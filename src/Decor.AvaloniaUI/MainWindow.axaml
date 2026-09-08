@@ -1,0 +1,306 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        x:Class="Decor.AvaloniaUI.MainWindow"
+        Title="Decor"
+        Width="1200"
+        Height="800"
+        x:DataType="vm:MainViewModel">
+  <Window.Resources>
+    <Flyout x:Key="NotificationsFlyout" Placement="TopEdgeAlignedRight" ShowMode="Transient">
+      <Border Padding="14" MinWidth="220" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+        <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+      </Border>
+    </Flyout>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="Button.activity-bar-button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Width" Value="48"/>
+      <Setter Property="Height" Value="48"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.top-menu-button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Width" Value="32"/>
+      <Setter Property="Height" Value="32"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Menu.top-menu > MenuItem">
+      <Setter Property="Padding" Value="6,3"/>
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="Button.main-menu-button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="7,0"/>
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.main-menu-button:pointerover">
+      <Setter Property="Background" Value="{DynamicResource DecorControlBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="CornerRadius" Value="3"/>
+    </Style>
+    <Style Selector="Border.status-bar-notification">
+      <Setter Property="Width" Value="28"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Cursor" Value="Arrow"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Border.status-bar-notification.is-hovered">
+      <Setter Property="Background" Value="{DynamicResource DecorControlBrush}"/>
+    </Style>
+  </Window.Styles>
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Background="{DynamicResource DecorSurfaceBrush}"
+            BorderBrush="{DynamicResource DecorBorderBrush}"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal">
+          <Button x:Name="MainMenuRegistrationsButton" Classes="main-menu-button" Content="Cadastros">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Produtos">
+                  <MenuItem Header="Consultar produtos" Command="{Binding ShowProductsCommand}"/>
+                  <MenuItem Header="Novo produto" Command="{Binding NewProductCommand}"/>
+                </MenuItem>
+                <MenuItem Header="Marcas" Command="{Binding ShowBrandsCommand}"/>
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <Button Classes="main-menu-button" Content="Operações">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Termo de Entrega" Command="{Binding ShowTermDeliveryCommand}"/>
+                <MenuItem Header="Classificações" Command="{Binding ShowClassificationsCommand}"/>
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button Classes="top-menu-button"
+                  Cursor="Hand"
+                  ToolTip.Tip="{Binding UserDisplayNameWithRole, FallbackValue=Conta}">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem Header="{Binding UserDisplayNameWithRole}">
+                  <MenuItem Header="Alterar senha" Command="{Binding ChangePasswordCommand}"/>
+                  <MenuItem Header="Sair da sessão" Command="{Binding SignOutCommand}"/>
+                </MenuItem>
+              </MenuFlyout>
+            </Button.Flyout>
+            <Border Width="22" Height="22" CornerRadius="11" Background="{DynamicResource DecorAccentBrush}">
+              <TextBlock Text="{Binding UserInitials}" Foreground="{DynamicResource DecorSelectionForegroundBrush}" FontSize="{DynamicResource DecorFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+          </Button>
+          <Button Classes="top-menu-button" Cursor="Hand" ToolTip.Tip="Configurações">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem Header="Tema">
+                  <MenuItem Header="Claro" ToggleType="Radio" IsChecked="{Binding IsLightTheme}" Command="{Binding UseLightThemeCommand}"/>
+                  <MenuItem Header="Escuro" ToggleType="Radio" IsChecked="{Binding IsDarkTheme}" Command="{Binding UseDarkThemeCommand}"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Manutenção do banco de dados" Command="{Binding ShowDatabaseMaintenanceCommand}"/>
+                <MenuItem Header="Gerenciamento de contas" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
+              </MenuFlyout>
+            </Button.Flyout>
+              <Path Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.25" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Data="M19.43,12.98C19.47,12.66 19.5,12.34 19.5,12C19.5,11.66 19.47,11.34 19.43,11.02L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.53,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.32 14.85,5.07L14.5,2.42C14.47,2.18 14.26,2 14,2H10C9.74,2 9.53,2.18 9.5,2.42L9.15,5.07C8.53,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.47,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.02C4.53,11.34 4.5,11.66 4.5,12C4.5,12.34 4.53,12.66 4.57,12.98L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.47,18.95 4.73,19.04 4.95,18.95L7.44,17.95C7.96,18.34 8.53,18.68 9.15,18.93L9.5,21.58C9.53,21.82 9.74,22 10,22H14C14.26,22 14.47,21.82 14.5,21.58L14.85,18.93C15.47,18.68 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.53,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.98ZM12,15.5C10.07,15.5 8.5,13.93 8.5,12C8.5,10.07 10.07,8.5 12,8.5C13.93,8.5 15.5,10.07 15.5,12C15.5,13.93 13.93,15.5 12,15.5Z"/>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="48,*">
+      <Border Grid.Column="0"
+              Background="{DynamicResource DecorSurfaceBrush}"
+              BorderBrush="{DynamicResource DecorBorderBrush}"
+              BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="*,Auto">
+          <StackPanel Grid.Row="1" VerticalAlignment="Bottom" IsVisible="False">
+            <Button Classes="activity-bar-button"
+                    Cursor="Hand"
+                    ToolTip.Tip="Notificações"
+                    Command="{Binding ShowNotificationsCommand}">
+              <Button.Flyout>
+                <Flyout Placement="Right" ShowMode="Transient">
+                  <Border Padding="14" MinWidth="220" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                    <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                  </Border>
+                </Flyout>
+              </Button.Flyout>
+              <Path Fill="{DynamicResource DecorTextBrush}"
+                    Width="20" Height="20"
+                    Stretch="Uniform"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Data="M12,22A2.5,2.5 0 0,0 14.45,20H9.55A2.5,2.5 0 0,0 12,22M18,16V10A6,6 0 0,0 13,4.1V3A1,1 0 0,0 11,3V4.1A6,6 0 0,0 6,10V16L4,18V19H20V18L18,16M8,10A4,4 0 0,1 16,10V16H8V10Z"/>
+            </Button>
+            <Button Classes="activity-bar-button"
+                    Cursor="Hand"
+                    ToolTip.Tip="{Binding UserDisplayNameWithRole, FallbackValue=Conta}">
+              <Button.Flyout>
+                <MenuFlyout Placement="Right">
+                  <MenuItem Header="{Binding UserDisplayNameWithRole}">
+                    <MenuItem Header="Alterar senha" Command="{Binding ChangePasswordCommand}"/>
+                    <MenuItem Header="Sair da sessão" Command="{Binding SignOutCommand}"/>
+                  </MenuItem>
+                </MenuFlyout>
+              </Button.Flyout>
+              <Border Width="26" Height="26" CornerRadius="13"
+                      Background="{DynamicResource DecorAccentBrush}">
+                <TextBlock Text="{Binding UserInitials}"
+                           Foreground="{DynamicResource DecorSelectionForegroundBrush}"
+                           FontSize="{DynamicResource DecorFontSizeSmall}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </Border>
+            </Button>
+            <Button Classes="activity-bar-button"
+                    Cursor="Hand"
+                    ToolTip.Tip="Configurações">
+              <Button.Flyout>
+                <MenuFlyout Placement="Right">
+                  <MenuItem Header="Tema">
+                    <MenuItem Header="Claro" ToggleType="Radio" IsChecked="{Binding IsLightTheme}" Command="{Binding UseLightThemeCommand}"/>
+                    <MenuItem Header="Escuro" ToggleType="Radio" IsChecked="{Binding IsDarkTheme}" Command="{Binding UseDarkThemeCommand}"/>
+                  </MenuItem>
+                  <Separator/>
+                  <MenuItem Header="Manutenção do banco de dados" Command="{Binding ShowDatabaseMaintenanceCommand}"/>
+                  <MenuItem Header="Gerenciamento de contas" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
+                </MenuFlyout>
+              </Button.Flyout>
+              <Path Fill="{DynamicResource DecorTextBrush}"
+                    Width="20" Height="20"
+                    Stretch="Uniform"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Data="M19.14,12.94c0.04,-0.3,0.06,-0.61,0.06,-0.94c0,-0.32,-0.02,-0.64,-0.07,-0.94l2.03,-1.58c0.18,-0.14,0.23,-0.41,0.12,-0.61 l-1.92,-3.32c-0.12,-0.22,-0.37,-0.29,-0.59,-0.22l-2.39,0.96c-0.5,-0.38,-1.03,-0.7,-1.62,-0.94L14.4,2.81c-0.04,-0.24,-0.24,-0.41,-0.48,-0.41 h-3.84c-0.24,0,-0.43,0.17,-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22,-0.08,-0.47,0,-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14,-0.23,0.41,-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39,-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44,-0.17,0.47,-0.41l0.36,-2.54c0.59,-0.24,1.13,-0.56,1.62,-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59,-0.22l1.92,-3.32c0.12,-0.22,0.07,-0.47,-0.12,-0.61L19.14,12.94z M12,15.6c-1.98,0,-3.6,-1.62,-3.6,-3.6 s1.62,-3.6,3.6,-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*">
+      <StackPanel Grid.RowSpan="2" IsVisible="{Binding IsHomeVisible}"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Spacing="8">
+        <TextBlock Text="Bem-vindo ao Decor"
+                   FontSize="{DynamicResource DecorFontSizeDisplay}"
+                   HorizontalAlignment="Center"/>
+        <TextBlock Text="Selecione uma opção no menu para começar."
+                   HorizontalAlignment="Center"/>
+      </StackPanel>
+
+      <Border Grid.Row="0"
+              Height="37"
+              Background="{DynamicResource DecorWindowBackgroundBrush}"
+          ClipToBounds="False"
+              IsVisible="{Binding HasOpenDocuments}">
+        <Grid>
+          <Border VerticalAlignment="Bottom" Height="1" Background="{DynamicResource DecorBorderBrush}"/>
+          <ItemsControl ItemsSource="{Binding OpenDocuments}" ZIndex="1">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:WorkspaceDocumentViewModel">
+            <Border Height="37"
+                  Background="{DynamicResource DecorSurfaceBrush}"
+                    BorderBrush="{DynamicResource DecorBorderBrush}"
+                    BorderThickness="0,0,1,0"
+                  ClipToBounds="False"
+                  Cursor="Hand"
+                    PointerEntered="DocumentTab_PointerEntered"
+                    PointerExited="DocumentTab_PointerExited"
+                    PointerPressed="DocumentTab_PointerPressed">
+              <Grid RowDefinitions="1,*" ColumnDefinitions="Auto,28" ColumnSpacing="7">
+                <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" IsVisible="{Binding IsActive}"/>
+                <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsHighlighted}" Margin="0,0,0,1"/>
+                <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsActive}" Margin="0,0,0,-1"/>
+                <TextBlock Grid.Row="1"
+                           Margin="12,0,0,0"
+                           Text="{Binding Title}"
+                           Foreground="{DynamicResource DecorTextBrush}"
+                           VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource DecorAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowModificationIndicator}"/>
+                <Button Grid.Row="1" Grid.Column="1"
+                        Width="18"
+                        Height="18"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Content="x"
+                        FontSize="{DynamicResource DecorFontSizeCaption}"
+                        Margin="0"
+                        HorizontalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        IsVisible="{Binding ShowCloseButton}"
+                        ToolTip.Tip="Fechar aba"
+                        Command="{Binding CloseCommand}"/>
+              </Grid>
+            </Border>
+          </DataTemplate>
+          </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
+      </Border>
+
+      <ContentControl Grid.Row="1" Content="{Binding ActiveDocument.Content}" />
+    </Grid>
+    </Grid>
+    <Border Grid.Row="2" Classes="status-bar" Padding="8,5" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,28" ColumnSpacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsPaginationVisible}" VerticalAlignment="Center">
+          <TextBlock Text="Tamanho da página:" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+          <ComboBox ItemsSource="{Binding StatusSource.PageSizeOptions}"
+                    SelectedItem="{Binding StatusSource.SelectedPageSize, Mode=TwoWay}"
+                    MinWidth="76"
+                    ToolTip.Tip="Registros por página"/>
+          <TextBlock Text="{Binding StatusSource.PaginationStatus}" Margin="34,0,18,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
+          <Button x:Name="StatusBarFirstPageButton" Classes="pagination-button" IsEnabled="{Binding StatusSource.HasFirstPage}" Command="{Binding StatusSource.FirstPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Primeira página">
+            <Path Data="M 16,5 L 9,12 L 16,19 Z M 6,5 L 6,19" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+          </Button>
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasPreviousPage}" Command="{Binding StatusSource.PreviousPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Página anterior">
+            <Path Data="M 17,5 L 9,12 L 17,19 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+          </Button>
+          <TextBlock Text="{Binding StatusSource.PaginationPageStatus}" Margin="10,0,10,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasNextPage}" Command="{Binding StatusSource.NextPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Próxima página">
+            <Path Data="M 7,5 L 15,12 L 7,19 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+          </Button>
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasLastPage}" Command="{Binding StatusSource.LastPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Última página">
+            <Path Data="M 8,5 L 15,12 L 8,19 Z M 18,5 L 18,19" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+          </Button>
+        </StackPanel>
+        <TextBlock Grid.Column="2" Text="{Binding StatusSource.StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="4" Text="{Binding StatusSource.StatusSecondary}" IsVisible="{Binding StatusSource.HasStatusSecondary}" Foreground="{DynamicResource DecorAccentBrush}" VerticalAlignment="Center"/>
+        <Border x:Name="StatusBarNotificationsBorder" Grid.Column="6" Classes="status-bar-notification" ToolTip.Tip="Notificações" ToolTip.Placement="Top"
+                PointerEntered="Notifications_PointerEntered"
+          PointerMoved="Notifications_PointerMoved"
+                PointerExited="Notifications_PointerExited"
+                PointerPressed="Notifications_PointerPressed">
+          <Path IsHitTestVisible="False" Fill="{DynamicResource DecorTextBrush}" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Data="M12,22A2.5,2.5 0 0,0 14.45,20H9.55A2.5,2.5 0 0,0 12,22M18,16V10A6,6 0 0,0 13,4.1V3A1,1 0 0,0 11,3V4.1A6,6 0 0,0 6,10V16L4,18V19H20V18L18,16M8,10A4,4 0 0,1 16,10V16H8V10Z"/>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

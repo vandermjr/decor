@@ -1,0 +1,155 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+    xmlns:dto="using:Decor.Core.DTOs"
+    x:Class="Decor.AvaloniaUI.Views.ProductEditWindow"
+    x:DataType="vm:ProductsViewModel"
+    Title="Produto"
+    Width="900"
+    Height="760"
+    MinWidth="760"
+    MinHeight="620">
+
+  <Grid RowDefinitions="*,Auto" Margin="20">
+    <ScrollViewer Grid.Row="0">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+            ColumnDefinitions="180,*"
+            RowSpacing="10"
+            ColumnSpacing="12">
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                   Text="Informações do Produto"
+                   FontSize="{DynamicResource DecorFontSizeTitle}"
+                   Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="ID" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ProductId}" VerticalAlignment="Center"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Código de Barras" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="2" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="0" Text="{Binding Barcode}"/>
+          <TextBlock Text="{Binding BarcodeError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBarcodeError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Descrição" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="3" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="1" Text="{Binding Description}"/>
+          <TextBlock Text="{Binding DescriptionError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Ativo" VerticalAlignment="Center"/>
+        <CheckBox Grid.Row="4" Grid.Column="1" TabIndex="2" Content="Produto ativo" IsChecked="{Binding IsActive}"/>
+
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Estoque" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="5" Grid.Column="1" Spacing="3">
+          <NumericUpDown TabIndex="3" Value="{Binding StockQuantity}" Minimum="0"/>
+          <TextBlock Text="{Binding StockQuantityError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockQuantityError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Estoque Mínimo" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="6" Grid.Column="1" Spacing="3">
+          <NumericUpDown TabIndex="4" Value="{Binding MinimumStock}" Minimum="0"/>
+          <TextBlock Text="{Binding MinimumStockError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasMinimumStockError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Ref. Fabricante" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="7" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="5" Text="{Binding ManufacturerRef}"/>
+          <TextBlock Text="{Binding ManufacturerRefError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasManufacturerRefError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="8" Grid.Column="0" Text="Ref. Auxiliar" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="8" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="6" Text="{Binding AuxiliarRef}"/>
+          <TextBlock Text="{Binding AuxiliarRefError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasAuxiliarRefError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Dimensões" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="9" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="7" Text="{Binding Dimensions}"/>
+          <TextBlock Text="{Binding DimensionsError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDimensionsError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="10" Grid.Column="0" Text="Marca" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="10" Grid.Column="1" Spacing="3">
+          <ComboBox TabIndex="8" ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="dto:BrandDTO"><TextBlock Text="{Binding BrandName}"/></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Text="{Binding BrandError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBrandError}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="11" Grid.Column="0" Text="Classificação" VerticalAlignment="Top" Margin="0,6,0,0"/>
+        <Grid Grid.Row="11" Grid.Column="1"
+              ColumnDefinitions="*,*,*,*"
+              ColumnSpacing="6">
+
+          <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="6" CornerRadius="4">
+            <StackPanel Spacing="5">
+              <TextBlock Text="Classes"/>
+              <ListBox ItemsSource="{Binding Classes}" SelectedItem="{Binding SelectedClass}" Height="105">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="dto:ClassDTO">
+                    <TextBlock Text="{Binding ClassName}"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="6" CornerRadius="4">
+            <StackPanel Spacing="5">
+              <TextBlock Text="Famílias"/>
+              <ListBox ItemsSource="{Binding Families}" SelectedItem="{Binding SelectedFamily}" Height="105">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="dto:FamilyDTO">
+                    <TextBlock Text="{Binding FamilyName}"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="6" CornerRadius="4">
+            <StackPanel Spacing="5">
+              <TextBlock Text="Grupos"/>
+              <ListBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" Height="105">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="dto:GroupDTO">
+                    <TextBlock Text="{Binding GroupName}"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="6" CornerRadius="4">
+            <StackPanel Spacing="5">
+              <TextBlock Text="Subgrupos"/>
+              <ListBox ItemsSource="{Binding Subgroups}" SelectedItem="{Binding SelectedSubgroup}" Height="105">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="dto:SubgroupDTO">
+                    <TextBlock Text="{Binding SubgroupName}"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="12" Grid.Column="0" Text="Observações" VerticalAlignment="Top" Margin="0,6,0,0"/>
+        <StackPanel Grid.Row="12" Grid.Column="1" Spacing="3">
+          <TextBox TabIndex="9" Text="{Binding Observations}" AcceptsReturn="True" Height="100" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding ObservationsError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasObservationsError}"/>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+      <Button TabIndex="10" Content="Cancelar" Command="{Binding CancelCommand}" MinWidth="100"/>
+      <Button TabIndex="11" Content="Salvar" Command="{Binding SaveCommand}" MinWidth="100"/>
+    </StackPanel>
+  </Grid>
+</Window>

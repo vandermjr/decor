@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.DatabaseMaintenanceView"
+             x:DataType="vm:DatabaseMaintenanceViewModel">
+  <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Manutenção do banco de dados" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Backup" FontSize="{DynamicResource DecorFontSizeSection}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+    </StackPanel>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MinWidth="360"/>
+        <ColumnDefinition Width="12"/>
+        <ColumnDefinition Width="760" MinWidth="620"/>
+      </Grid.ColumnDefinitions>
+      <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="14" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+        <Grid RowDefinitions="Auto,*">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Agendamentos" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Rotinas ativas e pausadas" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="1" TabIndex="0" Content="Novo" Command="{Binding NewScheduleCommand}" VerticalAlignment="Top"/>
+            <Button Grid.Column="2" TabIndex="1" Content="Excluir" Command="{Binding DeleteSelectedScheduleCommand}" IsVisible="{Binding HasSelectedSchedule}" Background="{DynamicResource DecorDangerBrush}" Foreground="White" VerticalAlignment="Top"/>
+          </Grid>
+
+          <Border Grid.Row="1" Margin="0,12,0,0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Background="{DynamicResource DecorControlBrush}">
+            <Grid>
+              <TextBlock Text="Nenhum agendamento criado" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DecorTextMutedBrush}" IsVisible="{Binding !HasSchedules}"/>
+              <ListBox x:Name="SchedulesList" ItemsSource="{Binding Schedules}" SelectedItem="{Binding SelectedSchedule, Mode=TwoWay}" IsVisible="{Binding HasSchedules}" Background="Transparent" BorderThickness="0" PointerReleased="SchedulesList_PointerReleased">
+                <ListBox.Styles>
+                  <Style Selector="ListBoxItem">
+                    <Setter Property="MinHeight" Value="78"/>
+                    <Setter Property="Padding" Value="10,8"/>
+                  </Style>
+                </ListBox.Styles>
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:BackupScheduleItemViewModel">
+                    <Grid ColumnDefinitions="72,*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding TimeDisplay}" FontSize="26" VerticalAlignment="Center"/>
+                      <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PeriodDisplay}" Foreground="{DynamicResource DecorTextBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding DestinationsDisplay}" Foreground="{DynamicResource DecorAccentBrush}" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                      <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsEnabled}" OnContent="Ativo" OffContent="Pausado" VerticalAlignment="Center"/>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Grid>
+          </Border>
+        </Grid>
+      </Border>
+
+      <GridSplitter Grid.Column="1" Width="12" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent"/>
+
+      <ScrollViewer Grid.Column="2" MinWidth="620" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+          <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="16" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+            <StackPanel Spacing="14">
+              <TextBlock Text="{Binding EditorTitle}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <Grid ColumnDefinitions="260,220,*" ColumnSpacing="18">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Data inicial" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" MinHeight="34">
+                    <Grid ColumnDefinitions="*,38">
+                      <TextBlock Text="{Binding BackupDateDisplay}" Margin="10,0" VerticalAlignment="Center"/>
+                      <Button x:Name="ChooseBackupDateButton" Grid.Column="1" TabIndex="3" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="ChooseBackupDateButton_Click">
+                        <Button.Flyout>
+                          <Flyout Placement="BottomEdgeAlignedRight">
+                            <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                              <StackPanel Spacing="10">
+                                <Calendar x:Name="BackupDateCalendar" SelectedDate="{Binding BackupDate, Mode=TwoWay}" SelectedDatesChanged="BackupDateCalendar_SelectedDatesChanged"/>
+                              </StackPanel>
+                            </Border>
+                          </Flyout>
+                        </Button.Flyout>
+                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="M7,2V4H17V2H19V4H20A2,2 0,0 1,22 6V20A2,2 0,0 1,20 22H4A2,2 0,0 1,2 20V6A2,2 0,0 1,4 4H5V2H7M4,9V20H20V9H4M6,11H8V13H6V11M10,11H12V13H10V11M14,11H16V13H14V11M6,15H8V17H6V15M10,15H12V17H10V15M14,15H16V17H14V15Z"/>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Horário inicial" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" MinHeight="34">
+                    <Grid ColumnDefinitions="*,38">
+                      <TextBlock Text="{Binding BackupTimeDisplay}" Margin="10,0" VerticalAlignment="Center"/>
+                      <Button x:Name="ChooseBackupTimeButton" Grid.Column="1" TabIndex="4" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="ChooseBackupTimeButton_Click">
+                        <Button.Flyout>
+                          <Flyout Placement="BottomEdgeAlignedRight">
+                            <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                              <StackPanel Spacing="10">
+                                <TimePickerPresenter x:Name="BackupTimePicker" Time="{Binding BackupTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupTimePicker_Confirmed" Dismissed="BackupTimePicker_Dismissed"/>
+                              </StackPanel>
+                            </Border>
+                          </Flyout>
+                        </Button.Flyout>
+                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="M12,20A8,8 0,1 0,12 4A8,8 0,0 0,12 20M12,2A10,10 0,1 1,12 22A10,10 0,0 1,12 2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </StackPanel>
+                <TextBlock Grid.Column="2" VerticalAlignment="Bottom" Foreground="{DynamicResource DecorTextMutedBrush}" Text="A data e o horário definem quando o agendamento começa." TextWrapping="Wrap"/>
+              </Grid>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Repetição" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <RadioButton TabIndex="5" Content="Uma vez" IsChecked="{Binding IsOnceBackup}" GroupName="BackupRecurrence"/>
+                  <RadioButton TabIndex="6" Content="Diariamente" IsChecked="{Binding IsDailyBackup}" GroupName="BackupRecurrence"/>
+                  <RadioButton TabIndex="7" Content="Seg a Sex" IsChecked="{Binding IsWeekdaysBackup}" GroupName="BackupRecurrence"/>
+                  <RadioButton TabIndex="8" Content="Personalizar" IsChecked="{Binding IsCustomBackup}" GroupName="BackupRecurrence"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsCustomBackup}">
+                  <CheckBox TabIndex="9" Content="Seg" IsChecked="{Binding BackupOnMonday}"/>
+                  <CheckBox TabIndex="10" Content="Ter" IsChecked="{Binding BackupOnTuesday}"/>
+                  <CheckBox TabIndex="11" Content="Qua" IsChecked="{Binding BackupOnWednesday}"/>
+                  <CheckBox TabIndex="12" Content="Qui" IsChecked="{Binding BackupOnThursday}"/>
+                  <CheckBox TabIndex="13" Content="Sex" IsChecked="{Binding BackupOnFriday}"/>
+                  <CheckBox TabIndex="14" Content="Sáb" IsChecked="{Binding BackupOnSaturday}"/>
+                  <CheckBox TabIndex="15" Content="Dom" IsChecked="{Binding BackupOnSunday}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding PeriodDisplay}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding NextExecutionPreviewDisplay}" Foreground="{DynamicResource DecorAccentBrush}" TextWrapping="Wrap"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="16" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+            <StackPanel Spacing="14">
+              <TextBlock Text="Destino" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+
+              <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="160,*,Auto" ColumnSpacing="12" RowSpacing="4">
+                  <CheckBox TabIndex="16" Content="Pasta específica" IsChecked="{Binding UseSpecificFolder}" VerticalAlignment="Center"/>
+                  <TextBox Grid.Column="1" TabIndex="17" Text="{Binding SpecificFolderPath}" PlaceholderText="Ex.: /home/usuario/backups/decor" IsEnabled="{Binding UseSpecificFolder}"/>
+                  <Button Grid.Column="2" TabIndex="18" Content="Escolher" IsEnabled="{Binding UseSpecificFolder}" Click="ChooseSpecificFolder_Click"/>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Foreground="{DynamicResource DecorAccentBrush}" TextWrapping="Wrap" IsVisible="{Binding HasSpecificFolderBackupPath}">
+                    <Run Text="Destino: "/><Run Text="{Binding SpecificFolderBackupPath}"/>
+                  </TextBlock>
+                </Grid>
+
+                <Grid Grid.Row="1" RowDefinitions="Auto,Auto" ColumnDefinitions="160,*,Auto" ColumnSpacing="12" RowSpacing="4">
+                  <CheckBox TabIndex="19" Content="Unidade externa" IsChecked="{Binding UseExternalDrive}" VerticalAlignment="Center"/>
+                  <TextBox Grid.Column="1" TabIndex="20" Text="{Binding ExternalDrivePath}" PlaceholderText="Ex.: /media/backup/decor" IsEnabled="{Binding UseExternalDrive}"/>
+                  <Button Grid.Column="2" TabIndex="21" Content="Escolher" IsEnabled="{Binding UseExternalDrive}" Click="ChooseExternalDrive_Click"/>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Foreground="{DynamicResource DecorAccentBrush}" TextWrapping="Wrap" IsVisible="{Binding HasExternalDriveBackupPath}">
+                    <Run Text="Destino: "/><Run Text="{Binding ExternalDriveBackupPath}"/>
+                  </TextBlock>
+                </Grid>
+              </Grid>
+
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding Summary}" Foreground="{DynamicResource DecorAccentBrush}" TextWrapping="Wrap" IsVisible="{Binding HasSummary}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Top">
+                  <Button TabIndex="22" Content="{Binding ImmediateBackupButtonText}" Command="{Binding StartImmediateBackupCommand}" IsEnabled="{Binding !IsBackupRunning}"/>
+                  <Button TabIndex="23" Content="Salvar agendamento" Command="{Binding SaveScheduleCommand}" Background="{DynamicResource DecorAccentBrush}" Foreground="{DynamicResource DecorSelectionForegroundBrush}"/>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

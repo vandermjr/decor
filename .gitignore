@@ -1,0 +1,39 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Visual Studio
+.vs/
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# VS Code / Code - OSS local workspace
+.vscode/*.code-workspace
+
+# Local configuration / secrets
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+TestResults/
+
+# Generated documentation/artifacts
+artifacts/
+
+# Pastas fora do controle de versão (decisão do orquestrador)
+/Md/
+src/Decor.AvaloniaUI/appsettings.json

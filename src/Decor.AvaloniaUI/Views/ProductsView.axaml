@@ -1,0 +1,180 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Decor.AvaloniaUI.Controls"
+    xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+    xmlns:dto="using:Decor.Core.DTOs"
+    x:Class="Decor.AvaloniaUI.Views.ProductsView"
+    x:DataType="vm:ProductsViewModel">
+  <UserControl.Resources>
+    <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
+  </UserControl.Resources>
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <!-- Toolbar -->
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
+        <TextBox x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText}" PlaceholderText="Pesquisar por ID ou descrição" KeyDown="SearchTextBox_KeyDown"/>
+        <Button Grid.Column="1" TabIndex="1" Content="Pesquisar" Command="{Binding SearchCommand}"/>
+      </Grid>
+      
+      <!-- Botões com visibilidade condicional -->
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button TabIndex="2" Content="Novo" Command="{Binding NewCommand}" IsVisible="{Binding CanNew}"/>
+        <Button TabIndex="3" Content="Editar" Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}"/>
+        <Button TabIndex="0" Content="Salvar" Command="{Binding SaveCommand}" IsVisible="{Binding CanSave}" Background="#4CAF50" Foreground="White"/>
+        <Button TabIndex="1" Content="Cancelar" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Background="#F44336" Foreground="White"/>
+      </StackPanel>
+    </Grid>
+
+    <!-- DataGrid ou Formulário (alternância) -->
+    <Panel Grid.Row="1">
+      <!-- DataGrid (preenche tela inteira) -->
+      <controls:DecorDataGridControl x:Name="ProductsGrid" ItemsSource="{Binding Products}"
+                SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                IsVisible="{Binding !IsEditing}"/>
+
+      <!-- Formulário de Edição (substitui DataGrid) -->
+      <Border BorderThickness="0" Padding="0" CornerRadius="4" IsVisible="{Binding IsEditing}">
+        <ScrollViewer x:Name="ProductFormScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="12" Margin="0,0,20,0">
+            <TextBlock FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Text="Informações do Produto" Margin="0,0,0,12"/>
+            
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+              <Border Background="{DynamicResource DecorSurfaceRaisedBrush}"
+                      BorderBrush="{DynamicResource DecorBorderBrush}"
+                      BorderThickness="1" CornerRadius="4" Padding="12,8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="ID" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding ProductIdDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Background="{DynamicResource DecorSurfaceRaisedBrush}"
+                      BorderBrush="{DynamicResource DecorBorderBrush}"
+                      BorderThickness="1" CornerRadius="4" Padding="12,4">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                  <TextBlock Text="Status" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                  <ToggleSwitch TabIndex="2" IsChecked="{Binding IsActive}" OnContent="Ativo" OffContent="Inativo" MinWidth="115"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Código de Barras" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="3" Text="{Binding Barcode}"/>
+              <TextBlock Text="{Binding BarcodeError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBarcodeError}"/>
+            </StackPanel>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Descrição" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="4" Text="{Binding Description}"/>
+              <TextBlock Text="{Binding DescriptionError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
+            </StackPanel>
+            
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Estoque" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <NumericUpDown TabIndex="5" Value="{Binding StockQuantity}" Minimum="0"/>
+                <TextBlock Text="{Binding StockQuantityError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockQuantityError}"/>
+              </StackPanel>
+              <StackPanel Spacing="4">
+                <TextBlock Text="Estoque Mínimo" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <NumericUpDown TabIndex="6" Value="{Binding MinimumStock}" Minimum="0"/>
+                <TextBlock Text="{Binding MinimumStockError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasMinimumStockError}"/>
+              </StackPanel>
+            </Grid>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Ref. Fabricante" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="7" Text="{Binding ManufacturerRef}"/>
+              <TextBlock Text="{Binding ManufacturerRefError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasManufacturerRefError}"/>
+            </StackPanel>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Ref. Auxiliar" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="8" Text="{Binding AuxiliarRef}"/>
+              <TextBlock Text="{Binding AuxiliarRefError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasAuxiliarRefError}"/>
+            </StackPanel>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Dimensões" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="9" Text="{Binding Dimensions}"/>
+              <TextBlock Text="{Binding DimensionsError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDimensionsError}"/>
+            </StackPanel>
+            
+            <StackPanel Spacing="4">
+              <TextBlock Text="Marca" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <ComboBox TabIndex="10" ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}">
+                <ComboBox.ItemTemplate><DataTemplate x:DataType="dto:BrandDTO"><TextBlock Text="{Binding BrandName}"/></DataTemplate></ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBlock Text="{Binding BrandError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBrandError}"/>
+            </StackPanel>
+            
+            <TextBlock Text="Classificação Hierárquica" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,12,0,8"/>
+            <Grid Height="160" ClipToBounds="True" ColumnDefinitions="1*,1*,1*,1*" ColumnSpacing="8">
+              <Border BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                  <TextBlock Text="Classes" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <ListBox Grid.Row="1" ItemsSource="{Binding Classes}" SelectedItem="{Binding SelectedClass}">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="dto:ClassDTO">
+                        <TextBlock Text="{Binding ClassName}" VerticalAlignment="Center"/>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid>
+              </Border>
+
+              <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                  <TextBlock Text="Famílias" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <ListBox Grid.Row="1" ItemsSource="{Binding Families}" SelectedItem="{Binding SelectedFamily}">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="dto:FamilyDTO">
+                        <TextBlock Text="{Binding FamilyName}" VerticalAlignment="Center"/>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid>
+              </Border>
+
+              <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                  <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="dto:GroupDTO">
+                        <TextBlock Text="{Binding GroupName}" VerticalAlignment="Center"/>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid>
+              </Border>
+
+              <Border Grid.Column="3" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                  <TextBlock Text="Subgrupos" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <ListBox Grid.Row="1" ItemsSource="{Binding Subgroups}" SelectedItem="{Binding SelectedSubgroup}">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="dto:SubgroupDTO">
+                        <TextBlock Text="{Binding SubgroupName}" VerticalAlignment="Center"/>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </Grid>
+              </Border>
+            </Grid>
+            
+            <StackPanel Spacing="4" Margin="0,8,0,0">
+              <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBox TabIndex="11" Text="{Binding Observations}" AcceptsReturn="True" Height="100" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ObservationsError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasObservationsError}"/>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Panel>
+
+  </Grid>
+</UserControl>

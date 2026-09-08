@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:dtos="using:Decor.Core.DTOs" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
+  <Grid Margin="16" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8"><TextBox x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário"/><Button Grid.Column="1" TabIndex="1" Content="Pesquisar" Command="{Binding SearchCommand}"/><Button Grid.Column="2" TabIndex="2" Content="Novo usuário" Command="{Binding NewUserCommand}"/></Grid>
+    <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="8"><ListBox ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"><ListBox.Styles><Style Selector="ListBoxItem"><Setter Property="MinHeight" Value="34"/><Setter Property="Padding" Value="8,6"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/></Style><Style Selector="ListBoxItem TextBlock"><Setter Property="VerticalAlignment" Value="Center"/></Style></ListBox.Styles><ListBox.ItemTemplate><DataTemplate x:DataType="dtos:AdministrativeUserDTO"><Grid ColumnDefinitions="80,180,*,100" Margin="4" MinHeight="32" VerticalAlignment="Center"><TextBlock Text="{Binding UserID}" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding Username}" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="3" Text="{Binding IsActive}" VerticalAlignment="Center"/></Grid></DataTemplate></ListBox.ItemTemplate></ListBox></Border>
+    <Border Grid.Row="2" Padding="12" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" IsVisible="{Binding HasDetails}">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto,Auto" RowSpacing="8">
+        <TextBlock Text="Detalhes do usuário" FontWeight="{DynamicResource DecorFontWeightHeading}" />
+        <Button Grid.Column="1" TabIndex="3" Content="Fechar" Command="{Binding ClearSelectionCommand}" />
+        <Button Grid.Column="2" TabIndex="4" Content="{Binding ToggleActiveButtonText}" Command="{Binding ToggleActiveCommand}" />
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" ColumnSpacing="8" RowSpacing="4">
+          <TextBlock Text="ID:" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Grid.Column="1" Text="{Binding SelectedDetails.UserID}"/>
+          <TextBlock Grid.Row="1" Text="Usuário:" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDetails.Username}"/>
+          <TextBlock Grid.Row="2" Text="Nome:" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedDetails.DisplayName}" TextWrapping="Wrap"/>
+          <TextBlock Grid.Row="3" Text="Ativo:" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedDetails.IsActive}"/>
+        </Grid>
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="4">
+          <TextBlock Text="Roles" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <ItemsControl ItemsSource="{Binding SelectedDetails.Roles}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="dtos:AdministrativeRoleDTO"><StackPanel Spacing="2"><TextBlock Text="{Binding RoleName}"/><TextBlock Text="{Binding Description}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding HierarchyLevel, StringFormat='Nível: {0}'}"/><TextBlock Text="{Binding IsSystemProtected, StringFormat='Protegida: {0}'}"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Spacing="4">
+          <TextBlock Text="Permission overrides" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <ItemsControl ItemsSource="{Binding SelectedDetails.PermissionOverrides}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="dtos:PermissionOverrideDTO"><TextBlock><Run Text="{Binding PermissionCode}"/><Run Text=" - "/><Run Text="{Binding IsGranted}"/></TextBlock></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+        </StackPanel>
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="{Binding DetailsStatus}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding HasDetailsError}" TextWrapping="Wrap"/>
+      </Grid>
+    </Border>
+
+    <Panel Grid.Row="0" Grid.RowSpan="4" Background="{DynamicResource DecorOverlayBrush}" IsVisible="{Binding ShowToggleUserConfirmation}" ZIndex="1000">
+      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="420" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Confirmação" FontSize="{DynamicResource DecorFontSizeSection}"/>
+          <TextBlock Text="{Binding ToggleActiveConfirmationMessage}" TextWrapping="Wrap" Foreground="{DynamicResource DecorTextBrush}"/>
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Button Grid.Column="0" TabIndex="0" Content="Sim, confirmar" Background="{DynamicResource DecorDangerBrush}" Foreground="White" Command="{Binding ConfirmToggleActiveCommand}"/>
+            <Button Grid.Column="1" TabIndex="1" Content="Não, cancelar" Command="{Binding CancelToggleActiveCommand}"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Panel>
+    <StackPanel Grid.Row="2" Spacing="4">
+      <TextBlock Text="Carregando detalhes..." Foreground="{DynamicResource DecorTextMutedBrush}" IsVisible="{Binding IsDetailsBusy}" />
+      <TextBlock Text="{Binding DetailsStatus}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding HasDetailsError}" TextWrapping="Wrap" />
+    </StackPanel>
+    <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+  </Grid>
+</UserControl>

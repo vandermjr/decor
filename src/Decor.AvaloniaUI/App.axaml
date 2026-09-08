@@ -1,0 +1,178 @@
+<Application
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="Decor.AvaloniaUI.App"
+    RequestedThemeVariant="Dark">
+
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.ThemeDictionaries>
+            <ResourceDictionary x:Key="Light">
+                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#F3F4F6</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceBrush">#FBFBFC</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorControlBrush">#F7F8FA</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorBorderBrush">#D6DAE0</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextBrush">#20242B</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextMutedBrush">#626B77</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAccentBrush">#2074B8</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAccentHoverBrush">#185F9A</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorDangerBrush">#B32D35</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorOverlayBrush">#66000000</SolidColorBrush>
+                <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
+                <x:Double x:Key="DecorFontSizeBase">13</x:Double>
+                <x:Double x:Key="DecorFontSizeSmall">10</x:Double>
+                <x:Double x:Key="DecorFontSizeCaption">11</x:Double>
+                <x:Double x:Key="DecorFontSizeSection">17</x:Double>
+                <x:Double x:Key="DecorFontSizeTitle">22</x:Double>
+                <x:Double x:Key="DecorFontSizeDisplay">28</x:Double>
+                <FontWeight x:Key="DecorFontWeightBase">Light</FontWeight>
+                <FontWeight x:Key="DecorFontWeightHeading">Light</FontWeight>
+            </ResourceDictionary>
+            <ResourceDictionary x:Key="Dark">
+                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#20252B</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceBrush">#272D34</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#303740</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorControlBrush">#252B32</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorBorderBrush">#414A55</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextBrush">#E3E7EC</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextMutedBrush">#AAB4C0</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAccentBrush">#3D94D1</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAccentHoverBrush">#55A7E0</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorDangerBrush">#E16B73</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorOverlayBrush">#99000000</SolidColorBrush>
+                <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
+                <x:Double x:Key="DecorFontSizeBase">13</x:Double>
+                <x:Double x:Key="DecorFontSizeSmall">10</x:Double>
+                <x:Double x:Key="DecorFontSizeCaption">11</x:Double>
+                <x:Double x:Key="DecorFontSizeSection">17</x:Double>
+                <x:Double x:Key="DecorFontSizeTitle">22</x:Double>
+                <x:Double x:Key="DecorFontSizeDisplay">28</x:Double>
+                <FontWeight x:Key="DecorFontWeightBase">Light</FontWeight>
+                <FontWeight x:Key="DecorFontWeightHeading">Light</FontWeight>
+            </ResourceDictionary>
+        </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
+
+<Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <Style Selector="Window">
+        <Setter Property="Background" Value="{DynamicResource DecorWindowBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="ScrollViewer">
+        <Setter Property="AllowAutoHide" Value="False" />
+    </Style>
+    <Style Selector="ScrollBar">
+        <Setter Property="AllowAutoHide" Value="False" />
+    </Style>
+    <Style Selector="Menu">
+        <Setter Property="Background" Value="{DynamicResource DecorSurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="MenuItem /template/ ContentPresenter">
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="MenuItem /template/ ContentPresenter TextBlock">
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="TextBox">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+    <Style Selector="Button">
+        <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.pagination-button">
+        <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.pagination-button:disabled">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="Opacity" Value="0.55" />
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="Button /template/ ContentPresenter">
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="Button /template/ ContentPresenter TextBlock">
+        <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+    </Style>
+    <Style Selector="ListBox">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem">
+        <Setter Property="Height" Value="23" />
+        <Setter Property="MinHeight" Value="23" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ListBoxItem TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem /template/ ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DecorAccentHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="DataGrid">
+        <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+</Application.Styles>
+
+</Application>

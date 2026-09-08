@@ -1,0 +1,65 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+    xmlns:entities="using:Decor.Core.Entities"
+    x:Class="Decor.AvaloniaUI.Views.TermDeliveryView"
+    x:DataType="vm:TermDeliveryViewModel">
+  <UserControl.Resources>
+    <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
+  </UserControl.Resources>
+  <Grid RowDefinitions="Auto,*,Auto" Margin="16" ColumnDefinitions="*">
+    <Border BorderBrush="Gray" BorderThickness="1" Padding="12" CornerRadius="4">
+      <Grid ColumnDefinitions="120,*,120,*,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+        <TextBlock Text="Produto" VerticalAlignment="Center"/>
+        <TextBox Grid.Column="1" TabIndex="0" Text="{Binding ProductIdText}" PlaceholderText="Código do produto"/>
+        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding ProductIdError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasProductIdError}"/>
+
+        <TextBlock Grid.Column="2" Text="Quantidade" VerticalAlignment="Center"/>
+        <NumericUpDown Grid.Column="3" TabIndex="1" Value="{Binding Quantity}" Minimum="0"/>
+        <TextBlock Grid.Column="3" Grid.Row="1" Text="{Binding QuantityError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasQuantityError}"/>
+
+        <Button Grid.Column="4" TabIndex="2" Content="Adicionar" Command="{Binding AddProductCommand}"/>
+        <Button Grid.Column="5" TabIndex="3" Content="Remover" Command="{Binding RemoveTermCommand}"/>
+
+        <TextBlock Grid.Row="2" Text="Cliente" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="1" TabIndex="4" Text="{Binding CustomerName}" PlaceholderText="Nome do cliente"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="2" Text="Endereço" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="3" TabIndex="5" Text="{Binding CustomerAddress}" PlaceholderText="Endereço"/>
+
+        <Button Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" TabIndex="6" Content="Gerar Relatório" Command="{Binding GenerateReportCommand}"/>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Margin="0,12,0,0" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4">
+      <ListBox ItemsSource="{Binding Terms}" SelectedItem="{Binding SelectedTerm}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="entities:Term">
+            <Grid ColumnDefinitions="100,*,120" Margin="4">
+              <TextBlock Text="{Binding ProductID}"/>
+              <TextBlock Grid.Column="1" Text="{Binding Description}" Margin="8,0,0,0"/>
+              <TextBlock Grid.Column="2" Text="{Binding Qtde}" HorizontalAlignment="Right"/>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Margin="0,8,0,0"/>
+    
+    <!-- Delete Confirmation Dialog -->
+    <Panel Grid.Row="0" Grid.RowSpan="3" Background="#80000000" IsVisible="{Binding ShowDeleteConfirmation}" ZIndex="1000">
+      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="400" Background="White" Padding="24" CornerRadius="8">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Confirmação de Remoção" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <TextBlock Text="{Binding DeleteConfirmationMessage}" TextWrapping="Wrap" Foreground="#333333"/>
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+            <Button Grid.Column="0" TabIndex="0" Content="Sim, remover" Background="#B3261E" Foreground="White" Command="{Binding ConfirmDeleteCommand}"/>
+            <Button Grid.Column="1" TabIndex="1" Content="Não, cancelar" Background="#E0E0E0" Foreground="#333333" Command="{Binding CancelDeleteCommand}"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Panel>
+  </Grid>
+</UserControl>

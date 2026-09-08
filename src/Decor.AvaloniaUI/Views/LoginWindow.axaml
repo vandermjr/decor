@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        x:Class="Decor.AvaloniaUI.Views.LoginWindow"
+        x:DataType="vm:LoginViewModel"
+        Title="Decor — Entrar"
+        Width="420"
+        Height="470"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+  <Grid Margin="36" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Decor" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}" />
+      <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextMutedBrush}" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="1" Margin="0,16,0,0" Spacing="6">
+      <TextBlock Text="Usuário" />
+      <TextBox x:Name="UsernameTextBox" TabIndex="0" Focusable="True" Text="{Binding Username}" PlaceholderText="Informe seu usuário" IsEnabled="{Binding !IsBusy}" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="2" Spacing="6">
+      <TextBlock Text="Senha" />
+      <TextBox TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
+               PlaceholderText="Informe sua senha" IsEnabled="{Binding !IsBusy}" />
+    </StackPanel>
+
+    <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
+            BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
+            IsVisible="{Binding HasError}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" />
+        <Button Grid.Column="1" TabIndex="3" Width="28" Height="28" Padding="0"
+                ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
+                Click="CopyErrorButton_OnClick">
+          <PathIcon Width="16" Height="16"
+                    Data="M8.25,2A2.25,2.25 0,0 0,6,4.25V13.75A2.25,2.25 0,0 0,8.25,16H8.5V14.5H8.25A0.75,0.75 0,0 1,7.5,13.75V4.25A0.75,0.75 0,0 1,8.25,3.5H17.75A0.75,0.75 0,0 1,18.5,4.25V5H20V4.25A2.25,2.25 0,0 0,17.75,2H8.25M11.25,7A2.25,2.25 0,0 0,9,9.25V19.75A2.25,2.25 0,0 0,11.25,22H19.75A2.25,2.25 0,0 0,22,19.75V9.25A2.25,2.25 0,0 0,19.75,7H11.25M11.25,8.5H19.75A0.75,0.75 0,0 1,20.5,9.25V19.75A0.75,0.75 0,0 1,19.75,20.5H11.25A0.75,0.75 0,0 1,10.5,19.75V9.25A0.75,0.75 0,0 1,11.25,8.5Z" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <ProgressBar Grid.Row="4" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
+
+    <Button Grid.Row="5" TabIndex="2" Content="Entrar" Command="{Binding LoginCommand}" IsDefault="True"
+            HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="170" MinHeight="36" Padding="12,8"
+            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+  </Grid>
+</Window>

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="FluentAssertions" Version="8.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Testcontainers.MariaDb" Version="4.13.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <None Include="..\..\Migrations\20260830_add_authentication_authorization.sql"
+          Link="Migrations\20260830_add_authentication_authorization.sql"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Migrations\20260831_add_users_must_change_password.sql"
+          Link="Migrations\20260831_add_users_must_change_password.sql"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Migrations\20260901_add_administration_security.sql"
+          Link="Migrations\20260901_add_administration_security.sql"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Migrations\20260902_harden_administration_security.sql"
+          Link="Migrations\20260902_harden_administration_security.sql"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Decor.Infrastructure\Decor.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

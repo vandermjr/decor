@@ -1,0 +1,15 @@
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('1', 'CX', 'CAIXA');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('4', 'KG', 'KILOGRAMA');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('6', 'LT', 'LATA');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('7', 'M2', 'METRO QUADRADO');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('10', 'MLIN', 'METRO LINEAR');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('14', 'PC', 'PACOTE');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('16', 'UN', 'UNIDADE');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('17', 'BD', 'BALDE');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('19', 'BRR', 'BARRA');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('20', 'CJ', 'CONJUNTO');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('21', 'GL', 'GALÃO');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('22', 'JG', 'JOGO');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('23', 'KIT', 'KIT');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('30', 'RL', 'ROLO');
+INSERT INTO t_medidas (Ganso_ID, Sigla, Nome) VALUES ('32', 'PÇ', 'PEÇA');
