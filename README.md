@@ -1,6 +1,6 @@
 # Decor
 
-Aplicação desktop multiplataforma em migração de WinForms para AvaloniaUI.
+Aplicação desktop multiplataforma em AvaloniaUI.
 
 ## Estrutura
 
@@ -13,7 +13,7 @@ src/
 └── Decor.AvaloniaUI/
 
 tests/
-└── Decor.FluentSqlBuilder.Tests/
+├── Decor.FluentSqlBuilder.Tests/
+├── Decor.Application.Tests/
+└── Decor.Infrastructure.IntegrationTests/
 ```
-
-O frontend WinForms legado permanece fora da solução em `Decor.WinForms/` durante a migração.
