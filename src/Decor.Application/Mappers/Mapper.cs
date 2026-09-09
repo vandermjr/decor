@@ -72,4 +72,29 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
 
     public static IEnumerable<SubgroupDTO> ToDTO(this IEnumerable<Subgroup> subgroups) => subgroups.Select(s => s.ToDTO());
     public static SubgroupDTO ToDTO(this Subgroup subgroup) => new(subgroup.SubgroupID, subgroup.SubgroupName);
+
+    // --- Mapeadores para Customer ---
+    public static IEnumerable<CustomerDTO> ToDTO(this IEnumerable<Customer> customers) => customers.Select(c => c.ToDTO());
+    public static CustomerDTO ToDTO(this Customer customer) => new(customer.CustomerID, customer.Name, customer.Document, customer.Phone, customer.Email, customer.Address, customer.IsActive);
+    public static Customer FromDTO(this CustomerDTO customerDto) => new() { CustomerID = customerDto.CustomerID, Name = customerDto.Name ?? string.Empty, Document = customerDto.Document, Phone = customerDto.Phone, Email = customerDto.Email, Address = customerDto.Address, IsActive = customerDto.IsActive };
+
+    // --- Mapeadores para Supplier ---
+    public static IEnumerable<SupplierDTO> ToDTO(this IEnumerable<Supplier> suppliers) => suppliers.Select(s => s.ToDTO());
+    public static SupplierDTO ToDTO(this Supplier supplier) => new(supplier.SupplierID, supplier.CorporateName, supplier.Document, supplier.Phone, supplier.Email, supplier.IsActive);
+    public static Supplier FromDTO(this SupplierDTO supplierDto) => new() { SupplierID = supplierDto.SupplierID, CorporateName = supplierDto.CorporateName ?? string.Empty, Document = supplierDto.Document, Phone = supplierDto.Phone, Email = supplierDto.Email, IsActive = supplierDto.IsActive };
+
+    // --- Mapeadores para Employee ---
+    public static IEnumerable<EmployeeDTO> ToDTO(this IEnumerable<Employee> employees) => employees.Select(e => e.ToDTO());
+    public static EmployeeDTO ToDTO(this Employee employee) => new(employee.EmployeeID, employee.Name, employee.Document, employee.Phone, employee.IsActive, employee.UserID);
+    public static Employee FromDTO(this EmployeeDTO employeeDto) => new() { EmployeeID = employeeDto.EmployeeID, Name = employeeDto.Name ?? string.Empty, Document = employeeDto.Document, Phone = employeeDto.Phone, IsActive = employeeDto.IsActive, UserID = employeeDto.UserID };
+
+    // --- Mapeadores para Partner ---
+    public static IEnumerable<PartnerDTO> ToDTO(this IEnumerable<Partner> partners) => partners.Select(p => p.ToDTO());
+    public static PartnerDTO ToDTO(this Partner partner) => new(partner.PartnerID, partner.Name, partner.Document, partner.Phone, partner.PartnerType, partner.IsActive);
+    public static Partner FromDTO(this PartnerDTO partnerDto) => new() { PartnerID = partnerDto.PartnerID, Name = partnerDto.Name ?? string.Empty, Document = partnerDto.Document, Phone = partnerDto.Phone, PartnerType = partnerDto.PartnerType, IsActive = partnerDto.IsActive };
+
+    // --- Mapeadores para StockLocation ---
+    public static IEnumerable<StockLocationDTO> ToDTO(this IEnumerable<StockLocation> stockLocations) => stockLocations.Select(sl => sl.ToDTO());
+    public static StockLocationDTO ToDTO(this StockLocation stockLocation) => new(stockLocation.StockLocationID, stockLocation.Name, stockLocation.LocationType, stockLocation.PartnerID, stockLocation.IsActive);
+    public static StockLocation FromDTO(this StockLocationDTO stockLocationDto) => new() { StockLocationID = stockLocationDto.StockLocationID, Name = stockLocationDto.Name ?? string.Empty, LocationType = stockLocationDto.LocationType, PartnerID = stockLocationDto.PartnerID, IsActive = stockLocationDto.IsActive };
 }
