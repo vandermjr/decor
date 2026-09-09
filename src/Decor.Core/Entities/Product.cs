@@ -3,6 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Decor.Core.Entities;
 
+public enum ProductOrigin
+{
+    Compra = 1,       // comprado pronto de fornecedor
+    Manufatura = 2    // produzido via Ordem de Fabricação (ex: cortina)
+}
+
+public enum ProductAcquisitionMode
+{
+    Estocado = 1,      // mantém saldo em depósito
+    SobEncomenda = 2   // comprado especificamente por pedido aprovado
+}
+
 [Table("products")]
 public class Product
 {
@@ -46,6 +58,12 @@ public class Product
     [Column("SubgroupID")] // Opcional
     public int SubgroupID { get; set; }
 
+    [Column("Origin")]
+    public ProductOrigin Origin { get; set; }
+
+    [Column("AcquisitionMode")]
+    public ProductAcquisitionMode AcquisitionMode { get; set; }
+    
     // Propriedades de Navegação
     [NotMapped]
     public virtual Brand? Brand { get; set; }
