@@ -44,4 +44,10 @@ public static class DecorPermissions
     public const string StockLocationsCreate = "StockLocations.Create";
     public const string StockLocationsEdit = "StockLocations.Edit";
     public const string StockLocationsDelete = "StockLocations.Delete";
+    public const string StockMovementsView = "StockMovements.View";
+    public const string StockMovementsEntry = "StockMovements.Entry";
+    public const string StockMovementsExit = "StockMovements.Exit";
+    public const string StockMovementsAdjust = "StockMovements.Adjust";
+    public const string StockMovementsTransfer = "StockMovements.Transfer";
+    public const string StockMovementsReview = "StockMovements.Review";
 }

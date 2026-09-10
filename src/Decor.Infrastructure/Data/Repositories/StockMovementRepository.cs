@@ -95,6 +95,20 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
         return result.AsList();
     }
 
+    public async Task<int> UpdateReviewAsync(Guid transferId, StockMovementReviewStatus reviewStatus, int reviewedByEmployeeId, DateTime reviewedAt, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = createCommandBuilder()
+            .Update().Table<StockMovement>()
+            .Set((StockMovement sm) => sm.ReviewStatus, reviewStatus)
+            .Set((StockMovement sm) => sm.ReviewedByEmployeeID, reviewedByEmployeeId)
+            .Set((StockMovement sm) => sm.ReviewedAt, reviewedAt)
+            .Where(w => w.Equals((StockMovement sm) => sm.TransferID, transferId))
+            .Build();
+
+        using var connection = databaseConnection.CreateConnection();
+        return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
+
     private async Task<int> InsertMovementAsync(IDbConnection connection, IDbTransaction transaction, StockMovement movement, CancellationToken cancellationToken)
     {
         var (sql, parameters) = createCommandBuilder()

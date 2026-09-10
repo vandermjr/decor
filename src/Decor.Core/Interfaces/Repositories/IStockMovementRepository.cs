@@ -8,4 +8,5 @@ public interface IStockMovementRepository
     Task<StockMovement?> GetByIdAsync(int stockMovementId, CancellationToken cancellationToken = default);
     Task<IEnumerable<StockMovement>> GetByProductAsync(int productId, CancellationToken cancellationToken = default);
     Task<IEnumerable<StockMovement>> GetByTransferIdAsync(Guid transferId, CancellationToken cancellationToken = default);
+    Task<int> UpdateReviewAsync(Guid transferId, StockMovementReviewStatus reviewStatus, int reviewedByEmployeeId, DateTime reviewedAt, CancellationToken cancellationToken = default);
 }

@@ -97,4 +97,14 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static IEnumerable<StockLocationDTO> ToDTO(this IEnumerable<StockLocation> stockLocations) => stockLocations.Select(sl => sl.ToDTO());
     public static StockLocationDTO ToDTO(this StockLocation stockLocation) => new(stockLocation.StockLocationID, stockLocation.Name, stockLocation.LocationType, stockLocation.PartnerID, stockLocation.IsActive);
     public static StockLocation FromDTO(this StockLocationDTO stockLocationDto) => new() { StockLocationID = stockLocationDto.StockLocationID, Name = stockLocationDto.Name ?? string.Empty, LocationType = stockLocationDto.LocationType, PartnerID = stockLocationDto.PartnerID, IsActive = stockLocationDto.IsActive };
+
+    // --- Mapeadores para StockMovement ---
+    public static IEnumerable<StockMovementDTO> ToDTO(this IEnumerable<StockMovement> stockMovements) => stockMovements.Select(sm => sm.ToDTO());
+    public static StockMovementDTO ToDTO(this StockMovement stockMovement) => new(stockMovement.StockMovementID, stockMovement.ProductID, stockMovement.StockLocationID, stockMovement.Quantity, stockMovement.MovementType, stockMovement.TransferID, stockMovement.Reason, stockMovement.Justification, stockMovement.AuthorizedByEmployeeID, stockMovement.PerformedByEmployeeID, stockMovement.ReviewStatus, stockMovement.ReviewedByEmployeeID, stockMovement.ReviewedAt, stockMovement.MovementDate, stockMovement.Notes);
+    public static StockMovement FromDTO(this StockMovementDTO stockMovementDto) => new() { StockMovementID = stockMovementDto.StockMovementID, ProductID = stockMovementDto.ProductID, StockLocationID = stockMovementDto.StockLocationID, Quantity = stockMovementDto.Quantity, MovementType = stockMovementDto.MovementType, TransferID = stockMovementDto.TransferID, Reason = stockMovementDto.Reason, Justification = stockMovementDto.Justification, AuthorizedByEmployeeID = stockMovementDto.AuthorizedByEmployeeID, PerformedByEmployeeID = stockMovementDto.PerformedByEmployeeID, ReviewStatus = stockMovementDto.ReviewStatus, ReviewedByEmployeeID = stockMovementDto.ReviewedByEmployeeID, ReviewedAt = stockMovementDto.ReviewedAt, MovementDate = stockMovementDto.MovementDate, Notes = stockMovementDto.Notes };
+
+    // --- Mapeadores para StockBalance ---
+    public static IEnumerable<StockBalanceDTO> ToDTO(this IEnumerable<StockBalance> stockBalances) => stockBalances.Select(sb => sb.ToDTO());
+    public static StockBalanceDTO ToDTO(this StockBalance stockBalance) => new(stockBalance.StockBalanceID, stockBalance.ProductID, stockBalance.StockLocationID, stockBalance.Quantity, stockBalance.UpdatedAt);
+    public static StockBalance FromDTO(this StockBalanceDTO stockBalanceDto) => new() { StockBalanceID = stockBalanceDto.StockBalanceID, ProductID = stockBalanceDto.ProductID, StockLocationID = stockBalanceDto.StockLocationID, Quantity = stockBalanceDto.Quantity, UpdatedAt = stockBalanceDto.UpdatedAt };
 }
