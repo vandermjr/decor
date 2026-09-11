@@ -107,4 +107,19 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static IEnumerable<StockBalanceDTO> ToDTO(this IEnumerable<StockBalance> stockBalances) => stockBalances.Select(sb => sb.ToDTO());
     public static StockBalanceDTO ToDTO(this StockBalance stockBalance) => new(stockBalance.StockBalanceID, stockBalance.ProductID, stockBalance.StockLocationID, stockBalance.Quantity, stockBalance.UpdatedAt);
     public static StockBalance FromDTO(this StockBalanceDTO stockBalanceDto) => new() { StockBalanceID = stockBalanceDto.StockBalanceID, ProductID = stockBalanceDto.ProductID, StockLocationID = stockBalanceDto.StockLocationID, Quantity = stockBalanceDto.Quantity, UpdatedAt = stockBalanceDto.UpdatedAt };
+
+    // --- Mapeadores para PurchaseOrder ---
+    public static IEnumerable<PurchaseOrderDTO> ToDTO(this IEnumerable<PurchaseOrder> purchaseOrders) => purchaseOrders.Select(po => po.ToDTO());
+    public static PurchaseOrderDTO ToDTO(this PurchaseOrder purchaseOrder) => new(purchaseOrder.PurchaseOrderID, purchaseOrder.SupplierID, purchaseOrder.OrderDate, purchaseOrder.Status, purchaseOrder.Notes);
+    public static PurchaseOrder FromDTO(this PurchaseOrderDTO purchaseOrderDto) => new() { PurchaseOrderID = purchaseOrderDto.PurchaseOrderID, SupplierID = purchaseOrderDto.SupplierID, OrderDate = purchaseOrderDto.OrderDate, Status = purchaseOrderDto.Status, Notes = purchaseOrderDto.Notes };
+
+    // --- Mapeadores para PurchaseOrderItem ---
+    public static IEnumerable<PurchaseOrderItemDTO> ToDTO(this IEnumerable<PurchaseOrderItem> purchaseOrderItems) => purchaseOrderItems.Select(poi => poi.ToDTO());
+    public static PurchaseOrderItemDTO ToDTO(this PurchaseOrderItem purchaseOrderItem) => new(purchaseOrderItem.PurchaseOrderItemID, purchaseOrderItem.PurchaseOrderID, purchaseOrderItem.ProductID, purchaseOrderItem.QuantityOrdered, purchaseOrderItem.UnitPrice, purchaseOrderItem.ReceivingMethod, purchaseOrderItem.FinalDestination, purchaseOrderItem.StockLocationID, purchaseOrderItem.CustomerID);
+    public static PurchaseOrderItem FromDTO(this PurchaseOrderItemDTO purchaseOrderItemDto) => new() { PurchaseOrderItemID = purchaseOrderItemDto.PurchaseOrderItemID, PurchaseOrderID = purchaseOrderItemDto.PurchaseOrderID, ProductID = purchaseOrderItemDto.ProductID, QuantityOrdered = purchaseOrderItemDto.QuantityOrdered, UnitPrice = purchaseOrderItemDto.UnitPrice, ReceivingMethod = purchaseOrderItemDto.ReceivingMethod, FinalDestination = purchaseOrderItemDto.FinalDestination, StockLocationID = purchaseOrderItemDto.StockLocationID, CustomerID = purchaseOrderItemDto.CustomerID };
+
+    // --- Mapeadores para GoodsReceipt ---
+    public static IEnumerable<GoodsReceiptDTO> ToDTO(this IEnumerable<GoodsReceipt> goodsReceipts) => goodsReceipts.Select(gr => gr.ToDTO());
+    public static GoodsReceiptDTO ToDTO(this GoodsReceipt goodsReceipt) => new(goodsReceipt.GoodsReceiptID, goodsReceipt.PurchaseOrderItemID, goodsReceipt.ReceiptDate, goodsReceipt.QuantityReceived, goodsReceipt.ReceivedByEmployeeID, goodsReceipt.HasDivergence, goodsReceipt.DivergenceNotes, goodsReceipt.Status);
+    public static GoodsReceipt FromDTO(this GoodsReceiptDTO goodsReceiptDto) => new() { GoodsReceiptID = goodsReceiptDto.GoodsReceiptID, PurchaseOrderItemID = goodsReceiptDto.PurchaseOrderItemID, ReceiptDate = goodsReceiptDto.ReceiptDate, QuantityReceived = goodsReceiptDto.QuantityReceived, ReceivedByEmployeeID = goodsReceiptDto.ReceivedByEmployeeID, HasDivergence = goodsReceiptDto.HasDivergence, DivergenceNotes = goodsReceiptDto.DivergenceNotes, Status = goodsReceiptDto.Status };
 }

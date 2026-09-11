@@ -50,4 +50,14 @@ public static class DecorPermissions
     public const string StockMovementsAdjust = "StockMovements.Adjust";
     public const string StockMovementsTransfer = "StockMovements.Transfer";
     public const string StockMovementsReview = "StockMovements.Review";
+    public const string PurchaseOrdersView = "PurchaseOrders.View";
+    public const string PurchaseOrdersCreate = "PurchaseOrders.Create";
+    public const string PurchaseOrdersEdit = "PurchaseOrders.Edit";
+    public const string PurchaseOrdersDelete = "PurchaseOrders.Delete";
+    public const string PurchaseOrderItemsView = "PurchaseOrderItems.View";
+    public const string PurchaseOrderItemsCreate = "PurchaseOrderItems.Create";
+    public const string PurchaseOrderItemsEdit = "PurchaseOrderItems.Edit";
+    public const string PurchaseOrderItemsDelete = "PurchaseOrderItems.Delete";
+    public const string GoodsReceiptsView = "GoodsReceipts.View";
+    public const string GoodsReceiptsRegister = "GoodsReceipts.Register";
 }
