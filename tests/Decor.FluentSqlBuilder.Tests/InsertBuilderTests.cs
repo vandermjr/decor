@@ -41,8 +41,8 @@ namespace Decor.FluentSqlBuilder.Tests
 
             // Assert
             NormalizeSqlString(sql).Should().Contain(
-                NormalizeSqlString("INSERT INTO products (Barcode, IsActive, Description, ManufacturerRef, AuxiliaryRef, Dimensions, Observations, StockQuantity, MinimumStock, BrandID, SubgroupID, Origin, AcquisitionMode) VALUES (@Barcode, @IsActive, @Description, @ManufacturerRef, @AuxiliaryRef, @Dimensions, @Observations, @StockQuantity, @MinimumStock, @BrandID, @SubgroupID, @Origin, @AcquisitionMode);"));
-            parameters.Should().ContainKeys("Barcode", "IsActive", "Description", "ManufacturerRef", "AuxiliaryRef", "Dimensions", "Observations", "StockQuantity", "MinimumStock", "BrandID", "SubgroupID", "Origin", "AcquisitionMode");
+                NormalizeSqlString("INSERT INTO products (Barcode, IsActive, Description, ManufacturerRef, AuxiliaryRef, Dimensions, Observations, StockQuantity, MinimumStock, BrandID, SubgroupID, Origin, AcquisitionMode, ProductType) VALUES (@Barcode, @IsActive, @Description, @ManufacturerRef, @AuxiliaryRef, @Dimensions, @Observations, @StockQuantity, @MinimumStock, @BrandID, @SubgroupID, @Origin, @AcquisitionMode, @ProductType);"));
+            parameters.Should().ContainKeys("Barcode", "IsActive", "Description", "ManufacturerRef", "AuxiliaryRef", "Dimensions", "Observations", "StockQuantity", "MinimumStock", "BrandID", "SubgroupID", "Origin", "AcquisitionMode", "ProductType");
             parameters["Barcode"].Should().Be("12345");
             parameters["IsActive"].Should().Be(true);
             parameters["Description"].Should().Be("Mouse sem fio");

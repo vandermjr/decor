@@ -48,7 +48,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Build();
 
             // Assert
-            string expectedSql = "SELECT p.ProductID, p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode FROM products AS p ORDER BY p.ProductID ASC;";
+            string expectedSql = "SELECT p.ProductID, p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode, p.ProductType FROM products AS p ORDER BY p.ProductID ASC;";
             NormalizeSqlString(sql).Should().Be(NormalizeSqlString(expectedSql));
             parameters.Should().BeEmpty();
         }
@@ -96,7 +96,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Build();
 
             // Assert
-            string expectedSql = "SELECT p.ProductID, p.IsActive, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode FROM products AS p ORDER BY p.ProductID ASC;";
+            string expectedSql = "SELECT p.ProductID, p.IsActive, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode, p.ProductType FROM products AS p ORDER BY p.ProductID ASC;";
             NormalizeSqlString(sql).Should().Be(NormalizeSqlString(expectedSql));
             parameters.Should().BeEmpty();
         }
@@ -168,7 +168,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Build();
 
             NormalizeSqlString(sql).Should().Contain(
-                NormalizeSqlString("SELECT p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode FROM products AS p ORDER BY p.ProductID ASC;"));
+                NormalizeSqlString("SELECT p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.Origin, p.AcquisitionMode, p.ProductType FROM products AS p ORDER BY p.ProductID ASC;"));
             parameters.Should().BeEmpty();
         }
 

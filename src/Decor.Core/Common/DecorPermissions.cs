@@ -60,4 +60,8 @@ public static class DecorPermissions
     public const string PurchaseOrderItemsDelete = "PurchaseOrderItems.Delete";
     public const string GoodsReceiptsView = "GoodsReceipts.View";
     public const string GoodsReceiptsRegister = "GoodsReceipts.Register";
+    public const string ProductSpecificationAttributesView = "ProductSpecificationAttributes.View";
+    public const string ProductSpecificationAttributesCreate = "ProductSpecificationAttributes.Create";
+    public const string ProductSpecificationAttributesEdit = "ProductSpecificationAttributes.Edit";
+    public const string ProductSpecificationAttributesDelete = "ProductSpecificationAttributes.Delete";
 }

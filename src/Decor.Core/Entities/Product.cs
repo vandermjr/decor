@@ -15,6 +15,12 @@ public enum ProductAcquisitionMode
     SobEncomenda = 2   // comprado especificamente por pedido aprovado
 }
 
+public enum ProductType
+{
+    Good = 1,     // produto físico, sujeito a estoque
+    Service = 2   // serviço, sem controle de estoque
+}
+
 [Table("products")]
 public class Product
 {
@@ -63,7 +69,10 @@ public class Product
 
     [Column("AcquisitionMode")]
     public ProductAcquisitionMode AcquisitionMode { get; set; }
-    
+
+    [Column("ProductType")]
+    public ProductType ProductType { get; set; } = ProductType.Good;
+
     // Propriedades de Navegação
     [NotMapped]
     public virtual Brand? Brand { get; set; }

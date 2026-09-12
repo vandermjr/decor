@@ -60,6 +60,11 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static BrandDTO ToDTO(this Brand brand) => new(brand.BrandID, brand.BrandName);
     public static Brand FromDTO(this BrandDTO brandDto) => new() { BrandID = brandDto.BrandID, BrandName = brandDto.BrandName };
 
+    // --- Mapeadores para ProductSpecificationAttribute ---
+    public static IEnumerable<ProductSpecificationAttributeDTO> ToDTO(this IEnumerable<ProductSpecificationAttribute> attributes) => attributes.Select(a => a.ToDTO());
+    public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder);
+    public static ProductSpecificationAttribute FromDTO(this ProductSpecificationAttributeDTO attributeDto) => new() { AttributeID = attributeDto.AttributeID, ProductCategoryID = attributeDto.ProductCategoryID, Name = attributeDto.Name, DataType = attributeDto.DataType, Unit = attributeDto.Unit, EnumOptions = attributeDto.EnumOptions, IsRequired = attributeDto.IsRequired, DisplayOrder = attributeDto.DisplayOrder };
+
     // --- Mapeadores para Classificação ---
     public static IEnumerable<ClassDTO> ToDTO(this IEnumerable<Class> classes) => classes.Select(c => c.ToDTO());
     public static ClassDTO ToDTO(this Class @class) => new(@class.ClassID, @class.ClassName);

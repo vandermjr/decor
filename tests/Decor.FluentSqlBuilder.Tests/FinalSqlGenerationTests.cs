@@ -352,7 +352,8 @@ namespace Decor.FluentSqlBuilder.Tests
                     p.MinimumStock,
                     p.SubgroupID,
                     p.Origin,
-                    p.AcquisitionMode
+                    p.AcquisitionMode,
+                    p.ProductType
                 FROM
                     products AS p
                 ORDER BY
@@ -385,7 +386,8 @@ namespace Decor.FluentSqlBuilder.Tests
                 p.BrandID,
                 p.SubgroupID,
                 p.Origin,
-                p.AcquisitionMode
+                p.AcquisitionMode,
+                p.ProductType
             FROM
                 products AS p
             ORDER BY
