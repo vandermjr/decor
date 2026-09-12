@@ -60,6 +60,43 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static BrandDTO ToDTO(this Brand brand) => new(brand.BrandID, brand.BrandName);
     public static Brand FromDTO(this BrandDTO brandDto) => new() { BrandID = brandDto.BrandID, BrandName = brandDto.BrandName };
 
+    // --- Mapeadores para PaymentMethod ---
+    public static IEnumerable<PaymentMethodDTO> ToDTO(this IEnumerable<PaymentMethod> paymentMethods) => paymentMethods.Select(p => p.ToDTO());
+    public static PaymentMethodDTO ToDTO(this PaymentMethod paymentMethod) => new(paymentMethod.PaymentMethodID, paymentMethod.Name, paymentMethod.Timing, paymentMethod.IsActive);
+    public static PaymentMethod FromDTO(this PaymentMethodDTO dto) => new()
+    {
+        PaymentMethodID = dto.PaymentMethodID,
+        Name = dto.Name,
+        Timing = dto.Timing,
+        IsActive = dto.IsActive
+    };
+
+    // --- Mapeadores para OrderInstallment ---
+    public static IEnumerable<OrderInstallmentDTO> ToDTO(this IEnumerable<OrderInstallment> installments) => installments.Select(i => i.ToDTO());
+    public static OrderInstallmentDTO ToDTO(this OrderInstallment installment) => new(
+        installment.InstallmentID,
+        installment.OrderID,
+        installment.PaymentMethodID,
+        installment.InstallmentNumber,
+        installment.Amount,
+        installment.DueDate,
+        installment.Status,
+        installment.PaidAt,
+        installment.ReceivedByEmployeeID
+    );
+    public static OrderInstallment FromDTO(this OrderInstallmentDTO dto) => new()
+    {
+        InstallmentID = dto.InstallmentID,
+        OrderID = dto.OrderID,
+        PaymentMethodID = dto.PaymentMethodID,
+        InstallmentNumber = dto.InstallmentNumber,
+        Amount = dto.Amount,
+        DueDate = dto.DueDate,
+        Status = dto.Status,
+        PaidAt = dto.PaidAt,
+        ReceivedByEmployeeID = dto.ReceivedByEmployeeID
+    };
+
     // --- Mapeadores para ProductSpecificationAttribute ---
     public static IEnumerable<ProductSpecificationAttributeDTO> ToDTO(this IEnumerable<ProductSpecificationAttribute> attributes) => attributes.Select(a => a.ToDTO());
     public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder);

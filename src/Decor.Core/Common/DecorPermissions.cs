@@ -82,4 +82,13 @@ public static class DecorPermissions
     public const string StockReservationsView = "StockReservations.View";
     public const string StockReservationsCreate = "StockReservations.Create";
     public const string StockReservationsRelease = "StockReservations.Release";
+    public const string PaymentMethodsView = "PaymentMethods.View";
+    public const string PaymentMethodsCreate = "PaymentMethods.Create";
+    public const string PaymentMethodsEdit = "PaymentMethods.Edit";
+    public const string PaymentMethodsDelete = "PaymentMethods.Delete";
+    public const string OrderInstallmentsView = "OrderInstallments.View";
+    public const string OrderInstallmentsCreatePlan = "OrderInstallments.CreatePlan";
+    public const string OrderInstallmentsRegisterPayment = "OrderInstallments.RegisterPayment";
+    public const string OrderInstallmentsMarkOverdue = "OrderInstallments.MarkOverdue";
+    public const string OrderInstallmentsCancel = "OrderInstallments.Cancel";
 }

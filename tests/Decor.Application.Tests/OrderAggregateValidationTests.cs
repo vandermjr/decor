@@ -225,13 +225,26 @@ public sealed class OrderAggregateValidationTests
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }
 
+    [Fact]
+    public async Task CancelOrderAsync_AlsoCancelsOrderInstallments()
+    {
+        var orderRepo = new TrackingOrderRepository();
+        orderRepo.SetOrderForTest(new Order { OrderID = 10, Status = OrderStatus.Approved });
+        var installmentService = new TrackingOrderInstallmentService();
+        var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), new TrackingStockReservationService(), installmentService, DecorPermissions.OrdersCancel);
+
+        await service.CancelOrderAsync(10);
+
+        installmentService.CancelledOrders.Should().Contain(10);
+    }
+
     private static OrderService CreateService(
         IQuoteRepository quoteRepo,
         IOrderRepository orderRepo,
         IProductRepository productRepo,
         params string[] permissions)
     {
-        return CreateService(quoteRepo, orderRepo, productRepo, new TrackingStockReservationService(), permissions);
+        return CreateService(quoteRepo, orderRepo, productRepo, new TrackingStockReservationService(), new TrackingOrderInstallmentService(), permissions);
     }
 
     private static OrderService CreateService(
@@ -241,11 +254,23 @@ public sealed class OrderAggregateValidationTests
         IStockReservationService stockReservationService,
         params string[] permissions)
     {
+        return CreateService(quoteRepo, orderRepo, productRepo, stockReservationService, new TrackingOrderInstallmentService(), permissions);
+    }
+
+    private static OrderService CreateService(
+        IQuoteRepository quoteRepo,
+        IOrderRepository orderRepo,
+        IProductRepository productRepo,
+        IStockReservationService stockReservationService,
+        IOrderInstallmentService orderInstallmentService,
+        params string[] permissions)
+    {
         return new OrderService(
             orderRepo,
             quoteRepo,
             productRepo,
             stockReservationService,
+            orderInstallmentService,
             new OrderDTOValidator(),
             new OrderRepositoryValidator(orderRepo),
             new FixedAuthorizationService(permissions));
@@ -406,5 +431,34 @@ public sealed class OrderAggregateValidationTests
 
         public Task<IEnumerable<StockReservationDTO>> SearchAsync(string? searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
             => Task.FromResult<IEnumerable<StockReservationDTO>>([]);
+    }
+
+    private sealed class TrackingOrderInstallmentService : IOrderInstallmentService
+    {
+        public List<int> CancelledOrders { get; } = [];
+
+        public Task<OrderInstallmentDTO> GetInstallmentByIdAsync(int installmentId, CancellationToken cancellationToken = default)
+            => Task.FromResult(new OrderInstallmentDTO(installmentId, 1, 1, 1, 100m, DateTime.UtcNow.AddDays(30), OrderInstallmentStatus.Pending, null, null));
+
+        public Task<IEnumerable<OrderInstallmentDTO>> GetInstallmentsByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<OrderInstallmentDTO>>([]);
+
+        public Task<IEnumerable<OrderInstallmentDTO>> CreateInstallmentPlanAsync(int orderId, IEnumerable<InstallmentItemInputDTO> items, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<OrderInstallmentDTO>>([]);
+
+        public Task RegisterPaymentAsync(int installmentId, int receivedByEmployeeId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task MarkOverdueAsync(int installmentId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task CancelInstallmentAsync(int installmentId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task CancelInstallmentsForOrderAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            CancelledOrders.Add(orderId);
+            return Task.CompletedTask;
+        }
     }
 }
