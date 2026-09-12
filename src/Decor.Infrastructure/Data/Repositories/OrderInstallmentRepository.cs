@@ -14,22 +14,55 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     public int Save(OrderInstallment installment)
     {
         using var conn = _dbConnection.CreateConnection();
-
-        var (sql, parameters) = installment.InstallmentID != 0
-            ? _createCommandBuilder().Update().Table<OrderInstallment>().Set(installment).Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID)).Build()
-            : _createCommandBuilder().Insert().Into<OrderInstallment>().Values(installment).Build();
-
-        return conn.Execute(sql, parameters);
+        if (installment.InstallmentID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Update()
+                .Table<OrderInstallment>()
+                .Set(installment)
+                .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID))
+                .Build();
+            return conn.Execute(sql, parameters);
+        }
+        else
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Insert()
+                .Into<OrderInstallment>()
+                .Values(installment)
+                .ReturningGeneratedId()
+                .Build();
+            var generatedId = conn.QuerySingle<int>(sql, parameters);
+            installment.InstallmentID = generatedId;
+            return 1;
+        }
     }
 
     public async Task<int> SaveAsync(OrderInstallment installment, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = installment.InstallmentID != 0
-            ? _createCommandBuilder().Update().Table<OrderInstallment>().Set(installment).Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID)).Build()
-            : _createCommandBuilder().Insert().Into<OrderInstallment>().Values(installment).Build();
-
         using var connection = _dbConnection.CreateConnection();
-        return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        if (installment.InstallmentID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Update()
+                .Table<OrderInstallment>()
+                .Set(installment)
+                .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID))
+                .Build();
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        }
+        else
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Insert()
+                .Into<OrderInstallment>()
+                .Values(installment)
+                .ReturningGeneratedId()
+                .Build();
+            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            installment.InstallmentID = generatedId;
+            return 1;
+        }
     }
 
     public int Delete(int id)
@@ -60,7 +93,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
-            .OrderBy("i.InstallmentID ASC")
+            .OrderBy("oi.InstallmentID ASC")
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -74,7 +107,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
-            .OrderBy("i.InstallmentID ASC")
+            .OrderBy("oi.InstallmentID ASC")
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -90,7 +123,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.Equals((OrderInstallment i) => i.OrderID, orderId))
-            .OrderBy("i.InstallmentNumber ASC")
+            .OrderBy("oi.InstallmentNumber ASC")
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

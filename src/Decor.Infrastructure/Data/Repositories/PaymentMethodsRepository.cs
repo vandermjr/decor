@@ -14,22 +14,55 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public int Save(PaymentMethod paymentMethod)
     {
         using var conn = _dbConnection.CreateConnection();
-
-        var (sql, parameters) = paymentMethod.PaymentMethodID != 0
-            ? _createCommandBuilder().Update().Table<PaymentMethod>().Set(paymentMethod).Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID)).Build()
-            : _createCommandBuilder().Insert().Into<PaymentMethod>().Values(paymentMethod).Build();
-
-        return conn.Execute(sql, parameters);
+        if (paymentMethod.PaymentMethodID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Update()
+                .Table<PaymentMethod>()
+                .Set(paymentMethod)
+                .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID))
+                .Build();
+            return conn.Execute(sql, parameters);
+        }
+        else
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Insert()
+                .Into<PaymentMethod>()
+                .Values(paymentMethod)
+                .ReturningGeneratedId()
+                .Build();
+            var generatedId = conn.QuerySingle<int>(sql, parameters);
+            paymentMethod.PaymentMethodID = generatedId;
+            return 1;
+        }
     }
 
     public async Task<int> SaveAsync(PaymentMethod paymentMethod, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = paymentMethod.PaymentMethodID != 0
-            ? _createCommandBuilder().Update().Table<PaymentMethod>().Set(paymentMethod).Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID)).Build()
-            : _createCommandBuilder().Insert().Into<PaymentMethod>().Values(paymentMethod).Build();
-
         using var connection = _dbConnection.CreateConnection();
-        return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        if (paymentMethod.PaymentMethodID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Update()
+                .Table<PaymentMethod>()
+                .Set(paymentMethod)
+                .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID))
+                .Build();
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        }
+        else
+        {
+            var (sql, parameters) = _createCommandBuilder()
+                .Insert()
+                .Into<PaymentMethod>()
+                .Values(paymentMethod)
+                .ReturningGeneratedId()
+                .Build();
+            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            paymentMethod.PaymentMethodID = generatedId;
+            return 1;
+        }
     }
 
     public int Delete(int id)
@@ -60,7 +93,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .Select(s => s.AllColumns<PaymentMethod>())
             .From<PaymentMethod>()
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
-            .OrderBy("p.Name ASC")
+            .OrderBy("pm.Name ASC")
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -74,7 +107,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .Select(s => s.AllColumns<PaymentMethod>())
             .From<PaymentMethod>()
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
-            .OrderBy("p.Name ASC")
+            .OrderBy("pm.Name ASC")
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
