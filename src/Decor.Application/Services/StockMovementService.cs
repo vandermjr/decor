@@ -78,7 +78,7 @@ public class StockMovementService(IStockMovementRepository stockMovementReposito
         return await _stockMovementRepository.RegisterMovementAsync(movement, cancellationToken);
     }
 
-    public async Task<Guid> RegisterTransferAsync(int productId, int sourceStockLocationId, int destinationStockLocationId, decimal quantity, int performedByEmployeeId, string? notes = null, CancellationToken cancellationToken = default)
+    public async Task<Guid> RegisterTransferAsync(int productId, int sourceStockLocationId, int destinationStockLocationId, decimal quantity, int performedByEmployeeId, string? notes = null, int? orderItemId = null, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.StockMovementsTransfer);
         if (quantity <= 0)
@@ -96,7 +96,8 @@ public class StockMovementService(IStockMovementRepository stockMovementReposito
             PerformedByEmployeeID = performedByEmployeeId,
             ReviewStatus = StockMovementReviewStatus.PendenteDeCiencia,
             MovementDate = movementDate,
-            Notes = notes
+            Notes = notes,
+            OrderItemID = orderItemId
         };
         var inboundMovement = new StockMovement
         {
@@ -107,7 +108,8 @@ public class StockMovementService(IStockMovementRepository stockMovementReposito
             PerformedByEmployeeID = performedByEmployeeId,
             ReviewStatus = StockMovementReviewStatus.PendenteDeCiencia,
             MovementDate = movementDate,
-            Notes = notes
+            Notes = notes,
+            OrderItemID = orderItemId
         };
 
         return await _stockMovementRepository.RegisterTransferAsync(outboundMovement, inboundMovement, cancellationToken);

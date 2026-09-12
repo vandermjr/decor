@@ -166,8 +166,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
 
     // --- Mapeadores para StockMovement ---
     public static IEnumerable<StockMovementDTO> ToDTO(this IEnumerable<StockMovement> stockMovements) => stockMovements.Select(sm => sm.ToDTO());
-    public static StockMovementDTO ToDTO(this StockMovement stockMovement) => new(stockMovement.StockMovementID, stockMovement.ProductID, stockMovement.StockLocationID, stockMovement.Quantity, stockMovement.MovementType, stockMovement.TransferID, stockMovement.Reason, stockMovement.Justification, stockMovement.AuthorizedByEmployeeID, stockMovement.PerformedByEmployeeID, stockMovement.ReviewStatus, stockMovement.ReviewedByEmployeeID, stockMovement.ReviewedAt, stockMovement.MovementDate, stockMovement.Notes);
-    public static StockMovement FromDTO(this StockMovementDTO stockMovementDto) => new() { StockMovementID = stockMovementDto.StockMovementID, ProductID = stockMovementDto.ProductID, StockLocationID = stockMovementDto.StockLocationID, Quantity = stockMovementDto.Quantity, MovementType = stockMovementDto.MovementType, TransferID = stockMovementDto.TransferID, Reason = stockMovementDto.Reason, Justification = stockMovementDto.Justification, AuthorizedByEmployeeID = stockMovementDto.AuthorizedByEmployeeID, PerformedByEmployeeID = stockMovementDto.PerformedByEmployeeID, ReviewStatus = stockMovementDto.ReviewStatus, ReviewedByEmployeeID = stockMovementDto.ReviewedByEmployeeID, ReviewedAt = stockMovementDto.ReviewedAt, MovementDate = stockMovementDto.MovementDate, Notes = stockMovementDto.Notes };
+    public static StockMovementDTO ToDTO(this StockMovement stockMovement) => new(stockMovement.StockMovementID, stockMovement.ProductID, stockMovement.StockLocationID, stockMovement.Quantity, stockMovement.MovementType, stockMovement.TransferID, stockMovement.Reason, stockMovement.Justification, stockMovement.AuthorizedByEmployeeID, stockMovement.PerformedByEmployeeID, stockMovement.ReviewStatus, stockMovement.ReviewedByEmployeeID, stockMovement.ReviewedAt, stockMovement.MovementDate, stockMovement.Notes, stockMovement.OrderItemID);
+    public static StockMovement FromDTO(this StockMovementDTO stockMovementDto) => new() { StockMovementID = stockMovementDto.StockMovementID, ProductID = stockMovementDto.ProductID, StockLocationID = stockMovementDto.StockLocationID, Quantity = stockMovementDto.Quantity, MovementType = stockMovementDto.MovementType, TransferID = stockMovementDto.TransferID, Reason = stockMovementDto.Reason, Justification = stockMovementDto.Justification, AuthorizedByEmployeeID = stockMovementDto.AuthorizedByEmployeeID, PerformedByEmployeeID = stockMovementDto.PerformedByEmployeeID, ReviewStatus = stockMovementDto.ReviewStatus, ReviewedByEmployeeID = stockMovementDto.ReviewedByEmployeeID, ReviewedAt = stockMovementDto.ReviewedAt, MovementDate = stockMovementDto.MovementDate, Notes = stockMovementDto.Notes, OrderItemID = stockMovementDto.OrderItemID };
 
     // --- Mapeadores para StockBalance ---
     public static IEnumerable<StockBalanceDTO> ToDTO(this IEnumerable<StockBalance> stockBalances) => stockBalances.Select(sb => sb.ToDTO());
@@ -257,5 +257,31 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         OrderItemID = valueDto.OrderItemID,
         AttributeID = valueDto.AttributeID,
         Value = valueDto.Value
+    };
+
+    // --- Mapeadores para StockReservation ---
+    public static IEnumerable<StockReservationDTO> ToDTO(this IEnumerable<StockReservation> reservations) => reservations.Select(r => r.ToDTO());
+    public static StockReservationDTO ToDTO(this StockReservation reservation) => new(
+        reservation.ReservationID,
+        reservation.OrderItemID,
+        reservation.ProductID,
+        reservation.StockLocationID,
+        reservation.Quantity,
+        reservation.Status,
+        reservation.CreatedByEmployeeID,
+        reservation.CreatedAt,
+        reservation.ReleasedAt
+    );
+    public static StockReservation FromDTO(this StockReservationDTO reservationDto) => new()
+    {
+        ReservationID = reservationDto.ReservationID,
+        OrderItemID = reservationDto.OrderItemID,
+        ProductID = reservationDto.ProductID,
+        StockLocationID = reservationDto.StockLocationID,
+        Quantity = reservationDto.Quantity,
+        Status = reservationDto.Status,
+        CreatedByEmployeeID = reservationDto.CreatedByEmployeeID,
+        CreatedAt = reservationDto.CreatedAt,
+        ReleasedAt = reservationDto.ReleasedAt
     };
 }

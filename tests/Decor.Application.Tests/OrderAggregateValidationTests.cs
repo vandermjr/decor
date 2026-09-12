@@ -122,10 +122,11 @@ public sealed class OrderAggregateValidationTests
     }
 
     [Fact]
-    public async Task Cancel_PendingApprovalOrApprovedOrder_TransitionsToCancelled()
+    public async Task Cancel_PendingApprovalOrApprovedOrder_TransitionsToCancelledAndReleasesActiveReservations()
     {
         var orderRepo = new TrackingOrderRepository();
-        var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), DecorPermissions.OrdersCancel);
+        var reservationService = new TrackingStockReservationService();
+        var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), reservationService, DecorPermissions.OrdersCancel);
 
         var order = new Order { OrderID = 1, Status = OrderStatus.Approved, CustomerID = 10, QuoteSectionID = 100 };
         orderRepo.SetOrderForTest(order);
@@ -133,6 +134,7 @@ public sealed class OrderAggregateValidationTests
         await service.CancelOrderAsync(1);
 
         order.Status.Should().Be(OrderStatus.Cancelled);
+        reservationService.ReleasedOrders.Should().Contain(1);
     }
 
     [Fact]
@@ -229,10 +231,21 @@ public sealed class OrderAggregateValidationTests
         IProductRepository productRepo,
         params string[] permissions)
     {
+        return CreateService(quoteRepo, orderRepo, productRepo, new TrackingStockReservationService(), permissions);
+    }
+
+    private static OrderService CreateService(
+        IQuoteRepository quoteRepo,
+        IOrderRepository orderRepo,
+        IProductRepository productRepo,
+        IStockReservationService stockReservationService,
+        params string[] permissions)
+    {
         return new OrderService(
             orderRepo,
             quoteRepo,
             productRepo,
+            stockReservationService,
             new OrderDTOValidator(),
             new OrderRepositoryValidator(orderRepo),
             new FixedAuthorizationService(permissions));
@@ -361,5 +374,37 @@ public sealed class OrderAggregateValidationTests
             if (value.ValueID == 0) value.ValueID = _nextSpecId++;
             return Task.FromResult(1);
         }
+    }
+
+    private sealed class TrackingStockReservationService : IStockReservationService
+    {
+        public List<int> ReleasedOrders { get; } = [];
+
+        public Task<StockReservationDTO> CreateReservationAsync(int orderItemId, int stockLocationId, int createdByEmployeeId, decimal quantity, CancellationToken cancellationToken = default)
+            => Task.FromResult(new StockReservationDTO(1, orderItemId, 1, stockLocationId, quantity, StockReservationStatus.Active, createdByEmployeeId, DateTime.UtcNow, null));
+
+        public Task ReleaseReservationAsync(int reservationId, int? releasedByEmployeeId = null, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task ReleaseActiveReservationsForOrderAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            ReleasedOrders.Add(orderId);
+            return Task.CompletedTask;
+        }
+
+        public Task<StockReservationDTO> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
+            => Task.FromResult(new StockReservationDTO(reservationId, 1, 1, 1, 1m, StockReservationStatus.Active, 1, DateTime.UtcNow, null));
+
+        public Task<IEnumerable<StockReservationDTO>> GetByOrderItemIdAsync(int orderItemId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<StockReservationDTO>>([]);
+
+        public Task<IEnumerable<StockReservationDTO>> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<StockReservationDTO>>([]);
+
+        public Task<IEnumerable<StockReservationDTO>> GetAllAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<StockReservationDTO>>([]);
+
+        public Task<IEnumerable<StockReservationDTO>> SearchAsync(string? searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<StockReservationDTO>>([]);
     }
 }

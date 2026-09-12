@@ -13,6 +13,7 @@ public class OrderService(
     IOrderRepository orderRepository,
     IQuoteRepository quoteRepository,
     IProductRepository productRepository,
+    IStockReservationService stockReservationService,
     IDTOValidator<OrderDTO> dtoValidator,
     IRepositoryValidator<Order> repoValidator,
     IAuthorizationService authorizationService) : IOrderService
@@ -20,6 +21,7 @@ public class OrderService(
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
     private readonly IProductRepository _productRepository = productRepository;
+    private readonly IStockReservationService _stockReservationService = stockReservationService;
     private readonly IDTOValidator<OrderDTO> _dtoValidator = dtoValidator;
     private readonly IRepositoryValidator<Order> _repoValidator = repoValidator;
     private readonly IAuthorizationService _authorizationService = authorizationService;
@@ -155,6 +157,7 @@ public class OrderService(
         order.Status = OrderStatus.Cancelled;
 
         await _orderRepository.SaveAsync(order, cancellationToken);
+        await _stockReservationService.ReleaseActiveReservationsForOrderAsync(orderId, cancellationToken);
     }
 
     public async Task SendItemToProductionAsync(int orderItemId, int sentToProductionByEmployeeID, CancellationToken cancellationToken = default)

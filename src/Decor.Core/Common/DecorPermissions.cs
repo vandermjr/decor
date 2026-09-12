@@ -79,4 +79,7 @@ public static class DecorPermissions
     public const string OrdersApprove = "Orders.Approve";
     public const string OrdersCancel = "Orders.Cancel";
     public const string OrdersSendToProduction = "Orders.SendToProduction";
+    public const string StockReservationsView = "StockReservations.View";
+    public const string StockReservationsCreate = "StockReservations.Create";
+    public const string StockReservationsRelease = "StockReservations.Release";
 }

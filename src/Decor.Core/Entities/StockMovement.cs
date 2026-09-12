@@ -75,4 +75,7 @@ public class StockMovement
 
     [Column("Notes")]
     public string? Notes { get; set; }
+
+    [Column("OrderItemID")]
+    public int? OrderItemID { get; set; }
 }

@@ -15,4 +15,5 @@ public record StockMovementDTO(int StockMovementID,
                                int? ReviewedByEmployeeID,
                                DateTime? ReviewedAt,
                                DateTime MovementDate,
-                               string? Notes);
+                               string? Notes,
+                               int? OrderItemID = null);
