@@ -60,6 +60,24 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static BrandDTO ToDTO(this Brand brand) => new(brand.BrandID, brand.BrandName);
     public static Brand FromDTO(this BrandDTO brandDto) => new() { BrandID = brandDto.BrandID, BrandName = brandDto.BrandName };
 
+    // --- Mapeadores para OccurrenceReason ---
+    public static IEnumerable<OccurrenceReasonDTO> ToDTO(this IEnumerable<OccurrenceReason> reasons) => reasons.Select(r => r.ToDTO());
+    public static OccurrenceReasonDTO ToDTO(this OccurrenceReason reason) => new(reason.ReasonID, reason.Description, reason.IsActive);
+    public static OccurrenceReason FromDTO(this OccurrenceReasonDTO dto) => new() { ReasonID = dto.ReasonID, Description = dto.Description, IsActive = dto.IsActive };
+
+    // --- Mapeadores para OrderOccurrence ---
+    public static IEnumerable<OrderOccurrenceDTO> ToDTO(this IEnumerable<OrderOccurrence> occurrences) => occurrences.Select(o => o.ToDTO());
+    public static OrderOccurrenceDTO ToDTO(this OrderOccurrence occurrence) => new(
+        occurrence.OccurrenceID,
+        occurrence.OrderID,
+        occurrence.ReasonID,
+        occurrence.RegisteredByEmployeeID,
+        occurrence.RegisteredAt,
+        occurrence.Observation,
+        occurrence.NewManufacturingDeadline,
+        occurrence.NewInstallationDeadline
+    );
+
     // --- Mapeadores para PaymentMethod ---
     public static IEnumerable<PaymentMethodDTO> ToDTO(this IEnumerable<PaymentMethod> paymentMethods) => paymentMethods.Select(p => p.ToDTO());
     public static PaymentMethodDTO ToDTO(this PaymentMethod paymentMethod) => new(paymentMethod.PaymentMethodID, paymentMethod.Name, paymentMethod.Timing, paymentMethod.IsActive);

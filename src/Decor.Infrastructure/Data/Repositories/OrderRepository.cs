@@ -41,6 +41,11 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<int> SaveAsync(Order entity, CancellationToken cancellationToken = default)
     {
         using var connection = _dbConnection.CreateConnection();
+        return await SaveAsync(entity, connection, null, cancellationToken);
+    }
+
+    public async Task<int> SaveAsync(Order entity, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
+    {
         if (entity.OrderID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
@@ -49,7 +54,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Set(entity)
                 .Where(w => w.Equals((Order o) => o.OrderID, entity.OrderID))
                 .Build();
-            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
         else
         {
@@ -59,7 +64,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Values(entity)
                 .ReturningGeneratedId()
                 .Build();
-            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
             entity.OrderID = generatedId;
             return 1;
         }

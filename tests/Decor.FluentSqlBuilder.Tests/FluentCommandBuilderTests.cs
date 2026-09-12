@@ -49,6 +49,17 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
+        public void AutoAlias_ShouldSuffixReservedSqlKeyword()
+        {
+            var builder = FluentCommandBuilder.Create(new MariaDBDialect());
+
+            var alias = builder.GetAliasForType(typeof(OccurrenceReason));
+
+            alias.Should().Be("or1");
+            builder.GetTableNameForAlias("or1").Should().Be("occurrence_reasons");
+        }
+
+        [Fact]
         public void LambdaParameter_ShouldBeIndependentFromAlias()
         {
             // Arrange & Act

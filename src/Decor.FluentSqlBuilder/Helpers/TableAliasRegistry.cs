@@ -9,6 +9,11 @@ namespace Decor.FluentSqlBuilder.Helpers;
 /// </summary>
 public class TableAliasRegistry
 {
+    private static readonly HashSet<string> ReservedAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "and", "as", "by", "in", "is", "join", "not", "on", "or"
+    };
+
     private readonly Dictionary<Type, string> _typeAliases = [];
     private readonly Dictionary<string, string> _aliasTableNames = [];
     private readonly Dictionary<Type, string> _typeTableNames = [];
@@ -140,13 +145,13 @@ public class TableAliasRegistry
             baseCandidate = "t";
         }
 
-        if (!_usedAliases.Contains(baseCandidate))
+        if (!_usedAliases.Contains(baseCandidate) && !ReservedAliases.Contains(baseCandidate))
         {
             return baseCandidate;
         }
 
         int suffix = 1;
-        while (_usedAliases.Contains($"{baseCandidate}{suffix}"))
+        while (_usedAliases.Contains($"{baseCandidate}{suffix}") || ReservedAliases.Contains($"{baseCandidate}{suffix}"))
         {
             suffix++;
         }
