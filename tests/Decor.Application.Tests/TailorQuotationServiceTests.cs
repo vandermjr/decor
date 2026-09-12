@@ -345,6 +345,7 @@ public class TailorQuotationServiceTests
     {
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
+        public bool ServiceProductExists(int productId) => true;
         public int Save(Product entity) => 1;
         public int Delete(int id) => 1;
         public IEnumerable<Product> SearchGetBy(string? arg = null) => [];

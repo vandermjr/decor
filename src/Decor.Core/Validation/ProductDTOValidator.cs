@@ -13,7 +13,9 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
         if (dto.BrandID is null or <= 0)
             errors.Add("O ID da Marca deve ser maior que zero.");
 
-        if (dto.SubgroupID is null or <= 0)
+        // SubgroupID nulo é permitido na estrutura do DTO; a obrigatoriedade
+        // condicionada ao ProductType é validada em ProductService.
+        if (dto.SubgroupID is <= 0)
             errors.Add("O ID do Subgrupo deve ser maior que zero.");
 
         if (!string.IsNullOrWhiteSpace(dto.Barcode))

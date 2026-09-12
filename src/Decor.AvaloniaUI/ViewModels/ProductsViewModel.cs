@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Decor.Core.DTOs;
+using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
@@ -656,7 +657,12 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 AuxiliarRef,
                 Dimensions,
                 Observations,
-                MinimumStock);
+                MinimumStock,
+                (int)ProductType.Good,
+                null,
+                null,
+                null,
+                null);
 
             await _productService.SaveProductAsync(dto);
             StatusMessage = _isNew ? "Produto incluído com sucesso." : "Produto atualizado com sucesso.";

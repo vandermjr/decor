@@ -24,5 +24,10 @@ public record ProductDTO(
     [property: Display(Name = "Ref. Auxiliar"), Browsable(false)] string? AuxiliarRef,
     [property: Display(Name = "Dimensões"), Browsable(true)] string? Dimensions,
     [property: Display(Name = "Observações"), Browsable(false)] string? Observations,
-    [property: Display(Name = "Estoque Mínimo"), Browsable(false)] decimal MinimumStock
+    [property: Display(Name = "Estoque Mínimo"), Browsable(false)] decimal MinimumStock,
+    [property: Display(Name = "Tipo"), Browsable(true)] int ProductType,
+    [property: Display(Name = "Preço de Custo"), Browsable(true)] decimal? CostPrice,
+    [property: Display(Name = "Preço de Venda"), Browsable(true)] decimal? SalePrice,
+    [property: Display(Name = "Comissão do Funcionário"), Browsable(true)] decimal? EmployeeCommissionValue,
+    [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? DefaultInstallationServiceID
 );

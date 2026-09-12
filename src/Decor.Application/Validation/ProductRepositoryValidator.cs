@@ -16,9 +16,14 @@ public class ProductRepositoryValidator(IProductRepository Repository) : IReposi
             errors.Add("A marca informada não existe.");
         }
 
-        if (!_repository.SubgroupExists(product.SubgroupID))
+        if (product.SubgroupID.HasValue && !_repository.SubgroupExists(product.SubgroupID.Value))
         {
             errors.Add("O subgrupo informado não existe.");
+        }
+
+        if (product.DefaultInstallationServiceID.HasValue && !_repository.ServiceProductExists(product.DefaultInstallationServiceID.Value))
+        {
+            errors.Add("O serviço de instalação padrão informado não existe ou não é do tipo Serviço.");
         }
 
         return errors;

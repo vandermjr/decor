@@ -31,7 +31,12 @@ public static class Mapper
             GroupID: product.Subgroup?.Group?.GroupID,
             GroupName: product.Subgroup?.Group?.GroupName,
             SubgroupID: product.Subgroup?.SubgroupID,
-            SubgroupName: product.Subgroup?.SubgroupName
+            SubgroupName: product.Subgroup?.SubgroupName,
+            ProductType: (int)product.ProductType,
+            CostPrice: product.CostPrice,
+            SalePrice: product.SalePrice,
+            EmployeeCommissionValue: product.EmployeeCommissionValue,
+            DefaultInstallationServiceID: product.DefaultInstallationServiceID
         );
     }
 
@@ -50,7 +55,12 @@ public static class Mapper
         StockQuantity = productDto.StockQuantity,
         MinimumStock = productDto.MinimumStock,
         BrandID = productDto.BrandID ?? 0,
-        SubgroupID = productDto.SubgroupID ?? 0,
+        SubgroupID = productDto.SubgroupID,
+        ProductType = (ProductType)productDto.ProductType,
+        CostPrice = productDto.CostPrice,
+        SalePrice = productDto.SalePrice,
+        EmployeeCommissionValue = productDto.EmployeeCommissionValue,
+        DefaultInstallationServiceID = productDto.DefaultInstallationServiceID,
         Brand = null,
         Subgroup = null
     };

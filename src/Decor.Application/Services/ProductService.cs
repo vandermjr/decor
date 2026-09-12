@@ -57,6 +57,14 @@ public class ProductService(
 
         var productEntity = productDto.FromDTO();
 
+        // Ao ser Service, SubgroupID nunca pode ficar com valor órfão: é zerado automaticamente.
+        if (productEntity.ProductType == ProductType.Service)
+            productEntity.SubgroupID = null;
+
+        var businessRuleErrors = ValidateBusinessRules(productEntity);
+        if (businessRuleErrors.Any())
+            throw new ValidationException(string.Join("\n", businessRuleErrors));
+
         var repoErrors = _repoValidator.Validate(productEntity);
         if (repoErrors.Any())
             throw new ValidationException(string.Join("\n", repoErrors));
@@ -64,6 +72,30 @@ public class ProductService(
         var affectedRows = await _productRepository.SaveAsync(productEntity, cancellationToken);
         if (affectedRows != 1)
             throw new InvalidOperationException("Não foi possível salvar o produto.");
+    }
+
+    private static IEnumerable<string> ValidateBusinessRules(Product product)
+    {
+        var errors = new List<string>();
+
+        if (product.ProductType == ProductType.Good)
+        {
+            if (product.SubgroupID is null or <= 0)
+                errors.Add("O Subgrupo é obrigatório quando o Tipo de Produto é Bem (Good).");
+
+            if (product.EmployeeCommissionValue is not null)
+                errors.Add("O valor de Comissão do Funcionário só pode ser preenchido quando o Tipo de Produto é Serviço (Service).");
+        }
+        else if (product.ProductType == ProductType.Service)
+        {
+            if (product.SubgroupID is not null)
+                errors.Add("O Subgrupo deve ser nulo quando o Tipo de Produto é Serviço (Service).");
+        }
+
+        if (product.DefaultInstallationServiceID.HasValue && product.ProductID > 0 && product.DefaultInstallationServiceID.Value == product.ProductID)
+            errors.Add("O Produto não pode referenciar a si mesmo como Serviço de Instalação padrão.");
+
+        return errors;
     }
 
     private void Require(string permission)

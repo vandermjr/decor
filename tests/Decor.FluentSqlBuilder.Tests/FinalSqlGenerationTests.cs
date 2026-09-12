@@ -353,7 +353,11 @@ namespace Decor.FluentSqlBuilder.Tests
                     p.SubgroupID,
                     p.Origin,
                     p.AcquisitionMode,
-                    p.ProductType
+                    p.ProductType,
+                    p.CostPrice,
+                    p.SalePrice,
+                    p.EmployeeCommissionValue,
+                    p.DefaultInstallationServiceID
                 FROM
                     products AS p
                 ORDER BY
@@ -387,7 +391,11 @@ namespace Decor.FluentSqlBuilder.Tests
                 p.SubgroupID,
                 p.Origin,
                 p.AcquisitionMode,
-                p.ProductType
+                p.ProductType,
+                p.CostPrice,
+                p.SalePrice,
+                p.EmployeeCommissionValue,
+                p.DefaultInstallationServiceID
             FROM
                 products AS p
             ORDER BY

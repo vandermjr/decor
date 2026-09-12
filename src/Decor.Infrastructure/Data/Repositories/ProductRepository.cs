@@ -77,10 +77,10 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Join(j =>
             {
                 j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID);
-                j.Inner<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
-                j.Inner<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
-                j.Inner<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
-                j.Inner<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
+                j.Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
+                j.Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
+                j.Left<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
+                j.Left<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
             })
             .Where(w =>
             {
@@ -132,10 +132,10 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Join(j =>
             {
                 j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID);
-                j.Inner<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
-                j.Inner<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
-                j.Inner<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
-                j.Inner<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
+                j.Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
+                j.Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
+                j.Left<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
+                j.Left<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
             })
             .Where(w =>
             {
@@ -192,6 +192,23 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Select(s => s.Count())
             .From<Subgroup>()
             .Where(w => w.Equals((Subgroup sg) => sg.SubgroupID, subgroupID))            
+            .Build();
+
+        using var conn = _dbConnection.CreateConnection();
+        int count = conn.QuerySingle<int>(sql, parameters);
+        return count > 0;
+    }
+
+    public bool ServiceProductExists(int productId)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.Count())
+            .From<Product>()
+            .Where(w =>
+            {
+                w.Equals((Product p) => p.ProductID, productId);
+                w.Equals((Product p) => p.ProductType, ProductType.Service);
+            })
             .Build();
 
         using var conn = _dbConnection.CreateConnection();

@@ -61,8 +61,8 @@ public class Product
     [Column("BrandID")] // Opcional
     public int BrandID { get; set; }
 
-    [Column("SubgroupID")] // Opcional
-    public int SubgroupID { get; set; }
+    [Column("SubgroupID")] // Obrigatório apenas quando ProductType = Good
+    public int? SubgroupID { get; set; }
 
     [Column("Origin")]
     public ProductOrigin Origin { get; set; }
@@ -72,6 +72,18 @@ public class Product
 
     [Column("ProductType")]
     public ProductType ProductType { get; set; } = ProductType.Good;
+
+    [Column("CostPrice")] // Opcional
+    public decimal? CostPrice { get; set; }
+
+    [Column("SalePrice")] // Opcional
+    public decimal? SalePrice { get; set; }
+
+    [Column("EmployeeCommissionValue")] // Só utilizado quando ProductType = Service
+    public decimal? EmployeeCommissionValue { get; set; }
+
+    [Column("DefaultInstallationServiceID")] // FK para Product cujo ProductType seja Service
+    public int? DefaultInstallationServiceID { get; set; }
 
     // Propriedades de Navegação
     [NotMapped]

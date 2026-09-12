@@ -144,5 +144,6 @@ public sealed class QuoteAggregateValidationTests
         public Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
         public bool BrandExists(int marcaID) => true;
         public bool SubgroupExists(int subgroupID) => true;
+        public bool ServiceProductExists(int productId) => true;
     }
 }
