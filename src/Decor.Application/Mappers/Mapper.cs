@@ -82,6 +82,50 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static QuoteItemSpecificationValueDTO ToDTO(this QuoteItemSpecificationValue value) => new(value.ValueID, value.QuoteItemID, value.AttributeID, value.Value);
     public static QuoteItemSpecificationValue FromDTO(this QuoteItemSpecificationValueDTO valueDto) => new() { ValueID = valueDto.ValueID, QuoteItemID = valueDto.QuoteItemID, AttributeID = valueDto.AttributeID, Value = valueDto.Value };
 
+    // --- Mapeadores para TailorQuotationRequest ---
+    public static IEnumerable<TailorQuotationRequestDTO> ToDTO(this IEnumerable<TailorQuotationRequest> requests) => requests.Select(r => r.ToDTO());
+    public static TailorQuotationRequestDTO ToDTO(this TailorQuotationRequest request) => new(
+        request.RequestID,
+        request.QuoteItemID,
+        request.PartnerID,
+        request.RequestedByEmployeeID,
+        request.RequestedAt,
+        request.Deadline,
+        (int)request.Status
+    );
+    public static TailorQuotationRequest FromDTO(this TailorQuotationRequestDTO requestDto) => new()
+    {
+        RequestID = requestDto.RequestID,
+        QuoteItemID = requestDto.QuoteItemID,
+        PartnerID = requestDto.PartnerID,
+        RequestedByEmployeeID = requestDto.RequestedByEmployeeID,
+        RequestedAt = requestDto.RequestedAt,
+        Deadline = requestDto.Deadline,
+        Status = (TailorQuotationRequestStatus)requestDto.Status
+    };
+
+    // --- Mapeadores para TailorQuotationRevision ---
+    public static IEnumerable<TailorQuotationRevisionDTO> ToDTO(this IEnumerable<TailorQuotationRevision> revisions) => revisions.Select(r => r.ToDTO());
+    public static TailorQuotationRevisionDTO ToDTO(this TailorQuotationRevision revision) => new(
+        revision.RevisionID,
+        revision.RequestID,
+        revision.RevisionNumber,
+        revision.Price,
+        revision.ChangeReason,
+        revision.RespondedAt,
+        revision.RegisteredByEmployeeID
+    );
+    public static TailorQuotationRevision FromDTO(this TailorQuotationRevisionDTO revisionDto) => new()
+    {
+        RevisionID = revisionDto.RevisionID,
+        RequestID = revisionDto.RequestID,
+        RevisionNumber = revisionDto.RevisionNumber,
+        Price = revisionDto.Price,
+        ChangeReason = revisionDto.ChangeReason,
+        RespondedAt = revisionDto.RespondedAt,
+        RegisteredByEmployeeID = revisionDto.RegisteredByEmployeeID
+    };
+
     // --- Mapeadores para Classificação ---
     public static IEnumerable<ClassDTO> ToDTO(this IEnumerable<Class> classes) => classes.Select(c => c.ToDTO());
     public static ClassDTO ToDTO(this Class @class) => new(@class.ClassID, @class.ClassName);

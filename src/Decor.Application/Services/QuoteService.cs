@@ -15,7 +15,8 @@ public class QuoteService(
     IRepositoryValidator<Quote> repoValidator,
     IAuthorizationService authorizationService,
     IProductSpecificationAttributeRepository productSpecificationAttributeRepository,
-    IProductRepository productRepository) : IQuoteService
+    IProductRepository productRepository,
+    ITailorQuotationRepository? tailorQuotationRepository = null) : IQuoteService
 {
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
     private readonly IDTOValidator<QuoteDTO> _dtoValidator = dtoValidator;
@@ -23,6 +24,7 @@ public class QuoteService(
     private readonly IAuthorizationService _authorizationService = authorizationService;
     private readonly IProductSpecificationAttributeRepository _productSpecificationAttributeRepository = productSpecificationAttributeRepository;
     private readonly IProductRepository _productRepository = productRepository;
+    private readonly ITailorQuotationRepository? _tailorQuotationRepository = tailorQuotationRepository;
 
     public async Task<IEnumerable<QuoteDTO>> SearchQuotesAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
         => (await _quoteRepository.SearchGetByAsync(searchTerm, page, pageSize, cancellationToken)).Select(q => q.ToDTO());
@@ -73,6 +75,15 @@ public class QuoteService(
             ?? throw new KeyNotFoundException($"Seção com ID {sectionId} não encontrada.");
 
         ValidateStatusTransition(section.Status, newStatus, section);
+
+        if (newStatus == QuoteSectionStatus.Sent && section.SectionType == QuoteSectionType.Custom && _tailorQuotationRepository != null)
+        {
+            var tailorRequests = await _tailorQuotationRepository.GetByQuoteSectionIdAsync(sectionId, cancellationToken);
+            if (tailorRequests.Any(r => r.Status != TailorQuotationRequestStatus.Closed))
+            {
+                throw new ValidationException("Para seções do tipo Custom, todas as solicitações de cotação vinculadas devem estar com status Fechado (Closed) antes do envio.");
+            }
+        }
 
         section.Status = newStatus;
         if (newStatus == QuoteSectionStatus.Sent)

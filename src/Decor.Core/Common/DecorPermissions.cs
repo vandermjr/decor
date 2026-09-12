@@ -70,4 +70,8 @@ public static class DecorPermissions
     public const string QuotesDelete = "Quotes.Delete";
     public const string QuotesSend = "Quotes.Send";
     public const string QuotesApprove = "Quotes.Approve";
+    public const string TailorQuotationsView = "TailorQuotations.View";
+    public const string TailorQuotationsCreate = "TailorQuotations.Create";
+    public const string TailorQuotationsRespond = "TailorQuotations.Respond";
+    public const string TailorQuotationsClose = "TailorQuotations.Close";
 }
