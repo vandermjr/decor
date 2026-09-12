@@ -65,6 +65,23 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder);
     public static ProductSpecificationAttribute FromDTO(this ProductSpecificationAttributeDTO attributeDto) => new() { AttributeID = attributeDto.AttributeID, ProductCategoryID = attributeDto.ProductCategoryID, Name = attributeDto.Name, DataType = attributeDto.DataType, Unit = attributeDto.Unit, EnumOptions = attributeDto.EnumOptions, IsRequired = attributeDto.IsRequired, DisplayOrder = attributeDto.DisplayOrder };
 
+    // --- Mapeadores para Quote ---
+    public static IEnumerable<QuoteDTO> ToDTO(this IEnumerable<Quote> quotes) => quotes.Select(q => q.ToDTO());
+    public static QuoteDTO ToDTO(this Quote quote) => new(quote.QuoteID, quote.CustomerID, quote.CreatedByEmployeeID, quote.SourcePartnerID, (int)quote.SourceType, quote.CreatedAt, quote.Notes);
+    public static Quote FromDTO(this QuoteDTO quoteDto) => new() { QuoteID = quoteDto.QuoteID, CustomerID = quoteDto.CustomerID, CreatedByEmployeeID = quoteDto.CreatedByEmployeeID, SourcePartnerID = quoteDto.SourcePartnerID, SourceType = (QuoteSourceType)quoteDto.SourceType, CreatedAt = quoteDto.CreatedAt, Notes = quoteDto.Notes };
+
+    public static IEnumerable<QuoteSectionDTO> ToDTO(this IEnumerable<QuoteSection> sections) => sections.Select(s => s.ToDTO());
+    public static QuoteSectionDTO ToDTO(this QuoteSection section) => new(section.QuoteSectionID, section.QuoteID, (int)section.SectionType, (int)section.Status, section.SentToCustomerAt, section.ApprovedAt, section.CreatedAt);
+    public static QuoteSection FromDTO(this QuoteSectionDTO sectionDto) => new() { QuoteSectionID = sectionDto.QuoteSectionID, QuoteID = sectionDto.QuoteID, SectionType = (QuoteSectionType)sectionDto.SectionType, Status = (QuoteSectionStatus)sectionDto.Status, SentToCustomerAt = sectionDto.SentToCustomerAt, ApprovedAt = sectionDto.ApprovedAt, CreatedAt = sectionDto.CreatedAt };
+
+    public static IEnumerable<QuoteItemDTO> ToDTO(this IEnumerable<QuoteItem> items) => items.Select(i => i.ToDTO());
+    public static QuoteItemDTO ToDTO(this QuoteItem item) => new(item.QuoteItemID, item.QuoteSectionID, item.ProductID, item.Quantity, item.UnitPrice, item.HasInstallationService);
+    public static QuoteItem FromDTO(this QuoteItemDTO itemDto) => new() { QuoteItemID = itemDto.QuoteItemID, QuoteSectionID = itemDto.QuoteSectionID, ProductID = itemDto.ProductID, Quantity = itemDto.Quantity, UnitPrice = itemDto.UnitPrice, HasInstallationService = itemDto.HasInstallationService };
+
+    public static IEnumerable<QuoteItemSpecificationValueDTO> ToDTO(this IEnumerable<QuoteItemSpecificationValue> values) => values.Select(v => v.ToDTO());
+    public static QuoteItemSpecificationValueDTO ToDTO(this QuoteItemSpecificationValue value) => new(value.ValueID, value.QuoteItemID, value.AttributeID, value.Value);
+    public static QuoteItemSpecificationValue FromDTO(this QuoteItemSpecificationValueDTO valueDto) => new() { ValueID = valueDto.ValueID, QuoteItemID = valueDto.QuoteItemID, AttributeID = valueDto.AttributeID, Value = valueDto.Value };
+
     // --- Mapeadores para Classificação ---
     public static IEnumerable<ClassDTO> ToDTO(this IEnumerable<Class> classes) => classes.Select(c => c.ToDTO());
     public static ClassDTO ToDTO(this Class @class) => new(@class.ClassID, @class.ClassName);
