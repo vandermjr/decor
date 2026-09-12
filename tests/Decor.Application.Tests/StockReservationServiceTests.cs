@@ -408,6 +408,7 @@ public sealed class StockReservationServiceTests
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
         public bool ServiceProductExists(int productId) => true;
+        public bool GoodProductExists(int productId) => true;
     }
 
     private sealed class InMemoryStockLocationRepository : IStockLocationRepository

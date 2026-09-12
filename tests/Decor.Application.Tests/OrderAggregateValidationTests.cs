@@ -332,6 +332,7 @@ public sealed class OrderAggregateValidationTests
         public bool BrandExists(int marcaID) => true;
         public bool SubgroupExists(int subgroupID) => true;
         public bool ServiceProductExists(int productId) => true;
+        public bool GoodProductExists(int productId) => true;
     }
 
     private sealed class TrackingQuoteRepository : IQuoteRepository

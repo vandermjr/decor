@@ -125,6 +125,11 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         ReceivedByEmployeeID = dto.ReceivedByEmployeeID
     };
 
+    // --- Mapeadores para ProductKitComponent ---
+    public static IEnumerable<ProductKitComponentDTO> ToDTO(this IEnumerable<ProductKitComponent> components) => components.Select(c => c.ToDTO());
+    public static ProductKitComponentDTO ToDTO(this ProductKitComponent component) => new(component.ComponentID, component.KitProductID, component.ComponentProductID, component.Quantity, component.IsVisibleToCustomer, component.DisplayOrder);
+    public static ProductKitComponent FromDTO(this ProductKitComponentDTO dto) => new() { ComponentID = dto.ComponentID, KitProductID = dto.KitProductID, ComponentProductID = dto.ComponentProductID, Quantity = dto.Quantity, IsVisibleToCustomer = dto.IsVisibleToCustomer, DisplayOrder = dto.DisplayOrder };
+
     // --- Mapeadores para ProductSpecificationAttribute ---
     public static IEnumerable<ProductSpecificationAttributeDTO> ToDTO(this IEnumerable<ProductSpecificationAttribute> attributes) => attributes.Select(a => a.ToDTO());
     public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder);

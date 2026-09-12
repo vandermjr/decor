@@ -165,6 +165,7 @@ public sealed class CatalogSecurityAndValidationTests
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
         public bool ServiceProductExists(int productId) => ServiceProductExistsResult;
+        public bool GoodProductExists(int productId) => true;
     }
 
     private sealed class TrackingBrandRepository : IBrandRepository

@@ -215,4 +215,21 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         int count = conn.QuerySingle<int>(sql, parameters);
         return count > 0;
     }
+
+    public bool GoodProductExists(int productId)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.Count())
+            .From<Product>()
+            .Where(w =>
+            {
+                w.Equals((Product p) => p.ProductID, productId);
+                w.Equals((Product p) => p.ProductType, ProductType.Good);
+            })
+            .Build();
+
+        using var conn = _dbConnection.CreateConnection();
+        int count = conn.QuerySingle<int>(sql, parameters);
+        return count > 0;
+    }
 }
