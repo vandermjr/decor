@@ -26,17 +26,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <None Include="..\..\Migrations\20260830_add_authentication_authorization.sql"
-          Link="Migrations\20260830_add_authentication_authorization.sql"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\Migrations\20260831_add_users_must_change_password.sql"
-          Link="Migrations\20260831_add_users_must_change_password.sql"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\Migrations\20260901_add_administration_security.sql"
-          Link="Migrations\20260901_add_administration_security.sql"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\Migrations\20260902_harden_administration_security.sql"
-          Link="Migrations\20260902_harden_administration_security.sql"
+    <None Include="..\..\Migrations\*.sql"
+          Link="Migrations\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

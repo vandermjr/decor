@@ -188,4 +188,74 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static IEnumerable<GoodsReceiptDTO> ToDTO(this IEnumerable<GoodsReceipt> goodsReceipts) => goodsReceipts.Select(gr => gr.ToDTO());
     public static GoodsReceiptDTO ToDTO(this GoodsReceipt goodsReceipt) => new(goodsReceipt.GoodsReceiptID, goodsReceipt.PurchaseOrderItemID, goodsReceipt.ReceiptDate, goodsReceipt.QuantityReceived, goodsReceipt.ReceivedByEmployeeID, goodsReceipt.HasDivergence, goodsReceipt.DivergenceNotes, goodsReceipt.Status);
     public static GoodsReceipt FromDTO(this GoodsReceiptDTO goodsReceiptDto) => new() { GoodsReceiptID = goodsReceiptDto.GoodsReceiptID, PurchaseOrderItemID = goodsReceiptDto.PurchaseOrderItemID, ReceiptDate = goodsReceiptDto.ReceiptDate, QuantityReceived = goodsReceiptDto.QuantityReceived, ReceivedByEmployeeID = goodsReceiptDto.ReceivedByEmployeeID, HasDivergence = goodsReceiptDto.HasDivergence, DivergenceNotes = goodsReceiptDto.DivergenceNotes, Status = goodsReceiptDto.Status };
+
+    // --- Mapeadores para Order ---
+    public static IEnumerable<OrderDTO> ToDTO(this IEnumerable<Order> orders) => orders.Select(o => o.ToDTO());
+    public static OrderDTO ToDTO(this Order order) => new(
+        order.OrderID,
+        order.QuoteSectionID,
+        order.CustomerID,
+        (int)order.OrderType,
+        (int)order.Status,
+        order.RequiresDownPayment,
+        order.ManufacturingDeadline,
+        order.InstallationDeadline,
+        order.CreatedAt,
+        order.Items?.Select(i => i.ToDTO()).ToList()
+    );
+    public static Order FromDTO(this OrderDTO orderDto) => new()
+    {
+        OrderID = orderDto.OrderID,
+        QuoteSectionID = orderDto.QuoteSectionID,
+        CustomerID = orderDto.CustomerID,
+        OrderType = (OrderType)orderDto.OrderType,
+        Status = (OrderStatus)orderDto.Status,
+        RequiresDownPayment = orderDto.RequiresDownPayment,
+        ManufacturingDeadline = orderDto.ManufacturingDeadline,
+        InstallationDeadline = orderDto.InstallationDeadline,
+        CreatedAt = orderDto.CreatedAt,
+        Items = orderDto.Items?.Select(i => i.FromDTO()).ToList() ?? new List<OrderItem>()
+    };
+
+    public static IEnumerable<OrderItemDTO> ToDTO(this IEnumerable<OrderItem> items) => items.Select(i => i.ToDTO());
+    public static OrderItemDTO ToDTO(this OrderItem item) => new(
+        item.OrderItemID,
+        item.OrderID,
+        item.QuoteItemID,
+        item.ProductID,
+        item.Quantity,
+        item.UnitPrice,
+        item.HasInstallationService,
+        item.SentToProductionAt,
+        item.SentToProductionByEmployeeID,
+        item.SpecificationValues?.Select(v => v.ToDTO()).ToList()
+    );
+    public static OrderItem FromDTO(this OrderItemDTO itemDto) => new()
+    {
+        OrderItemID = itemDto.OrderItemID,
+        OrderID = itemDto.OrderID,
+        QuoteItemID = itemDto.QuoteItemID,
+        ProductID = itemDto.ProductID,
+        Quantity = itemDto.Quantity,
+        UnitPrice = itemDto.UnitPrice,
+        HasInstallationService = itemDto.HasInstallationService,
+        SentToProductionAt = itemDto.SentToProductionAt,
+        SentToProductionByEmployeeID = itemDto.SentToProductionByEmployeeID,
+        SpecificationValues = itemDto.SpecificationValues?.Select(v => v.FromDTO()).ToList() ?? new List<OrderItemSpecificationValue>()
+    };
+
+    public static IEnumerable<OrderItemSpecificationValueDTO> ToDTO(this IEnumerable<OrderItemSpecificationValue> values) => values.Select(v => v.ToDTO());
+    public static OrderItemSpecificationValueDTO ToDTO(this OrderItemSpecificationValue value) => new(
+        value.ValueID,
+        value.OrderItemID,
+        value.AttributeID,
+        value.Value
+    );
+    public static OrderItemSpecificationValue FromDTO(this OrderItemSpecificationValueDTO valueDto) => new()
+    {
+        ValueID = valueDto.ValueID,
+        OrderItemID = valueDto.OrderItemID,
+        AttributeID = valueDto.AttributeID,
+        Value = valueDto.Value
+    };
 }

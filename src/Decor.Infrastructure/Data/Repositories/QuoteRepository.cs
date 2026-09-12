@@ -190,6 +190,18 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         return await connection.QuerySingleOrDefaultAsync<QuoteSection>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
+    public async Task<QuoteSection?> GetSectionByIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<QuoteSection>())
+            .From<QuoteSection>()
+            .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, quoteSectionId))
+            .Build();
+
+        using var connection = _dbConnection.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<QuoteSection>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
+
     public async Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()

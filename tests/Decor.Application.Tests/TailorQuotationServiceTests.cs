@@ -297,6 +297,9 @@ public class TailorQuotationServiceTests
             return Task.FromResult<QuoteSection?>(Sections.FirstOrDefault(s => s.QuoteSectionID == item.QuoteSectionID));
         }
 
+        public Task<QuoteSection?> GetSectionByIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Sections.FirstOrDefault(s => s.QuoteSectionID == quoteSectionId));
+
         public Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
             => Task.FromResult(Items.FirstOrDefault(i => i.QuoteItemID == quoteItemId));
 

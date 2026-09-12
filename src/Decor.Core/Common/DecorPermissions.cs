@@ -74,4 +74,9 @@ public static class DecorPermissions
     public const string TailorQuotationsCreate = "TailorQuotations.Create";
     public const string TailorQuotationsRespond = "TailorQuotations.Respond";
     public const string TailorQuotationsClose = "TailorQuotations.Close";
+    public const string OrdersView = "Orders.View";
+    public const string OrdersConvertFromQuote = "Orders.ConvertFromQuote";
+    public const string OrdersApprove = "Orders.Approve";
+    public const string OrdersCancel = "Orders.Cancel";
+    public const string OrdersSendToProduction = "Orders.SendToProduction";
 }

@@ -117,6 +117,7 @@ public sealed class QuoteAggregateValidationTests
         public Task<Quote?> GetByIdAsync(int quoteId, CancellationToken cancellationToken = default) => Task.FromResult<Quote?>(_quote);
         public Task<Quote?> GetCompleteQuoteAsync(int quoteId, CancellationToken cancellationToken = default) => Task.FromResult<Quote?>(_quote);
         public Task<QuoteSection?> GetSectionByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default) => Task.FromResult(_quote?.Sections.FirstOrDefault(s => s.Items.Any(i => i.QuoteItemID == quoteItemId)));
+        public Task<QuoteSection?> GetSectionByIdAsync(int quoteSectionId, CancellationToken cancellationToken = default) => Task.FromResult(_quote?.Sections.FirstOrDefault(s => s.QuoteSectionID == quoteSectionId));
         public Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default) => Task.FromResult(_quote?.Sections.SelectMany(s => s.Items).FirstOrDefault(i => i.QuoteItemID == quoteItemId));
         public Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default) => Task.FromResult(1);
         public Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default) => Task.FromResult(1);
