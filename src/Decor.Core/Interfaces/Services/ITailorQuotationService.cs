@@ -11,4 +11,5 @@ public interface ITailorQuotationService
     Task AddRevisionAsync(TailorQuotationRevisionDTO revisionDto, CancellationToken cancellationToken = default);
     Task CloseRequestAsync(int requestId, CancellationToken cancellationToken = default);
     Task<IEnumerable<TailorQuotationRevisionDTO>> GetRevisionsByRequestIdAsync(int requestId, CancellationToken cancellationToken = default);
+    Task<decimal?> GetSuggestedFabricationPriceAsync(int quoteItemId, int partnerId, CancellationToken cancellationToken = default);
 }

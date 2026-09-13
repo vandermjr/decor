@@ -68,6 +68,10 @@ public static class DecorPermissions
     public const string ProductKitComponentsCreate = "ProductKitComponents.Create";
     public const string ProductKitComponentsEdit = "ProductKitComponents.Edit";
     public const string ProductKitComponentsDelete = "ProductKitComponents.Delete";
+    public const string PartnerPriceTablesView = "PartnerPriceTables.View";
+    public const string PartnerPriceTablesCreate = "PartnerPriceTables.Create";
+    public const string PartnerPriceTablesEdit = "PartnerPriceTables.Edit";
+    public const string PartnerPriceTablesDelete = "PartnerPriceTables.Delete";
     public const string QuotesView = "Quotes.View";
     public const string QuotesCreate = "Quotes.Create";
     public const string QuotesEdit = "Quotes.Edit";

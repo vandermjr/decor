@@ -214,6 +214,19 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         return await connection.QuerySingleOrDefaultAsync<QuoteItem>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
+    public async Task<IEnumerable<QuoteItemSpecificationValue>> GetSpecificationValuesByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
+            .From<QuoteItemSpecificationValue>()
+            .Where(w => w.Equals((QuoteItemSpecificationValue v) => v.QuoteItemID, quoteItemId))
+            .Build();
+
+        using var connection = _dbConnection.CreateConnection();
+        var result = await connection.QueryAsync<QuoteItemSpecificationValue>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+        return result.AsList();
+    }
+
     public async Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default)
     {
         using var connection = _dbConnection.CreateConnection();

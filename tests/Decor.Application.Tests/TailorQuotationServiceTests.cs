@@ -22,9 +22,16 @@ public class TailorQuotationServiceTests
         DecorPermissions.QuotesSend,
         DecorPermissions.QuotesEdit);
 
+    private readonly InMemoryPartnerPriceTableRepository _partnerPriceRepo = new();
+    private readonly InMemoryProductRepository _productRepo = new();
+    private readonly InMemoryAttributeRepository _attributeRepo = new();
+
     private TailorQuotationService CreateTailorService() => new(
         _tailorRepo,
         _quoteRepo,
+        _partnerPriceRepo,
+        _productRepo,
+        _attributeRepo,
         new TailorQuotationRequestDTOValidator(),
         new TailorQuotationRevisionDTOValidator(),
         new TailorQuotationRepositoryValidator(_tailorRepo),
@@ -170,6 +177,72 @@ public class TailorQuotationServiceTests
     }
 
     [Fact]
+    public async Task GetSuggestedFabricationPriceAsync_ShouldReturnAreaTimesPrice_WhenWidthAndHeightConfigured()
+    {
+        var service = CreateTailorService();
+
+        var product = new Product
+        {
+            ProductID = 42,
+            ProductType = ProductType.Good,
+            SubgroupID = 7,
+            IsActive = true,
+            Description = "Tecido"
+        };
+        product.Subgroup = new Subgroup { SubgroupID = 7, GroupID = 9, SubgroupName = "Voil" };
+        _productRepo.Products.Add(product);
+
+        _quoteRepo.Items.Add(new QuoteItem { QuoteItemID = 10, ProductID = 42, Quantity = 1m, UnitPrice = 100m, QuoteSectionID = 100 });
+        _quoteRepo.Sections.Add(new QuoteSection { QuoteSectionID = 100, QuoteID = 1, SectionType = QuoteSectionType.Custom });
+
+        _attributeRepo.Attributes.AddRange([
+            new ProductSpecificationAttribute { AttributeID = 1, ProductCategoryID = 7, Name = "Largura", DataType = ProductSpecificationDataType.Number, MeasurementRole = MeasurementRole.Width },
+            new ProductSpecificationAttribute { AttributeID = 2, ProductCategoryID = 7, Name = "Altura", DataType = ProductSpecificationDataType.Number, MeasurementRole = MeasurementRole.Height }
+        ]);
+
+        _quoteRepo.SpecificationValues.AddRange([
+            new QuoteItemSpecificationValue { ValueID = 1, QuoteItemID = 10, AttributeID = 1, Value = "2.5" },
+            new QuoteItemSpecificationValue { ValueID = 2, QuoteItemID = 10, AttributeID = 2, Value = "3" }
+        ]);
+
+        _partnerPriceRepo.Tables.Add(new PartnerPriceTable { PriceTableID = 1, PartnerID = 5, GroupID = 9, PricePerSquareMeter = 40m, IsActive = true });
+
+        var result = await service.GetSuggestedFabricationPriceAsync(10, 5);
+
+        Assert.NotNull(result);
+        Assert.Equal(300m, result);
+    }
+
+    [Fact]
+    public async Task GetSuggestedFabricationPriceAsync_ShouldReturnNull_WhenMissingWidthHeightConfiguration()
+    {
+        var service = CreateTailorService();
+
+        var product = new Product
+        {
+            ProductID = 42,
+            ProductType = ProductType.Good,
+            SubgroupID = 7,
+            IsActive = true,
+            Description = "Tecido"
+        };
+        product.Subgroup = new Subgroup { SubgroupID = 7, GroupID = 9, SubgroupName = "Voil" };
+        _productRepo.Products.Add(product);
+
+        _quoteRepo.Items.Add(new QuoteItem { QuoteItemID = 10, ProductID = 42, Quantity = 1m, UnitPrice = 100m, QuoteSectionID = 100 });
+        _quoteRepo.Sections.Add(new QuoteSection { QuoteSectionID = 100, QuoteID = 1, SectionType = QuoteSectionType.Custom });
+
+        _attributeRepo.Attributes.Add(new ProductSpecificationAttribute { AttributeID = 1, ProductCategoryID = 7, Name = "Largura", DataType = ProductSpecificationDataType.Number, MeasurementRole = MeasurementRole.Width });
+        _quoteRepo.SpecificationValues.Add(new QuoteItemSpecificationValue { ValueID = 1, QuoteItemID = 10, AttributeID = 1, Value = "2.5" });
+
+        _partnerPriceRepo.Tables.Add(new PartnerPriceTable { PriceTableID = 1, PartnerID = 5, GroupID = 9, PricePerSquareMeter = 40m, IsActive = true });
+
+        var result = await service.GetSuggestedFabricationPriceAsync(10, 5);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task QuoteService_TransitionToSent_ShouldFail_IfTailorQuotationNotClosed()
     {
         var quoteService = CreateQuoteService();
@@ -274,6 +347,7 @@ public class TailorQuotationServiceTests
         public List<Quote> Quotes { get; } = [];
         public List<QuoteItem> Items { get; } = [];
         public List<QuoteSection> Sections { get; } = [];
+        public List<QuoteItemSpecificationValue> SpecificationValues { get; } = [];
 
         public void SetupItemAndSection(int quoteItemId, QuoteSectionType sectionType)
         {
@@ -303,6 +377,9 @@ public class TailorQuotationServiceTests
         public Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
             => Task.FromResult(Items.FirstOrDefault(i => i.QuoteItemID == quoteItemId));
 
+        public Task<IEnumerable<QuoteItemSpecificationValue>> GetSpecificationValuesByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<QuoteItemSpecificationValue>>(SpecificationValues.Where(v => v.QuoteItemID == quoteItemId).ToList());
+
         public Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default) => Task.FromResult(1);
         public Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default) => Task.FromResult(1);
         public Task<int> SaveSpecificationValueAsync(QuoteItemSpecificationValue value, CancellationToken cancellationToken = default) => Task.FromResult(1);
@@ -329,6 +406,56 @@ public class TailorQuotationServiceTests
     private sealed class DummyQuoteRepoValidator : IRepositoryValidator<Quote>
     {
         public IEnumerable<string> Validate(Quote entity) => Enumerable.Empty<string>();
+    }
+
+    private sealed class InMemoryAttributeRepository : IProductSpecificationAttributeRepository
+    {
+        public List<ProductSpecificationAttribute> Attributes { get; } = [];
+
+        public int Save(ProductSpecificationAttribute entity) => 1;
+        public int Delete(int id) => 1;
+        public IEnumerable<ProductSpecificationAttribute> SearchGetBy(string? arg = null) => Attributes;
+        public Task<int> SaveAsync(ProductSpecificationAttribute entity, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<IReadOnlyList<ProductSpecificationAttribute>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<ProductSpecificationAttribute>>(Attributes.Where(a => arg == null || a.AttributeID.ToString() == arg || a.Name!.Contains(arg, StringComparison.OrdinalIgnoreCase)).ToList());
+    }
+
+    private sealed class InMemoryProductRepository : IProductRepository
+    {
+        public List<Product> Products { get; } = [];
+
+        public bool BrandExists(int marcaId) => true;
+        public bool SubgroupExists(int subgroupId) => true;
+        public bool ServiceProductExists(int productId) => true;
+        public bool GoodProductExists(int productId) => true;
+        public int Save(Product entity) => 1;
+        public int Delete(int id) => 1;
+        public IEnumerable<Product> SearchGetBy(string? arg = null) => Products;
+        public Task<int> SaveAsync(Product entity, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Product>>(Products.Where(p => arg == null || p.ProductID.ToString() == arg).ToList());
+    }
+
+    private sealed class InMemoryPartnerPriceTableRepository : IPartnerPriceTableRepository
+    {
+        public List<PartnerPriceTable> Tables { get; } = [];
+
+        public int Save(PartnerPriceTable entity) => 1;
+        public int Delete(int id) => 1;
+        public IEnumerable<PartnerPriceTable> SearchGetBy(string? arg = null) => Tables;
+        public Task<int> SaveAsync(PartnerPriceTable entity, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public Task<IReadOnlyList<PartnerPriceTable>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<PartnerPriceTable>>(Tables.ToList());
+        public Task<PartnerPriceTable?> GetByIdAsync(int priceTableId, CancellationToken cancellationToken = default) => Task.FromResult(Tables.FirstOrDefault(t => t.PriceTableID == priceTableId));
+        public Task<PartnerPriceTable?> GetActiveByPartnerAndGroupAsync(int partnerId, int groupId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Tables.FirstOrDefault(t => t.PartnerID == partnerId && t.GroupID == groupId && t.IsActive));
+        public Task<IEnumerable<PartnerPriceTable>> GetByPartnerIdAsync(int partnerId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IEnumerable<PartnerPriceTable>>(Tables.Where(t => t.PartnerID == partnerId).ToList());
+        public bool ActiveEntryExists(int partnerId, int groupId, int currentPriceTableId = 0) => Tables.Any(t => t.PartnerID == partnerId && t.GroupID == groupId && t.IsActive && t.PriceTableID != currentPriceTableId);
+        public Task<bool> ActiveEntryExistsAsync(int partnerId, int groupId, int currentPriceTableId = 0, CancellationToken cancellationToken = default) => Task.FromResult(ActiveEntryExists(partnerId, groupId, currentPriceTableId));
     }
 
     private sealed class DummyAttributeRepo : IProductSpecificationAttributeRepository

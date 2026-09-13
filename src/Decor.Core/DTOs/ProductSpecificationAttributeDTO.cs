@@ -11,4 +11,5 @@ public record ProductSpecificationAttributeDTO(
     [property: Display(Name = "Unidade")] string? Unit,
     [property: Display(Name = "Opções (Enum)")] string? EnumOptions,
     [property: Display(Name = "Obrigatório")] bool IsRequired,
-    [property: Display(Name = "Ordem de Exibição")] int DisplayOrder);
+    [property: Display(Name = "Ordem de Exibição")] int DisplayOrder,
+    [property: Display(Name = "Função de Medida")] MeasurementRole MeasurementRole = MeasurementRole.None);

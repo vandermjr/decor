@@ -31,6 +31,9 @@ public class ProductSpecificationAttributeDTOValidator : IDTOValidator<ProductSp
         if (dto.DisplayOrder < 0)
             errors.Add("A ordem de exibição não pode ser negativa.");
 
+        if (!System.Enum.IsDefined(typeof(MeasurementRole), dto.MeasurementRole))
+            errors.Add("A função de medida informada é inválida.");
+
         // DataType = Enum exige EnumOptions preenchido; nos demais DataTypes, EnumOptions deve ser nulo
         if (dto.DataType == ProductSpecificationDataType.Enum)
         {

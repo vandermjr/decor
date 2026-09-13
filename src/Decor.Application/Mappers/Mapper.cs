@@ -130,10 +130,15 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static ProductKitComponentDTO ToDTO(this ProductKitComponent component) => new(component.ComponentID, component.KitProductID, component.ComponentProductID, component.Quantity, component.IsVisibleToCustomer, component.DisplayOrder);
     public static ProductKitComponent FromDTO(this ProductKitComponentDTO dto) => new() { ComponentID = dto.ComponentID, KitProductID = dto.KitProductID, ComponentProductID = dto.ComponentProductID, Quantity = dto.Quantity, IsVisibleToCustomer = dto.IsVisibleToCustomer, DisplayOrder = dto.DisplayOrder };
 
+    // --- Mapeadores para PartnerPriceTable ---
+    public static IEnumerable<PartnerPriceTableDTO> ToDTO(this IEnumerable<PartnerPriceTable> tables) => tables.Select(t => t.ToDTO());
+    public static PartnerPriceTableDTO ToDTO(this PartnerPriceTable table) => new(table.PriceTableID, table.PartnerID, table.GroupID, table.PricePerSquareMeter, table.IsActive);
+    public static PartnerPriceTable FromDTO(this PartnerPriceTableDTO dto) => new() { PriceTableID = dto.PriceTableID, PartnerID = dto.PartnerID, GroupID = dto.GroupID, PricePerSquareMeter = dto.PricePerSquareMeter, IsActive = dto.IsActive };
+
     // --- Mapeadores para ProductSpecificationAttribute ---
     public static IEnumerable<ProductSpecificationAttributeDTO> ToDTO(this IEnumerable<ProductSpecificationAttribute> attributes) => attributes.Select(a => a.ToDTO());
-    public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder);
-    public static ProductSpecificationAttribute FromDTO(this ProductSpecificationAttributeDTO attributeDto) => new() { AttributeID = attributeDto.AttributeID, ProductCategoryID = attributeDto.ProductCategoryID, Name = attributeDto.Name, DataType = attributeDto.DataType, Unit = attributeDto.Unit, EnumOptions = attributeDto.EnumOptions, IsRequired = attributeDto.IsRequired, DisplayOrder = attributeDto.DisplayOrder };
+    public static ProductSpecificationAttributeDTO ToDTO(this ProductSpecificationAttribute attribute) => new(attribute.AttributeID, attribute.ProductCategoryID, attribute.Name, attribute.DataType, attribute.Unit, attribute.EnumOptions, attribute.IsRequired, attribute.DisplayOrder, attribute.MeasurementRole);
+    public static ProductSpecificationAttribute FromDTO(this ProductSpecificationAttributeDTO attributeDto) => new() { AttributeID = attributeDto.AttributeID, ProductCategoryID = attributeDto.ProductCategoryID, Name = attributeDto.Name, DataType = attributeDto.DataType, Unit = attributeDto.Unit, EnumOptions = attributeDto.EnumOptions, IsRequired = attributeDto.IsRequired, DisplayOrder = attributeDto.DisplayOrder, MeasurementRole = attributeDto.MeasurementRole };
 
     // --- Mapeadores para Quote ---
     public static IEnumerable<QuoteDTO> ToDTO(this IEnumerable<Quote> quotes) => quotes.Select(q => q.ToDTO());

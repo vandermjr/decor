@@ -11,6 +11,13 @@ public enum ProductSpecificationDataType
     Enum = 4
 }
 
+public enum MeasurementRole
+{
+    None = 0,
+    Width = 1,
+    Height = 2
+}
+
 [Table("product_specification_attributes")]
 public class ProductSpecificationAttribute
 {
@@ -39,6 +46,9 @@ public class ProductSpecificationAttribute
 
     [Column("DisplayOrder")]
     public int DisplayOrder { get; set; }
+
+    [Column("MeasurementRole")]
+    public MeasurementRole MeasurementRole { get; set; } = MeasurementRole.None;
 
     [NotMapped]
     public virtual Subgroup? ProductCategory { get; set; }

@@ -9,6 +9,7 @@ public interface IQuoteRepository : IRepository<Quote>
     Task<QuoteSection?> GetSectionByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default);
     Task<QuoteSection?> GetSectionByIdAsync(int quoteSectionId, CancellationToken cancellationToken = default);
     Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<QuoteItemSpecificationValue>> GetSpecificationValuesByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default);
     Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default);
     Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default);
     Task<int> SaveSpecificationValueAsync(QuoteItemSpecificationValue value, CancellationToken cancellationToken = default);

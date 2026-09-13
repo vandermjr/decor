@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Decor.Application.Mappers;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
@@ -12,6 +13,9 @@ namespace Decor.Application.Services;
 public class TailorQuotationService(
     ITailorQuotationRepository tailorQuotationRepository,
     IQuoteRepository quoteRepository,
+    IPartnerPriceTableRepository partnerPriceTableRepository,
+    IProductRepository productRepository,
+    IProductSpecificationAttributeRepository productSpecificationAttributeRepository,
     IDTOValidator<TailorQuotationRequestDTO> requestDtoValidator,
     IDTOValidator<TailorQuotationRevisionDTO> revisionDtoValidator,
     IRepositoryValidator<TailorQuotationRequest> repoValidator,
@@ -19,6 +23,9 @@ public class TailorQuotationService(
 {
     private readonly ITailorQuotationRepository _tailorQuotationRepository = tailorQuotationRepository;
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
+    private readonly IPartnerPriceTableRepository _partnerPriceTableRepository = partnerPriceTableRepository;
+    private readonly IProductRepository _productRepository = productRepository;
+    private readonly IProductSpecificationAttributeRepository _productSpecificationAttributeRepository = productSpecificationAttributeRepository;
     private readonly IDTOValidator<TailorQuotationRequestDTO> _requestDtoValidator = requestDtoValidator;
     private readonly IDTOValidator<TailorQuotationRevisionDTO> _revisionDtoValidator = revisionDtoValidator;
     private readonly IRepositoryValidator<TailorQuotationRequest> _repoValidator = repoValidator;
@@ -133,6 +140,49 @@ public class TailorQuotationService(
 
         request.Status = TailorQuotationRequestStatus.Closed;
         await _tailorQuotationRepository.SaveAsync(request, cancellationToken);
+    }
+
+    public async Task<decimal?> GetSuggestedFabricationPriceAsync(int quoteItemId, int partnerId, CancellationToken cancellationToken = default)
+    {
+        Require(DecorPermissions.TailorQuotationsView);
+
+        var quoteItem = await _quoteRepository.GetItemByIdAsync(quoteItemId, cancellationToken);
+        if (quoteItem == null)
+            return null;
+
+        var product = (await _productRepository.SearchGetByAsync(quoteItem.ProductID.ToString(), 1, 1, cancellationToken)).FirstOrDefault();
+        if (product == null)
+            return null;
+
+        if (product.SubgroupID is null || product.Subgroup?.GroupID is null)
+            return null;
+
+        var groupId = product.Subgroup.GroupID;
+        var partnerTable = await _partnerPriceTableRepository.GetActiveByPartnerAndGroupAsync(partnerId, groupId, cancellationToken);
+        if (partnerTable == null)
+            return null;
+
+        var values = (await _quoteRepository.GetSpecificationValuesByItemIdAsync(quoteItemId, cancellationToken)).ToList();
+        decimal? width = null;
+        decimal? height = null;
+
+        foreach (var value in values)
+        {
+            var attribute = (await _productSpecificationAttributeRepository.SearchGetByAsync(value.AttributeID.ToString(), 1, 1, cancellationToken)).FirstOrDefault();
+            if (attribute == null)
+                continue;
+
+            if (attribute.MeasurementRole == MeasurementRole.Width && decimal.TryParse(value.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedWidth))
+                width = parsedWidth;
+            else if (attribute.MeasurementRole == MeasurementRole.Height && decimal.TryParse(value.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedHeight))
+                height = parsedHeight;
+        }
+
+        if (width is null || height is null)
+            return null;
+
+        var area = width.Value * height.Value;
+        return area * partnerTable.PricePerSquareMeter;
     }
 
     private void Require(string permission)
