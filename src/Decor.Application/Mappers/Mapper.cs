@@ -92,6 +92,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static InstallationAppointmentDTO ToDTO(this InstallationAppointment appointment) => new(appointment.AppointmentID, appointment.OrderItemID, appointment.ScheduledDate, appointment.ScheduledTime, appointment.ExecutorEmployeeID, appointment.ExecutorPartnerID, appointment.Status, appointment.CreatedByEmployeeID, appointment.CreatedAt);
     public static IEnumerable<AppointmentRescheduleDTO> ToDTO(this IEnumerable<AppointmentReschedule> reschedules) => reschedules.Select(r => r.ToDTO());
     public static AppointmentRescheduleDTO ToDTO(this AppointmentReschedule reschedule) => new(reschedule.RescheduleID, reschedule.AppointmentID, reschedule.PreviousDate, reschedule.NewDate, reschedule.Reason, reschedule.RegisteredByEmployeeID, reschedule.RegisteredAt);
+    public static ServiceExecutionRecordDTO ToDTO(this ServiceExecutionRecord record) => new(record.ExecutionID, record.AppointmentID, record.ExecutedAt, record.Observations, record.CustomerPresent, record.CustomerSignedConfirmation, record.AbsentAuthorizationNote);
+    public static ServiceExecutionRecord FromDTO(this ServiceExecutionRecordDTO dto) => new() { ExecutionID = dto.ExecutionID, AppointmentID = dto.AppointmentID, ExecutedAt = dto.ExecutedAt, Observations = dto.Observations, CustomerPresent = dto.CustomerPresent, CustomerSignedConfirmation = dto.CustomerSignedConfirmation, AbsentAuthorizationNote = dto.AbsentAuthorizationNote };
 
     // --- Mapeadores para PaymentMethod ---
     public static IEnumerable<PaymentMethodDTO> ToDTO(this IEnumerable<PaymentMethod> paymentMethods) => paymentMethods.Select(p => p.ToDTO());

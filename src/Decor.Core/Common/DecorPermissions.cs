@@ -109,4 +109,6 @@ public static class DecorPermissions
     public const string InstallationAppointmentsCreate = "InstallationAppointments.Create";
     public const string InstallationAppointmentsReschedule = "InstallationAppointments.Reschedule";
     public const string InstallationAppointmentsCancel = "InstallationAppointments.Cancel";
+    public const string ServiceExecutionRecordsView = "ServiceExecutionRecords.View";
+    public const string ServiceExecutionRecordsCreate = "ServiceExecutionRecords.Create";
 }

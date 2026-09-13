@@ -47,6 +47,14 @@ public class InstallationAppointmentService(IInstallationAppointmentRepository r
         if (await repository.SaveAsync(appointment, cancellationToken) != 1) throw new InvalidOperationException("Não foi possível cancelar o agendamento.");
     }
 
+    public async Task CompleteAsync(int appointmentId, CancellationToken cancellationToken = default)
+    {
+        var appointment = await repository.GetByIdAsync(appointmentId, cancellationToken) ?? throw new KeyNotFoundException($"Agendamento com ID {appointmentId} não encontrado.");
+        if (appointment.Status is not (InstallationAppointmentStatus.Scheduled or InstallationAppointmentStatus.Rescheduled)) throw new ValidationException("Apenas agendamentos programados podem ser concluídos.");
+        appointment.Status = InstallationAppointmentStatus.Completed;
+        if (await repository.SaveAsync(appointment, cancellationToken) != 1) throw new InvalidOperationException("Não foi possível concluir o agendamento.");
+    }
+
     public async Task<IReadOnlyList<InstallationAppointmentDTO>> GetScheduleForExecutorAsync(int? executorEmployeeId, int? executorPartnerId, DateTime from, DateTime to, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.InstallationAppointmentsView);
