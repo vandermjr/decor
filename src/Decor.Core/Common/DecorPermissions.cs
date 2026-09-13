@@ -105,4 +105,8 @@ public static class DecorPermissions
     public const string OccurrenceReasonsDelete = "OccurrenceReasons.Delete";
     public const string OrderOccurrencesView = "OrderOccurrences.View";
     public const string OrderOccurrencesRegister = "OrderOccurrences.Register";
+    public const string InstallationAppointmentsView = "InstallationAppointments.View";
+    public const string InstallationAppointmentsCreate = "InstallationAppointments.Create";
+    public const string InstallationAppointmentsReschedule = "InstallationAppointments.Reschedule";
+    public const string InstallationAppointmentsCancel = "InstallationAppointments.Cancel";
 }
