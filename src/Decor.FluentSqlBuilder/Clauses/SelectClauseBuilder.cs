@@ -226,5 +226,43 @@ namespace Decor.FluentSqlBuilder.Clauses
             _isCountQuery = true;
             return this;
         }
+
+        public SelectClauseBuilder Sum<TEntity>(Expression<Func<TEntity, object?>> expression)
+        {
+            return Sum<TEntity>(expression, null);
+        }
+
+        public SelectClauseBuilder Sum<TEntity>(Expression<Func<TEntity, object?>> expression, string? resultAlias)
+        {
+            if (_selectColumns.Count != 0)
+            {
+                throw new InvalidOperationException("Não é possível usar Sum() com outras colunas selecionadas.");
+            }
+
+            Type entityType = typeof(TEntity);
+            string alias = _aliasRegistry.GetOrAddAlias(entityType);
+            string columnName = ExpressionHelper.GetColumnName(expression);
+
+            _selectColumns.Add(_dialect.Functions.Sum($"{alias}.{columnName}", resultAlias));
+            return this;
+        }
+
+        public SelectClauseBuilder Sum(string rawExpression)
+        {
+            return Sum(rawExpression, null);
+        }
+
+        public SelectClauseBuilder Sum(string rawExpression, string? resultAlias)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(rawExpression);
+
+            if (_selectColumns.Count != 0)
+            {
+                throw new InvalidOperationException("Não é possível usar Sum() com outras colunas selecionadas.");
+            }
+
+            _selectColumns.Add(_dialect.Functions.Sum(rawExpression, resultAlias));
+            return this;
+        }
     }
 }

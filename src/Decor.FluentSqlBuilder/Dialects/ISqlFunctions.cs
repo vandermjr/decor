@@ -17,5 +17,7 @@
 
         string Count(string expression);
         string Count(string expression, bool isDistinct);
+        string Sum(string expression);
+        string Sum(string expression, string? alias);
     }
 }

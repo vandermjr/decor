@@ -43,8 +43,10 @@ namespace Decor.FluentSqlBuilder.Statements
             var selectClauseBuilder = new SelectClauseBuilder(_selectColumns, _aliasRegistry, _dialect, _fromAlias);
             action(selectClauseBuilder);
 
-            // Adicionado: Verifica se a query é uma contagem
-            _isCountQuery = _selectColumns.Count == 1 && _selectColumns[0].StartsWith(_dialect.Keywords.COUNT);
+            // Consulta agregada: COUNT/SUM ignoram ORDER BY/paginação e seguem o mesmo padrão de seleção especial.
+            _isCountQuery = _selectColumns.Count == 1 &&
+                (_selectColumns[0].StartsWith(_dialect.Keywords.COUNT, StringComparison.OrdinalIgnoreCase) ||
+                 _selectColumns[0].StartsWith(_dialect.Keywords.SUM, StringComparison.OrdinalIgnoreCase));
             _isDistinct = selectClauseBuilder._isDistinct;
 
             return this;

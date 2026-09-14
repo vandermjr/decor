@@ -157,6 +157,44 @@ namespace Decor.FluentSqlBuilder.Tests
             parameters.Should().BeEmpty();
         }
 
+        [Fact]
+        public void Select_SumTypedColumn_ShouldGenerateSumOnColumn()
+        {
+            var (sql, parameters) = _builder
+                .Select(s => s.Sum<Product>(p => p.StockQuantity))
+                .From<Product>()
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) FROM products AS p;"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Select_SumWithAlias_ShouldGenerateSumWithAlias()
+        {
+            var (sql, parameters) = _builder
+                .Select(s => s.Sum<Product>(p => p.StockQuantity, "TotalStock"))
+                .From<Product>()
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) AS TotalStock FROM products AS p;"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Select_SumWithWhere_ShouldGenerateSumFilteredQuery()
+        {
+            var (sql, parameters) = _builder
+                .Select(s => s.Sum<Product>(p => p.StockQuantity))
+                .From<Product>()
+                .Where(w => w.Equals((Product p) => p.BrandID, 10))
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) FROM products AS p WHERE p.BrandID = @BrandID;"));
+            parameters.Should().ContainKey("BrandID");
+            parameters["BrandID"].Should().Be(10);
+        }
+
         // --- Testes de Falha ---
 
         [Fact]

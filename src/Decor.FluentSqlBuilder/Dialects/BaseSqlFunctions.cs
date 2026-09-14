@@ -122,5 +122,41 @@
                 state._keywords.RIGHT_PARENTHESIS.AsSpan().CopyTo(span.Slice(pos));
             });
         }
+
+        public virtual string Sum(string expression)
+        {
+            int totalLength =
+                _keywords.SUM.Length +
+                _keywords.LEFT_PARENTHESIS.Length +
+                expression.Length +
+                _keywords.RIGHT_PARENTHESIS.Length;
+
+            return string.Create(totalLength, expression, (span, expr) =>
+            {
+                int pos = 0;
+
+                _keywords.SUM.AsSpan().CopyTo(span.Slice(pos));
+                pos += _keywords.SUM.Length;
+
+                _keywords.LEFT_PARENTHESIS.AsSpan().CopyTo(span.Slice(pos));
+                pos += _keywords.LEFT_PARENTHESIS.Length;
+
+                expr.AsSpan().CopyTo(span.Slice(pos));
+                pos += expr.Length;
+
+                _keywords.RIGHT_PARENTHESIS.AsSpan().CopyTo(span.Slice(pos));
+            });
+        }
+
+        public virtual string Sum(string expression, string? alias)
+        {
+            string aggregate = Sum(expression);
+            if (string.IsNullOrWhiteSpace(alias))
+            {
+                return aggregate;
+            }
+
+            return $"{aggregate} {_keywords.AS} {alias}";
+        }
     }
 }
