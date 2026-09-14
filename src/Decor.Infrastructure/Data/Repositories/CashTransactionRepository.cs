@@ -57,8 +57,12 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
 
     public async Task<decimal> GetBalanceAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
+        var balanceExpression =
+            $"SUM(CASE WHEN ct.TransactionType = {(int)CashTransactionType.Income} THEN ct.Amount " +
+            $"WHEN ct.TransactionType = {(int)CashTransactionType.Expense} THEN -ct.Amount ELSE 0 END)";
+
         var (sql, parameters) = createCommandBuilder()
-            .Select(s => s.Sum("CASE WHEN ct.TransactionType = 1 THEN ct.Amount WHEN ct.TransactionType = 2 THEN -ct.Amount ELSE 0 END", "Balance"))
+            .Select(s => s.Sum(balanceExpression, "Balance"))
             .From<CashTransaction>()
             .Where(w => w.Equals((CashTransaction t) => t.CashAccountID, cashAccountId))
             .Build();
