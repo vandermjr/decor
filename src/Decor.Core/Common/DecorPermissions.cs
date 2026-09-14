@@ -99,6 +99,12 @@ public static class DecorPermissions
     public const string OrderInstallmentsRegisterPayment = "OrderInstallments.RegisterPayment";
     public const string OrderInstallmentsMarkOverdue = "OrderInstallments.MarkOverdue";
     public const string OrderInstallmentsCancel = "OrderInstallments.Cancel";
+    public const string CashAccountsView = "CashAccounts.View";
+    public const string CashAccountsCreate = "CashAccounts.Create";
+    public const string CashAccountsUpdate = "CashAccounts.Update";
+    public const string CashAccountsDeactivate = "CashAccounts.Deactivate";
+    public const string CashTransactionsView = "CashTransactions.View";
+    public const string CashTransactionsCreate = "CashTransactions.Create";
     public const string OccurrenceReasonsView = "OccurrenceReasons.View";
     public const string OccurrenceReasonsCreate = "OccurrenceReasons.Create";
     public const string OccurrenceReasonsEdit = "OccurrenceReasons.Edit";
