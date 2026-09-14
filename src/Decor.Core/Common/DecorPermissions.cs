@@ -99,6 +99,11 @@ public static class DecorPermissions
     public const string OrderInstallmentsRegisterPayment = "OrderInstallments.RegisterPayment";
     public const string OrderInstallmentsMarkOverdue = "OrderInstallments.MarkOverdue";
     public const string OrderInstallmentsCancel = "OrderInstallments.Cancel";
+    public const string PurchaseOrderInstallmentsView = "PurchaseOrderInstallments.View";
+    public const string PurchaseOrderInstallmentsCreatePlan = "PurchaseOrderInstallments.CreatePlan";
+    public const string PurchaseOrderInstallmentsRegisterPayment = "PurchaseOrderInstallments.RegisterPayment";
+    public const string PurchaseOrderInstallmentsMarkOverdue = "PurchaseOrderInstallments.MarkOverdue";
+    public const string PurchaseOrderInstallmentsCancel = "PurchaseOrderInstallments.Cancel";
     public const string CashAccountsView = "CashAccounts.View";
     public const string CashAccountsCreate = "CashAccounts.Create";
     public const string CashAccountsUpdate = "CashAccounts.Update";

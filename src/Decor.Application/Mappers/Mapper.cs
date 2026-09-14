@@ -132,6 +132,31 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         ReceivedByEmployeeID = dto.ReceivedByEmployeeID
     };
 
+    public static IEnumerable<PurchaseOrderInstallmentDTO> ToDTO(this IEnumerable<PurchaseOrderInstallment> installments) => installments.Select(i => i.ToDTO());
+    public static PurchaseOrderInstallmentDTO ToDTO(this PurchaseOrderInstallment installment) => new(
+        installment.InstallmentID,
+        installment.PurchaseOrderID,
+        installment.PaymentMethodID,
+        installment.InstallmentNumber,
+        installment.Amount,
+        installment.DueDate,
+        installment.Status,
+        installment.PaidAt,
+        installment.PaidByEmployeeID
+    );
+    public static PurchaseOrderInstallment FromDTO(this PurchaseOrderInstallmentDTO dto) => new()
+    {
+        InstallmentID = dto.InstallmentID,
+        PurchaseOrderID = dto.PurchaseOrderID,
+        PaymentMethodID = dto.PaymentMethodID,
+        InstallmentNumber = dto.InstallmentNumber,
+        Amount = dto.Amount,
+        DueDate = dto.DueDate,
+        Status = dto.Status,
+        PaidAt = dto.PaidAt,
+        PaidByEmployeeID = dto.PaidByEmployeeID
+    };
+
     // --- Mapeadores para ProductKitComponent ---
     public static IEnumerable<ProductKitComponentDTO> ToDTO(this IEnumerable<ProductKitComponent> components) => components.Select(c => c.ToDTO());
     public static ProductKitComponentDTO ToDTO(this ProductKitComponent component) => new(component.ComponentID, component.KitProductID, component.ComponentProductID, component.Quantity, component.IsVisibleToCustomer, component.DisplayOrder);
