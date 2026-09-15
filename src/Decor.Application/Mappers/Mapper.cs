@@ -280,8 +280,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
 
     // --- Mapeadores para Employee ---
     public static IEnumerable<EmployeeDTO> ToDTO(this IEnumerable<Employee> employees) => employees.Select(e => e.ToDTO());
-    public static EmployeeDTO ToDTO(this Employee employee) => new(employee.EmployeeID, employee.Name, employee.Document, employee.Phone, employee.IsActive, employee.UserID);
-    public static Employee FromDTO(this EmployeeDTO employeeDto) => new() { EmployeeID = employeeDto.EmployeeID, Name = employeeDto.Name ?? string.Empty, Document = employeeDto.Document, Phone = employeeDto.Phone, IsActive = employeeDto.IsActive, UserID = employeeDto.UserID };
+    public static EmployeeDTO ToDTO(this Employee employee) => new(employee.EmployeeID, employee.Name, employee.JobTitle, employee.BaseSalary, employee.WorkScheduleNote, employee.Document, employee.Phone, employee.IsActive, employee.UserID);
+    public static Employee FromDTO(this EmployeeDTO employeeDto) => new() { EmployeeID = employeeDto.EmployeeID, Name = employeeDto.Name ?? string.Empty, JobTitle = employeeDto.JobTitle, BaseSalary = employeeDto.BaseSalary, WorkScheduleNote = employeeDto.WorkScheduleNote, Document = employeeDto.Document, Phone = employeeDto.Phone, IsActive = employeeDto.IsActive, UserID = employeeDto.UserID };
 
     // --- Mapeadores para Partner ---
     public static IEnumerable<PartnerDTO> ToDTO(this IEnumerable<Partner> partners) => partners.Select(p => p.ToDTO());

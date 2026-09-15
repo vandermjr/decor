@@ -13,6 +13,15 @@ public class Employee
     [Column("Name")]
     public string Name { get; set; } = string.Empty;
 
+    [Column("JobTitle")]
+    public string? JobTitle { get; set; }
+
+    [Column("BaseSalary")]
+    public decimal? BaseSalary { get; set; }
+
+    [Column("WorkScheduleNote")]
+    public string? WorkScheduleNote { get; set; }
+
     [Column("Document")]
     public string? Document { get; set; } // CPF
 

@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations;
 namespace Decor.Core.DTOs;
 public record EmployeeDTO([property: Display(Name = "ID do Funcionário")] int EmployeeID,
                           [property: Display(Name = "Nome")] string? Name,
+                          [property: Display(Name = "Cargo")] string? JobTitle,
+                          [property: Display(Name = "Salário base")] decimal? BaseSalary,
+                          [property: Display(Name = "Observação de horário")] string? WorkScheduleNote,
                           [property: Display(Name = "Documento")] string? Document,
                           [property: Display(Name = "Telefone")] string? Phone,
                           [property: Display(Name = "Ativo")] bool IsActive,

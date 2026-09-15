@@ -28,6 +28,11 @@ public class EmployeeDTOValidator : IDTOValidator<EmployeeDTO>
                 errors.Add("O nome do funcionário não pode exceder 150 caracteres.");
         }
 
+        if (dto.BaseSalary is <= 0)
+        {
+            errors.Add("O salário base, quando informado, deve ser maior que zero.");
+        }
+
         return errors;
     }
 }
