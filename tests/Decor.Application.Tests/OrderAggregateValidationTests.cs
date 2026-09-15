@@ -442,7 +442,7 @@ public sealed class OrderAggregateValidationTests
         public List<int> CancelledOrders { get; } = [];
 
         public Task<OrderInstallmentDTO> GetInstallmentByIdAsync(int installmentId, CancellationToken cancellationToken = default)
-            => Task.FromResult(new OrderInstallmentDTO(installmentId, 1, 1, 1, 100m, DateTime.UtcNow.AddDays(30), OrderInstallmentStatus.Pending, null, null));
+            => Task.FromResult(new OrderInstallmentDTO(installmentId, 1, 1, 1, 100m, DateTime.UtcNow.AddDays(30), OrderInstallmentStatus.Pending, null, null, null));
 
         public Task<IEnumerable<OrderInstallmentDTO>> GetInstallmentsByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
             => Task.FromResult<IEnumerable<OrderInstallmentDTO>>([]);
@@ -450,7 +450,7 @@ public sealed class OrderAggregateValidationTests
         public Task<IEnumerable<OrderInstallmentDTO>> CreateInstallmentPlanAsync(int orderId, IEnumerable<InstallmentItemInputDTO> items, CancellationToken cancellationToken = default)
             => Task.FromResult<IEnumerable<OrderInstallmentDTO>>([]);
 
-        public Task RegisterPaymentAsync(int installmentId, int receivedByEmployeeId, CancellationToken cancellationToken = default)
+        public Task RegisterPaymentAsync(int installmentId, int receivedByEmployeeId, int receivedIntoCashAccountId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
         public Task MarkOverdueAsync(int installmentId, CancellationToken cancellationToken = default)

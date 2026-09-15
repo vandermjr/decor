@@ -41,4 +41,7 @@ public class OrderInstallment
 
     [Column("ReceivedByEmployeeID")]
     public int? ReceivedByEmployeeID { get; set; }
+
+    [Column("ReceivedIntoCashAccountID")]
+    public int? ReceivedIntoCashAccountID { get; set; }
 }

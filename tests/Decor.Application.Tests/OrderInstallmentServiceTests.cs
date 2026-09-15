@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Decor.Application.Mappers;
 using Decor.Application.Services;
 using Decor.Application.Validation;
 using Decor.Core.Common;
@@ -104,12 +105,16 @@ public sealed class OrderInstallmentServiceTests
 
         var service = testContext.CreateService(DecorPermissions.OrderInstallmentsRegisterPayment, DecorPermissions.OrderInstallmentsView);
 
-        await service.RegisterPaymentAsync(5, receivedByEmployeeId: 2);
+        await service.RegisterPaymentAsync(5, receivedByEmployeeId: 2, receivedIntoCashAccountId: 3);
 
         var updated = await service.GetInstallmentByIdAsync(5);
         updated.Status.Should().Be(OrderInstallmentStatus.Paid);
         updated.ReceivedByEmployeeID.Should().Be(2);
+        updated.ReceivedIntoCashAccountID.Should().Be(3);
         updated.PaidAt.Should().NotBeNull();
+        testContext.CashTransactionService.Transactions.Should().ContainSingle(t =>
+            t.CashAccountID == 3 && t.Amount == 100m && t.TransactionType == CashTransactionType.Income &&
+            t.SourceType == "OrderInstallment" && t.SourceID == 5);
     }
 
     [Fact]
@@ -120,7 +125,7 @@ public sealed class OrderInstallmentServiceTests
 
         var service = testContext.CreateService(DecorPermissions.OrderInstallmentsRegisterPayment);
 
-        var act = () => service.RegisterPaymentAsync(5, receivedByEmployeeId: 2);
+        var act = () => service.RegisterPaymentAsync(5, receivedByEmployeeId: 2, receivedIntoCashAccountId: 3);
 
         await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("*Pendente ou Vencida*");
@@ -161,6 +166,7 @@ public sealed class OrderInstallmentServiceTests
         public TrackingOrderInstallmentRepository InstallmentRepo { get; } = new();
         public TrackingOrderRepository OrderRepo { get; } = new();
         public TrackingPaymentMethodRepository PaymentMethodRepo { get; } = new();
+        public TrackingCashTransactionService CashTransactionService { get; } = new();
 
         public OrderInstallmentService CreateService(params string[] permissions)
         {
@@ -170,6 +176,7 @@ public sealed class OrderInstallmentServiceTests
                 PaymentMethodRepo,
                 new OrderInstallmentDTOValidator(),
                 new OrderInstallmentRepositoryValidator(InstallmentRepo),
+                CashTransactionService,
                 new FixedAuthorizationService(permissions)
             );
         }
@@ -267,6 +274,35 @@ public sealed class OrderInstallmentServiceTests
             var item = Installments.FirstOrDefault(i => i.InstallmentID == installmentId);
             return Task.FromResult(item);
         }
+    }
+
+    private sealed class TrackingCashTransactionService : ICashTransactionService
+    {
+        public List<CashTransaction> Transactions { get; } = [];
+
+        public Task<CashTransactionDTO> CreateAsync(int cashAccountId, decimal amount, CashTransactionType transactionType, string? sourceType, int? sourceId, int createdByEmployeeId, DateTime? transactionDate = null, CancellationToken cancellationToken = default)
+        {
+            var transaction = new CashTransaction
+            {
+                CashAccountID = cashAccountId,
+                Amount = amount,
+                TransactionType = transactionType,
+                SourceType = sourceType,
+                SourceID = sourceId,
+                CreatedByEmployeeID = createdByEmployeeId,
+                TransactionDate = transactionDate ?? DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+            Transactions.Add(transaction);
+            return Task.FromResult(transaction.ToDTO());
+        }
+
+        public Task<Guid> CreateTransferAsync(int fromAccountId, int toAccountId, decimal amount, int createdByEmployeeId, string? sourceType = null, int? sourceId = null, DateTime? transactionDate = null, CancellationToken cancellationToken = default)
+            => Task.FromResult(Guid.NewGuid());
+
+        public Task<CashTransactionDTO> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<CashTransactionDTO>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<decimal> GetBalanceAsync(int cashAccountId, CancellationToken cancellationToken = default) => Task.FromResult(Transactions.Where(t => t.CashAccountID == cashAccountId).Sum(t => t.Amount));
     }
 
     private sealed class TrackingOrderRepository : IOrderRepository

@@ -15,6 +15,7 @@ public class OrderInstallmentService(
     IPaymentMethodRepository paymentMethodRepository,
     IDTOValidator<OrderInstallmentDTO> dtoValidator,
     IRepositoryValidator<OrderInstallment> repoValidator,
+    ICashTransactionService cashTransactionService,
     IAuthorizationService authorizationService) : IOrderInstallmentService
 {
     private readonly IOrderInstallmentRepository _orderInstallmentRepository = orderInstallmentRepository;
@@ -22,6 +23,7 @@ public class OrderInstallmentService(
     private readonly IPaymentMethodRepository _paymentMethodRepository = paymentMethodRepository;
     private readonly IDTOValidator<OrderInstallmentDTO> _dtoValidator = dtoValidator;
     private readonly IRepositoryValidator<OrderInstallment> _repoValidator = repoValidator;
+    private readonly ICashTransactionService _cashTransactionService = cashTransactionService;
     private readonly IAuthorizationService _authorizationService = authorizationService;
 
     public async Task<OrderInstallmentDTO> GetInstallmentByIdAsync(int installmentId, CancellationToken cancellationToken = default)
@@ -107,7 +109,7 @@ public class OrderInstallmentService(
         return createdInstallments.ToDTO();
     }
 
-    public async Task RegisterPaymentAsync(int installmentId, int receivedByEmployeeId, CancellationToken cancellationToken = default)
+    public async Task RegisterPaymentAsync(int installmentId, int receivedByEmployeeId, int receivedIntoCashAccountId, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.OrderInstallmentsRegisterPayment);
 
@@ -117,8 +119,18 @@ public class OrderInstallmentService(
         if (installment.Status != OrderInstallmentStatus.Pending && installment.Status != OrderInstallmentStatus.Overdue)
             throw new ValidationException("Apenas parcelas com status Pendente ou Vencida podem ter o pagamento registrado.");
 
+        await _cashTransactionService.CreateAsync(
+            receivedIntoCashAccountId,
+            installment.Amount,
+            CashTransactionType.Income,
+            "OrderInstallment",
+            installment.InstallmentID,
+            receivedByEmployeeId,
+            cancellationToken: cancellationToken);
+
         installment.PaidAt = DateTime.UtcNow;
         installment.ReceivedByEmployeeID = receivedByEmployeeId;
+        installment.ReceivedIntoCashAccountID = receivedIntoCashAccountId;
         installment.Status = OrderInstallmentStatus.Paid;
 
         await _orderInstallmentRepository.SaveAsync(installment, cancellationToken);

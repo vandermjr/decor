@@ -24,6 +24,8 @@ public sealed class PaymentAndInstallmentRepositoryIntegrationTests(MariaDbFixtu
 
         var paymentRepo = new PaymentMethodsRepository(dbConn, () => FluentCommandBuilder.Create(dialect));
         var installmentRepo = new OrderInstallmentRepository(dbConn, () => FluentCommandBuilder.Create(dialect));
+        var cashAccountRepo = new CashAccountRepository(dbConn, () => FluentCommandBuilder.Create(dialect));
+        var cashTransactionRepo = new CashTransactionRepository(dbConn, () => FluentCommandBuilder.Create(dialect));
 
         // 1. Verify seeded PaymentMethods from migration
         var allMethods = await paymentRepo.SearchGetByAsync();
@@ -31,6 +33,11 @@ public sealed class PaymentAndInstallmentRepositoryIntegrationTests(MariaDbFixtu
         allMethods.Should().Contain(p => p.Name == "Boleto");
 
         var pix = allMethods.First(p => p.Name == "PIX");
+
+        var cashAccount = new CashAccount { Name = "Caixa Integracao Parcela", AccountType = CashAccountType.Cash };
+        await cashAccountRepo.SaveAsync(cashAccount);
+        var balanceBefore = await cashTransactionRepo.GetBalanceAsync(cashAccount.CashAccountID);
+        balanceBefore.Should().Be(0m);
 
         // 2. Create customer, quote, section, order
         var customerId = await connection.QuerySingleAsync<int>(
@@ -77,18 +84,36 @@ public sealed class PaymentAndInstallmentRepositoryIntegrationTests(MariaDbFixtu
         installment.Status = OrderInstallmentStatus.Paid;
         installment.PaidAt = DateTime.UtcNow;
         installment.ReceivedByEmployeeID = employeeId;
+        installment.ReceivedIntoCashAccountID = cashAccount.CashAccountID;
         await installmentRepo.SaveAsync(installment);
+
+        await cashTransactionRepo.RegisterAsync(new CashTransaction
+        {
+            CashAccountID = cashAccount.CashAccountID,
+            Amount = installment.Amount,
+            TransactionType = CashTransactionType.Income,
+            SourceType = "OrderInstallment",
+            SourceID = installment.InstallmentID,
+            TransactionDate = DateTime.UtcNow,
+            CreatedByEmployeeID = employeeId,
+            CreatedAt = DateTime.UtcNow
+        });
 
         var fetched = await installmentRepo.GetByIdAsync(installment.InstallmentID);
         fetched.Should().NotBeNull();
         fetched!.Status.Should().Be(OrderInstallmentStatus.Paid);
         fetched.ReceivedByEmployeeID.Should().Be(employeeId);
+        fetched.ReceivedIntoCashAccountID.Should().Be(cashAccount.CashAccountID);
+        var balanceAfter = await cashTransactionRepo.GetBalanceAsync(cashAccount.CashAccountID);
+        balanceAfter.Should().Be(150.00m);
     }
 
     private async Task EnsureTablesAndMigrationAppliedAsync(MySqlConnection connection)
     {
         var migrationsDirectory = Path.Combine(AppContext.BaseDirectory, "Migrations");
         var migrationFile = Path.Combine(migrationsDirectory, "20260911_add_payment_installments.sql");
+        var cashMigrationFile = Path.Combine(migrationsDirectory, "20260914_add_cash_accounts_and_transactions.sql");
+        var orderInstallmentCashMigrationFile = Path.Combine(migrationsDirectory, "20260914_add_order_installment_cash_account.sql");
 
         await connection.ExecuteAsync(@"
             CREATE TABLE IF NOT EXISTS customers (
@@ -139,5 +164,8 @@ public sealed class PaymentAndInstallmentRepositoryIntegrationTests(MariaDbFixtu
             var sql = await File.ReadAllTextAsync(migrationFile);
             await connection.ExecuteAsync(sql);
         }
+
+        await connection.ExecuteAsync(await File.ReadAllTextAsync(cashMigrationFile));
+        await connection.ExecuteAsync(await File.ReadAllTextAsync(orderInstallmentCashMigrationFile));
     }
 }
