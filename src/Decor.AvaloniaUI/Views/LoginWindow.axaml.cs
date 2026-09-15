@@ -4,13 +4,13 @@ using Avalonia.Interactivity;
 using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
+using Decor.AvaloniaUI.Services;
 
 namespace Decor.AvaloniaUI.Views;
 
 public partial class LoginWindow : Window
 {
-    private readonly IServiceProvider? _services;
+    private readonly INavigationService? _navigationService;
 
     public LoginWindow()
     {
@@ -27,18 +27,18 @@ public partial class LoginWindow : Window
         UsernameTextBox.CaretIndex = UsernameTextBox.Text?.Length ?? 0;
     }
 
-    public LoginWindow(LoginViewModel viewModel, IServiceProvider services)
+    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService)
         : this()
     {
         DataContext = viewModel;
-        _services = services;
+        _navigationService = navigationService;
         viewModel.LoginSucceeded += OnLoginSucceeded;
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
     }
 
     private void OnLoginSucceeded(object? sender, EventArgs e)
     {
-        var mainWindow = _services!.GetRequiredService<MainWindow>();
+        var mainWindow = _navigationService!.Resolve<MainWindow>();
         if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = mainWindow;
 
@@ -48,10 +48,10 @@ public partial class LoginWindow : Window
 
     private async void OnPasswordChangeRequired(object? sender, EventArgs e)
     {
-        var changePasswordWindow = _services!.GetRequiredService<ChangePasswordWindow>();
+        var changePasswordWindow = _navigationService!.Resolve<ChangePasswordWindow>();
         changePasswordWindow.Configure(required: true);
         changePasswordWindow.SetSuccessAction(() => OnLoginSucceeded(null, EventArgs.Empty));
-        await changePasswordWindow.ShowDialog(this);
+        await _navigationService.ShowDialogAsync(this, changePasswordWindow);
     }
 
     private async void CopyErrorButton_OnClick(object? sender, RoutedEventArgs e)

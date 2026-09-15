@@ -6,8 +6,8 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
+using Decor.AvaloniaUI.Services;
 using Decor.Core.Interfaces.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Decor.AvaloniaUI;
 
@@ -19,7 +19,7 @@ public partial class MainWindow : Window
         InitializeStatusBarDiagnosticInstrumentation();
     }
 
-    public MainWindow(MainViewModel mainViewModel, IAuthenticatedUserContext authenticatedUserContext, IServiceProvider services)
+    public MainWindow(MainViewModel mainViewModel, IAuthenticatedUserContext authenticatedUserContext, INavigationService navigationService)
         : this()
     {
         if (!authenticatedUserContext.IsAuthenticated || authenticatedUserContext.User!.MustChangePassword)
@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         DataContext = mainViewModel;
         authenticatedUserContext.SignedOut += (_, _) =>
         {
-            var loginWindow = services.GetRequiredService<LoginWindow>();
+            var loginWindow = navigationService.Resolve<LoginWindow>();
             if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 desktop.MainWindow = loginWindow;
             loginWindow.Show();
@@ -36,9 +36,9 @@ public partial class MainWindow : Window
         };
         mainViewModel.PasswordChangeRequested += async (_, _) =>
         {
-            var changePasswordWindow = services.GetRequiredService<ChangePasswordWindow>();
+            var changePasswordWindow = navigationService.Resolve<ChangePasswordWindow>();
             changePasswordWindow.Configure(required: false);
-            await changePasswordWindow.ShowDialog(this);
+            await navigationService.ShowDialogAsync(this, changePasswordWindow);
         };
     }
 

@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Decor.AvaloniaUI.Views;
+using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 using System.Windows.Input;
@@ -13,19 +14,19 @@ namespace Decor.AvaloniaUI.ViewModels;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
-    private readonly IServiceProvider _services;
+    private readonly INavigationService _navigationService;
     private readonly IThemeService _themeService;
     private readonly IAuthenticatedUserContext _authenticatedUserContext;
     private WorkspaceDocumentViewModel? _activeDocument;
     private IStatusBarSource? _statusSource;
 
     public MainViewModel(
-        IServiceProvider services,
+        INavigationService navigationService,
         IThemeService themeService,
         IAuthorizationService authorizationService,
         IAuthenticatedUserContext authenticatedUserContext)
     {
-        _services = services;
+        _navigationService = navigationService;
         _themeService = themeService;
         _authenticatedUserContext = authenticatedUserContext;
 
@@ -165,7 +166,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private TView CreateView<TView>() where TView : Control =>
-        (TView)_services.GetService(typeof(TView))!;
+        _navigationService.Resolve<TView>();
 
     private void OpenDocument(string key, string title, Control content)
     {

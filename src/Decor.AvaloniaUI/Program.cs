@@ -3,6 +3,7 @@ using Decor.Application.CrossCutting.IoC;
 using Decor.Core.Configuration;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
+using Decor.AvaloniaUI.Services;
 using Decor.Infrastructure.CrossCutting.IoC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +53,7 @@ internal static class Program
                 services.AddTransient<ChangePasswordViewModel>();
                 services.AddTransient<ChangePasswordWindow>();
                 services.AddTransient<MainWindow>();
+                services.AddSingleton<INavigationService, NavigationService>();
             })
             .Build();
 
