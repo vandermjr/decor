@@ -16,6 +16,7 @@ public class PurchaseOrderInstallmentService(
     IPaymentMethodRepository paymentMethodRepository,
     IDTOValidator<PurchaseOrderInstallmentDTO> dtoValidator,
     IRepositoryValidator<PurchaseOrderInstallment> repoValidator,
+    ICashTransactionService cashTransactionService,
     IAuthorizationService authorizationService) : IPurchaseOrderInstallmentService
 {
     public async Task<PurchaseOrderInstallmentDTO> GetInstallmentByIdAsync(int installmentId, CancellationToken cancellationToken = default)
@@ -77,14 +78,14 @@ public class PurchaseOrderInstallmentService(
         return created.ToDTO();
     }
 
-    public Task RegisterPaymentAsync(int installmentId, int paidByEmployeeId, CancellationToken cancellationToken = default)
-        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Paid, DecorPermissions.PurchaseOrderInstallmentsRegisterPayment, "Pendente ou Vencida", paidByEmployeeId, cancellationToken);
+    public Task RegisterPaymentAsync(int installmentId, int paidByEmployeeId, int paidFromCashAccountId, CancellationToken cancellationToken = default)
+        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Paid, DecorPermissions.PurchaseOrderInstallmentsRegisterPayment, "Pendente ou Vencida", paidByEmployeeId, paidFromCashAccountId, cancellationToken);
 
     public Task MarkOverdueAsync(int installmentId, CancellationToken cancellationToken = default)
-        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Overdue, DecorPermissions.PurchaseOrderInstallmentsMarkOverdue, "Pendente", null, cancellationToken);
+        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Overdue, DecorPermissions.PurchaseOrderInstallmentsMarkOverdue, "Pendente", null, null, cancellationToken);
 
     public Task CancelInstallmentAsync(int installmentId, CancellationToken cancellationToken = default)
-        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Cancelled, DecorPermissions.PurchaseOrderInstallmentsCancel, "Pendente ou Vencida", null, cancellationToken);
+        => ChangeStatusAsync(installmentId, PurchaseOrderInstallmentStatus.Cancelled, DecorPermissions.PurchaseOrderInstallmentsCancel, "Pendente ou Vencida", null, null, cancellationToken);
 
     public async Task CancelInstallmentsForPurchaseOrderAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
@@ -98,7 +99,7 @@ public class PurchaseOrderInstallmentService(
         }
     }
 
-    private async Task ChangeStatusAsync(int id, PurchaseOrderInstallmentStatus status, string permission, string allowedStatuses, int? paidByEmployeeId, CancellationToken cancellationToken)
+    private async Task ChangeStatusAsync(int id, PurchaseOrderInstallmentStatus status, string permission, string allowedStatuses, int? paidByEmployeeId, int? paidFromCashAccountId, CancellationToken cancellationToken)
     {
         Require(permission);
         var installment = await installmentRepository.GetByIdAsync(id, cancellationToken)
@@ -107,11 +108,23 @@ public class PurchaseOrderInstallmentService(
             ? installment.Status == PurchaseOrderInstallmentStatus.Pending
             : installment.Status is PurchaseOrderInstallmentStatus.Pending or PurchaseOrderInstallmentStatus.Overdue;
         if (!allowed) throw new ValidationException($"Apenas parcelas com status {allowedStatuses} podem sofrer esta operação.");
+        if (status == PurchaseOrderInstallmentStatus.Paid)
+        {
+            await cashTransactionService.CreateAsync(
+                paidFromCashAccountId!.Value,
+                installment.Amount,
+                CashTransactionType.Expense,
+                "PurchaseOrderInstallment",
+                installment.InstallmentID,
+                paidByEmployeeId!.Value,
+                cancellationToken: cancellationToken);
+        }
         installment.Status = status;
         if (status == PurchaseOrderInstallmentStatus.Paid)
         {
             installment.PaidAt = DateTime.UtcNow;
             installment.PaidByEmployeeID = paidByEmployeeId;
+            installment.PaidFromCashAccountID = paidFromCashAccountId;
         }
         await installmentRepository.SaveAsync(installment, cancellationToken);
     }

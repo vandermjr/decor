@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Decor.Application.Mappers;
 using Decor.Application.Services;
 using Decor.Application.Validation;
 using Decor.Core.Common;
@@ -49,12 +50,16 @@ public sealed class PurchaseOrderInstallmentServiceTests
         context.Installments.Add(new PurchaseOrderInstallment { InstallmentID = 5, PurchaseOrderID = 10, PaymentMethodID = 1, InstallmentNumber = 1, Amount = 100m, DueDate = DateTime.UtcNow.AddDays(10), Status = PurchaseOrderInstallmentStatus.Pending });
 
         await context.CreateService(DecorPermissions.PurchaseOrderInstallmentsRegisterPayment)
-            .RegisterPaymentAsync(5, 42);
+            .RegisterPaymentAsync(5, 42, 3);
 
         var installment = context.Installments.Single();
         installment.Status.Should().Be(PurchaseOrderInstallmentStatus.Paid);
         installment.PaidByEmployeeID.Should().Be(42);
+        installment.PaidFromCashAccountID.Should().Be(3);
         installment.PaidAt.Should().NotBeNull();
+        context.CashTransactions.Should().ContainSingle(t =>
+            t.CashAccountID == 3 && t.Amount == 100m && t.TransactionType == CashTransactionType.Expense &&
+            t.SourceType == "PurchaseOrderInstallment" && t.SourceID == 5);
     }
 
     private sealed class TestContext
@@ -63,10 +68,26 @@ public sealed class PurchaseOrderInstallmentServiceTests
         public List<PurchaseOrderItem> Items { get; } = [];
         public List<PurchaseOrderInstallment> Installments { get; } = [];
         public List<PaymentMethod> PaymentMethods { get; } = [];
+        public List<CashTransaction> CashTransactions { get; } = [];
 
         public PurchaseOrderInstallmentService CreateService(params string[] permissions) => new(
             new InstallmentRepository(Installments), new PurchaseOrderRepository(Orders), new ItemRepository(Items), new PaymentMethodRepository(PaymentMethods),
-            new PurchaseOrderInstallmentDTOValidator(), new PurchaseOrderInstallmentRepositoryValidator(), new AuthorizationService(permissions));
+            new PurchaseOrderInstallmentDTOValidator(), new PurchaseOrderInstallmentRepositoryValidator(), new TrackingCashTransactionService(CashTransactions), new AuthorizationService(permissions));
+    }
+
+    private sealed class TrackingCashTransactionService(List<CashTransaction> transactions) : ICashTransactionService
+    {
+        public Task<CashTransactionDTO> CreateAsync(int cashAccountId, decimal amount, CashTransactionType transactionType, string? sourceType, int? sourceId, int createdByEmployeeId, DateTime? transactionDate = null, CancellationToken cancellationToken = default)
+        {
+            var transaction = new CashTransaction { CashAccountID = cashAccountId, Amount = amount, TransactionType = transactionType, SourceType = sourceType, SourceID = sourceId, CreatedByEmployeeID = createdByEmployeeId, TransactionDate = transactionDate ?? DateTime.UtcNow, CreatedAt = DateTime.UtcNow };
+            transactions.Add(transaction);
+            return Task.FromResult(transaction.ToDTO());
+        }
+
+        public Task<Guid> CreateTransferAsync(int fromAccountId, int toAccountId, decimal amount, int createdByEmployeeId, string? sourceType = null, int? sourceId = null, DateTime? transactionDate = null, CancellationToken cancellationToken = default) => Task.FromResult(Guid.NewGuid());
+        public Task<CashTransactionDTO> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<CashTransactionDTO>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<decimal> GetBalanceAsync(int cashAccountId, CancellationToken cancellationToken = default) => Task.FromResult(transactions.Where(t => t.CashAccountID == cashAccountId).Sum(t => t.TransactionType == CashTransactionType.Expense ? -t.Amount : t.Amount));
     }
 
     private sealed class InstallmentRepository(List<PurchaseOrderInstallment> items) : IPurchaseOrderInstallmentRepository

@@ -12,5 +12,6 @@ public record PurchaseOrderInstallmentDTO(
     [property: Display(Name = "Data de Vencimento")] DateTime DueDate,
     [property: Display(Name = "Status")] PurchaseOrderInstallmentStatus Status,
     [property: Display(Name = "Data do Pagamento")] DateTime? PaidAt,
-    [property: Display(Name = "ID do Funcionário Pagador")] int? PaidByEmployeeID
+    [property: Display(Name = "ID do Funcionário Pagador")] int? PaidByEmployeeID,
+    [property: Display(Name = "ID da Conta de Caixa de Pagamento")] int? PaidFromCashAccountID
 );

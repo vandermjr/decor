@@ -41,4 +41,7 @@ public class PurchaseOrderInstallment
 
     [Column("PaidByEmployeeID")]
     public int? PaidByEmployeeID { get; set; }
+
+    [Column("PaidFromCashAccountID")]
+    public int? PaidFromCashAccountID { get; set; }
 }

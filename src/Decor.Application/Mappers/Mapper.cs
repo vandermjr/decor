@@ -144,7 +144,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         installment.DueDate,
         installment.Status,
         installment.PaidAt,
-        installment.PaidByEmployeeID
+        installment.PaidByEmployeeID,
+        installment.PaidFromCashAccountID
     );
     public static PurchaseOrderInstallment FromDTO(this PurchaseOrderInstallmentDTO dto) => new()
     {
@@ -156,7 +157,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         DueDate = dto.DueDate,
         Status = dto.Status,
         PaidAt = dto.PaidAt,
-        PaidByEmployeeID = dto.PaidByEmployeeID
+        PaidByEmployeeID = dto.PaidByEmployeeID,
+        PaidFromCashAccountID = dto.PaidFromCashAccountID
     };
 
     public static AccountsPayableDTO ToDTO(this AccountsPayable payable) => new(
