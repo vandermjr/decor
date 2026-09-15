@@ -6,7 +6,7 @@ using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
-public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IGoodsReceiptRepository
+public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IGoodsReceiptRepository, ITransactionalGoodsReceiptRepository
 {
     public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, CancellationToken cancellationToken = default)
     {
@@ -18,6 +18,12 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
 
         using var connection = databaseConnection.CreateConnection();
         return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
+
+    public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = createCommandBuilder().Insert().Into<GoodsReceipt>().Values(goodsReceipt).ReturningGeneratedId().Build();
+        return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<GoodsReceipt?> GetByIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)

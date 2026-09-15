@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using Decor.Application.Mappers;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Repositories;
 using Decor.Core.Interfaces.Services;
+using Decor.Core.Interfaces.Data;
 
 namespace Decor.Application.Services;
 
@@ -12,17 +14,18 @@ public class GoodsReceiptService(
     IGoodsReceiptRepository goodsReceiptRepository,
     IPurchaseOrderItemRepository purchaseOrderItemRepository,
     IStockMovementService stockMovementService,
-    IAuthorizationService authorizationService) : IGoodsReceiptService
+    IAuthorizationService authorizationService,
+    IDatabaseConnection databaseConnection,
+    ITransactionalGoodsReceiptRepository? transactionalGoodsReceiptRepository = null,
+    ITransactionalStockMovementService? transactionalStockMovementService = null) : IGoodsReceiptService
 {
     private readonly IGoodsReceiptRepository _goodsReceiptRepository = goodsReceiptRepository;
     private readonly IPurchaseOrderItemRepository _purchaseOrderItemRepository = purchaseOrderItemRepository;
     private readonly IStockMovementService _stockMovementService = stockMovementService;
     private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly ITransactionalGoodsReceiptRepository? _transactionalGoodsReceiptRepository = transactionalGoodsReceiptRepository;
+    private readonly ITransactionalStockMovementService? _transactionalStockMovementService = transactionalStockMovementService;
 
-    // NOTA: não há transação compartilhada entre o GoodsReceiptRepository
-    // e o IStockMovementService. O recebimento é persistido primeiro; se a
-    // entrada no estoque falhar, o recebimento pode ficar órfão de estoque.
-    // Reconciliação/idempotência ficam fora de escopo (ver Md/, Fase P3).
     public async Task<int> RegisterReceiptAsync(int purchaseOrderItemId, decimal quantityReceived, int receivedByEmployeeId, bool hasDivergence, string? divergenceNotes = null, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.GoodsReceiptsRegister);
@@ -46,6 +49,34 @@ public class GoodsReceiptService(
             Status = hasDivergence ? GoodsReceiptStatus.DivergenteDevolvido : GoodsReceiptStatus.Conferido
         };
 
+        if (_transactionalGoodsReceiptRepository is null || _transactionalStockMovementService is null)
+            return await RegisterWithoutExternalTransactionAsync(goodsReceipt, purchaseOrderItem, quantityReceived, receivedByEmployeeId, hasDivergence, cancellationToken);
+
+        using var connection = databaseConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var goodsReceiptId = await _transactionalGoodsReceiptRepository.InsertAsync(goodsReceipt, connection, transaction, cancellationToken);
+            if (!hasDivergence && purchaseOrderItem.FinalDestination == PurchaseOrderFinalDestination.DepositoEmpresa)
+            {
+                await _transactionalStockMovementService.RegisterEntryAsync(
+                    purchaseOrderItem.ProductID, purchaseOrderItem.StockLocationID!.Value, quantityReceived,
+                    receivedByEmployeeId, $"Recebimento do Pedido de Compra #{purchaseOrderItem.PurchaseOrderID}",
+                    connection, transaction, cancellationToken);
+            }
+            transaction.Commit();
+            return goodsReceiptId;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    private async Task<int> RegisterWithoutExternalTransactionAsync(GoodsReceipt goodsReceipt, PurchaseOrderItem purchaseOrderItem, decimal quantityReceived, int receivedByEmployeeId, bool hasDivergence, CancellationToken cancellationToken)
+    {
         var goodsReceiptId = await _goodsReceiptRepository.InsertAsync(goodsReceipt, cancellationToken);
         if (!hasDivergence && purchaseOrderItem.FinalDestination == PurchaseOrderFinalDestination.DepositoEmpresa)
         {

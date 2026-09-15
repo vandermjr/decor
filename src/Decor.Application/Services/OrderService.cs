@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using Decor.Application.Mappers;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Repositories;
 using Decor.Core.Interfaces.Services;
+using Decor.Core.Interfaces.Data;
 using Decor.Core.Validation;
 
 namespace Decor.Application.Services;
@@ -17,7 +19,10 @@ public class OrderService(
     IOrderInstallmentService orderInstallmentService,
     IDTOValidator<OrderDTO> dtoValidator,
     IRepositoryValidator<Order> repoValidator,
-    IAuthorizationService authorizationService) : IOrderService
+    IAuthorizationService authorizationService,
+    IDatabaseConnection? databaseConnection = null,
+    ITransactionalOrderRepository? transactionalOrderRepository = null,
+    ITransactionalQuoteRepository? transactionalQuoteRepository = null) : IOrderService
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
@@ -27,6 +32,9 @@ public class OrderService(
     private readonly IDTOValidator<OrderDTO> _dtoValidator = dtoValidator;
     private readonly IRepositoryValidator<Order> _repoValidator = repoValidator;
     private readonly IAuthorizationService _authorizationService = authorizationService;
+    private readonly IDatabaseConnection? _databaseConnection = databaseConnection;
+    private readonly ITransactionalOrderRepository? _transactionalOrderRepository = transactionalOrderRepository;
+    private readonly ITransactionalQuoteRepository? _transactionalQuoteRepository = transactionalQuoteRepository;
 
     public async Task<IEnumerable<OrderDTO>> SearchOrdersAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
@@ -87,45 +95,82 @@ public class OrderService(
         if (repoErrors.Any())
             throw new ValidationException(string.Join("\n", repoErrors));
 
-        await _orderRepository.SaveAsync(order, cancellationToken);
-
-        foreach (var quoteItem in fullSection.Items)
+        if (_transactionalOrderRepository is null || _transactionalQuoteRepository is null)
         {
-            var orderItem = new OrderItem
-            {
-                OrderID = order.OrderID,
-                QuoteItemID = quoteItem.QuoteItemID,
-                ProductID = quoteItem.ProductID,
-                Quantity = quoteItem.Quantity,
-                UnitPrice = quoteItem.UnitPrice ?? 0m,
-                HasInstallationService = quoteItem.HasInstallationService,
-                SentToProductionAt = null,
-                SentToProductionByEmployeeID = null,
-                SpecificationValues = new List<OrderItemSpecificationValue>()
-            };
+            await SaveWithoutExternalTransactionAsync(order, fullSection, section, cancellationToken);
+            return order.ToDTO();
+        }
 
-            await _orderRepository.SaveOrderItemAsync(orderItem, cancellationToken);
+        using var connection = (_databaseConnection ?? throw new InvalidOperationException("A conexão de banco é necessária para conversão transacional.")).CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            await _transactionalOrderRepository.SaveAsync(order, connection, transaction, cancellationToken);
 
-            foreach (var specValue in quoteItem.SpecificationValues)
+            foreach (var quoteItem in fullSection.Items)
             {
-                var orderSpecValue = new OrderItemSpecificationValue
+                var orderItem = new OrderItem
                 {
-                    OrderItemID = orderItem.OrderItemID,
-                    AttributeID = specValue.AttributeID,
-                    Value = specValue.Value
+                    OrderID = order.OrderID,
+                    QuoteItemID = quoteItem.QuoteItemID,
+                    ProductID = quoteItem.ProductID,
+                    Quantity = quoteItem.Quantity,
+                    UnitPrice = quoteItem.UnitPrice ?? 0m,
+                    HasInstallationService = quoteItem.HasInstallationService,
+                    SentToProductionAt = null,
+                    SentToProductionByEmployeeID = null,
+                    SpecificationValues = new List<OrderItemSpecificationValue>()
                 };
 
+                await _transactionalOrderRepository.SaveOrderItemAsync(orderItem, connection, transaction, cancellationToken);
+
+                foreach (var specValue in quoteItem.SpecificationValues)
+                {
+                    var orderSpecValue = new OrderItemSpecificationValue
+                    {
+                        OrderItemID = orderItem.OrderItemID,
+                        AttributeID = specValue.AttributeID,
+                        Value = specValue.Value
+                    };
+
+                    await _transactionalOrderRepository.SaveSpecificationValueAsync(orderSpecValue, connection, transaction, cancellationToken);
+                    orderItem.SpecificationValues.Add(orderSpecValue);
+                }
+
+                order.Items.Add(orderItem);
+            }
+
+            section.Status = QuoteSectionStatus.ConvertedToOrder;
+            await _transactionalQuoteRepository.SaveSectionAsync(section, connection, transaction, cancellationToken);
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+
+        return order.ToDTO();
+    }
+
+    private async Task SaveWithoutExternalTransactionAsync(Order order, QuoteSection fullSection, QuoteSection section, CancellationToken cancellationToken)
+    {
+        await _orderRepository.SaveAsync(order, cancellationToken);
+        foreach (var quoteItem in fullSection.Items)
+        {
+            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, Quantity = quoteItem.Quantity, UnitPrice = quoteItem.UnitPrice ?? 0m, HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
+            await _orderRepository.SaveOrderItemAsync(orderItem, cancellationToken);
+            foreach (var specValue in quoteItem.SpecificationValues)
+            {
+                var orderSpecValue = new OrderItemSpecificationValue { OrderItemID = orderItem.OrderItemID, AttributeID = specValue.AttributeID, Value = specValue.Value };
                 await _orderRepository.SaveSpecificationValueAsync(orderSpecValue, cancellationToken);
                 orderItem.SpecificationValues.Add(orderSpecValue);
             }
-
             order.Items.Add(orderItem);
         }
-
         section.Status = QuoteSectionStatus.ConvertedToOrder;
         await _quoteRepository.SaveSectionAsync(section, cancellationToken);
-
-        return order.ToDTO();
     }
 
     public async Task ApproveOrderAsync(int orderId, bool requiresDownPayment, DateTime? manufacturingDeadline = null, DateTime? installationDeadline = null, CancellationToken cancellationToken = default)

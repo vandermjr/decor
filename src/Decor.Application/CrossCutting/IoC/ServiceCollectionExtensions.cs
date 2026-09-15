@@ -1,5 +1,6 @@
 using Decor.Application.Services;
 using Decor.Core.Interfaces.Services;
+using Decor.Core.Interfaces.Repositories;
 using Decor.Core.Validation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,6 +36,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IPasswordPolicy, PasswordPolicy>();
+
+        services.AddTransient<ITransactionalOrderRepository>(sp => (ITransactionalOrderRepository)sp.GetRequiredService<IOrderRepository>());
+        services.AddTransient<ITransactionalQuoteRepository>(sp => (ITransactionalQuoteRepository)sp.GetRequiredService<IQuoteRepository>());
+        services.AddTransient<ITransactionalGoodsReceiptRepository>(sp => (ITransactionalGoodsReceiptRepository)sp.GetRequiredService<IGoodsReceiptRepository>());
+        services.AddTransient<ITransactionalStockMovementService>(sp => (ITransactionalStockMovementService)sp.GetRequiredService<IStockMovementService>());
 
         return services;
     }

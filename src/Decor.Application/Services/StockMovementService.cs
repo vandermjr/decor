@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using Decor.Application.Mappers;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
@@ -8,7 +9,7 @@ using Decor.Core.Interfaces.Services;
 
 namespace Decor.Application.Services;
 
-public class StockMovementService(IStockMovementRepository stockMovementRepository, IAuthorizationService authorizationService) : IStockMovementService
+public class StockMovementService(IStockMovementRepository stockMovementRepository, IAuthorizationService authorizationService) : IStockMovementService, ITransactionalStockMovementService
 {
     private readonly IStockMovementRepository _stockMovementRepository = stockMovementRepository;
     private readonly IAuthorizationService _authorizationService = authorizationService;
@@ -31,6 +32,26 @@ public class StockMovementService(IStockMovementRepository stockMovementReposito
         };
 
         return await _stockMovementRepository.RegisterMovementAsync(movement, cancellationToken);
+    }
+
+    public async Task<int> RegisterEntryAsync(int productId, int stockLocationId, decimal quantity, int performedByEmployeeId, string? notes, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        Require(DecorPermissions.StockMovementsEntry);
+        if (quantity <= 0)
+            throw new ValidationException("A quantidade de entrada deve ser maior que zero.");
+
+        var movement = new StockMovement
+        {
+            ProductID = productId,
+            StockLocationID = stockLocationId,
+            Quantity = quantity,
+            MovementType = StockMovementType.Entrada,
+            PerformedByEmployeeID = performedByEmployeeId,
+            MovementDate = DateTime.UtcNow,
+            Notes = notes
+        };
+
+        return await ((ITransactionalStockMovementRepository)_stockMovementRepository).RegisterMovementAsync(movement, connection, transaction, cancellationToken);
     }
 
     public async Task<int> RegisterExitAsync(int productId, int stockLocationId, decimal quantity, int performedByEmployeeId, string? notes = null, CancellationToken cancellationToken = default)

@@ -6,7 +6,7 @@ using Decor.Core.Interfaces.Repositories;
 using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
-public sealed class StockMovementRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IStockMovementRepository
+public sealed class StockMovementRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IStockMovementRepository, ITransactionalStockMovementRepository
 {
     public async Task<int> RegisterMovementAsync(StockMovement movement, CancellationToken cancellationToken = default)
     {
@@ -26,6 +26,13 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task<int> RegisterMovementAsync(StockMovement movement, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        var id = await InsertMovementAsync(connection, transaction, movement, cancellationToken);
+        await ApplyMovementToBalanceAsync(connection, transaction, movement, cancellationToken);
+        return id;
     }
 
     public async Task<Guid> RegisterTransferAsync(StockMovement outboundMovement, StockMovement inboundMovement, CancellationToken cancellationToken = default)

@@ -9,7 +9,7 @@ namespace Decor.Infrastructure.Data.Repositories;
 public class OrderOccurrenceRepository(
     IDatabaseConnection dbConnection,
     Func<FluentCommandBuilder> createCommandBuilder,
-    IOrderRepository orderRepository) : IOrderOccurrenceRepository
+    ITransactionalOrderRepository orderRepository) : IOrderOccurrenceRepository
 {
     public int Save(OrderOccurrence entity)
     {

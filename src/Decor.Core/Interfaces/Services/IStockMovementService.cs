@@ -1,3 +1,4 @@
+using System.Data;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 
@@ -13,4 +14,9 @@ public interface IStockMovementService
     Task<StockMovementDTO> GetByIdAsync(int stockMovementId, CancellationToken cancellationToken = default);
     Task<IEnumerable<StockMovementDTO>> GetByProductAsync(int productId, CancellationToken cancellationToken = default);
     Task<IEnumerable<StockMovementDTO>> GetByTransferIdAsync(Guid transferId, CancellationToken cancellationToken = default);
+}
+
+public interface ITransactionalStockMovementService
+{
+    Task<int> RegisterEntryAsync(int productId, int stockLocationId, decimal quantity, int performedByEmployeeId, string? notes, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default);
 }

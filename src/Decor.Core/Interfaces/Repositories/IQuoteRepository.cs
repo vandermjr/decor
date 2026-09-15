@@ -1,3 +1,4 @@
+using System.Data;
 using Decor.Core.Entities;
 
 namespace Decor.Core.Interfaces.Repositories;
@@ -13,4 +14,9 @@ public interface IQuoteRepository : IRepository<Quote>
     Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default);
     Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default);
     Task<int> SaveSpecificationValueAsync(QuoteItemSpecificationValue value, CancellationToken cancellationToken = default);
+}
+
+public interface ITransactionalQuoteRepository
+{
+    Task<int> SaveSectionAsync(QuoteSection section, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default);
 }

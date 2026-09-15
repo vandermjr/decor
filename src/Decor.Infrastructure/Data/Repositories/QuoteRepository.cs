@@ -6,7 +6,7 @@ using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
-public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IQuoteRepository
+public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IQuoteRepository, ITransactionalQuoteRepository
 {
     private readonly IDatabaseConnection _dbConnection = dbConnection;
     private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
@@ -252,6 +252,20 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             section.QuoteSectionID = generatedId;
             return 1;
         }
+    }
+
+    public async Task<int> SaveSectionAsync(QuoteSection section, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        if (section.QuoteSectionID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder().Update().Table<QuoteSection>().Set(section)
+                .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, section.QuoteSectionID)).Build();
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<QuoteSection>().Values(section).ReturningGeneratedId().Build();
+        section.QuoteSectionID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
+        return 1;
     }
 
     public async Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default)

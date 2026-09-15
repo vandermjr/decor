@@ -6,7 +6,7 @@ using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
-public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IOrderRepository
+public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IOrderRepository, ITransactionalOrderRepository
 {
     private readonly IDatabaseConnection _dbConnection = dbConnection;
     private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
@@ -44,7 +44,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         return await SaveAsync(entity, connection, null, cancellationToken);
     }
 
-    public async Task<int> SaveAsync(Order entity, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
+    public async Task<int> SaveAsync(Order entity, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
     {
         if (entity.OrderID != 0)
         {
@@ -218,6 +218,20 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         }
     }
 
+    public async Task<int> SaveOrderItemAsync(OrderItem item, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        if (item.OrderItemID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder().Update().Table<OrderItem>().Set(item)
+                .Where(w => w.Equals((OrderItem i) => i.OrderItemID, item.OrderItemID)).Build();
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<OrderItem>().Values(item).ReturningGeneratedId().Build();
+        item.OrderItemID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
+        return 1;
+    }
+
     public async Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, CancellationToken cancellationToken = default)
     {
         using var connection = _dbConnection.CreateConnection();
@@ -243,6 +257,20 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
             value.ValueID = generatedId;
             return 1;
         }
+    }
+
+    public async Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        if (value.ValueID != 0)
+        {
+            var (sql, parameters) = _createCommandBuilder().Update().Table<OrderItemSpecificationValue>().Set(value)
+                .Where(w => w.Equals((OrderItemSpecificationValue v) => v.ValueID, value.ValueID)).Build();
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<OrderItemSpecificationValue>().Values(value).ReturningGeneratedId().Build();
+        value.ValueID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
+        return 1;
     }
 
     private static void ValidatePage(int page, int pageSize)
