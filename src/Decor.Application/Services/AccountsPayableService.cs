@@ -17,6 +17,7 @@ public class AccountsPayableService(
     IServiceExecutionRecordRepository serviceExecutionRecordRepository,
     IDTOValidator<AccountsPayableDTO> dtoValidator,
     IRepositoryValidator<AccountsPayable> repositoryValidator,
+    ICashTransactionService cashTransactionService,
     IAuthorizationService authorizationService) : IAccountsPayableService
 {
     public async Task<AccountsPayableDTO> CreateAsync(AccountsPayableDTO dto, CancellationToken cancellationToken = default)
@@ -51,13 +52,13 @@ public class AccountsPayableService(
         return entity.ToDTO();
     }
 
-    public Task RegisterPaymentAsync(int id, int paidByEmployeeId, CancellationToken cancellationToken = default)
-        => ChangeStatusAsync(id, AccountsPayableStatus.Paid, DecorPermissions.AccountsPayableRegisterPayment, paidByEmployeeId, cancellationToken);
+    public Task RegisterPaymentAsync(int id, int paidByEmployeeId, int paidFromCashAccountId, CancellationToken cancellationToken = default)
+        => ChangeStatusAsync(id, AccountsPayableStatus.Paid, DecorPermissions.AccountsPayableRegisterPayment, paidByEmployeeId, paidFromCashAccountId, cancellationToken);
 
     public Task CancelAsync(int id, CancellationToken cancellationToken = default)
-        => ChangeStatusAsync(id, AccountsPayableStatus.Cancelled, DecorPermissions.AccountsPayableCancel, null, cancellationToken);
+        => ChangeStatusAsync(id, AccountsPayableStatus.Cancelled, DecorPermissions.AccountsPayableCancel, null, null, cancellationToken);
 
-    private async Task ChangeStatusAsync(int id, AccountsPayableStatus status, string permission, int? paidByEmployeeId, CancellationToken cancellationToken)
+    private async Task ChangeStatusAsync(int id, AccountsPayableStatus status, string permission, int? paidByEmployeeId, int? paidFromCashAccountId, CancellationToken cancellationToken)
     {
         Require(permission);
         var entity = await repository.GetByIdAsync(id, cancellationToken)
@@ -67,8 +68,17 @@ public class AccountsPayableService(
         entity.Status = status;
         if (status == AccountsPayableStatus.Paid)
         {
+            await cashTransactionService.CreateAsync(
+                paidFromCashAccountId!.Value,
+                entity.Amount,
+                CashTransactionType.Expense,
+                "AccountsPayable",
+                entity.AccountsPayableID,
+                paidByEmployeeId!.Value,
+                cancellationToken: cancellationToken);
             entity.PaidAt = DateTime.UtcNow;
             entity.PaidByEmployeeID = paidByEmployeeId;
+            entity.PaidFromCashAccountID = paidFromCashAccountId;
         }
         await repository.SaveAsync(entity, cancellationToken);
     }

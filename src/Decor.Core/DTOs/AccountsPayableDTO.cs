@@ -16,5 +16,6 @@ public record AccountsPayableDTO(
     [property: Display(Name = "Criado por")] int CreatedByEmployeeID,
     [property: Display(Name = "Criado em")] DateTime CreatedAt,
     [property: Display(Name = "Pago em")] DateTime? PaidAt,
-    [property: Display(Name = "Pago por")] int? PaidByEmployeeID
+    [property: Display(Name = "Pago por")] int? PaidByEmployeeID,
+    [property: Display(Name = "ID da Conta de Caixa de Pagamento")] int? PaidFromCashAccountID
 );

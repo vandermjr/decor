@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Decor.Application.Mappers;
 using Decor.Application.Services;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
@@ -62,11 +63,14 @@ public sealed class AccountsPayableServiceTests
         var context = new TestContext();
         context.Payables.Add(context.Entity(AccountsPayableStatus.Pending));
 
-        await context.Service(DecorPermissions.AccountsPayableRegisterPayment).RegisterPaymentAsync(1, 42);
+        await context.Service(DecorPermissions.AccountsPayableRegisterPayment).RegisterPaymentAsync(1, 42, 3);
 
         context.Payables.Single().Status.Should().Be(AccountsPayableStatus.Paid);
         context.Payables.Single().PaidByEmployeeID.Should().Be(42);
         context.Payables.Single().PaidAt.Should().NotBeNull();
+        context.CashTransactions.Should().ContainSingle(t =>
+            t.CashAccountID == 3 && t.Amount == 100m && t.TransactionType == CashTransactionType.Expense &&
+            t.SourceType == "AccountsPayable" && t.SourceID == 1 && t.CreatedByEmployeeID == 42);
     }
 
     [Fact]
@@ -94,16 +98,17 @@ public sealed class AccountsPayableServiceTests
     private sealed class TestContext
     {
         public List<AccountsPayable> Payables { get; } = [];
+        public List<CashTransaction> CashTransactions { get; } = [];
         public List<Employee> Employees { get; } = [new() { EmployeeID = 42, Name = "Employee", IsActive = true }];
         public List<Partner> Partners { get; } = [new() { PartnerID = 10, Name = "Partner", IsActive = true }];
         public List<TailorQuotationRevision> Revisions { get; } = [new() { RevisionID = 7, RequestID = 1 }];
 
-        public AccountsPayableDTO Dto() => new(0, AccountsPayablePayeeType.Partner, 10, "Costura avulsa", 100m, DateTime.UtcNow.AddDays(10), AccountsPayableStatus.Pending, null, null, 42, default, null, null);
+        public AccountsPayableDTO Dto() => new(0, AccountsPayablePayeeType.Partner, 10, "Costura avulsa", 100m, DateTime.UtcNow.AddDays(10), AccountsPayableStatus.Pending, null, null, 42, default, null, null, null);
         public AccountsPayable Entity(AccountsPayableStatus status) => new() { AccountsPayableID = 1, PayeeType = AccountsPayablePayeeType.Partner, PayeeID = 10, Description = "Costura", Amount = 100m, DueDate = DateTime.UtcNow.AddDays(10), Status = status, CreatedByEmployeeID = 42, CreatedAt = DateTime.UtcNow };
         public AccountsPayableService Service(params string[] permissions) => new(
             new PayableRepository(Payables), new EmployeeRepository(Employees), new PartnerRepository(Partners),
             new TailorRepository(Revisions), new ExecutionRepository(), new AccountsPayableDTOValidator(),
-            new PayableValidator(), new Authorization(permissions));
+            new PayableValidator(), new TrackingCashTransactionService(CashTransactions), new Authorization(permissions));
     }
 
     private sealed class PayableRepository(List<AccountsPayable> items) : IAccountsPayableRepository
@@ -158,6 +163,31 @@ public sealed class AccountsPayableServiceTests
     }
 
     private sealed class PayableValidator : IRepositoryValidator<AccountsPayable> { public IEnumerable<string> Validate(AccountsPayable entity) => []; }
+    private sealed class TrackingCashTransactionService(List<CashTransaction> transactions) : ICashTransactionService
+    {
+        public Task<CashTransactionDTO> CreateAsync(int cashAccountId, decimal amount, CashTransactionType transactionType, string? sourceType, int? sourceId, int createdByEmployeeId, DateTime? transactionDate = null, CancellationToken cancellationToken = default)
+        {
+            var transaction = new CashTransaction
+            {
+                CashTransactionID = transactions.Count + 1,
+                CashAccountID = cashAccountId,
+                Amount = amount,
+                TransactionType = transactionType,
+                SourceType = sourceType,
+                SourceID = sourceId,
+                TransactionDate = transactionDate ?? DateTime.UtcNow,
+                CreatedByEmployeeID = createdByEmployeeId,
+                CreatedAt = DateTime.UtcNow
+            };
+            transactions.Add(transaction);
+            return Task.FromResult(transaction.ToDTO());
+        }
+
+        public Task<Guid> CreateTransferAsync(int fromAccountId, int toAccountId, decimal amount, int createdByEmployeeId, string? sourceType = null, int? sourceId = null, DateTime? transactionDate = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<CashTransactionDTO> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<CashTransactionDTO>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<decimal> GetBalanceAsync(int cashAccountId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
     private sealed class Authorization(params string[] permissions) : IAuthorizationService
     {
         private readonly HashSet<string> permissions = new(permissions);

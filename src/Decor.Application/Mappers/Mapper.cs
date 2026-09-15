@@ -164,7 +164,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
     public static AccountsPayableDTO ToDTO(this AccountsPayable payable) => new(
         payable.AccountsPayableID, payable.PayeeType, payable.PayeeID, payable.Description,
         payable.Amount, payable.DueDate, payable.Status, payable.SourceType, payable.SourceID,
-        payable.CreatedByEmployeeID, payable.CreatedAt, payable.PaidAt, payable.PaidByEmployeeID);
+        payable.CreatedByEmployeeID, payable.CreatedAt, payable.PaidAt, payable.PaidByEmployeeID,
+        payable.PaidFromCashAccountID);
 
     public static AccountsPayable FromDTO(this AccountsPayableDTO dto) => new()
     {
@@ -180,7 +181,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         CreatedByEmployeeID = dto.CreatedByEmployeeID,
         CreatedAt = dto.CreatedAt,
         PaidAt = dto.PaidAt,
-        PaidByEmployeeID = dto.PaidByEmployeeID
+        PaidByEmployeeID = dto.PaidByEmployeeID,
+        PaidFromCashAccountID = dto.PaidFromCashAccountID
     };
 
     // --- Mapeadores para ProductKitComponent ---

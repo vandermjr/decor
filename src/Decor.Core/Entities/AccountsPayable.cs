@@ -39,4 +39,5 @@ public class AccountsPayable
     [Column("CreatedAt")] public DateTime CreatedAt { get; set; }
     [Column("PaidAt")] public DateTime? PaidAt { get; set; }
     [Column("PaidByEmployeeID")] public int? PaidByEmployeeID { get; set; }
+    [Column("PaidFromCashAccountID")] public int? PaidFromCashAccountID { get; set; }
 }
