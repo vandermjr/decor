@@ -100,6 +100,7 @@ public sealed class ServiceExecutionRecordServiceTests
         public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public IEnumerable<ServiceExecutionRecord> SearchGetBy(string? arg = null) => [];
         public Task<IReadOnlyList<ServiceExecutionRecord>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ServiceExecutionRecord>>([]);
+        public Task<ServiceExecutionRecord?> GetByIdAsync(int executionId, CancellationToken cancellationToken = default) => Task.FromResult(Record);
         public Task<ServiceExecutionRecord?> GetByAppointmentIdAsync(int appointmentId, CancellationToken cancellationToken = default) => Task.FromResult(Record);
     }
 

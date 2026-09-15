@@ -122,4 +122,8 @@ public static class DecorPermissions
     public const string InstallationAppointmentsCancel = "InstallationAppointments.Cancel";
     public const string ServiceExecutionRecordsView = "ServiceExecutionRecords.View";
     public const string ServiceExecutionRecordsCreate = "ServiceExecutionRecords.Create";
+    public const string AccountsPayableView = "AccountsPayable.View";
+    public const string AccountsPayableCreate = "AccountsPayable.Create";
+    public const string AccountsPayableRegisterPayment = "AccountsPayable.RegisterPayment";
+    public const string AccountsPayableCancel = "AccountsPayable.Cancel";
 }

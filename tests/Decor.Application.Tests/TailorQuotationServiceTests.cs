@@ -326,6 +326,9 @@ public class TailorQuotationServiceTests
         public Task<IReadOnlyList<TailorQuotationRevision>> GetRevisionsByRequestIdAsync(int requestId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<TailorQuotationRevision>>(Revisions.Where(rev => rev.RequestID == requestId).ToList());
 
+        public Task<TailorQuotationRevision?> GetRevisionByIdAsync(int revisionId, CancellationToken cancellationToken = default)
+            => Task.FromResult(Revisions.FirstOrDefault(rev => rev.RevisionID == revisionId));
+
         public int Save(TailorQuotationRequest entity) => 1;
         public int Delete(int id) => 1;
         public IEnumerable<TailorQuotationRequest> SearchGetBy(string? arg = null) => Requests;

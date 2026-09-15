@@ -8,5 +8,6 @@ public interface ITailorQuotationRepository : IRepository<TailorQuotationRequest
     Task<IReadOnlyList<TailorQuotationRequest>> GetByQuoteItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TailorQuotationRequest>> GetByQuoteSectionIdAsync(int quoteSectionId, CancellationToken cancellationToken = default);
     Task<int> SaveRevisionAsync(TailorQuotationRevision revision, CancellationToken cancellationToken = default);
+    Task<TailorQuotationRevision?> GetRevisionByIdAsync(int revisionId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<TailorQuotationRevision>> GetRevisionsByRequestIdAsync(int requestId, CancellationToken cancellationToken = default);
 }

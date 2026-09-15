@@ -157,6 +157,28 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         PaidByEmployeeID = dto.PaidByEmployeeID
     };
 
+    public static AccountsPayableDTO ToDTO(this AccountsPayable payable) => new(
+        payable.AccountsPayableID, payable.PayeeType, payable.PayeeID, payable.Description,
+        payable.Amount, payable.DueDate, payable.Status, payable.SourceType, payable.SourceID,
+        payable.CreatedByEmployeeID, payable.CreatedAt, payable.PaidAt, payable.PaidByEmployeeID);
+
+    public static AccountsPayable FromDTO(this AccountsPayableDTO dto) => new()
+    {
+        AccountsPayableID = dto.AccountsPayableID,
+        PayeeType = dto.PayeeType,
+        PayeeID = dto.PayeeID,
+        Description = dto.Description,
+        Amount = dto.Amount,
+        DueDate = dto.DueDate,
+        Status = dto.Status,
+        SourceType = dto.SourceType,
+        SourceID = dto.SourceID,
+        CreatedByEmployeeID = dto.CreatedByEmployeeID,
+        CreatedAt = dto.CreatedAt,
+        PaidAt = dto.PaidAt,
+        PaidByEmployeeID = dto.PaidByEmployeeID
+    };
+
     // --- Mapeadores para ProductKitComponent ---
     public static IEnumerable<ProductKitComponentDTO> ToDTO(this IEnumerable<ProductKitComponent> components) => components.Select(c => c.ToDTO());
     public static ProductKitComponentDTO ToDTO(this ProductKitComponent component) => new(component.ComponentID, component.KitProductID, component.ComponentProductID, component.Quantity, component.IsVisibleToCustomer, component.DisplayOrder);

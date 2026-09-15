@@ -41,6 +41,15 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     public IEnumerable<ServiceExecutionRecord> SearchGetBy(string? arg = null) => throw new NotSupportedException();
     public Task<IReadOnlyList<ServiceExecutionRecord>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
+    public async Task<ServiceExecutionRecord?> GetByIdAsync(int executionId, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<ServiceExecutionRecord>())
+            .From<ServiceExecutionRecord>()
+            .Where(w => w.Equals((ServiceExecutionRecord r) => r.ExecutionID, executionId)).Build();
+        using var connection = dbConnection.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
+
     public async Task<ServiceExecutionRecord?> GetByAppointmentIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()

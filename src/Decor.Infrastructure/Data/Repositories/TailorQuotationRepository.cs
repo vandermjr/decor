@@ -205,6 +205,17 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         return result.AsList();
     }
 
+    public async Task<TailorQuotationRevision?> GetRevisionByIdAsync(int revisionId, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<TailorQuotationRevision>())
+            .From<TailorQuotationRevision>()
+            .Where(w => w.Equals((TailorQuotationRevision revision) => revision.RevisionID, revisionId))
+            .Build();
+        using var connection = _dbConnection.CreateConnection();
+        return await connection.QuerySingleOrDefaultAsync<TailorQuotationRevision>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+    }
+
     private static void ValidatePage(int page, int pageSize)
     {
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
