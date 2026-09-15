@@ -51,7 +51,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
 
@@ -75,7 +75,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
 
@@ -99,7 +99,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
 
@@ -129,7 +129,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
 
@@ -158,7 +158,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
 
@@ -205,7 +205,7 @@ namespace Decor.FluentSqlBuilder.Clauses
                     string alias = _aliasRegistry.GetOrAddAlias(typeof(TIdEntity));
                     var propInfo = ExpressionHelper.GetPropertyInfo(idPropertySelector);
                     string propertyName = propInfo.Name;
-                    string columnName = ExpressionHelper.GetColumnName(propInfo);
+                    string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
                     string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
                     AddPredicate($"{alias}.{columnName} {_dialect.Keywords.EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
@@ -219,7 +219,7 @@ namespace Decor.FluentSqlBuilder.Clauses
                     string alias = _aliasRegistry.GetOrAddAlias(typeof(TStringEntity));
                     var propInfo = ExpressionHelper.GetPropertyInfo(stringPropertySelector);
                     string propertyName = propInfo.Name;
-                    string columnName = ExpressionHelper.GetColumnName(propInfo);
+                    string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
                     string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
                     string likePattern = _dialect.Functions.Concat(
@@ -270,7 +270,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             foreach (var propertySelector in propertySelectors)
             {
                 var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
-                columns.Add($"{alias}.{ExpressionHelper.GetColumnName(propInfo)}");
+                    columns.Add($"{alias}.{ExpressionHelper.GetColumnName(propInfo, _aliasRegistry)}");
             }
 
             var parameterName = ParameterHelper.GenerateUniqueParameterName("FullTextSearch", _parameters);
@@ -354,7 +354,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.GREATER_THAN} {_dialect.GetParameterPrefix()}{paramName}");
@@ -367,7 +367,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LESS_THAN} {_dialect.GetParameterPrefix()}{paramName}");
@@ -380,7 +380,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.GREATER_THAN_OR_EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
@@ -393,7 +393,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LESS_THAN_OR_EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
@@ -407,7 +407,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             var parameterNames = new List<string>();
             int i = 0;
@@ -425,7 +425,7 @@ namespace Decor.FluentSqlBuilder.Clauses
         {
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.IS} {_dialect.Keywords.NULL}");
             return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
@@ -435,7 +435,7 @@ namespace Decor.FluentSqlBuilder.Clauses
         {
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.IS} {_dialect.Keywords.NOT_NULL}");
             return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);

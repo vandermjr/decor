@@ -17,6 +17,7 @@ public class TableAliasRegistry
     private readonly Dictionary<Type, string> _typeAliases = [];
     private readonly Dictionary<string, string> _aliasTableNames = [];
     private readonly Dictionary<Type, string> _typeTableNames = [];
+    private readonly Dictionary<(Type EntityType, string PropertyName), string> _columnNames = [];
     private readonly HashSet<string> _usedAliases = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyDictionary<Type, string> TypeAliases => _typeAliases;
@@ -52,6 +53,29 @@ public class TableAliasRegistry
         _typeTableNames[entityType] = finalTableName;
         _usedAliases.Add(alias);
     }
+
+    public void RegisterColumn(Type entityType, string propertyName, string columnName)
+    {
+        ArgumentNullException.ThrowIfNull(entityType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(columnName);
+
+        var key = (entityType, propertyName);
+        if (_columnNames.TryGetValue(key, out var existingColumn))
+        {
+            if (existingColumn != columnName)
+                throw new ArgumentException($"A propriedade '{propertyName}' do tipo '{entityType.Name}' já foi registrada com a coluna '{existingColumn}'.");
+            return;
+        }
+
+        if (entityType.GetProperty(propertyName) is null)
+            throw new ArgumentException($"A propriedade '{propertyName}' não existe no tipo '{entityType.Name}'.");
+
+        _columnNames[key] = columnName;
+    }
+
+    public bool TryGetColumnName(Type entityType, string propertyName, out string? columnName)
+        => _columnNames.TryGetValue((entityType, propertyName), out columnName);
 
     /// <summary>
     /// Obtém o alias para o tipo de entidade fornecido ou gera um automaticamente se ainda não registrado.

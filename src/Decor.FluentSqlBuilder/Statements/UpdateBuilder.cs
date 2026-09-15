@@ -64,7 +64,7 @@ namespace Decor.FluentSqlBuilder.Statements
         {
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
-            string columnName = ExpressionHelper.GetColumnName(propInfo);
+            string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
             string alias = _aliasRegistry.GetOrAddAlias(typeof(TEntity));
 
             string paramName = propertyName;
@@ -92,7 +92,7 @@ namespace Decor.FluentSqlBuilder.Statements
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
 
-            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType))
+            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType, _aliasRegistry))
             {
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                 {

@@ -17,6 +17,15 @@ namespace Decor.FluentSqlBuilder.Tests
             public string? Name { get; set; }
         }
 
+        private class ExplicitColumnEntity
+        {
+            [Key]
+            public int ID { get; set; }
+
+            [Column("attribute_column")]
+            public string Value { get; set; } = string.Empty;
+        }
+
         [Fact]
         public void AutoAlias_ShouldGenerateAliasAutomatically_WhenNotExplicitlyRegistered()
         {
@@ -106,5 +115,41 @@ namespace Decor.FluentSqlBuilder.Tests
                 .WithMessage("O tipo 'Product' já foi registrado com o alias 'p'.");
         }
 #pragma warning restore CS0618
+
+        [Fact]
+        public void RegisterColumn_ShouldUseExplicitColumnName()
+        {
+            var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
+                .RegisterColumn<ExplicitColumnEntity>(nameof(ExplicitColumnEntity.Value), "registered_column")
+                .Select(s => s.Columns<ExplicitColumnEntity>(e => e.Value))
+                .From<ExplicitColumnEntity>()
+                .Build();
+
+            sql.Should().Contain("e.registered_column");
+        }
+
+        [Fact]
+        public void RegisterColumn_ShouldTakePriorityOverAttributeAndPropertyName()
+        {
+            var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
+                .RegisterColumn<ExplicitColumnEntity>(nameof(ExplicitColumnEntity.Value), "registered_column")
+                .Select(s => s.AllColumns<ExplicitColumnEntity>(explicitColumns: true))
+                .From<ExplicitColumnEntity>()
+                .Build();
+
+            sql.Should().Contain("e.registered_column AS Value");
+            sql.Should().NotContain("attribute_column");
+        }
+
+        [Fact]
+        public void ColumnAttribute_ShouldRemainTheFallbackWithoutExplicitRegistration()
+        {
+            var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
+                .Select(s => s.Columns<ExplicitColumnEntity>(e => e.Value))
+                .From<ExplicitColumnEntity>()
+                .Build();
+
+            sql.Should().Contain("e.attribute_column AS Value");
+        }
     }
 }

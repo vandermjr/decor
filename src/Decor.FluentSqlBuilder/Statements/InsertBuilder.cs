@@ -67,7 +67,7 @@ namespace Decor.FluentSqlBuilder.Statements
                 throw new ArgumentException("O tipo de Values deve ser o mesmo tipo informado em Into.", nameof(entity));
             }
 
-            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType))
+            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType, _aliasRegistry))
             {
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                 {
@@ -119,7 +119,7 @@ namespace Decor.FluentSqlBuilder.Statements
                 throw new InvalidOperationException($"{nameof(ReturningGeneratedId)}() não é suportado para inserção em lote.");
             }
 
-            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType))
+            foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType, _aliasRegistry))
             {
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                 {

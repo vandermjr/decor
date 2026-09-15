@@ -31,9 +31,12 @@ public static class ExpressionHelper
     /// <summary>
     /// Extrai o nome da coluna no banco de dados para a propriedade (considerando [Column("col_name")] ou o nome da propriedade).
     /// </summary>
-    public static string GetColumnName(PropertyInfo propertyInfo)
+    public static string GetColumnName(PropertyInfo propertyInfo, TableAliasRegistry? registry = null)
     {
         ArgumentNullException.ThrowIfNull(propertyInfo);
+
+        if (registry?.TryGetColumnName(propertyInfo.DeclaringType!, propertyInfo.Name, out var registeredColumn) == true)
+            return registeredColumn!;
 
         var columnAttr = propertyInfo.GetCustomAttribute<ColumnAttribute>();
         return !string.IsNullOrEmpty(columnAttr?.Name) ? columnAttr.Name : propertyInfo.Name;
@@ -50,15 +53,15 @@ public static class ExpressionHelper
     /// <summary>
     /// Extrai o nome da coluna no banco de dados de uma expressão lambda.
     /// </summary>
-    public static string GetColumnName<TEntity>(Expression<Func<TEntity, object?>> propertySelector)
+    public static string GetColumnName<TEntity>(Expression<Func<TEntity, object?>> propertySelector, TableAliasRegistry? registry = null)
     {
-        return GetColumnName(GetPropertyInfo(propertySelector));
+        return GetColumnName(GetPropertyInfo(propertySelector), registry);
     }
 
     /// <summary>
     /// Extrai o nome da propriedade, nome da coluna e o ParameterExpression de uma expressão lambda.
     /// </summary>
-    public static (string PropertyName, string ColumnName, ParameterExpression Parameter) GetPropertyAndColumnNameAndParameter<TEntity>(Expression<Func<TEntity, object?>> propertySelector)
+    public static (string PropertyName, string ColumnName, ParameterExpression Parameter) GetPropertyAndColumnNameAndParameter<TEntity>(Expression<Func<TEntity, object?>> propertySelector, TableAliasRegistry? registry = null)
     {
         ArgumentNullException.ThrowIfNull(propertySelector);
 
@@ -73,7 +76,7 @@ public static class ExpressionHelper
             memberExpression.Member is PropertyInfo propertyInfo &&
             memberExpression.Expression is ParameterExpression parameterExpression)
         {
-            string columnName = GetColumnName(propertyInfo);
+            string columnName = GetColumnName(propertyInfo, registry);
             return (propertyInfo.Name, columnName, parameterExpression);
         }
 
@@ -92,7 +95,7 @@ public static class ExpressionHelper
     /// <summary>
     /// Extrai os nomes das colunas e os ParameterExpressions de uma expressão de condição JOIN.
     /// </summary>
-    public static (string LeftColumnName, ParameterExpression LeftParameter, string RightColumnName, ParameterExpression RightParameter) GetJoinPropertiesAndParameters<TLeft, TRight>(Expression<Func<TLeft, TRight, bool>> onCondition)
+    public static (string LeftColumnName, ParameterExpression LeftParameter, string RightColumnName, ParameterExpression RightParameter) GetJoinPropertiesAndParameters<TLeft, TRight>(Expression<Func<TLeft, TRight, bool>> onCondition, TableAliasRegistry? registry = null)
     {
         ArgumentNullException.ThrowIfNull(onCondition);
 
@@ -107,10 +110,10 @@ public static class ExpressionHelper
             {
                 if (leftParam.Type == typeof(TRight) && rightParam.Type == typeof(TLeft))
                 {
-                    return (GetColumnName(rightProperty), rightParam, GetColumnName(leftProperty), leftParam);
+                    return (GetColumnName(rightProperty, registry), rightParam, GetColumnName(leftProperty, registry), leftParam);
                 }
 
-                return (GetColumnName(leftProperty), leftParam, GetColumnName(rightProperty), rightParam);
+                return (GetColumnName(leftProperty, registry), leftParam, GetColumnName(rightProperty, registry), rightParam);
             }
         }
 

@@ -101,10 +101,10 @@ namespace Decor.FluentSqlBuilder.Helpers
         /// <summary>
         /// Retorna o nome da coluna do banco que é a chave primária da entidade (marcada com [Key]).
         /// </summary>
-        public static string? GetPrimaryKeyColumnName(Type entityType)
+        public static string? GetPrimaryKeyColumnName(Type entityType, TableAliasRegistry? registry = null)
         {
             var pkProp = GetPrimaryKeyProperty(entityType);
-            return pkProp != null ? ExpressionHelper.GetColumnName(pkProp) : null;
+            return pkProp != null ? ExpressionHelper.GetColumnName(pkProp, registry) : null;
         }
 
         /// <summary>
@@ -118,13 +118,13 @@ namespace Decor.FluentSqlBuilder.Helpers
         /// <summary>
         /// Retorna as propriedades mapeáveis junto com seus nomes de propriedade e nomes de coluna.
         /// </summary>
-        public static IEnumerable<(PropertyInfo Property, string PropertyName, string ColumnName)> GetMappableProperties(Type entityType)
+        public static IEnumerable<(PropertyInfo Property, string PropertyName, string ColumnName)> GetMappableProperties(Type entityType, TableAliasRegistry? registry = null)
         {
             ArgumentNullException.ThrowIfNull(entityType);
 
             return entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                              .Where(p => p.GetCustomAttribute<NotMappedAttribute>() == null)
-                             .Select(p => (Property: p, PropertyName: p.Name, ColumnName: ExpressionHelper.GetColumnName(p)));
+                             .Select(p => (Property: p, PropertyName: p.Name, ColumnName: ExpressionHelper.GetColumnName(p, registry)));
         }
 
         /// <summary>

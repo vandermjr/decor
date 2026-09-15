@@ -227,7 +227,7 @@ namespace Decor.FluentSqlBuilder.Statements
                 {
                     if (_fromEntityType != null)
                     {
-                        string? pkColumnName = ParameterHelper.GetPrimaryKeyColumnName(_fromEntityType);
+                        string? pkColumnName = ParameterHelper.GetPrimaryKeyColumnName(_fromEntityType, _aliasRegistry);
                         if (!string.IsNullOrEmpty(pkColumnName))
                         {
                             _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_fromAlias}.{pkColumnName} {_dialect.Keywords.ASC}\n");

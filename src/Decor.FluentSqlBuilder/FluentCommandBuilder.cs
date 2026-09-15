@@ -61,6 +61,12 @@ namespace Decor.FluentSqlBuilder
             return this;
         }
 
+        public FluentCommandBuilder RegisterColumn<TEntity>(string propertyName, string columnName)
+        {
+            _aliasRegistry.RegisterColumn(typeof(TEntity), propertyName, columnName);
+            return this;
+        }
+
         // --- Método de fábrica para SELECT ---
         /// <summary>
         /// Inicia a construção de uma declaração SELECT e permite a configuração de colunas.

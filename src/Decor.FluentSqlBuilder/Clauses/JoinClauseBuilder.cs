@@ -97,7 +97,7 @@ namespace Decor.FluentSqlBuilder.Clauses
                 {
                     if (parameter == rootParam)
                     {
-                        return $"{alias}.{ExpressionHelper.GetColumnName(propertyInfo)}";
+                        return $"{alias}.{ExpressionHelper.GetColumnName(propertyInfo, _aliasRegistry)}";
                     }
                 }
             }

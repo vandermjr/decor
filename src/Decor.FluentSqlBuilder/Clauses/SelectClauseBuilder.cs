@@ -68,7 +68,7 @@ namespace Decor.FluentSqlBuilder.Clauses
 
             if (explicitColumns)
             {
-                var mappableProperties = ParameterHelper.GetMappableProperties(entityType);
+                var mappableProperties = ParameterHelper.GetMappableProperties(entityType, _aliasRegistry);
                 foreach (var p in mappableProperties)
                 {
                     string colExpr = p.ColumnName != p.PropertyName
@@ -125,7 +125,7 @@ namespace Decor.FluentSqlBuilder.Clauses
 
             if (!_selectionIntent.TryGetValue(entityType, out SelectIntent value) || value == SelectIntent.None)
             {
-                var mappableProperties = ParameterHelper.GetMappableProperties(entityType);
+                var mappableProperties = ParameterHelper.GetMappableProperties(entityType, _aliasRegistry);
 
                 foreach (var p in mappableProperties.Where(p => !excludedPropertyNames.Contains(p.PropertyName)))
                 {
@@ -163,7 +163,7 @@ namespace Decor.FluentSqlBuilder.Clauses
                 {
                     var propInfo = ExpressionHelper.GetPropertyInfo(expr);
                     string propName = propInfo.Name;
-                    string colName = ExpressionHelper.GetColumnName(propInfo);
+                    string colName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
                     string colExpr = colName != propName
                         ? $"{alias}.{colName} {_dialect.Keywords.AS} {propName}"
                         : $"{alias}.{colName}";
@@ -220,7 +220,7 @@ namespace Decor.FluentSqlBuilder.Clauses
 
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
-            string columnName = ExpressionHelper.GetColumnName(expression);
+            string columnName = ExpressionHelper.GetColumnName(expression, _aliasRegistry);
 
             _selectColumns.Add(_dialect.Functions.Count($"{alias}.{columnName}", isDistinct));
             _isCountQuery = true;
@@ -241,7 +241,7 @@ namespace Decor.FluentSqlBuilder.Clauses
 
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
-            string columnName = ExpressionHelper.GetColumnName(expression);
+            string columnName = ExpressionHelper.GetColumnName(expression, _aliasRegistry);
 
             _selectColumns.Add(_dialect.Functions.Sum($"{alias}.{columnName}", resultAlias));
             return this;
