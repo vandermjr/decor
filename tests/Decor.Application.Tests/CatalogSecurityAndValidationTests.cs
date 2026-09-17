@@ -58,6 +58,56 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
+    public async Task ProductService_GoodWithoutStockUnit_ThrowsValidationException()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
+
+        var action = () => service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Good));
+
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ProductService_GoodWithStockUnit_Saves()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
+
+        await service.SaveProductAsync(CreateProduct(stockUnitId: 7, productType: ProductType.Good));
+
+        repository.SaveCalls.Should().Be(1);
+        repository.LastSaved.Should().NotBeNull();
+        repository.LastSaved!.StockUnitID.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task ProductService_ServiceWithoutStockUnit_Saves()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
+
+        await service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Service));
+
+        repository.SaveCalls.Should().Be(1);
+        repository.LastSaved.Should().NotBeNull();
+        repository.LastSaved!.StockUnitID.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ProductService_ExistingGoodWithoutStockUnitOnUpdate_ThrowsValidationException()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsEdit));
+
+        var action = () => service.SaveProductAsync(CreateProduct(productId: 7, stockUnitId: null, productType: ProductType.Good, subgroupId: 1));
+
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
+    }
+
+    [Fact]
     public async Task ProductService_ServiceWithSubgroup_AutoClearsSubgroupAndSaves()
     {
         var repository = new TrackingProductRepository();
@@ -124,10 +174,11 @@ public sealed class CatalogSecurityAndValidationTests
         int productId = 0,
         int? brandId = 1,
         int? subgroupId = 1,
+        int? stockUnitId = 7,
         ProductType productType = ProductType.Good,
         decimal? employeeCommissionValue = null,
         int? defaultInstallationServiceId = null) => new(
-        productId, "12345678", true, "Produto válido", 1, brandId, "Marca", subgroupId, "Subgrupo", 1, "Grupo", 1, "Família", 1, "Classe", null, null, null, null, 0, (int)productType, null, null, employeeCommissionValue, defaultInstallationServiceId);
+        productId, "12345678", true, "Produto válido", 1, brandId, "Marca", subgroupId, "Subgrupo", 1, "Grupo", 1, "Família", 1, "Classe", null, null, null, null, 0, (int)productType, null, null, employeeCommissionValue, defaultInstallationServiceId, stockUnitId);
 
 
     private sealed class FixedAuthorizationService(params string[] permissions) : IAuthorizationService
@@ -164,6 +215,7 @@ public sealed class CatalogSecurityAndValidationTests
         public Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
+        public bool UnitOfMeasureExists(int unitOfMeasureId) => true;
         public bool ServiceProductExists(int productId) => ServiceProductExistsResult;
         public bool GoodProductExists(int productId) => true;
     }

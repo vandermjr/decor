@@ -21,6 +21,11 @@ public class ProductRepositoryValidator(IProductRepository Repository) : IReposi
             errors.Add("O subgrupo informado não existe.");
         }
 
+        if (product.StockUnitID.HasValue && !_repository.UnitOfMeasureExists(product.StockUnitID.Value))
+        {
+            errors.Add("A unidade de medida informada não existe.");
+        }
+
         if (product.DefaultInstallationServiceID.HasValue && !_repository.ServiceProductExists(product.DefaultInstallationServiceID.Value))
         {
             errors.Add("O serviço de instalação padrão informado não existe ou não é do tipo Serviço.");

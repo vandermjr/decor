@@ -36,7 +36,8 @@ public static class Mapper
             CostPrice: product.CostPrice,
             SalePrice: product.SalePrice,
             EmployeeCommissionValue: product.EmployeeCommissionValue,
-            DefaultInstallationServiceID: product.DefaultInstallationServiceID
+            DefaultInstallationServiceID: product.DefaultInstallationServiceID,
+            StockUnitID: product.StockUnit?.UnitOfMeasureID ?? product.StockUnitID
         );
     }
 
@@ -56,6 +57,7 @@ public static class Mapper
         MinimumStock = productDto.MinimumStock,
         BrandID = productDto.BrandID ?? 0,
         SubgroupID = productDto.SubgroupID,
+        StockUnitID = productDto.StockUnitID,
         ProductType = (ProductType)productDto.ProductType,
         CostPrice = productDto.CostPrice,
         SalePrice = productDto.SalePrice,

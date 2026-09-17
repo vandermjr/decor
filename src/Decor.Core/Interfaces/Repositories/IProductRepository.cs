@@ -6,6 +6,7 @@ public interface IProductRepository : IRepository<Product>
     // Verifica se a marca referenciada existe.
     bool BrandExists(int marcaId);
     bool SubgroupExists(int subgroupId);
+    bool UnitOfMeasureExists(int unitOfMeasureId) => true;
     // Verifica se existe um Product com o ID informado e ProductType = Service.
     bool ServiceProductExists(int productId);
     // Verifica se existe um Product com o ID informado e ProductType = Good.

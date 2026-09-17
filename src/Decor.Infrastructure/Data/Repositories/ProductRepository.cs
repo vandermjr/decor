@@ -72,12 +72,14 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 s.Columns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
                 s.Columns<Group>(gr => gr.GroupID, gr => gr.GroupName);
                 s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                s.Columns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
             })
             .From<Product>()
             .Join(j =>
             {
                 j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID);
                 j.Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
+                j.Left<Product, UnitOfMeasure>((p, u) => p.StockUnitID == u.UnitOfMeasureID);
                 j.Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
                 j.Left<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
                 j.Left<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
@@ -93,9 +95,9 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
-        var result = conn.Query<Product, Brand, Class, Family, Group, Subgroup, Product>(
+        var result = conn.Query<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
             sql,
-            map: (product, brand, @class, family, group, subgroup) =>
+            map: (product, brand, @class, family, group, subgroup, stockUnit) =>
             {
                 if (brand != null) { product.Brand = brand; product.BrandID = brand.BrandID; }
                 if (subgroup != null)
@@ -106,10 +108,15 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                     product.Subgroup = subgroup;
                     product.SubgroupID = subgroup.SubgroupID;
                 }
+                if (stockUnit != null)
+                {
+                    product.StockUnit = stockUnit;
+                    product.StockUnitID = stockUnit.UnitOfMeasureID;
+                }
                 return product;
             },
             param: parameters,
-            splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID");
+            splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
 
         return result.QuerySingleOrMany(queryContext);
     }
@@ -127,12 +134,14 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 s.Columns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
                 s.Columns<Group>(gr => gr.GroupID, gr => gr.GroupName);
                 s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                s.Columns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
             })
             .From<Product>()
             .Join(j =>
             {
                 j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID);
                 j.Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
+                j.Left<Product, UnitOfMeasure>((p, u) => p.StockUnitID == u.UnitOfMeasureID);
                 j.Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
                 j.Left<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
                 j.Left<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
@@ -149,8 +158,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
-        var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, Product>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken),
-            map: (product, brand, @class, family, group, subgroup) =>
+        var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken),
+            map: (product, brand, @class, family, group, subgroup, stockUnit) =>
             {
                 if (brand != null) { product.Brand = brand; product.BrandID = brand.BrandID; }
                 if (subgroup != null)
@@ -161,8 +170,13 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                     product.Subgroup = subgroup;
                     product.SubgroupID = subgroup.SubgroupID;
                 }
+                if (stockUnit != null)
+                {
+                    product.StockUnit = stockUnit;
+                    product.StockUnitID = stockUnit.UnitOfMeasureID;
+                }
                 return product;
-            }, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID");
+            }, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
         var products = result.ToList();
         return queryContext.IsSingleIdSearch ? products.Take(1).ToArray() : products;
     }
@@ -192,6 +206,19 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Select(s => s.Count())
             .From<Subgroup>()
             .Where(w => w.Equals((Subgroup sg) => sg.SubgroupID, subgroupID))            
+            .Build();
+
+        using var conn = _dbConnection.CreateConnection();
+        int count = conn.QuerySingle<int>(sql, parameters);
+        return count > 0;
+    }
+
+    public bool UnitOfMeasureExists(int unitOfMeasureId)
+    {
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.Count())
+            .From<UnitOfMeasure>()
+            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();

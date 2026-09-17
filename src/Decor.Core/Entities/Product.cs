@@ -64,6 +64,9 @@ public class Product
     [Column("SubgroupID")] // Obrigatório apenas quando ProductType = Good
     public int? SubgroupID { get; set; }
 
+    [Column("StockUnitID")] // Obrigatório apenas quando ProductType = Good
+    public int? StockUnitID { get; set; }
+
     [Column("Origin")]
     public ProductOrigin Origin { get; set; }
 
@@ -90,4 +93,6 @@ public class Product
     public virtual Brand? Brand { get; set; }
     [NotMapped]
     public virtual Subgroup? Subgroup { get; set; }
+    [NotMapped]
+    public virtual UnitOfMeasure? StockUnit { get; set; }
 }

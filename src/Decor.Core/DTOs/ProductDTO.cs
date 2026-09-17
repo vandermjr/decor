@@ -29,5 +29,6 @@ public record ProductDTO(
     [property: Display(Name = "Preço de Custo"), Browsable(true)] decimal? CostPrice,
     [property: Display(Name = "Preço de Venda"), Browsable(true)] decimal? SalePrice,
     [property: Display(Name = "Comissão do Funcionário"), Browsable(true)] decimal? EmployeeCommissionValue,
-    [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? DefaultInstallationServiceID
+    [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? DefaultInstallationServiceID,
+    [property: KeyProperty, Display(Name = "ID da Unidade de Estoque"), Browsable(false)] int? StockUnitID
 );

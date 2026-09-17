@@ -18,6 +18,11 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
         if (dto.SubgroupID is <= 0)
             errors.Add("O ID do Subgrupo deve ser maior que zero.");
 
+        // StockUnitID nulo é permitido na estrutura do DTO; a obrigatoriedade
+        // condicionada ao ProductType é validada em ProductService.
+        if (dto.StockUnitID is <= 0)
+            errors.Add("O ID da Unidade de Estoque deve ser maior que zero.");
+
         if (!string.IsNullOrWhiteSpace(dto.Barcode))
         {
             if (dto.Barcode.Length is not 13 and not 8)

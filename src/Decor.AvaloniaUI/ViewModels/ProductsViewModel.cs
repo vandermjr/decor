@@ -662,6 +662,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 null,
                 null,
                 null,
+                null,
                 null);
 
             await _productService.SaveProductAsync(dto);

@@ -61,6 +61,10 @@ public class ProductService(
         if (productEntity.ProductType == ProductType.Service)
             productEntity.SubgroupID = null;
 
+        // Ao ser Service, StockUnitID também deve ser zerado automaticamente.
+        if (productEntity.ProductType == ProductType.Service)
+            productEntity.StockUnitID = null;
+
         var businessRuleErrors = ValidateBusinessRules(productEntity);
         if (businessRuleErrors.Any())
             throw new ValidationException(string.Join("\n", businessRuleErrors));
@@ -83,6 +87,9 @@ public class ProductService(
             if (product.SubgroupID is null or <= 0)
                 errors.Add("O Subgrupo é obrigatório quando o Tipo de Produto é Bem (Good).");
 
+            if (product.StockUnitID is null or <= 0)
+                errors.Add("A Unidade de Estoque é obrigatória quando o Tipo de Produto é Bem (Good).");
+
             if (product.EmployeeCommissionValue is not null)
                 errors.Add("O valor de Comissão do Funcionário só pode ser preenchido quando o Tipo de Produto é Serviço (Service).");
         }
@@ -90,6 +97,9 @@ public class ProductService(
         {
             if (product.SubgroupID is not null)
                 errors.Add("O Subgrupo deve ser nulo quando o Tipo de Produto é Serviço (Service).");
+
+            if (product.StockUnitID is not null)
+                errors.Add("A Unidade de Estoque deve ser nula quando o Tipo de Produto é Serviço (Service).");
         }
 
         if (product.DefaultInstallationServiceID.HasValue && product.ProductID > 0 && product.DefaultInstallationServiceID.Value == product.ProductID)
