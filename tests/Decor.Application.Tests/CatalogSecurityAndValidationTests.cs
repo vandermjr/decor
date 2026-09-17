@@ -96,12 +96,25 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_ExistingGoodWithoutStockUnitOnUpdate_ThrowsValidationException()
+    public async Task ProductService_ExistingGoodWithoutStockUnitOnUpdate_SavesWithoutChangingStockUnit()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsEdit));
 
-        var action = () => service.SaveProductAsync(CreateProduct(productId: 7, stockUnitId: null, productType: ProductType.Good, subgroupId: 1));
+        await service.SaveProductAsync(CreateProduct(productId: 7, stockUnitId: null, productType: ProductType.Good, subgroupId: 1));
+
+        repository.SaveCalls.Should().Be(1);
+        repository.LastSaved.Should().NotBeNull();
+        repository.LastSaved!.StockUnitID.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ProductService_ExistingGoodWithInvalidStockUnitOnUpdate_ThrowsValidationException()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsEdit));
+
+        var action = () => service.SaveProductAsync(CreateProduct(productId: 7, stockUnitId: 0, productType: ProductType.Good, subgroupId: 1));
 
         await action.Should().ThrowAsync<ValidationException>();
         repository.SaveCalls.Should().Be(0);
