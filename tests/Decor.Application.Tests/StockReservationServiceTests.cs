@@ -407,6 +407,7 @@ public sealed class StockReservationServiceTests
             => Task.FromResult<IReadOnlyList<Product>>(Products.Values.ToList());
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
+        public bool UnitOfMeasureExists(int unitOfMeasureId) => true;
         public bool ServiceProductExists(int productId) => true;
         public bool GoodProductExists(int productId) => true;
     }

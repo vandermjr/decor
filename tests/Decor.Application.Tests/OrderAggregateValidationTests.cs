@@ -331,6 +331,7 @@ public sealed class OrderAggregateValidationTests
             => Task.FromResult<IReadOnlyList<Product>>(_product != null ? [_product] : []);
         public bool BrandExists(int marcaID) => true;
         public bool SubgroupExists(int subgroupID) => true;
+        public bool UnitOfMeasureExists(int unitOfMeasureId) => true;
         public bool ServiceProductExists(int productId) => true;
         public bool GoodProductExists(int productId) => true;
     }

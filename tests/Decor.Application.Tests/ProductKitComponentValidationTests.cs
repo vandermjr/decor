@@ -131,6 +131,7 @@ public sealed class ProductKitComponentValidationTests
         public Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
         public bool BrandExists(int marcaId) => true;
         public bool SubgroupExists(int subgroupId) => true;
+        public bool UnitOfMeasureExists(int unitOfMeasureId) => true;
         public bool ServiceProductExists(int productId) => true;
         public bool GoodProductExists(int productId) => productId == 1 ? KitIsGood : ComponentIsGood;
     }
