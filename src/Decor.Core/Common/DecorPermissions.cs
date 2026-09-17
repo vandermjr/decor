@@ -94,6 +94,10 @@ public static class DecorPermissions
     public const string PaymentMethodsCreate = "PaymentMethods.Create";
     public const string PaymentMethodsEdit = "PaymentMethods.Edit";
     public const string PaymentMethodsDelete = "PaymentMethods.Delete";
+    public const string UnitsOfMeasureView = "UnitsOfMeasure.View";
+    public const string UnitsOfMeasureCreate = "UnitsOfMeasure.Create";
+    public const string UnitsOfMeasureEdit = "UnitsOfMeasure.Edit";
+    public const string UnitsOfMeasureDeactivate = "UnitsOfMeasure.Deactivate";
     public const string OrderInstallmentsView = "OrderInstallments.View";
     public const string OrderInstallmentsCreatePlan = "OrderInstallments.CreatePlan";
     public const string OrderInstallmentsRegisterPayment = "OrderInstallments.RegisterPayment";

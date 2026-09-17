@@ -106,6 +106,18 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         IsActive = dto.IsActive
     };
 
+    // --- Mapeadores para UnitOfMeasure ---
+    public static IEnumerable<UnitOfMeasureDTO> ToDTO(this IEnumerable<UnitOfMeasure> units) => units.Select(u => u.ToDTO());
+    public static UnitOfMeasureDTO ToDTO(this UnitOfMeasure unit) => new(unit.UnitOfMeasureID, unit.Code, unit.Description, unit.AllowsFraction, unit.IsActive);
+    public static UnitOfMeasure FromDTO(this UnitOfMeasureDTO dto) => new()
+    {
+        UnitOfMeasureID = dto.UnitOfMeasureID,
+        Code = dto.Code.Trim(),
+        Description = dto.Description.Trim(),
+        AllowsFraction = dto.AllowsFraction,
+        IsActive = dto.IsActive
+    };
+
     // --- Mapeadores para OrderInstallment ---
     public static IEnumerable<OrderInstallmentDTO> ToDTO(this IEnumerable<OrderInstallment> installments) => installments.Select(i => i.ToDTO());
     public static OrderInstallmentDTO ToDTO(this OrderInstallment installment) => new(
