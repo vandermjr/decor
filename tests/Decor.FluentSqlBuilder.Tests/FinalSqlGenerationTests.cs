@@ -41,8 +41,8 @@ namespace Decor.FluentSqlBuilder.Tests
                 })
                 .Where(w =>
                 {
-                    w.Equals((Product p) => p.ProductID, 999);
-                    w.Or().Contains((Product p) => p.Description, "test desc");
+                    w.Equals<Product>(p => p.ProductID, 999);
+                    w.Or().Contains<Product>(p => p.Description, "test desc");
                 })
                 .OrderBy("p.Description ASC")
                 .Take(10000);
@@ -104,7 +104,7 @@ namespace Decor.FluentSqlBuilder.Tests
             var builder = FluentCommandBuilder.Create()
                 .Select(s => s.Count())
                 .From<Brand>()
-                .Where(w => w.Equals((Brand b) => b.BrandID, 50));
+                .Where(w => w.Equals<Brand>(b => b.BrandID, 50));
 
             string expectedSql = @"SELECT
                 COUNT(*)

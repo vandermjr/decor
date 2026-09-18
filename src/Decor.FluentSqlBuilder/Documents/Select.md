@@ -28,7 +28,7 @@ var (sql, parameters) = builder
         s.Columns<Product>(p => p.IsActive);
     })
     .From<Product>()
-    .Where(w => w.Equals((Product p) => p.IsActive, true))
+    .Where(w => w.Equals<Product>(p => p.IsActive, true))
     .Build();
 
 // SQL gerado:

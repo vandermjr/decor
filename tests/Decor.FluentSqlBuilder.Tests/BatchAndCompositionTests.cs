@@ -23,12 +23,12 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Select(s => s
                     .Select(sc => sc.Columns<Role>(r => r.RoleID, r => r.RoleName))
                     .From<Role>()
-                    .Where(w => w.Equals((Role r) => r.RoleID, 1))
+                    .Where(w => w.Equals<Role>(r => r.RoleID, 1))
                     .OrderBy("r.RoleName ASC"))
                 .Select(s => s
                     .Select(sc => sc.Columns<Permission>(p => p.PermissionID, p => p.PermissionCode))
                     .From<Permission>()
-                    .Where(w => w.Equals((Permission p) => p.PermissionID, 2))
+                    .Where(w => w.Equals<Permission>(p => p.PermissionID, 2))
                     .OrderBy("p.PermissionCode ASC"))
                 .Build();
 
@@ -51,12 +51,12 @@ namespace Decor.FluentSqlBuilder.Tests
             var first = CreateBuilder()
                 .Select(s => s.Columns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
-                .Where(w => w.Equals((Permission p) => p.PermissionID, 5));
+                .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
             var second = CreateBuilder()
                 .Select(s => s.Columns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
-                .Where(w => w.Equals((Permission p) => p.PermissionID, 5));
+                .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
             var (sql, parameters) = first.Union(second).BuildInline();
 
@@ -71,12 +71,12 @@ namespace Decor.FluentSqlBuilder.Tests
             var roleBased = CreateBuilder()
                 .Select(s => s.Columns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
-                .Where(w => w.Equals((Permission p) => p.PermissionID, 7));
+                .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
             var overrideBased = CreateBuilder()
                 .Select(s => s.Columns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
-                .Where(w => w.Equals((Permission p) => p.PermissionID, 7));
+                .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
             var union = roleBased.Union(overrideBased);
 
@@ -118,12 +118,12 @@ namespace Decor.FluentSqlBuilder.Tests
                 .From<Permission>()
                 .Where(w =>
                 {
-                    w.Equals((Permission p) => p.PermissionID, 1);
+                    w.Equals<Permission>(p => p.PermissionID, 1);
                     w.Group(g =>
                     {
-                        g.IsNull((Permission p) => p.Description);
+                        g.IsNull<Permission>(p => p.Description);
                         g.Or();
-                        g.Equals((Permission p) => p.Description, "x");
+                        g.Equals<Permission>(p => p.Description, "x");
                     });
                 })
                 .Build();

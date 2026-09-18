@@ -16,8 +16,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Set((UserAccount u) => u.MustChangePassword, mustChangePassword)
             .Where(w =>
             {
-                w.Equals((UserAccount u) => u.UserID, userId);
-                w.Equals((UserAccount u) => u.IsActive, true);
+                w.Equals<UserAccount>(u => u.UserID, userId);
+                w.Equals<UserAccount>(u => u.IsActive, true);
             })
             .Build();
 
@@ -33,8 +33,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .From<UserAccount>()
             .Where(w =>
             {
-                w.Equals((UserAccount u) => u.Username, username);
-                w.Equals((UserAccount u) => u.IsActive, true);
+                w.Equals<UserAccount>(u => u.Username, username);
+                w.Equals<UserAccount>(u => u.IsActive, true);
             })
             .Take(1)
             .Build();
@@ -58,13 +58,13 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             })
             .Where(w =>
             {
-                w.Equals((ApplicationUser u) => u.Username, username);
-                w.Equals((ApplicationUser u) => u.IsActive, true);
+                w.Equals<ApplicationUser>(u => u.Username, username);
+                w.Equals<ApplicationUser>(u => u.IsActive, true);
                 w.Group(g =>
                 {
-                    g.IsNull((UserPermissionOverride o) => o.IsGranted);
+                    g.IsNull<UserPermissionOverride>(o => o.IsGranted);
                     g.Or();
-                    g.Equals((UserPermissionOverride o) => o.IsGranted, true);
+                    g.Equals<UserPermissionOverride>(o => o.IsGranted, true);
                 });
             });
 
@@ -79,8 +79,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             })
             .Where(w =>
             {
-                w.Equals((ApplicationUser u) => u.Username, username);
-                w.Equals((ApplicationUser u) => u.IsActive, true);
+                w.Equals<ApplicationUser>(u => u.Username, username);
+                w.Equals<ApplicationUser>(u => u.IsActive, true);
             });
 
         var effectivePermissions = permissionsByRole.Union(permissionsByOverride);
@@ -92,8 +92,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 .From<ApplicationUser>()
                 .Where(w =>
                 {
-                    w.Equals((ApplicationUser u) => u.Username, username);
-                    w.Equals((ApplicationUser u) => u.IsActive, true);
+                    w.Equals<ApplicationUser>(u => u.Username, username);
+                    w.Equals<ApplicationUser>(u => u.IsActive, true);
                 })
                 .Take(1))
             .Select(s => s
@@ -106,8 +106,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 })
                 .Where(w =>
                 {
-                    w.Equals((ApplicationUser u) => u.Username, username);
-                    w.Equals((ApplicationUser u) => u.IsActive, true);
+                    w.Equals<ApplicationUser>(u => u.Username, username);
+                    w.Equals<ApplicationUser>(u => u.IsActive, true);
                 }))
             .Select(s => s
                 .Select(sc =>

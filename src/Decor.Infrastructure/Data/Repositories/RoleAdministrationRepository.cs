@@ -13,7 +13,7 @@ public sealed class RoleAdministrationRepository(IDatabaseConnection databaseCon
             .Select(s => s.Columns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .From<Permission>()
             .Join(j => j.Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID))
-            .Where(w => w.Equals((RolePermission rp) => rp.RoleID, roleId))
+            .Where(w => w.Equals<RolePermission>(rp => rp.RoleID, roleId))
             .OrderBy("p.PermissionCode ASC")
             .Build();
 
@@ -31,7 +31,7 @@ public sealed class RoleAdministrationRepository(IDatabaseConnection databaseCon
         {
             var (deleteSql, deleteParameters) = createCommandBuilder()
                 .Delete<RolePermission>()
-                .Where(w => w.Equals((RolePermission rp) => rp.RoleID, roleId))
+                .Where(w => w.Equals<RolePermission>(rp => rp.RoleID, roleId))
                 .Build();
             await connection.ExecuteAsync(new CommandDefinition(deleteSql, deleteParameters, transaction, cancellationToken: cancellationToken));
 

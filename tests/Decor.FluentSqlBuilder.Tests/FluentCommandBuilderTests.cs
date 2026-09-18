@@ -75,7 +75,7 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = FluentCommandBuilder.Create(new MariaDBDialect())
                 .Select(s => s.Columns<Product>(prod => prod.ProductID, item => item.Description))
                 .From<Product>()
-                .Where(w => w.Equals((Product anyVarName) => anyVarName.ProductID, 123))
+                .Where(w => w.Equals<Product>(anyVarName => anyVarName.ProductID, 123))
                 .Build();
 
             // Assert

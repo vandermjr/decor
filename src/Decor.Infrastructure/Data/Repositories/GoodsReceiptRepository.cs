@@ -31,7 +31,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.AllColumns<GoodsReceipt>())
             .From<GoodsReceipt>()
-            .Where(w => w.Equals((GoodsReceipt gr) => gr.GoodsReceiptID, goodsReceiptId))
+            .Where(w => w.Equals<GoodsReceipt>(gr => gr.GoodsReceiptID, goodsReceiptId))
             .Build();
 
         using var connection = databaseConnection.CreateConnection();
@@ -43,7 +43,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.AllColumns<GoodsReceipt>())
             .From<GoodsReceipt>()
-            .Where(w => w.Equals((GoodsReceipt gr) => gr.PurchaseOrderItemID, purchaseOrderItemId))
+            .Where(w => w.Equals<GoodsReceipt>(gr => gr.PurchaseOrderItemID, purchaseOrderItemId))
             .OrderBy("gr.ReceiptDate ASC, gr.GoodsReceiptID ASC")
             .Build();
 

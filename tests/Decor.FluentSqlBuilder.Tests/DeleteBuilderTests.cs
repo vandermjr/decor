@@ -25,7 +25,7 @@ namespace Decor.FluentSqlBuilder.Tests
             // Act
             var (sql, parameters) = _builder
                 .Delete<Product>()
-                .Where(w => w.Equals((Product p) => p.ProductID, 5))
+                .Where(w => w.Equals<Product>(p => p.ProductID, 5))
                 .Build();
 
             // Assert

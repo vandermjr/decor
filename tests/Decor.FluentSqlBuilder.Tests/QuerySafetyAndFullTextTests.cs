@@ -26,7 +26,7 @@ public sealed class QuerySafetyAndFullTextTests
         var (sql, _) = CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.IsNull((SearchProduct p) => p.Description))
+            .Where(where => where.IsNull<SearchProduct>(p => p.Description))
             .Build();
 
         sql.Should().Contain("WHERE sp.Description IS NULL");
@@ -38,7 +38,7 @@ public sealed class QuerySafetyAndFullTextTests
         var (sql, _) = CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.IsNotNull((SearchProduct p) => p.Description))
+            .Where(where => where.IsNotNull<SearchProduct>(p => p.Description))
             .Build();
 
         sql.Should().Contain("WHERE sp.Description IS NOT NULL");
@@ -118,9 +118,7 @@ public sealed class QuerySafetyAndFullTextTests
         var (sql, parameters) = CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.FullText(
-                searchTerm,
-                (SearchProduct p) => p.Description,
+            .Where(where => where.FullText<SearchProduct>(searchTerm, p => p.Description,
                 p => p.ManufacturerRef)
                 .OrderByRelevanceDescending())
             .Take(25)
@@ -144,10 +142,10 @@ public sealed class QuerySafetyAndFullTextTests
             .From<SearchProduct>()
             .Where(where =>
             {
-                where.FullText("cimento", (SearchProduct p) => p.Description)
+                where.FullText<SearchProduct>("cimento", p => p.Description)
                     .OrderByRelevanceDescending()
                     .And()
-                    .Equals((SearchProduct p) => p.IsActive, true);
+                    .Equals<SearchProduct>(p => p.IsActive, true);
             })
             .Build();
 
@@ -161,10 +159,10 @@ public sealed class QuerySafetyAndFullTextTests
         var (sql, parameters) = CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.FullText(
+            .Where(where => where.FullText<SearchProduct>(
                 "ciment*",
                 FullTextSearchMode.Boolean,
-                (SearchProduct p) => p.Description))
+                p => p.Description))
             .Build();
 
         sql.Should().Contain("MATCH(sp.Description) AGAINST (@FullTextSearch IN BOOLEAN MODE)");
@@ -177,7 +175,7 @@ public sealed class QuerySafetyAndFullTextTests
         Action action = () => CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.FullText("   ", (SearchProduct p) => p.Description));
+            .Where(where => where.FullText<SearchProduct>("   ", p => p.Description));
 
         action.Should().Throw<ArgumentException>()
             .WithMessage("O termo de busca full-text não pode ser vazio.*");

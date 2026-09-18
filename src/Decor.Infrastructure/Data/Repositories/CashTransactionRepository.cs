@@ -42,7 +42,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<CashTransaction?> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<CashTransaction>()).From<CashTransaction>()
-            .Where(w => w.Equals((CashTransaction t) => t.CashTransactionID, cashTransactionId)).Build();
+            .Where(w => w.Equals<CashTransaction>(t => t.CashTransactionID, cashTransactionId)).Build();
         using var connection = databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<CashTransaction>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
@@ -50,7 +50,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<IReadOnlyList<CashTransaction>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<CashTransaction>()).From<CashTransaction>()
-            .Where(w => w.Equals((CashTransaction t) => t.CashAccountID, cashAccountId)).OrderBy("ct.TransactionDate ASC, ct.CashTransactionID ASC").Build();
+            .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId)).OrderBy("ct.TransactionDate ASC, ct.CashTransactionID ASC").Build();
         using var connection = databaseConnection.CreateConnection();
         return (await connection.QueryAsync<CashTransaction>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }
@@ -64,7 +64,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.Sum(balanceExpression, "Balance"))
             .From<CashTransaction>()
-            .Where(w => w.Equals((CashTransaction t) => t.CashAccountID, cashAccountId))
+            .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId))
             .Build();
 
         using var connection = databaseConnection.CreateConnection();

@@ -15,7 +15,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Columns<Family>(f => f.FamilyID, f => f.FamilyName))
             .From<Family>()
-            .Where(w => w.Equals((Family f) => f.ClassID, classId))
+            .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy("f.FamilyName ASC")
             .Build();
         using var conn = _dbConnection.CreateConnection();
@@ -28,7 +28,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Columns<Family>(f => f.FamilyID, f => f.FamilyName, f => f.ClassID))
             .From<Family>()
-            .Where(w => w.Equals((Family f) => f.ClassID, classId))
+            .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy("f.FamilyName ASC")
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
