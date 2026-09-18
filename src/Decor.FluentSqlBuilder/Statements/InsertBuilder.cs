@@ -42,7 +42,7 @@ namespace Decor.FluentSqlBuilder.Statements
         /// </summary>
         /// <typeparam name="TEntity">O tipo da entidade que representa a tabela.</typeparam>
         /// <returns>O InsertBuilder para encadeamento.</returns>
-        public InsertBuilder Into<TEntity>()
+        private InsertBuilder ConfigureTable<TEntity>()
         {
             Type entityType = typeof(TEntity);
             string tableName = _aliasRegistry.GetTableName(entityType);
@@ -53,20 +53,37 @@ namespace Decor.FluentSqlBuilder.Statements
         }
 
         /// <summary>
+        /// Configura a inserção de uma única entidade, inferindo a tabela a partir do tipo da entidade.
+        /// </summary>
+        /// <typeparam name="TEntity">O tipo da entidade a ser inserida.</typeparam>
+        /// <param name="entity">A instância da entidade contendo os valores a serem inseridos.</param>
+        /// <returns>O InsertBuilder para encadeamento.</returns>
+        public InsertBuilder Entity<TEntity>(TEntity entity)
+        {
+            return ConfigureTable<TEntity>().ConfigureEntity(entity);
+        }
+
+        /// <summary>
+        /// Configura a inserção em lote, inferindo a tabela a partir do tipo dos itens da coleção.
+        /// </summary>
+        /// <typeparam name="TEntity">O tipo das entidades a serem inseridas.</typeparam>
+        /// <param name="entities">A coleção de entidades contendo os valores a serem inseridos.</param>
+        /// <returns>O InsertBuilder para encadeamento.</returns>
+        public InsertBuilder Entities<TEntity>(IEnumerable<TEntity> entities)
+        {
+            return ConfigureTable<TEntity>().ConfigureBatch(entities);
+        }
+
+        /// <summary>
         /// Especifica as colunas a serem inseridas e seus valores, usando uma entidade.
         /// As propriedades da entidade serão mapeadas para colunas e parâmetros.
         /// </summary>
         /// <typeparam name="TEntity">O tipo da entidade a ser inserida.</typeparam>
         /// <param name="entity">A instância da entidade contendo os valores a serem inseridos.</param>
         /// <returns>O InsertBuilder para encadeamento.</returns>
-        public InsertBuilder Values<TEntity>(TEntity entity)
+        private InsertBuilder ConfigureEntity<TEntity>(TEntity entity)
         {
             Type entityType = typeof(TEntity);
-            if (_intoEntityType != entityType)
-            {
-                throw new ArgumentException("O tipo de Values deve ser o mesmo tipo informado em Into.", nameof(entity));
-            }
-
             foreach (var (prop, propertyName, columnName) in ParameterHelper.GetMappableProperties(entityType, _aliasRegistry))
             {
                 if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
@@ -90,25 +107,16 @@ namespace Decor.FluentSqlBuilder.Statements
         /// <summary>
         /// Especifica as colunas a serem inseridas com base numa coleção de entidades, para inserção em lote.
         /// A mesma instrução SQL é reaproveitada pelo Dapper uma vez por item da coleção (multi-exec).
-        /// Usa um nome de método distinto (em vez de sobrecarregar Values) porque, para uma coleção
-        /// concreta como List&lt;TEntity&gt;, a inferência de tipo genérico também satisfaz
-        /// Values&lt;TEntity&gt;(TEntity) com TEntity=List&lt;TEntity&gt;, e o C# prefere essa
-        /// sobrecarga por ser uma correspondência exata sem conversão implícita.
-        /// Não pode ser combinado com <see cref="Values{TEntity}(TEntity)"/> nem lido por <see cref="Build"/>; use <see cref="BuildBatch"/>.
+        /// A mesma instrução SQL é reaproveitada pelo Dapper uma vez por item da coleção (multi-exec).
         /// </summary>
         /// <typeparam name="TEntity">O tipo da entidade a ser inserida.</typeparam>
         /// <param name="entities">A coleção de entidades contendo os valores a serem inseridos.</param>
         /// <returns>O InsertBuilder para encadeamento.</returns>
-        public InsertBuilder ValuesBatch<TEntity>(IEnumerable<TEntity> entities)
+        private InsertBuilder ConfigureBatch<TEntity>(IEnumerable<TEntity> entities)
         {
             ArgumentNullException.ThrowIfNull(entities);
 
             Type entityType = typeof(TEntity);
-            if (_intoEntityType != entityType)
-            {
-                throw new ArgumentException("O tipo de Values deve ser o mesmo tipo informado em Into.", nameof(entities));
-            }
-
             var entityList = entities as IReadOnlyCollection<TEntity> ?? entities.ToList();
             if (entityList.Count == 0)
             {
@@ -155,14 +163,14 @@ namespace Decor.FluentSqlBuilder.Statements
         }
 
         /// <summary>
-        /// Constrói a declaração SQL INSERT e seus parâmetros para uma única entidade (ver <see cref="Values{TEntity}(TEntity)"/>).
+        /// Constrói a declaração SQL INSERT e seus parâmetros para uma única entidade.
         /// </summary>
         /// <returns>Uma tupla contendo a string SQL e o dicionário de parâmetros.</returns>
         public (string Sql, Dictionary<string, object?> Parameters) Build()
         {
             if (_bulkEntities != null)
             {
-                throw new InvalidOperationException($"Esta instrução foi configurada para inserção em lote com {_keywords.VALUES}<TEntity>(IEnumerable<TEntity>). Use {nameof(BuildBatch)}() em vez de {nameof(Build)}().");
+                throw new InvalidOperationException($"Esta instrução foi configurada para inserção em lote. Use {nameof(BuildBatch)}() em vez de {nameof(Build)}().");
             }
 
             return (BuildInsertSql(), _parameters);
@@ -176,7 +184,7 @@ namespace Decor.FluentSqlBuilder.Statements
         {
             if (_bulkEntities == null)
             {
-                throw new InvalidOperationException($"Nenhuma coleção foi especificada para inserção em lote. Use {_keywords.VALUES}<TEntity>(IEnumerable<TEntity>).");
+                throw new InvalidOperationException("Nenhuma coleção foi especificada para inserção em lote.");
             }
 
             return (BuildInsertSql(), _bulkEntities);
@@ -186,11 +194,11 @@ namespace Decor.FluentSqlBuilder.Statements
         {
             if (string.IsNullOrEmpty(_intoTable))
             {
-                throw new InvalidOperationException($"A tabela de destino deve ser especificada usando {_keywords.INSERT}Into<TEntity>().");
+                throw new InvalidOperationException("A tabela de destino deve ser especificada usando Entity ou Entities.");
             }
             if (_insertColumns.Count == 0)
             {
-                throw new InvalidOperationException($"Nenhuma coluna/valor foi especificada para a inserção. Use {_keywords.VALUES}<TEntity>(entity).");
+                throw new InvalidOperationException("Nenhuma coluna/valor foi especificada para a inserção.");
             }
 
             _sqlBuilder.Clear();

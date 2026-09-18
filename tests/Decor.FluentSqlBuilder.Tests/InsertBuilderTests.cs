@@ -35,8 +35,7 @@ namespace Decor.FluentSqlBuilder.Tests
 
             // Act
             var (sql, parameters) = _builder
-                .Insert().Into<Product>()
-                .Values(newProduct)
+                .Insert(i => i.Entity(newProduct))
                 .Build();
 
             // Assert
@@ -52,11 +51,24 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
+        public void Build_WithEntityConfiguration_ShouldCreateInsertQuery()
+        {
+            var entity = new Brand { BrandName = "Marca Nova" };
+
+            var (sql, parameters) = _builder
+                .Insert(i => i.Entity(entity))
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("INSERT INTO brands (BrandName) VALUES (@BrandName);"));
+            parameters.Should().ContainKey("BrandName");
+            parameters["BrandName"].Should().Be("Marca Nova");
+        }
+
+        [Fact]
         public void Build_WithReturningGeneratedId_ShouldAppendLastInsertIdSelect()
         {
             var (sql, _) = _builder
-                .Insert().Into<Brand>()
-                .Values(new Brand { BrandName = "Marca X" })
+                .Insert(i => i.Entity(new Brand { BrandName = "Marca X" }))
                 .ReturningGeneratedId()
                 .Build();
 
@@ -65,20 +77,30 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
-        public void ValuesBatch_WithConcreteList_ShouldBuildBatchAgainstDeclaredEntityType()
+        public void BuildBatch_WithEntitiesConfiguration_ShouldBuildBatch()
         {
-            // Regressão: uma List<Brand> concreta também satisfaz Values<TEntity>(TEntity) com
-            // TEntity=List<Brand>, então o método em lote precisa de um nome distinto (ValuesBatch)
-            // para não ser escolhido incorretamente pela resolução de sobrecarga do C#.
             List<Brand> rows = [new Brand { BrandName = "Marca A" }, new Brand { BrandName = "Marca B" }];
 
             var (sql, parameters) = _builder
-                .Insert().Into<Brand>()
-                .ValuesBatch(rows)
+                .Insert(i => i.Entities(rows))
                 .BuildBatch();
 
-            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("INSERT INTO brands (BrandName) VALUES (@BrandName);"));
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("INSERT INTO brands (BrandName) VALUES (@BrandName);"));
             parameters.Should().BeSameAs(rows);
+            parameters.Cast<Brand>().Should().HaveCount(2);
+        }
+
+        [Fact]
+        public void Build_WithEntityConfigurationAndReturningGeneratedId_ShouldAppendLastInsertIdSelect()
+        {
+            var (sql, parameters) = _builder
+                .Insert(i => i.Entity(new Brand { BrandName = "Marca X" }))
+                .ReturningGeneratedId()
+                .Build();
+
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("INSERT INTO brands (BrandName) VALUES (@BrandName);"));
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("SELECT LAST_INSERT_ID();"));
+            parameters["BrandName"].Should().Be("Marca X");
         }
     }
 }

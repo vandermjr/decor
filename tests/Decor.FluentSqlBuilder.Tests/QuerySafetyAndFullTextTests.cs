@@ -48,8 +48,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void Update_WithoutWhere_ShouldThrow()
     {
         Action action = () => CreateBuilder()
-            .Update().Table<SearchProduct>()
-            .Set((SearchProduct p) => p.Description, "novo valor")
+            .Update(u => u.Entity<SearchProduct>(p => p.Description, "novo valor"))
             .Build();
 
         action.Should().Throw<InvalidOperationException>()
@@ -68,24 +67,11 @@ public sealed class QuerySafetyAndFullTextTests
     }
 
     [Fact]
-    public void Insert_WithDifferentEntityType_ShouldThrow()
-    {
-        Action action = () => CreateBuilder()
-            .Insert().Into<SearchProduct>()
-            .Values(new Brand())
-            .Build();
-
-        action.Should().Throw<ArgumentException>()
-            .WithMessage("O tipo de Values deve ser o mesmo tipo informado em Into.*");
-    }
-
-    [Fact]
     public void Update_WithDuplicateSetColumn_ShouldThrow()
     {
         Action action = () => CreateBuilder()
-            .Update().Table<SearchProduct>()
-            .Set((SearchProduct p) => p.Description, "primeiro")
-            .Set((SearchProduct p) => p.Description, "segundo");
+            .Update(u => u.Entity<SearchProduct>(p => p.Description, "primeiro")
+                .Entity<SearchProduct>(p => p.Description, "segundo"));
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("A coluna 'Description' já foi definida na cláusula SET.");

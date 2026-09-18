@@ -39,8 +39,7 @@ public sealed class RoleAdministrationRepository(IDatabaseConnection databaseCon
             {
                 var rows = permissionIds.Distinct().Select(permissionId => new RolePermission { RoleID = roleId, PermissionID = permissionId }).ToList();
                 var (insertSql, insertParameters) = createCommandBuilder()
-                    .Insert().Into<RolePermission>()
-                    .ValuesBatch(rows)
+                    .Insert(i => i.Entities(rows))
                     .BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }

@@ -85,18 +85,42 @@ namespace Decor.FluentSqlBuilder
         /// Inicia a construção de uma declaração INSERT.
         /// </summary>
         /// <returns>Um InsertBuilder para configurar a query INSERT.</returns>
-        public InsertBuilder Insert()
+        private InsertBuilder CreateInsertBuilder()
         {
             return new InsertBuilder(this, _aliasRegistry, _dialect);
+        }
+
+        /// <summary>
+        /// Inicia a construção de uma declaração INSERT e permite configurá-la por lambda.
+        /// </summary>
+        /// <param name="action">Uma ação para configurar o InsertBuilder.</param>
+        /// <returns>Um InsertBuilder para encadeamento.</returns>
+        public InsertBuilder Insert(Action<InsertBuilder> action)
+        {
+            var insertBuilder = CreateInsertBuilder();
+            action(insertBuilder);
+            return insertBuilder;
         }
 
         /// <summary>
         /// Inicia a construção de uma declaração UPDATE.
         /// </summary>
         /// <returns>Um UpdateBuilder para configurar a query UPDATE.</returns>
-        public UpdateBuilder Update()
+        private UpdateBuilder CreateUpdateBuilder()
         {
             return new UpdateBuilder(this, _aliasRegistry, _dialect);
+        }
+
+        /// <summary>
+        /// Inicia a construção de uma declaração UPDATE e permite configurá-la por lambda.
+        /// </summary>
+        /// <param name="action">Uma ação para configurar o UpdateBuilder.</param>
+        /// <returns>Um UpdateBuilder para encadeamento.</returns>
+        public UpdateBuilder Update(Action<UpdateBuilder> action)
+        {
+            var updateBuilder = CreateUpdateBuilder();
+            action(updateBuilder);
+            return updateBuilder;
         }
 
         /// <summary>

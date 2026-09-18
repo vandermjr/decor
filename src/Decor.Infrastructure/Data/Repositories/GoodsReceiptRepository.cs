@@ -11,8 +11,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
     public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()
-            .Insert().Into<GoodsReceipt>()
-            .Values(goodsReceipt)
+            .Insert(i => i.Entity(goodsReceipt))
             .ReturningGeneratedId()
             .Build();
 
@@ -22,7 +21,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
 
     public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Insert().Into<GoodsReceipt>().Values(goodsReceipt).ReturningGeneratedId().Build();
+        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(goodsReceipt)).ReturningGeneratedId().Build();
         return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
     }
 

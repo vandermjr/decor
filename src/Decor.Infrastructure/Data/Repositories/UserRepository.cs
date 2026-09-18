@@ -11,9 +11,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
     public async Task<bool> UpdatePasswordAsync(int userId, string passwordHash, bool mustChangePassword, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()
-            .Update().Table<UserAccount>()
-            .Set((UserAccount u) => u.PasswordHash, passwordHash)
-            .Set((UserAccount u) => u.MustChangePassword, mustChangePassword)
+            .Update(u => u.Entity<UserAccount>(user => user.PasswordHash, passwordHash)
+                .Entity<UserAccount>(user => user.MustChangePassword, mustChangePassword))
             .Where(w =>
             {
                 w.Equals<UserAccount>(u => u.UserID, userId);

@@ -42,7 +42,7 @@ namespace Decor.FluentSqlBuilder.Statements
         /// </summary>
         /// <typeparam name="TEntity">O tipo da entidade que representa a tabela.</typeparam>
         /// <returns>O UpdateBuilder para encadeamento.</returns>
-        public UpdateBuilder Table<TEntity>()
+        private UpdateBuilder ConfigureTable<TEntity>()
         {
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
@@ -54,13 +54,36 @@ namespace Decor.FluentSqlBuilder.Statements
         }
 
         /// <summary>
+        /// Configura a atualização de uma entidade inteira, inferindo a tabela a partir do tipo da entidade.
+        /// </summary>
+        /// <typeparam name="TEntity">O tipo da entidade.</typeparam>
+        /// <param name="entity">A instância da entidade contendo os valores a serem atualizados.</param>
+        /// <returns>O UpdateBuilder para encadeamento.</returns>
+        public UpdateBuilder Entity<TEntity>(TEntity entity)
+        {
+            return ConfigureTable<TEntity>().ConfigureEntity(entity);
+        }
+
+        /// <summary>
+        /// Configura a atualização de uma propriedade específica, inferindo a tabela a partir do tipo da entidade.
+        /// </summary>
+        /// <typeparam name="TEntity">O tipo da entidade da qual a propriedade é selecionada.</typeparam>
+        /// <param name="propertySelector">A expressão lambda que seleciona a propriedade.</param>
+        /// <param name="value">O novo valor para a propriedade.</param>
+        /// <returns>O UpdateBuilder para encadeamento.</returns>
+        public UpdateBuilder Entity<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object? value)
+        {
+            return ConfigureTable<TEntity>().ConfigureProperty(propertySelector, value);
+        }
+
+        /// <summary>
         /// Define uma coluna a ser atualizada com um novo valor, usando uma expressão lambda.
         /// </summary>
         /// <typeparam name="TEntity">O tipo da entidade da qual a propriedade é selecionada.</typeparam>
         /// <param name="propertySelector">A expressão lambda que seleciona a propriedade (ex: p => p.Price).</param>
         /// <param name="value">O novo valor para a propriedade.</param>
         /// <returns>O UpdateBuilder para encadeamento.</returns>
-        public UpdateBuilder Set<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object? value)
+        private UpdateBuilder ConfigureProperty<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object? value)
         {
             var propInfo = ExpressionHelper.GetPropertyInfo(propertySelector);
             string propertyName = propInfo.Name;
@@ -87,7 +110,7 @@ namespace Decor.FluentSqlBuilder.Statements
         /// <typeparam name="TEntity">O tipo da entidade.</typeparam>
         /// <param name="entity">A instância da entidade contendo os valores a serem atualizados.</param>
         /// <returns>O UpdateBuilder para encadeamento.</returns>
-        public UpdateBuilder Set<TEntity>(TEntity entity)
+        private UpdateBuilder ConfigureEntity<TEntity>(TEntity entity)
         {
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
@@ -137,11 +160,11 @@ namespace Decor.FluentSqlBuilder.Statements
         {
             if (string.IsNullOrEmpty(_updateTable))
             {
-                throw new InvalidOperationException($"A tabela a ser atualizada deve ser especificada usando {_keywords.UPDATE}Table<TEntity>().");
+                throw new InvalidOperationException("A tabela a ser atualizada deve ser especificada usando Entity.");
             }
             if (_setClauses.Count == 0)
             {
-                throw new InvalidOperationException($"Nenhuma coluna/valor foi especificada para atualização. Use {_keywords.SET}<TEntity>(propertySelector, value) ou {_keywords.SET}<TEntity>(entity).");
+                throw new InvalidOperationException("Nenhuma coluna/valor foi especificada para atualização.");
             }
             if (_predicatesWithOperators.Count == 0)
             {

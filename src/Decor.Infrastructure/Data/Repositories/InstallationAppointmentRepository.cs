@@ -11,7 +11,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
     public int Save(InstallationAppointment entity)
     {
         using var connection = dbConnection.CreateConnection();
-        var (sql, parameters) = createCommandBuilder().Insert().Into<InstallationAppointment>().Values(entity).ReturningGeneratedId().Build();
+        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
         entity.AppointmentID = connection.QuerySingle<int>(sql, parameters);
         return 1;
     }

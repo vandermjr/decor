@@ -12,7 +12,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<int> RegisterAsync(CashTransaction transaction, CancellationToken cancellationToken = default)
     {
         using var connection = databaseConnection.CreateConnection();
-        var (sql, parameters) = createCommandBuilder().Insert().Into<CashTransaction>().Values(transaction).ReturningGeneratedId().Build();
+        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(transaction)).ReturningGeneratedId().Build();
         transaction.CashTransactionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return transaction.CashTransactionID;
     }
@@ -74,7 +74,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
 
     private async Task InsertAsync(IDbConnection connection, IDbTransaction transaction, CashTransaction entity, CancellationToken cancellationToken)
     {
-        var (sql, parameters) = createCommandBuilder().Insert().Into<CashTransaction>().Values(entity).ReturningGeneratedId().Build();
+        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
         entity.CashTransactionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
     }
 }

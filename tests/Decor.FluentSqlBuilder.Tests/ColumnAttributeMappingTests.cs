@@ -106,9 +106,7 @@ namespace Decor.FluentSqlBuilder.Tests
             };
 
             var (sql, parameters) = CreateCommandBuilder()
-                .Insert()
-                .Into<CustomMappedProduct>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .Build();
 
             sql.Should().Contain("INSERT INTO tb_produtos (desc_produto, id_marca)");
