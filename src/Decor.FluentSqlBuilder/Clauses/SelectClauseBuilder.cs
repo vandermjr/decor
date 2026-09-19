@@ -114,7 +114,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             return this;
         }
 
-        public SelectClauseBuilder Except<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
+        public SelectClauseBuilder ExceptColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
         {
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
@@ -144,7 +144,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             else
             {
                 throw new InvalidOperationException(
-                    $"Não é possível usar Except e AllColumns ou Columns para o mesmo tipo de entidade ('{entityType.Name}').");
+                    $"Não é possível usar ExceptColumns e AllColumns ou WithColumns para o mesmo tipo de entidade ('{entityType.Name}').");
             }
 
             _selectionIntent[entityType] = SelectIntent.AllColumnsWithExclusions;
@@ -152,7 +152,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             return this;
         }
 
-        public SelectClauseBuilder Columns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
+        public SelectClauseBuilder WithColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
         {
             Type entityType = typeof(TEntity);
             if (!_selectionIntent.TryGetValue(entityType, out SelectIntent value) || value == SelectIntent.None)
@@ -173,7 +173,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             }
             else
             {
-                throw new InvalidOperationException($"Não é possível usar Columns e AllColumns ou Except para o mesmo tipo de entidade ('{entityType.Name}').");
+                throw new InvalidOperationException($"Não é possível usar WithColumns e AllColumns ou ExceptColumns para o mesmo tipo de entidade ('{entityType.Name}').");
             }
 
             return this;

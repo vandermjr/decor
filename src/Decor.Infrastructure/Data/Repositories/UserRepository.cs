@@ -28,7 +28,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
     public async Task<string?> GetPasswordHashByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()
-            .Select(s => s.Columns<UserAccount>(u => u.PasswordHash))
+            .Select(s => s.WithColumns<UserAccount>(u => u.PasswordHash))
             .From<UserAccount>()
             .Where(w =>
             {
@@ -46,7 +46,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
     {
         // Permissões concedidas por role, respeitando um override negativo/positivo do próprio usuário.
         var permissionsByRole = createCommandBuilder()
-            .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+            .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
             .Join(j =>
             {
@@ -69,7 +69,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
 
         // Permissões concedidas exclusivamente por override positivo, mesmo sem nenhuma role que as conceda.
         var permissionsByOverride = createCommandBuilder()
-            .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+            .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
             .Join(j =>
             {
@@ -87,7 +87,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         var (sql, parameters) = createCommandBuilder()
             .Batch()
             .Select(s => s
-                .Select(sc => sc.Columns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword))
+                .Select(sc => sc.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword))
                 .From<ApplicationUser>()
                 .Where(w =>
                 {
@@ -96,7 +96,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 })
                 .Take(1))
             .Select(s => s
-                .Select(sc => sc.Columns<Role>(r => r.RoleName))
+                .Select(sc => sc.WithColumns<Role>(r => r.RoleName))
                 .From<Role>()
                 .Join(j =>
                 {

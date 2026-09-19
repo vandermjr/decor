@@ -21,12 +21,12 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = CreateBuilder()
                 .Batch()
                 .Select(s => s
-                    .Select(sc => sc.Columns<Role>(r => r.RoleID, r => r.RoleName))
+                    .Select(sc => sc.WithColumns<Role>(r => r.RoleID, r => r.RoleName))
                     .From<Role>()
                     .Where(w => w.Equals<Role>(r => r.RoleID, 1))
                     .OrderBy("r.RoleName ASC"))
                 .Select(s => s
-                    .Select(sc => sc.Columns<Permission>(p => p.PermissionID, p => p.PermissionCode))
+                    .Select(sc => sc.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode))
                     .From<Permission>()
                     .Where(w => w.Equals<Permission>(p => p.PermissionID, 2))
                     .OrderBy("p.PermissionCode ASC"))
@@ -49,12 +49,12 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Union_WithTwoSelects_ShouldCombineWithUnionKeywordAndMergeParameters()
         {
             var first = CreateBuilder()
-                .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
             var second = CreateBuilder()
-                .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
@@ -69,12 +69,12 @@ namespace Decor.FluentSqlBuilder.Tests
         public void FromSubquery_WithUnionAndDistinctColumn_ShouldWrapAsDerivedTable()
         {
             var roleBased = CreateBuilder()
-                .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
             var overrideBased = CreateBuilder()
-                .Select(s => s.Columns<Permission>(p => p.PermissionCode))
+                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .From<Permission>()
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
@@ -114,7 +114,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Where_Group_ShouldWrapConditionsInParentheses()
         {
             var (sql, parameters) = CreateBuilder()
-                .Select(s => s.Columns<Permission>(p => p.PermissionID))
+                .Select(s => s.WithColumns<Permission>(p => p.PermissionID))
                 .From<Permission>()
                 .Where(w =>
                 {

@@ -168,7 +168,7 @@ namespace Decor.FluentSqlBuilder.Statements
             }
             if (_selectColumns.Count == 0)
             {
-                throw new InvalidOperationException($"Nenhuma coluna foi especificada para a seleção. Use {_dialect.Keywords.SELECT}(s => s.Columns<TEntity>(...)) ou {_dialect.Keywords.SELECT}(s => s.AllColumns<TEntity>()).");
+                throw new InvalidOperationException($"Nenhuma coluna foi especificada para a seleção. Use {_dialect.Keywords.SELECT}(s => s.WithColumns<TEntity>(...)) ou {_dialect.Keywords.SELECT}(s => s.AllColumns<TEntity>()).");
             }
 
             _sqlBuilder.Clear();

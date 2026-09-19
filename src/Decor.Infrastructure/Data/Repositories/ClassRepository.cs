@@ -14,7 +14,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Class> GetAll()
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName))
+            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .OrderBy("c.ClassName ASC")
             .Build();
@@ -26,7 +26,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName))
+            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .OrderBy("c.ClassName ASC")
             .Take((uint)pageSize)
@@ -59,7 +59,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Class> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName))
+            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy("c.ClassName ASC")
@@ -89,7 +89,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName))
+            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy("c.ClassName ASC")

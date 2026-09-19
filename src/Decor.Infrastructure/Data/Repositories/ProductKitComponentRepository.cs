@@ -104,8 +104,8 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
         var (sql, parameters) = _createCommandBuilder()
             .Select(s =>
             {
-                s.Columns<ProductKitComponent>(c => c.Quantity);
-                s.Columns<Product>(p => p.SalePrice);
+                s.WithColumns<ProductKitComponent>(c => c.Quantity);
+                s.WithColumns<Product>(p => p.SalePrice);
             })
             .From<ProductKitComponent>()
             .Join(j => j.Inner<ProductKitComponent, Product>((c, p) => c.ComponentProductID == p.ProductID))

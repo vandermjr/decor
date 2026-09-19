@@ -64,13 +64,13 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s =>
             {
-                s.Except<Product>(p => p.BrandID);
-                s.Columns<Brand>(b => b.BrandID, b => b.BrandName);
-                s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName);
-                s.Columns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
-                s.Columns<Group>(gr => gr.GroupID, gr => gr.GroupName);
-                s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
-                s.Columns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
+                s.ExceptColumns<Product>(p => p.BrandID);
+                s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
+                s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName);
+                s.WithColumns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
+                s.WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName);
+                s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                s.WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
             })
             .From<Product>()
             .Join(j =>
@@ -126,13 +126,13 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s =>
             {
-                s.Except<Product>(p => p.BrandID);
-                s.Columns<Brand>(b => b.BrandID, b => b.BrandName);
-                s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName);
-                s.Columns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
-                s.Columns<Group>(gr => gr.GroupID, gr => gr.GroupName);
-                s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
-                s.Columns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
+                s.ExceptColumns<Product>(p => p.BrandID);
+                s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
+                s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName);
+                s.WithColumns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
+                s.WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName);
+                s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                s.WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
             })
             .From<Product>()
             .Join(j =>

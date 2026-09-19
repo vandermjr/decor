@@ -12,7 +12,7 @@ var (sql, parameters) = builder
 
 // Cria a query SELECT com colunas específicas
 var (sql, parameters) = builder
-    .Select(s => s.Columns<Product>(p => p.ProductID, p => p.Description, p => p.StockQuantity))
+    .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description, p => p.StockQuantity))
     .From<Product>()
     .Build();
 
@@ -23,9 +23,9 @@ var (sql, parameters) = builder
 var (sql, parameters) = builder
     .Select(s =>
     {
-        s.Columns<Product>(p => p.ProductID);
-        s.Columns<Product>(p => p.Description);
-        s.Columns<Product>(p => p.IsActive);
+        s.WithColumns<Product>(p => p.ProductID);
+        s.WithColumns<Product>(p => p.Description);
+        s.WithColumns<Product>(p => p.IsActive);
     })
     .From<Product>()
     .Where(w => w.Equals<Product>(p => p.IsActive, true))

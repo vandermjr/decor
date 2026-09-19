@@ -14,7 +14,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Subgroup> GetByGroupId(int groupId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
+            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
             .OrderBy("s.SubgroupName ASC")
@@ -27,7 +27,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName, sg => sg.GroupID))
+            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName, sg => sg.GroupID))
             .From<Subgroup>()
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
             .OrderBy("s.SubgroupName ASC")
@@ -61,7 +61,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Subgroup> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
+            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
             .OrderBy("s.SubgroupName ASC")
@@ -91,7 +91,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
+            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
             .OrderBy("s.SubgroupName ASC")

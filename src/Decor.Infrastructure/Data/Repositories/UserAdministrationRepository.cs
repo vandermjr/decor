@@ -13,7 +13,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
     {
         var normalized = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         var query = createCommandBuilder()
-            .Select(s => s.Columns<ApplicationUser>(u => u.UserID))
+            .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
             .From<ApplicationUser>();
 
         if (normalized is not null)
@@ -41,11 +41,11 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var (sql, parameters) = createCommandBuilder()
             .Batch()
             .Select(s => s
-                .Select(sc => sc.Columns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive))
+                .Select(sc => sc.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive))
                 .From<ApplicationUser>()
                 .Where(w => w.Equals<ApplicationUser>(u => u.UserID, userId)))
             .Select(s => s
-                .Select(sc => sc.Columns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
+                .Select(sc => sc.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
                 .From<Role>()
                 .Join(j => j.Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID))
                 .Where(w => w.Equals<UserRole>(ur => ur.UserID, userId))
@@ -53,8 +53,8 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             .Select(s => s
                 .Select(sc =>
                 {
-                    sc.Columns<Permission>(p => p.PermissionID, p => p.PermissionCode);
-                    sc.Columns<UserPermissionOverride>(o => o.IsGranted);
+                    sc.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode);
+                    sc.WithColumns<UserPermissionOverride>(o => o.IsGranted);
                 })
                 .From<UserPermissionOverride>()
                 .Join(j => j.Inner<UserPermissionOverride, Permission>((o, p) => o.PermissionID == p.PermissionID))
@@ -119,7 +119,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         try
         {
             var (lockRoleSql, lockRoleParameters) = createCommandBuilder()
-                .Select(s => s.Columns<Role>(r => r.RoleID))
+                .Select(s => s.WithColumns<Role>(r => r.RoleID))
                 .From<Role>()
                 .Where(w => w.Equals<Role>(r => r.RoleID, administratorRoleId))
                 .ForUpdate()
@@ -127,7 +127,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             await c.ExecuteAsync(new CommandDefinition(lockRoleSql, lockRoleParameters, t, cancellationToken: cancellationToken));
 
             var (activeAdminsSql, activeAdminsParameters) = createCommandBuilder()
-                .Select(s => s.Columns<ApplicationUser>(u => u.UserID))
+                .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
                 .From<ApplicationUser>()
                 .Join(j => j.Inner<ApplicationUser, UserRole>((u, ur) => u.UserID == ur.UserID))
                 .Where(w =>
@@ -177,7 +177,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         try
         {
             var (lockRoleSql, lockRoleParameters) = createCommandBuilder()
-                .Select(s => s.Columns<Role>(r => r.RoleID))
+                .Select(s => s.WithColumns<Role>(r => r.RoleID))
                 .From<Role>()
                 .Where(w => w.Equals<Role>(r => r.RoleID, administratorRoleId))
                 .ForUpdate()
@@ -185,7 +185,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             await connection.ExecuteAsync(new CommandDefinition(lockRoleSql, lockRoleParameters, transaction, cancellationToken: cancellationToken));
 
             var (activeAdminsSql, activeAdminsParameters) = createCommandBuilder()
-                .Select(s => s.Columns<ApplicationUser>(u => u.UserID))
+                .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
                 .From<ApplicationUser>()
                 .Join(j => j.Inner<ApplicationUser, UserRole>((u, ur) => u.UserID == ur.UserID))
                 .Where(w =>
@@ -251,7 +251,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
     public async Task<IReadOnlyList<AdministrativeRoleDTO>> GetRolesAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()
-            .Select(s => s.Columns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
+            .Select(s => s.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
             .From<Role>()
             .OrderBy("r.HierarchyLevel DESC, r.RoleName ASC")
             .Build();
@@ -263,7 +263,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
     public async Task<IReadOnlyList<AdministrativePermissionDTO>> GetPermissionsAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder()
-            .Select(s => s.Columns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
+            .Select(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .From<Permission>()
             .OrderBy("p.PermissionCode ASC")
             .Build();

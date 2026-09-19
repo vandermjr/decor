@@ -13,7 +13,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public IEnumerable<Family> GetByClassId(int classId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Family>(f => f.FamilyID, f => f.FamilyName))
+            .Select(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName))
             .From<Family>()
             .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy("f.FamilyName ASC")
@@ -26,7 +26,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Family>(f => f.FamilyID, f => f.FamilyName, f => f.ClassID))
+            .Select(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName, f => f.ClassID))
             .From<Family>()
             .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy("f.FamilyName ASC")

@@ -58,7 +58,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.Columns<Product>(p => p.ProductID, p => p.Description))
+                .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
                 .From<Product>()
                 .Build();
 
@@ -74,8 +74,8 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = _builder
                 .Select(s =>
                 {
-                    s.Columns<Product>(p => p.ProductID);
-                    s.Columns<Brand>(b => b.BrandName);
+                    s.WithColumns<Product>(p => p.ProductID);
+                    s.WithColumns<Brand>(b => b.BrandName);
                 })
                 .From<Product>()
                 .Join(j => j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID))
@@ -91,7 +91,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.AllColumns<Product>(true).Except<Product>(p => p.Description, p => p.Barcode))
+                .Select(s => s.AllColumns<Product>(true).ExceptColumns<Product>(p => p.Description, p => p.Barcode))
                 .From<Product>()
                 .Build();
 
@@ -201,7 +201,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_ExceptWithoutExplicitAllColumns_ShouldSelectRemainingColumns()
         {
             var (sql, parameters) = _builder
-                .Select(s => s.Except<Product>(p => p.ProductID))
+                .Select(s => s.ExceptColumns<Product>(p => p.ProductID))
                 .From<Product>()
                 .Build();
 
@@ -217,7 +217,7 @@ namespace Decor.FluentSqlBuilder.Tests
             Action act = () => _builder
                 .Select(s =>
                 {
-                    s.Columns<Product>(p => p.ProductID);
+                    s.WithColumns<Product>(p => p.ProductID);
                     s.AllColumns<Product>();
                 })
                 .From<Product>()
@@ -234,7 +234,7 @@ namespace Decor.FluentSqlBuilder.Tests
             Action act = () => _builder
                 .Select(s =>
                 {
-                    s.Columns<Product>(p => p.ProductID);
+                    s.WithColumns<Product>(p => p.ProductID);
                     s.Count();
                 })
                 .From<Product>()

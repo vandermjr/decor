@@ -45,7 +45,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_ExplicitColumnsWithCustomColumnAttribute_ShouldUseColumnNamesWithAlias()
         {
             var (sql, _) = CreateCommandBuilder()
-                .Select(s => s.Columns<CustomMappedProduct>(p => p.ProductID, p => p.Description))
+                .Select(s => s.WithColumns<CustomMappedProduct>(p => p.ProductID, p => p.Description))
                 .From<CustomMappedProduct>()
                 .Build();
 
@@ -86,7 +86,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Join_WithCustomColumnAttribute_ShouldUseColumnNameInOnClause()
         {
             var (sql, _) = CreateCommandBuilder()
-                .Select(s => s.Columns<CustomMappedProduct>(p => p.Description))
+                .Select(s => s.WithColumns<CustomMappedProduct>(p => p.Description))
                 .From<CustomMappedProduct>()
                 .Join(j => j.Inner<CustomMappedProduct, CustomMappedBrand>((p, b) => p.BrandID == b.BrandID))
                 .Build();

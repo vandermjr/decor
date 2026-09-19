@@ -56,7 +56,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public IEnumerable<Brand> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Brand>(b => b.BrandID, b => b.BrandName))
+            .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .From<Brand>()
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
             .OrderBy("b.BrandName ASC")
@@ -70,7 +70,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Columns<Brand>(b => b.BrandID, b => b.BrandName))
+            .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .From<Brand>()
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
             .OrderBy("b.BrandName ASC")

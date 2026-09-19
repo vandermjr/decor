@@ -20,15 +20,15 @@ namespace Decor.FluentSqlBuilder.Tests
             var builder = FluentCommandBuilder.Create()
                 .Select(s =>
                 {
-                    s.Columns<Product>(p => p.ProductID, p => p.Barcode, p => p.IsActive,
+                    s.WithColumns<Product>(p => p.ProductID, p => p.Barcode, p => p.IsActive,
                                        p => p.Description, p => p.ManufacturerRef, p => p.AuxiliaryRef,
                                        p => p.Dimensions, p => p.Observations, p => p.StockQuantity,
                                        p => p.MinimumStock);
-                    s.Columns<Brand>(b => b.BrandID, b => b.BrandName);
-                    s.Columns<Class>(cl => cl.ClassID, cl => cl.ClassName);
-                    s.Columns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
-                    s.Columns<Group>(gr => gr.GroupID, gr => gr.GroupName);
-                    s.Columns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                    s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
+                    s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName);
+                    s.WithColumns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
+                    s.WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName);
+                    s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
                 })
                 .From<Product>()
                 .Join(j =>
@@ -168,7 +168,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlWithTakeAndSkip()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Columns<Product>(p => p.ProductID))
+                .Select(s => s.WithColumns<Product>(p => p.ProductID))
                 .From<Product>()
                 .OrderBy("p.ProductID ASC")
                 .Take(10)
@@ -192,7 +192,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlWithOnlyTake()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Columns<Product>(p => p.ProductID))
+                .Select(s => s.WithColumns<Product>(p => p.ProductID))
                 .From<Product>()
                 .OrderBy("p.ProductID ASC")
                 .Take(10);
@@ -215,7 +215,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlWithOnlySkip()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Columns<Product>(p => p.ProductID))
+                .Select(s => s.WithColumns<Product>(p => p.ProductID))
                 .From<Product>()
                 .OrderBy("p.ProductID ASC")
                 .Skip(5);
@@ -239,7 +239,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlWithDefaultOrderByPrimaryKey()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Columns<Product>(p => p.ProductID))
+                .Select(s => s.WithColumns<Product>(p => p.ProductID))
                 .From<Product>();
             // Sem OrderBy explícito ou dinâmico
 
@@ -261,7 +261,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Entidade sem [Key]
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Columns<NoKeyEntity>(nk => nk.Id))
+                .Select(s => s.WithColumns<NoKeyEntity>(nk => nk.Id))
                 .From<NoKeyEntity>();
 
             var ex = Assert.Throws<InvalidOperationException>(() => builder.Build());
@@ -297,8 +297,8 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Select(s =>
                 {
                     s.AllColumns<Product>(true);
-                    s.Columns<Brand>(b => b.BrandID, b => b.BrandName);
-                    s.Columns<Subgroup>(sg => sg.SubgroupID);
+                    s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
+                    s.WithColumns<Subgroup>(sg => sg.SubgroupID);
                 })
                 .From<Product>();
 
@@ -336,7 +336,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlForExcept()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select(s => s.Except<Product>(p => p.BrandID, p => p.Description, p => p.Barcode))
+                .Select(s => s.ExceptColumns<Product>(p => p.BrandID, p => p.Description, p => p.Barcode))
                 .From<Product>();
 
             // Espera-se que BrandID, Description e Barcode sejam excluídos.

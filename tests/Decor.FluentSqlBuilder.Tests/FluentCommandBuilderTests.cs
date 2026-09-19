@@ -73,7 +73,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Arrange & Act
             var (sql, parameters) = FluentCommandBuilder.Create(new MariaDBDialect())
-                .Select(s => s.Columns<Product>(prod => prod.ProductID, item => item.Description))
+                .Select(s => s.WithColumns<Product>(prod => prod.ProductID, item => item.Description))
                 .From<Product>()
                 .Where(w => w.Equals<Product>(anyVarName => anyVarName.ProductID, 123))
                 .Build();
@@ -121,7 +121,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
                 .RegisterColumn<ExplicitColumnEntity>(nameof(ExplicitColumnEntity.Value), "registered_column")
-                .Select(s => s.Columns<ExplicitColumnEntity>(e => e.Value))
+                .Select(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
                 .From<ExplicitColumnEntity>()
                 .Build();
 
@@ -145,7 +145,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void ColumnAttribute_ShouldRemainTheFallbackWithoutExplicitRegistration()
         {
             var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
-                .Select(s => s.Columns<ExplicitColumnEntity>(e => e.Value))
+                .Select(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
                 .From<ExplicitColumnEntity>()
                 .Build();
 
