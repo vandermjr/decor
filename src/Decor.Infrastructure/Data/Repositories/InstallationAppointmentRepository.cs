@@ -11,9 +11,15 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
     public int Save(InstallationAppointment entity)
     {
         using var connection = dbConnection.CreateConnection();
-        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
-        entity.AppointmentID = connection.QuerySingle<int>(sql, parameters);
-        return 1;
+        var (sql, parameters) = entity.AppointmentID == 0
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<InstallationAppointment>(a => a.AppointmentID, entity.AppointmentID)).Build();
+        if (entity.AppointmentID == 0)
+        {
+            entity.AppointmentID = connection.QuerySingle<int>(sql, parameters);
+            return 1;
+        }
+        return connection.Execute(sql, parameters);
     }
 
     public async Task<int> SaveAsync(InstallationAppointment entity, CancellationToken cancellationToken = default)
