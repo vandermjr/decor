@@ -16,7 +16,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Columns<Group>(g => g.GroupID, g => g.GroupName))
             .From<Group>()
-            .Where(w => w.Equals((Group g) => g.FamilyID, familyId))
+            .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
             .OrderBy("g.GroupName ASC")
             .Build();
         using var conn = _dbConnection.CreateConnection();

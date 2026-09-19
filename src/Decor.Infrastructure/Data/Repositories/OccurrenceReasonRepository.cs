@@ -70,7 +70,7 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.AllColumns<OccurrenceReason>())
             .From<OccurrenceReason>()
-            .Where(w => w.Equals((OccurrenceReason r) => r.ReasonID, reasonId))
+            .Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, reasonId))
             .Build();
         using var connection = dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<OccurrenceReason>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
