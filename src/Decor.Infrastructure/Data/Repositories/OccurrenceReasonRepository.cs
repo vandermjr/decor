@@ -98,21 +98,28 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
     }
 
     private (string Sql, object Parameters) BuildInsert(OccurrenceReason entity)
-        => _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
+        => _createCommandBuilder()
+            .Insert(i => i.Entity(entity))
+            .ReturningGeneratedId()
+            .Build();
 
     private (string Sql, object Parameters) BuildUpdate(OccurrenceReason entity)
-        => _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, entity.ReasonID)).Build();
+        => _createCommandBuilder()
+            .Update(u => u.Entity(entity))
+            .Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, entity.ReasonID))
+            .Build();
 
     private (string Sql, object Parameters) BuildDelete(int id)
-        => _createCommandBuilder().Delete<OccurrenceReason>().Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, id)).Build();
+        => _createCommandBuilder()
+            .Delete<OccurrenceReason>()
+            .Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, id))
+            .Build();
 
     private (string Sql, object Parameters) BuildDescriptionExists(string description, int currentReasonId)
         => _createCommandBuilder()
             .Select(s => s.Count())
             .From<OccurrenceReason>()
-            .Where(w => w
-                .Equals<OccurrenceReason>(r => r.Description, description)
-                .NotEquals<OccurrenceReason>(r => r.ReasonID, currentReasonId))
+            .Where(w => w.Equals<OccurrenceReason>(r => r.Description, description).NotEquals<OccurrenceReason>(r => r.ReasonID, currentReasonId))
             .Build();
 
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)

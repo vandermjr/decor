@@ -210,12 +210,17 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (item.OrderItemID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(item))
-                .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, item.OrderItemID)).Build();
+            var (sql, parameters) = _createCommandBuilder()
+                .Update(u => u.Entity(item))
+                .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, item.OrderItemID))
+                .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(item)).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder()
+            .Insert(i => i.Entity(item))
+            .ReturningGeneratedId()
+            .Build();
         item.OrderItemID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }
@@ -247,12 +252,17 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (value.ValueID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(value))
-                .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.ValueID, value.ValueID)).Build();
+            var (sql, parameters) = _createCommandBuilder()
+                .Update(u => u.Entity(value))
+                .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.ValueID, value.ValueID))
+                .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(value)).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder()
+            .Insert(i => i.Entity(value))
+            .ReturningGeneratedId()
+            .Build();
         value.ValueID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }

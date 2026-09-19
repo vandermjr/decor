@@ -108,13 +108,22 @@ public class OrderOccurrenceRepository(
     }
 
     private (string Sql, object Parameters) BuildInsert(OrderOccurrence entity)
-        => _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
+        => _createCommandBuilder()
+            .Insert(i => i.Entity(entity))
+            .ReturningGeneratedId()
+            .Build();
 
     private (string Sql, object Parameters) BuildUpdate(OrderOccurrence entity)
-        => _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, entity.OccurrenceID)).Build();
+        => _createCommandBuilder()
+            .Update(u => u.Entity(entity))
+            .Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, entity.OccurrenceID))
+            .Build();
 
     private (string Sql, object Parameters) BuildDelete(int id)
-        => _createCommandBuilder().Delete<OrderOccurrence>().Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, id)).Build();
+        => _createCommandBuilder()
+            .Delete<OrderOccurrence>()
+            .Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, id))
+            .Build();
 
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)
     {

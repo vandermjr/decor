@@ -134,9 +134,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
         var (lockSql, lockParameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockBalance>())
             .From<StockBalance>()
-            .Where(w => w
-                .Equals<StockBalance>(sb => sb.ProductID, movement.ProductID)
-                .Equals<StockBalance>(sb => sb.StockLocationID, movement.StockLocationID))
+            .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, movement.ProductID).Equals<StockBalance>(sb => sb.StockLocationID, movement.StockLocationID))
             .ForUpdate()
             .Build();
         var balance = await connection.QuerySingleOrDefaultAsync<StockBalance>(new CommandDefinition(lockSql, lockParameters, transaction, cancellationToken: cancellationToken));

@@ -246,12 +246,17 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (section.QuoteSectionID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(section))
-                .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, section.QuoteSectionID)).Build();
+            var (sql, parameters) = _createCommandBuilder()
+                .Update(u => u.Entity(section))
+                .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, section.QuoteSectionID))
+                .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(section)).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder()
+            .Insert(i => i.Entity(section))
+            .ReturningGeneratedId()
+            .Build();
         section.QuoteSectionID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }

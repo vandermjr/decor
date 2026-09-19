@@ -42,8 +42,13 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public int Save(Subgroup subgroup)
     {
         var (sql, parameters) = subgroup.SubgroupID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(subgroup)).Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroup.SubgroupID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(subgroup)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(subgroup))
+                .Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroup.SubgroupID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(subgroup))
+                .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Execute(sql, parameters);
     }
@@ -73,8 +78,13 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public async Task<int> SaveAsync(Subgroup subgroup, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = subgroup.SubgroupID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(subgroup)).Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroup.SubgroupID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(subgroup)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(subgroup))
+                .Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroup.SubgroupID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(subgroup))
+                .Build();
         return await ExecuteWriteAsync(sql, parameters, cancellationToken);
     }
 

@@ -16,8 +16,13 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = employee.EmployeeID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(employee)).Where(w => w.Equals<Employee>(e => e.EmployeeID, employee.EmployeeID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(employee)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(employee))
+                .Where(w => w.Equals<Employee>(e => e.EmployeeID, employee.EmployeeID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(employee))
+                .Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public async Task<int> SaveAsync(Employee employee, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = employee.EmployeeID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(employee)).Where(w => w.Equals<Employee>(e => e.EmployeeID, employee.EmployeeID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(employee)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(employee))
+                .Where(w => w.Equals<Employee>(e => e.EmployeeID, employee.EmployeeID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(employee))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

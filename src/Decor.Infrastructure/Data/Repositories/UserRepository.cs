@@ -47,32 +47,26 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         var permissionsByRole = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
-            .Join(j =>
-            {
-                j.Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID);
-                j.Inner<RolePermission, UserRole>((rp, ur) => ur.RoleID == rp.RoleID);
-                j.Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID);
-                j.Left<ApplicationUser, Permission, UserPermissionOverride>((u, p, o) => o.UserID == u.UserID && o.PermissionID == p.PermissionID);
-            })
+            .Join(j => j
+                .Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID)
+                .Inner<RolePermission, UserRole>((rp, ur) => ur.RoleID == rp.RoleID)
+                .Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID)
+                .Left<ApplicationUser, Permission, UserPermissionOverride>((u, p, o) => o.UserID == u.UserID && o.PermissionID == p.PermissionID))
             .Where(w => w
                 .Equals<ApplicationUser>(u => u.Username, username)
                 .Equals<ApplicationUser>(u => u.IsActive, true)
-                .Group(g =>
-                {
-                    g.IsNull<UserPermissionOverride>(o => o.IsGranted);
-                    g.Or();
-                    g.Equals<UserPermissionOverride>(o => o.IsGranted, true);
-                }));
+                .Group(g => g
+                    .IsNull<UserPermissionOverride>(o => o.IsGranted)
+                    .Or()
+                    .Equals<UserPermissionOverride>(o => o.IsGranted, true)));
 
         // Permissões concedidas exclusivamente por override positivo, mesmo sem nenhuma role que as conceda.
         var permissionsByOverride = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
-            .Join(j =>
-            {
-                j.Inner<Permission, UserPermissionOverride>((p, o) => p.PermissionID == o.PermissionID && o.IsGranted == true);
-                j.Inner<UserPermissionOverride, ApplicationUser>((o, u) => u.UserID == o.UserID);
-            })
+            .Join(j => j
+                .Inner<Permission, UserPermissionOverride>((p, o) => p.PermissionID == o.PermissionID && o.IsGranted == true)
+                .Inner<UserPermissionOverride, ApplicationUser>((o, u) => u.UserID == o.UserID))
             .Where(w => w
                 .Equals<ApplicationUser>(u => u.Username, username)
                 .Equals<ApplicationUser>(u => u.IsActive, true));
@@ -91,11 +85,9 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Select(s => s
                 .WithColumns<Role>(r => r.RoleName)
                 .From<Role>()
-                .Join(j =>
-                {
-                    j.Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID);
-                    j.Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID);
-                })
+                .Join(j => j
+                    .Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID)
+                    .Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID))
                 .Where(w => w
                     .Equals<ApplicationUser>(u => u.Username, username)
                     .Equals<ApplicationUser>(u => u.IsActive, true)))

@@ -16,8 +16,13 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = customer.CustomerID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(customer)).Where(w => w.Equals<Customer>(c => c.CustomerID, customer.CustomerID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(customer)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(customer))
+                .Where(w => w.Equals<Customer>(c => c.CustomerID, customer.CustomerID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(customer))
+                .Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public async Task<int> SaveAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = customer.CustomerID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(customer)).Where(w => w.Equals<Customer>(c => c.CustomerID, customer.CustomerID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(customer)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(customer))
+                .Where(w => w.Equals<Customer>(c => c.CustomerID, customer.CustomerID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(customer))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

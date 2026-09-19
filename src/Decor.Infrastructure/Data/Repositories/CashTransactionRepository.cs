@@ -15,7 +15,10 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<int> RegisterAsync(CashTransaction transaction, CancellationToken cancellationToken = default)
     {
         using var connection = _databaseConnection.CreateConnection();
-        var (sql, parameters) = _createCommandBuilder().Insert(i => i.Entity(transaction)).ReturningGeneratedId().Build();
+        var (sql, parameters) = _createCommandBuilder()
+            .Insert(i => i.Entity(transaction))
+            .ReturningGeneratedId()
+            .Build();
         transaction.CashTransactionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return transaction.CashTransactionID;
     }
@@ -44,16 +47,23 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
 
     public async Task<CashTransaction?> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<CashTransaction>()).From<CashTransaction>()
-            .Where(w => w.Equals<CashTransaction>(t => t.CashTransactionID, cashTransactionId)).Build();
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<CashTransaction>())
+            .From<CashTransaction>()
+            .Where(w => w.Equals<CashTransaction>(t => t.CashTransactionID, cashTransactionId))
+            .Build();
         using var connection = _databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<CashTransaction>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<IReadOnlyList<CashTransaction>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<CashTransaction>()).From<CashTransaction>()
-            .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId)).OrderBy("ct.TransactionDate ASC, ct.CashTransactionID ASC").Build();
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<CashTransaction>())
+            .From<CashTransaction>()
+            .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId))
+            .OrderBy("ct.TransactionDate ASC, ct.CashTransactionID ASC")
+            .Build();
         using var connection = _databaseConnection.CreateConnection();
         return (await connection.QueryAsync<CashTransaction>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }
@@ -77,7 +87,10 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
 
     private async Task InsertAsync(IDbConnection connection, IDbTransaction transaction, CashTransaction entity, CancellationToken cancellationToken)
     {
-        var (sql, parameters) = _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
+        var (sql, parameters) = _createCommandBuilder()
+            .Insert(i => i.Entity(entity))
+            .ReturningGeneratedId()
+            .Build();
         entity.CashTransactionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
     }
 }

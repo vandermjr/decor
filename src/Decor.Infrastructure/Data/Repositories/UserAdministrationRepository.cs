@@ -21,13 +21,12 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
         if (normalized is not null)
         {
-            query = query.Where(w => w
-                .Contains<ApplicationUser>(u => u.Username, normalized)
-                .Or()
-                .Contains<ApplicationUser>(u => u.DisplayName, normalized));
+            query = query.Where(w => w.Contains<ApplicationUser>(u => u.Username, normalized).Or().Contains<ApplicationUser>(u => u.DisplayName, normalized));
         }
 
-        var (sql, parameters) = query.OrderBy("au.Username ASC").Build();
+        var (sql, parameters) = query
+            .OrderBy("au.Username ASC")
+            .Build();
 
         using var connection = _databaseConnection.CreateConnection();
         var ids = await connection.QueryAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -85,7 +84,9 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             if (roleIds.Count > 0)
             {
                 var rows = roleIds.Distinct().Select(roleId => new UserRole { UserID = id, RoleID = roleId }).ToList();
-                var (rolesSql, rolesParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (rolesSql, rolesParameters) = _createCommandBuilder()
+                    .Insert(i => i.Entities(rows))
+                    .BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(rolesSql, rolesParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -128,9 +129,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
                 .From<ApplicationUser>()
                 .Join(j => j.Inner<ApplicationUser, UserRole>((u, ur) => u.UserID == ur.UserID))
-                .Where(w => w
-                    .Equals<UserRole>(ur => ur.RoleID, administratorRoleId)
-                    .Equals<ApplicationUser>(u => u.IsActive, true))
+                .Where(w => w.Equals<UserRole>(ur => ur.RoleID, administratorRoleId).Equals<ApplicationUser>(u => u.IsActive, true))
                 .ForUpdate()
                 .Build();
             var activeAdministrators = (await c.QueryAsync<int>(new CommandDefinition(activeAdminsSql, activeAdminsParameters, t, cancellationToken: cancellationToken))).ToArray();
@@ -156,9 +155,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<UserAccount>(user => user.PasswordHash, passwordHash)
                 .Entity<UserAccount>(user => user.MustChangePassword, true))
-            .Where(w => w
-                .Equals<UserAccount>(u => u.UserID, userId)
-                .Equals<UserAccount>(u => u.IsActive, true))
+            .Where(w => w.Equals<UserAccount>(u => u.UserID, userId).Equals<UserAccount>(u => u.IsActive, true))
             .Build();
         return await ExecuteAsync(sql, parameters, cancellationToken) == 1;
     }
@@ -205,7 +202,9 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             if (roleIds.Count > 0)
             {
                 var rows = roleIds.Distinct().Select(roleId => new UserRole { UserID = userId, RoleID = roleId }).ToList();
-                var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (insertSql, insertParameters) = _createCommandBuilder()
+                    .Insert(i => i.Entities(rows))
+                    .BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -233,7 +232,9 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                     .GroupBy(x => x.PermissionID)
                     .Select(g => new UserPermissionOverride { UserID = userId, PermissionID = g.Key, IsGranted = g.Last().IsGranted })
                     .ToList();
-                var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (insertSql, insertParameters) = _createCommandBuilder()
+                    .Insert(i => i.Entities(rows))
+                    .BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }
 

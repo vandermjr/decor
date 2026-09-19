@@ -16,8 +16,13 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
         using var connection = _dbConnection.CreateConnection();
 
         var (sql, parameters) = purchaseOrderItem.PurchaseOrderItemID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(purchaseOrderItem)).Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID, purchaseOrderItem.PurchaseOrderItemID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(purchaseOrderItem)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(purchaseOrderItem))
+                .Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID, purchaseOrderItem.PurchaseOrderItemID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(purchaseOrderItem))
+                .Build();
 
         return connection.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
     public async Task<int> SaveAsync(PurchaseOrderItem purchaseOrderItem, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = purchaseOrderItem.PurchaseOrderItemID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(purchaseOrderItem)).Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID, purchaseOrderItem.PurchaseOrderItemID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(purchaseOrderItem)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(purchaseOrderItem))
+                .Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID, purchaseOrderItem.PurchaseOrderItemID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(purchaseOrderItem))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

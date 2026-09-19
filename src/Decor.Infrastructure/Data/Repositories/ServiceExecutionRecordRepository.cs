@@ -15,8 +15,14 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     {
         using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
+            ? _createCommandBuilder()
+                .Insert(i => i.Entity(entity))
+                .ReturningGeneratedId()
+                .Build()
+            : _createCommandBuilder()
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID))
+                .Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = connection.QuerySingle<int>(sql, parameters);
@@ -29,8 +35,14 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     {
         using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
+            ? _createCommandBuilder()
+                .Insert(i => i.Entity(entity))
+                .ReturningGeneratedId()
+                .Build()
+            : _createCommandBuilder()
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID))
+                .Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -46,9 +58,11 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
 
     public async Task<ServiceExecutionRecord?> GetByIdAsync(int executionId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<ServiceExecutionRecord>())
+        var (sql, parameters) = _createCommandBuilder()
+            .Select(s => s.AllColumns<ServiceExecutionRecord>())
             .From<ServiceExecutionRecord>()
-            .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, executionId)).Build();
+            .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, executionId))
+            .Build();
         using var connection = _dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }

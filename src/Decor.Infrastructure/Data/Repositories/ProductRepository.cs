@@ -42,8 +42,13 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     {
         var query = _createCommandBuilder();
         var (sql, parameters) = product.ProductID > 0
-            ? query.Update(u => u.Entity(product)).Where(w => w.Equals<Product>(p => p.ProductID, product.ProductID)).Build()
-            : query.Insert(i => i.Entity(product)).Build();
+            ? query
+                .Update(u => u.Entity(product))
+                .Where(w => w.Equals<Product>(p => p.ProductID, product.ProductID))
+                .Build()
+            : query
+                .Insert(i => i.Entity(product))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

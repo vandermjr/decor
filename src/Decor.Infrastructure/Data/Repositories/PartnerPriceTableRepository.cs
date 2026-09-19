@@ -16,8 +16,13 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
         using var connection = _dbConnection.CreateConnection();
 
         var (sql, parameters) = table.PriceTableID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(table)).Where(w => w.Equals<PartnerPriceTable>(p => p.PriceTableID, table.PriceTableID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(table)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(table))
+                .Where(w => w.Equals<PartnerPriceTable>(p => p.PriceTableID, table.PriceTableID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(table))
+                .Build();
 
         return connection.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public async Task<int> SaveAsync(PartnerPriceTable table, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = table.PriceTableID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(table)).Where(w => w.Equals<PartnerPriceTable>(p => p.PriceTableID, table.PriceTableID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(table)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(table))
+                .Where(w => w.Equals<PartnerPriceTable>(p => p.PriceTableID, table.PriceTableID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(table))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -101,10 +111,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<PartnerPriceTable>())
             .From<PartnerPriceTable>()
-            .Where(w => w
-                .Equals<PartnerPriceTable>(p => p.PartnerID, partnerId)
-                .Equals<PartnerPriceTable>(p => p.GroupID, groupId)
-                .Equals<PartnerPriceTable>(p => p.IsActive, true))
+            .Where(w => w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId).Equals<PartnerPriceTable>(p => p.GroupID, groupId).Equals<PartnerPriceTable>(p => p.IsActive, true))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

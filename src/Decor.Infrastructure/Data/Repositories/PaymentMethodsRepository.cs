@@ -139,9 +139,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<PaymentMethod>()
-            .Where(w => w
-                .Equals<PaymentMethod>(p => p.Name, name)
-                .NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
+            .Where(w => w.Equals<PaymentMethod>(p => p.Name, name).NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -153,9 +151,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<PaymentMethod>()
-            .Where(w => w
-                .Equals<PaymentMethod>(p => p.Name, name)
-                .NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
+            .Where(w => w.Equals<PaymentMethod>(p => p.Name, name).NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

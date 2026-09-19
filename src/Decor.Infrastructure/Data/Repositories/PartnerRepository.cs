@@ -16,8 +16,13 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = partner.PartnerID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(partner)).Where(w => w.Equals<Partner>(p => p.PartnerID, partner.PartnerID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(partner)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(partner))
+                .Where(w => w.Equals<Partner>(p => p.PartnerID, partner.PartnerID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(partner))
+                .Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
     public async Task<int> SaveAsync(Partner partner, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = partner.PartnerID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(partner)).Where(w => w.Equals<Partner>(p => p.PartnerID, partner.PartnerID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(partner)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(partner))
+                .Where(w => w.Equals<Partner>(p => p.PartnerID, partner.PartnerID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(partner))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

@@ -16,9 +16,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockBalance>())
             .From<StockBalance>()
-            .Where(w => w
-                .Equals<StockBalance>(sb => sb.ProductID, productId)
-                .Equals<StockBalance>(sb => sb.StockLocationID, stockLocationId))
+            .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, productId).Equals<StockBalance>(sb => sb.StockLocationID, stockLocationId))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();

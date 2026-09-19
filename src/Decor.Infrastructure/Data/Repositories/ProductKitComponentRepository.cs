@@ -17,8 +17,13 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
         using var connection = _dbConnection.CreateConnection();
 
         var (sql, parameters) = component.ComponentID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(component)).Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(component)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(component))
+                .Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(component))
+                .Build();
 
         return connection.Execute(sql, parameters);
     }
@@ -26,8 +31,13 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public async Task<int> SaveAsync(ProductKitComponent component, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = component.ComponentID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(component)).Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(component)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(component))
+                .Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(component))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

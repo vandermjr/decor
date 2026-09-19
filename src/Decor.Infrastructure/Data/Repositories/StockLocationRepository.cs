@@ -16,8 +16,13 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = stockLocation.StockLocationID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(stockLocation)).Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocation.StockLocationID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(stockLocation)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(stockLocation))
+                .Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocation.StockLocationID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(stockLocation))
+                .Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -25,8 +30,13 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
     public async Task<int> SaveAsync(StockLocation stockLocation, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = stockLocation.StockLocationID != 0
-            ? _createCommandBuilder().Update(u => u.Entity(stockLocation)).Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocation.StockLocationID)).Build()
-            : _createCommandBuilder().Insert(i => i.Entity(stockLocation)).Build();
+            ? _createCommandBuilder()
+                .Update(u => u.Entity(stockLocation))
+                .Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocation.StockLocationID))
+                .Build()
+            : _createCommandBuilder()
+                .Insert(i => i.Entity(stockLocation))
+                .Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
