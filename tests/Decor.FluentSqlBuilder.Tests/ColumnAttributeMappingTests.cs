@@ -75,7 +75,7 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = CreateCommandBuilder()
                 .Select(s => s.AllColumns<CustomMappedProduct>())
                 .From<CustomMappedProduct>()
-                .Where(w => w.Equals((CustomMappedProduct p) => p.Description, "Detergente"))
+                .Where(w => w.Equals<CustomMappedProduct>(p => p.Description, "Detergente"))
                 .Build();
 
             sql.Should().Contain("WHERE cmp.desc_produto = @Description");
