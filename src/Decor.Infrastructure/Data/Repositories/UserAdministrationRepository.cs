@@ -41,21 +41,18 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var (sql, parameters) = createCommandBuilder()
             .Batch()
             .Select(s => s
-                .Select(sc => sc.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive))
+                .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive)
                 .From<ApplicationUser>()
                 .Where(w => w.Equals<ApplicationUser>(u => u.UserID, userId)))
             .Select(s => s
-                .Select(sc => sc.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
+                .WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected)
                 .From<Role>()
                 .Join(j => j.Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID))
                 .Where(w => w.Equals<UserRole>(ur => ur.UserID, userId))
                 .OrderBy("r.HierarchyLevel DESC, r.RoleName ASC"))
             .Select(s => s
-                .Select(sc =>
-                {
-                    sc.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode);
-                    sc.WithColumns<UserPermissionOverride>(o => o.IsGranted);
-                })
+                .WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode)
+                .WithColumns<UserPermissionOverride>(o => o.IsGranted)
                 .From<UserPermissionOverride>()
                 .Join(j => j.Inner<UserPermissionOverride, Permission>((o, p) => o.PermissionID == p.PermissionID))
                 .Where(w => w.Equals<UserPermissionOverride>(o => o.UserID, userId))

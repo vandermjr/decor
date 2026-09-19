@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq.Expressions;
+using System.Text;
 using Decor.FluentSqlBuilder.Clauses;
 using Decor.FluentSqlBuilder.Dialects;
 using Decor.FluentSqlBuilder.Helpers;
@@ -29,6 +30,7 @@ namespace Decor.FluentSqlBuilder.Statements
         private bool _isCountQuery = false;
         private bool _isDistinct = false;
         private bool _forUpdate = false;
+        private SelectClauseBuilder? _selectClauseBuilder;
 
         internal SelectBuilder(FluentCommandBuilder rootCommandBuilder, TableAliasRegistry aliasRegistry, IDialect dialect)
         {
@@ -39,15 +41,114 @@ namespace Decor.FluentSqlBuilder.Statements
 
         public SelectBuilder Select(Action<SelectClauseBuilder> action)
         {
+            _selectClauseBuilder = null;
             _selectColumns.Clear();
-            var selectClauseBuilder = new SelectClauseBuilder(_selectColumns, _aliasRegistry, _dialect, _fromAlias);
-            action(selectClauseBuilder);
+            ConfigureSelect(action);
+
+            return this;
+        }
+
+        private void ConfigureSelect(Action<SelectClauseBuilder> action)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+
+            _selectClauseBuilder ??= new SelectClauseBuilder(_selectColumns, _aliasRegistry, _dialect, _fromAlias);
+            action(_selectClauseBuilder);
 
             // Consulta agregada: COUNT/SUM ignoram ORDER BY/paginação e seguem o mesmo padrão de seleção especial.
             _isCountQuery = _selectColumns.Count == 1 &&
                 (_selectColumns[0].StartsWith(_dialect.Keywords.COUNT, StringComparison.OrdinalIgnoreCase) ||
                  _selectColumns[0].StartsWith(_dialect.Keywords.SUM, StringComparison.OrdinalIgnoreCase));
-            _isDistinct = selectClauseBuilder._isDistinct;
+            _isDistinct = _selectClauseBuilder._isDistinct;
+        }
+
+        public SelectBuilder WithColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
+        {
+            ConfigureSelect(select => select.WithColumns(expressions));
+            return this;
+        }
+
+        public SelectBuilder AllColumns<TEntity>(bool explicitColumns)
+        {
+            ConfigureSelect(select => select.AllColumns<TEntity>(explicitColumns));
+            return this;
+        }
+
+        public SelectBuilder AllColumns<TEntity>()
+        {
+            ConfigureSelect(select => select.AllColumns<TEntity>());
+            return this;
+        }
+
+        public SelectBuilder AllColumns()
+        {
+            ConfigureSelect(select => select.AllColumns());
+            return this;
+        }
+
+        public SelectBuilder ExceptColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
+        {
+            ConfigureSelect(select => select.ExceptColumns(expressions));
+            return this;
+        }
+
+        public SelectBuilder Count()
+        {
+            ConfigureSelect(select => select.Count());
+            return this;
+        }
+
+        public SelectBuilder Count(byte value)
+        {
+            ConfigureSelect(select => select.Count(value));
+            return this;
+        }
+
+        public SelectBuilder Count<TEntity>(Expression<Func<TEntity, object?>> expression)
+        {
+            ConfigureSelect(select => select.Count(expression));
+            return this;
+        }
+
+        public SelectBuilder Count<TEntity>(Expression<Func<TEntity, object?>> expression, bool isDistinct)
+        {
+            ConfigureSelect(select => select.Count(expression, isDistinct));
+            return this;
+        }
+
+        public SelectBuilder Sum<TEntity>(Expression<Func<TEntity, object?>> expression)
+        {
+            ConfigureSelect(select => select.Sum(expression));
+            return this;
+        }
+
+        public SelectBuilder Sum<TEntity>(Expression<Func<TEntity, object?>> expression, string? resultAlias)
+        {
+            ConfigureSelect(select => select.Sum(expression, resultAlias));
+            return this;
+        }
+
+        public SelectBuilder Sum(string rawExpression)
+        {
+            ConfigureSelect(select => select.Sum(rawExpression));
+            return this;
+        }
+
+        public SelectBuilder Sum(string rawExpression, string? resultAlias)
+        {
+            ConfigureSelect(select => select.Sum(rawExpression, resultAlias));
+            return this;
+        }
+
+        public SelectBuilder Distinct()
+        {
+            ConfigureSelect(select => select.Distinct());
+            return this;
+        }
+
+        public SelectBuilder Column(string rawExpression)
+        {
+            ConfigureSelect(select => select.Column(rawExpression));
 
             return this;
         }

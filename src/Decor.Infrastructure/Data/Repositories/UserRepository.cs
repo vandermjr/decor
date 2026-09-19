@@ -87,7 +87,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         var (sql, parameters) = createCommandBuilder()
             .Batch()
             .Select(s => s
-                .Select(sc => sc.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword))
+                .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
                 .From<ApplicationUser>()
                 .Where(w =>
                 {
@@ -96,7 +96,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 })
                 .Take(1))
             .Select(s => s
-                .Select(sc => sc.WithColumns<Role>(r => r.RoleName))
+                .WithColumns<Role>(r => r.RoleName)
                 .From<Role>()
                 .Join(j =>
                 {
@@ -109,11 +109,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                     w.Equals<ApplicationUser>(u => u.IsActive, true);
                 }))
             .Select(s => s
-                .Select(sc =>
-                {
-                    sc.Distinct();
-                    sc.Column("effective.PermissionCode");
-                })
+                .Distinct()
+                .Column("effective.PermissionCode")
                 .FromSubquery(effectivePermissions, "effective"))
             .Build();
 

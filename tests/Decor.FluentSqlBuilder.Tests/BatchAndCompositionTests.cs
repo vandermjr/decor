@@ -21,12 +21,12 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = CreateBuilder()
                 .Batch()
                 .Select(s => s
-                    .Select(sc => sc.WithColumns<Role>(r => r.RoleID, r => r.RoleName))
+                    .WithColumns<Role>(r => r.RoleID, r => r.RoleName)
                     .From<Role>()
                     .Where(w => w.Equals<Role>(r => r.RoleID, 1))
                     .OrderBy("r.RoleName ASC"))
                 .Select(s => s
-                    .Select(sc => sc.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode))
+                    .WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode)
                     .From<Permission>()
                     .Where(w => w.Equals<Permission>(p => p.PermissionID, 2))
                     .OrderBy("p.PermissionCode ASC"))
@@ -81,12 +81,11 @@ namespace Decor.FluentSqlBuilder.Tests
             var union = roleBased.Union(overrideBased);
 
             var (sql, parameters) = CreateBuilder()
-                .Select(s =>
-                {
-                    s.Distinct();
-                    s.Column("effective.PermissionCode");
-                })
-                .FromSubquery(union, "effective")
+                .Batch()
+                .Select(s => s
+                    .Distinct()
+                    .Column("effective.PermissionCode")
+                    .FromSubquery(union, "effective"))
                 .Build();
 
             NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("SELECT DISTINCT"));
