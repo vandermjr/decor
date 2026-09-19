@@ -31,8 +31,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert().Into<Product>()
-                .Values(product)
+                .Insert(i => i.Entity(product))
                 .Build();
 
             result = conn.Execute(sql: sql, param: parameters);

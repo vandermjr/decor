@@ -79,8 +79,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         try
         {
             var (insertSql, insertParameters) = createCommandBuilder()
-                .Insert().Into<UserAccount>()
-                .Values(new UserAccount { Username = username, DisplayName = displayName, PasswordHash = passwordHash, IsActive = true, MustChangePassword = true })
+                .Insert(i => i.Entity(new UserAccount { Username = username, DisplayName = displayName, PasswordHash = passwordHash, IsActive = true, MustChangePassword = true }))
                 .ReturningGeneratedId()
                 .Build();
             var id = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
@@ -88,7 +87,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             if (roleIds.Count > 0)
             {
                 var rows = roleIds.Distinct().Select(roleId => new UserRole { UserID = id, RoleID = roleId }).ToList();
-                var (rolesSql, rolesParameters) = createCommandBuilder().Insert().Into<UserRole>().ValuesBatch(rows).BuildBatch();
+                var (rolesSql, rolesParameters) = createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(rolesSql, rolesParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -243,7 +242,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                     .GroupBy(x => x.PermissionID)
                     .Select(g => new UserPermissionOverride { UserID = userId, PermissionID = g.Key, IsGranted = g.Last().IsGranted })
                     .ToList();
-                var (insertSql, insertParameters) = createCommandBuilder().Insert().Into<UserPermissionOverride>().ValuesBatch(rows).BuildBatch();
+                var (insertSql, insertParameters) = createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }
 
