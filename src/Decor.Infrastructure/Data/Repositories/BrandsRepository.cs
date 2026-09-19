@@ -35,7 +35,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Brand>()
-            .Where(w => w.Equals((Brand b) => b.BrandID, brandid))
+            .Where(w => w.Equals<Brand>(b => b.BrandID, brandid))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Brand>()
-            .Where(w => w.Equals((Brand b) => b.BrandID, brandId))
+            .Where(w => w.Equals<Brand>(b => b.BrandID, brandId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

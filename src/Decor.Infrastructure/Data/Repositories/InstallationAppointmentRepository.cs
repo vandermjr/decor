@@ -37,7 +37,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
 
     public async Task<InstallationAppointment?> GetByIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<InstallationAppointment>()).From<InstallationAppointment>().Where(w => w.Equals((InstallationAppointment a) => a.AppointmentID, appointmentId)).Build();
+        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<InstallationAppointment>()).From<InstallationAppointment>().Where(w => w.Equals<InstallationAppointment>(a => a.AppointmentID, appointmentId)).Build();
         using var connection = dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<InstallationAppointment>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
@@ -65,7 +65,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
 
     public async Task<IReadOnlyList<AppointmentReschedule>> GetReschedulesAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<AppointmentReschedule>()).From<AppointmentReschedule>().Where(w => w.Equals((AppointmentReschedule r) => r.AppointmentID, appointmentId)).OrderBy("ar.RegisteredAt ASC").Build();
+        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<AppointmentReschedule>()).From<AppointmentReschedule>().Where(w => w.Equals<AppointmentReschedule>(r => r.AppointmentID, appointmentId)).OrderBy("ar.RegisteredAt ASC").Build();
         using var connection = dbConnection.CreateConnection();
         return (await connection.QueryAsync<AppointmentReschedule>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }

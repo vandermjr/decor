@@ -35,7 +35,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<ProductSpecificationAttribute>()
-            .Where(w => w.Equals((ProductSpecificationAttribute a) => a.AttributeID, attributeId))
+            .Where(w => w.Equals<ProductSpecificationAttribute>(a => a.AttributeID, attributeId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<ProductSpecificationAttribute>()
-            .Where(w => w.Equals((ProductSpecificationAttribute a) => a.AttributeID, attributeId))
+            .Where(w => w.Equals<ProductSpecificationAttribute>(a => a.AttributeID, attributeId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

@@ -29,7 +29,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Columns<Group>(g => g.GroupID, g => g.GroupName, g => g.FamilyID))
             .From<Group>()
-            .Where(w => w.Equals((Group g) => g.FamilyID, familyId))
+            .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
             .OrderBy("g.GroupName ASC")
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
@@ -52,7 +52,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Group>()
-            .Where(w => w.Equals((Group g) => g.GroupID, id))
+            .Where(w => w.Equals<Group>(g => g.GroupID, id))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Execute(sql, parameters);
