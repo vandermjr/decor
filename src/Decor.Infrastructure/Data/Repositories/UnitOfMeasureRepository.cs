@@ -122,11 +122,9 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<UnitOfMeasure>()
-            .Where(w =>
-            {
-                w.Equals<UnitOfMeasure>(u => u.Code, code);
-                w.NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId);
-            })
+            .Where(w => w
+                .Equals<UnitOfMeasure>(u => u.Code, code)
+                .NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -138,11 +136,9 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<UnitOfMeasure>()
-            .Where(w =>
-            {
-                w.Equals<UnitOfMeasure>(u => u.Code, code);
-                w.NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId);
-            })
+            .Where(w => w
+                .Equals<UnitOfMeasure>(u => u.Code, code)
+                .NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

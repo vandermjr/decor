@@ -8,12 +8,15 @@ namespace Decor.Infrastructure.Data.Repositories;
 
 public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IServiceExecutionRecordRepository
 {
+    private readonly IDatabaseConnection _dbConnection = dbConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public int Save(ServiceExecutionRecord entity)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
+            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = connection.QuerySingle<int>(sql, parameters);
@@ -24,10 +27,10 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
 
     public async Task<int> SaveAsync(ServiceExecutionRecord entity, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
+            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -43,21 +46,21 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
 
     public async Task<ServiceExecutionRecord?> GetByIdAsync(int executionId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<ServiceExecutionRecord>())
+        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<ServiceExecutionRecord>())
             .From<ServiceExecutionRecord>()
             .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, executionId)).Build();
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<ServiceExecutionRecord?> GetByAppointmentIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<ServiceExecutionRecord>())
             .From<ServiceExecutionRecord>()
             .Where(w => w.Equals<ServiceExecutionRecord>(r => r.AppointmentID, appointmentId))
             .Build();
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 }

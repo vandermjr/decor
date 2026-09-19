@@ -88,7 +88,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 var filter = w.WithDynamicFullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
                 queryContext.IsSingleIdSearch = filter.IsIdSearch;
                 filter.OrderByRelevanceDescending();
-            })            
+            })
             .Take(10000)
             .Build();
 

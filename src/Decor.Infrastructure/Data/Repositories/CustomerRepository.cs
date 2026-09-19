@@ -5,6 +5,7 @@ using Decor.Core.Interfaces.Repositories;
 using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
+
 public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : ICustomerRepository
 {
     private readonly IDatabaseConnection _dbConnection = dbConnection;

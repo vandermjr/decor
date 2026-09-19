@@ -8,9 +8,12 @@ namespace Decor.Infrastructure.Data.Repositories;
 
 public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IUserRepository
 {
+    private readonly IDatabaseConnection _databaseConnection = databaseConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public async Task<bool> UpdatePasswordAsync(int userId, string passwordHash, bool mustChangePassword, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<UserAccount>(user => user.PasswordHash, passwordHash)
                 .Entity<UserAccount>(user => user.MustChangePassword, mustChangePassword))
             .Where(w => w
@@ -18,14 +21,14 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 .Equals<UserAccount>(u => u.IsActive, true))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return affectedRows == 1;
     }
 
     public async Task<string?> GetPasswordHashByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<UserAccount>(u => u.PasswordHash))
             .From<UserAccount>()
             .Where(w => w
@@ -34,14 +37,14 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Take(1)
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<ApplicationUser?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         // Permissões concedidas por role, respeitando um override negativo/positivo do próprio usuário.
-        var permissionsByRole = createCommandBuilder()
+        var permissionsByRole = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
             .Join(j =>
@@ -51,20 +54,18 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 j.Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID);
                 j.Left<ApplicationUser, Permission, UserPermissionOverride>((u, p, o) => o.UserID == u.UserID && o.PermissionID == p.PermissionID);
             })
-            .Where(w =>
-            {
-                w.Equals<ApplicationUser>(u => u.Username, username);
-                w.Equals<ApplicationUser>(u => u.IsActive, true);
-                w.Group(g =>
+            .Where(w => w
+                .Equals<ApplicationUser>(u => u.Username, username)
+                .Equals<ApplicationUser>(u => u.IsActive, true)
+                .Group(g =>
                 {
                     g.IsNull<UserPermissionOverride>(o => o.IsGranted);
                     g.Or();
                     g.Equals<UserPermissionOverride>(o => o.IsGranted, true);
-                });
-            });
+                }));
 
         // Permissões concedidas exclusivamente por override positivo, mesmo sem nenhuma role que as conceda.
-        var permissionsByOverride = createCommandBuilder()
+        var permissionsByOverride = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
             .From<Permission>()
             .Join(j =>
@@ -72,15 +73,13 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 j.Inner<Permission, UserPermissionOverride>((p, o) => p.PermissionID == o.PermissionID && o.IsGranted == true);
                 j.Inner<UserPermissionOverride, ApplicationUser>((o, u) => u.UserID == o.UserID);
             })
-            .Where(w =>
-            {
-                w.Equals<ApplicationUser>(u => u.Username, username);
-                w.Equals<ApplicationUser>(u => u.IsActive, true);
-            });
+            .Where(w => w
+                .Equals<ApplicationUser>(u => u.Username, username)
+                .Equals<ApplicationUser>(u => u.IsActive, true));
 
         var effectivePermissions = permissionsByRole.Union(permissionsByOverride);
 
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Batch()
             .Select(s => s
                 .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
@@ -106,7 +105,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 .FromSubquery(effectivePermissions, "effective"))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         using var results = await connection.QueryMultipleAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         var user = await results.ReadSingleOrDefaultAsync<ApplicationUser>();
         if (user is null) return null;

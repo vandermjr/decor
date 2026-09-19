@@ -8,22 +8,25 @@ namespace Decor.Infrastructure.Data.Repositories;
 
 public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<FluentCommandBuilder> createCommandBuilder) : IAccountsPayableRepository
 {
+    private readonly IDatabaseConnection _dbConnection = dbConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public int Save(AccountsPayable entity)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.AccountsPayableID == 0
-            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
+            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
         if (entity.AccountsPayableID == 0) entity.AccountsPayableID = connection.QuerySingle<int>(sql, parameters);
         return 1;
     }
 
     public async Task<int> SaveAsync(AccountsPayable entity, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         var (sql, parameters) = entity.AccountsPayableID == 0
-            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
+            ? _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
         if (entity.AccountsPayableID == 0)
         {
             entity.AccountsPayableID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -40,19 +43,19 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
         if (pageSize is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(pageSize));
-        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<AccountsPayable>())
+        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<AccountsPayable>())
             .From<AccountsPayable>()
             .Where(w => w.WithDynamicSearchFilter<AccountsPayable, AccountsPayable>(arg, a => a.AccountsPayableID, a => a.PayeeID))
             .OrderBy("ap.AccountsPayableID ASC").Take((uint)pageSize).Skip((uint)((page - 1) * pageSize)).Build();
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return (await connection.QueryAsync<AccountsPayable>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }
 
     public async Task<AccountsPayable?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<AccountsPayable>()).From<AccountsPayable>()
+        var (sql, parameters) = _createCommandBuilder().Select(s => s.AllColumns<AccountsPayable>()).From<AccountsPayable>()
             .Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, id)).Build();
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<AccountsPayable>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 }

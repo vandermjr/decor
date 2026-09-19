@@ -6,11 +6,15 @@ using Decor.Core.Interfaces.Repositories;
 using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
+
 public sealed class StockMovementRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IStockMovementRepository, ITransactionalStockMovementRepository
 {
+    private readonly IDatabaseConnection _databaseConnection = databaseConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public async Task<int> RegisterMovementAsync(StockMovement movement, CancellationToken cancellationToken = default)
     {
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
@@ -41,7 +45,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
         outboundMovement.TransferID = transferId;
         inboundMovement.TransferID = transferId;
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
@@ -64,60 +68,60 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
 
     public async Task<StockMovement?> GetByIdAsync(int stockMovementId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockMovement>())
             .From<StockMovement>()
             .Where(w => w.Equals<StockMovement>(sm => sm.StockMovementID, stockMovementId))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<StockMovement>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<IEnumerable<StockMovement>> GetByProductAsync(int productId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockMovement>())
             .From<StockMovement>()
             .Where(w => w.Equals<StockMovement>(sm => sm.ProductID, productId))
             .OrderBy("sm.MovementDate DESC, sm.StockMovementID DESC")
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<StockMovement>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return result.AsList();
     }
 
     public async Task<IEnumerable<StockMovement>> GetByTransferIdAsync(Guid transferId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockMovement>())
             .From<StockMovement>()
             .Where(w => w.Equals<StockMovement>(sm => sm.TransferID, transferId))
             .OrderBy("sm.StockMovementID ASC")
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<StockMovement>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return result.AsList();
     }
 
     public async Task<int> UpdateReviewAsync(Guid transferId, StockMovementReviewStatus reviewStatus, int reviewedByEmployeeId, DateTime reviewedAt, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<StockMovement>(sm => sm.ReviewStatus, reviewStatus)
                 .Entity<StockMovement>(sm => sm.ReviewedByEmployeeID, reviewedByEmployeeId)
                 .Entity<StockMovement>(sm => sm.ReviewedAt, reviewedAt))
             .Where(w => w.Equals<StockMovement>(sm => sm.TransferID, transferId))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     private async Task<int> InsertMovementAsync(IDbConnection connection, IDbTransaction transaction, StockMovement movement, CancellationToken cancellationToken)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Insert(i => i.Entity(movement))
             .ReturningGeneratedId()
             .Build();
@@ -127,14 +131,12 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
 
     private async Task ApplyMovementToBalanceAsync(IDbConnection connection, IDbTransaction transaction, StockMovement movement, CancellationToken cancellationToken)
     {
-        var (lockSql, lockParameters) = createCommandBuilder()
+        var (lockSql, lockParameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockBalance>())
             .From<StockBalance>()
-            .Where(w =>
-            {
-                w.Equals<StockBalance>(sb => sb.ProductID, movement.ProductID);
-                w.Equals<StockBalance>(sb => sb.StockLocationID, movement.StockLocationID);
-            })
+            .Where(w => w
+                .Equals<StockBalance>(sb => sb.ProductID, movement.ProductID)
+                .Equals<StockBalance>(sb => sb.StockLocationID, movement.StockLocationID))
             .ForUpdate()
             .Build();
         var balance = await connection.QuerySingleOrDefaultAsync<StockBalance>(new CommandDefinition(lockSql, lockParameters, transaction, cancellationToken: cancellationToken));
@@ -158,7 +160,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
             UpdatedAt = movement.MovementDate
         };
 
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Insert(i => i.Entity(balance))
             .Build();
 
@@ -167,7 +169,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
 
     private async Task UpdateBalanceAsync(IDbConnection connection, IDbTransaction transaction, int stockBalanceId, decimal quantity, DateTime updatedAt, CancellationToken cancellationToken)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<StockBalance>(sb => sb.Quantity, quantity)
                 .Entity<StockBalance>(sb => sb.UpdatedAt, updatedAt))
             .Where(w => w.Equals<StockBalance>(sb => sb.StockBalanceID, stockBalanceId))

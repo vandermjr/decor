@@ -8,45 +8,48 @@ namespace Decor.Infrastructure.Data.Repositories;
 
 public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IGoodsReceiptRepository, ITransactionalGoodsReceiptRepository
 {
+    private readonly IDatabaseConnection _databaseConnection = databaseConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Insert(i => i.Entity(goodsReceipt))
             .ReturningGeneratedId()
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<int> InsertAsync(GoodsReceipt goodsReceipt, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Insert(i => i.Entity(goodsReceipt)).ReturningGeneratedId().Build();
+        var (sql, parameters) = _createCommandBuilder().Insert(i => i.Entity(goodsReceipt)).ReturningGeneratedId().Build();
         return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
     }
 
     public async Task<GoodsReceipt?> GetByIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<GoodsReceipt>())
             .From<GoodsReceipt>()
             .Where(w => w.Equals<GoodsReceipt>(gr => gr.GoodsReceiptID, goodsReceiptId))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<GoodsReceipt>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public async Task<IEnumerable<GoodsReceipt>> GetByPurchaseOrderItemIdAsync(int purchaseOrderItemId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<GoodsReceipt>())
             .From<GoodsReceipt>()
             .Where(w => w.Equals<GoodsReceipt>(gr => gr.PurchaseOrderItemID, purchaseOrderItemId))
             .OrderBy("gr.ReceiptDate ASC, gr.GoodsReceiptID ASC")
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<GoodsReceipt>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return result.AsList();
     }

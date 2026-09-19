@@ -9,26 +9,27 @@ namespace Decor.Infrastructure.Data.Repositories;
 
 public sealed class UserAdministrationRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IUserAdministrationRepository
 {
+    private readonly IDatabaseConnection _databaseConnection = databaseConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+
     public async Task<IReadOnlyList<AdministrativeUserDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default)
     {
         var normalized = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-        var query = createCommandBuilder()
+        var query = _createCommandBuilder()
             .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
             .From<ApplicationUser>();
 
         if (normalized is not null)
         {
-            query = query.Where(w =>
-            {
-                w.Contains<ApplicationUser>(u => u.Username, normalized);
-                w.Or();
-                w.Contains<ApplicationUser>(u => u.DisplayName, normalized);
-            });
+            query = query.Where(w => w
+                .Contains<ApplicationUser>(u => u.Username, normalized)
+                .Or()
+                .Contains<ApplicationUser>(u => u.DisplayName, normalized));
         }
 
         var (sql, parameters) = query.OrderBy("au.Username ASC").Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var ids = await connection.QueryAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         var users = new List<AdministrativeUserDTO>();
         foreach (var id in ids) { var user = await GetByIdAsync(id, cancellationToken); if (user is not null) users.Add(user); }
@@ -38,7 +39,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
     public async Task<AdministrativeUserDTO?> GetByIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         // Um único lote (Batch) mantém os três result sets consistentes numa única ida ao banco.
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Batch()
             .Select(s => s
                 .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive)
@@ -59,7 +60,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .OrderBy("p.PermissionID ASC"))
             .Build();
 
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         using var results = await connection.QueryMultipleAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         var user = await results.ReadSingleOrDefaultAsync<ApplicationUser>();
         if (user is null) return null;
@@ -70,12 +71,12 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<int> CreateWithRolesAsync(string username, string displayName, string passwordHash, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default)
     {
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            var (insertSql, insertParameters) = createCommandBuilder()
+            var (insertSql, insertParameters) = _createCommandBuilder()
                 .Insert(i => i.Entity(new UserAccount { Username = username, DisplayName = displayName, PasswordHash = passwordHash, IsActive = true, MustChangePassword = true }))
                 .ReturningGeneratedId()
                 .Build();
@@ -84,7 +85,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             if (roleIds.Count > 0)
             {
                 var rows = roleIds.Distinct().Select(roleId => new UserRole { UserID = id, RoleID = roleId }).ToList();
-                var (rolesSql, rolesParameters) = createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (rolesSql, rolesParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(rolesSql, rolesParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -100,7 +101,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<bool> UpdateAsync(int userId, string username, string displayName, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<ApplicationUser>(user => user.Username, username)
                 .Entity<ApplicationUser>(user => user.DisplayName, displayName))
             .Where(w => w.Equals<ApplicationUser>(u => u.UserID, userId))
@@ -110,12 +111,12 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<bool> SetActivePreservingLastAdministratorAsync(int userId, bool isActive, int administratorRoleId, CancellationToken cancellationToken = default)
     {
-        using var c = databaseConnection.CreateConnection();
+        using var c = _databaseConnection.CreateConnection();
         c.Open();
         using var t = c.BeginTransaction();
         try
         {
-            var (lockRoleSql, lockRoleParameters) = createCommandBuilder()
+            var (lockRoleSql, lockRoleParameters) = _createCommandBuilder()
                 .Select(s => s.WithColumns<Role>(r => r.RoleID))
                 .From<Role>()
                 .Where(w => w.Equals<Role>(r => r.RoleID, administratorRoleId))
@@ -123,15 +124,13 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .Build();
             await c.ExecuteAsync(new CommandDefinition(lockRoleSql, lockRoleParameters, t, cancellationToken: cancellationToken));
 
-            var (activeAdminsSql, activeAdminsParameters) = createCommandBuilder()
+            var (activeAdminsSql, activeAdminsParameters) = _createCommandBuilder()
                 .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
                 .From<ApplicationUser>()
                 .Join(j => j.Inner<ApplicationUser, UserRole>((u, ur) => u.UserID == ur.UserID))
-                .Where(w =>
-                {
-                    w.Equals<UserRole>(ur => ur.RoleID, administratorRoleId);
-                    w.Equals<ApplicationUser>(u => u.IsActive, true);
-                })
+                .Where(w => w
+                    .Equals<UserRole>(ur => ur.RoleID, administratorRoleId)
+                    .Equals<ApplicationUser>(u => u.IsActive, true))
                 .ForUpdate()
                 .Build();
             var activeAdministrators = (await c.QueryAsync<int>(new CommandDefinition(activeAdminsSql, activeAdminsParameters, t, cancellationToken: cancellationToken))).ToArray();
@@ -141,7 +140,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 throw new InvalidOperationException("O último Administrador ativo não pode ser desativado.");
             }
 
-            var (updateSql, updateParameters) = createCommandBuilder()
+            var (updateSql, updateParameters) = _createCommandBuilder()
                 .Update(u => u.Entity<ApplicationUser>(user => user.IsActive, isActive))
                 .Where(w => w.Equals<ApplicationUser>(u => u.UserID, userId))
                 .Build();
@@ -154,26 +153,24 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<bool> UpdateTemporaryPasswordAsync(int userId, string passwordHash, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Update(u => u.Entity<UserAccount>(user => user.PasswordHash, passwordHash)
                 .Entity<UserAccount>(user => user.MustChangePassword, true))
-            .Where(w =>
-            {
-                w.Equals<UserAccount>(u => u.UserID, userId);
-                w.Equals<UserAccount>(u => u.IsActive, true);
-            })
+            .Where(w => w
+                .Equals<UserAccount>(u => u.UserID, userId)
+                .Equals<UserAccount>(u => u.IsActive, true))
             .Build();
         return await ExecuteAsync(sql, parameters, cancellationToken) == 1;
     }
 
     public async Task ReplaceRolesPreservingLastAdministratorAsync(int userId, IReadOnlyCollection<int> roleIds, int administratorRoleId, CancellationToken cancellationToken = default)
     {
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            var (lockRoleSql, lockRoleParameters) = createCommandBuilder()
+            var (lockRoleSql, lockRoleParameters) = _createCommandBuilder()
                 .Select(s => s.WithColumns<Role>(r => r.RoleID))
                 .From<Role>()
                 .Where(w => w.Equals<Role>(r => r.RoleID, administratorRoleId))
@@ -181,7 +178,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .Build();
             await connection.ExecuteAsync(new CommandDefinition(lockRoleSql, lockRoleParameters, transaction, cancellationToken: cancellationToken));
 
-            var (activeAdminsSql, activeAdminsParameters) = createCommandBuilder()
+            var (activeAdminsSql, activeAdminsParameters) = _createCommandBuilder()
                 .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID))
                 .From<ApplicationUser>()
                 .Join(j => j.Inner<ApplicationUser, UserRole>((u, ur) => u.UserID == ur.UserID))
@@ -199,7 +196,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 throw new InvalidOperationException("O último Administrador ativo não pode perder a role Administrador.");
             }
 
-            var (deleteSql, deleteParameters) = createCommandBuilder()
+            var (deleteSql, deleteParameters) = _createCommandBuilder()
                 .Delete<UserRole>()
                 .Where(w => w.Equals<UserRole>(ur => ur.UserID, userId))
                 .Build();
@@ -208,7 +205,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             if (roleIds.Count > 0)
             {
                 var rows = roleIds.Distinct().Select(roleId => new UserRole { UserID = userId, RoleID = roleId }).ToList();
-                var (insertSql, insertParameters) = createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -219,12 +216,12 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task ReplacePermissionOverridesAsync(int userId, IReadOnlyCollection<PermissionOverrideDTO> overrides, CancellationToken cancellationToken = default)
     {
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            var (deleteSql, deleteParameters) = createCommandBuilder()
+            var (deleteSql, deleteParameters) = _createCommandBuilder()
                 .Delete<UserPermissionOverride>()
                 .Where(w => w.Equals<UserPermissionOverride>(o => o.UserID, userId))
                 .Build();
@@ -236,7 +233,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                     .GroupBy(x => x.PermissionID)
                     .Select(g => new UserPermissionOverride { UserID = userId, PermissionID = g.Key, IsGranted = g.Last().IsGranted })
                     .ToList();
-                var (insertSql, insertParameters) = createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
+                var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entities(rows)).BuildBatch();
                 await connection.ExecuteAsync(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
             }
 
@@ -247,31 +244,31 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<IReadOnlyList<AdministrativeRoleDTO>> GetRolesAsync(CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
             .From<Role>()
             .OrderBy("r.HierarchyLevel DESC, r.RoleName ASC")
             .Build();
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<AdministrativeRoleDTO>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return result.ToArray();
     }
 
     public async Task<IReadOnlyList<AdministrativePermissionDTO>> GetPermissionsAsync(CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .From<Permission>()
             .OrderBy("p.PermissionCode ASC")
             .Build();
-        using var connection = databaseConnection.CreateConnection();
+        using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<AdministrativePermissionDTO>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         return result.ToArray();
     }
 
     private async Task<int> ExecuteAsync(string sql, object parameters, CancellationToken cancellationToken)
     {
-        using var c = databaseConnection.CreateConnection();
+        using var c = _databaseConnection.CreateConnection();
         return await c.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 }

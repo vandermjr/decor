@@ -101,12 +101,10 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<PartnerPriceTable>())
             .From<PartnerPriceTable>()
-            .Where(w =>
-            {
-                w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId);
-                w.Equals<PartnerPriceTable>(p => p.GroupID, groupId);
-                w.Equals<PartnerPriceTable>(p => p.IsActive, true);
-            })
+            .Where(w => w
+                .Equals<PartnerPriceTable>(p => p.PartnerID, partnerId)
+                .Equals<PartnerPriceTable>(p => p.GroupID, groupId)
+                .Equals<PartnerPriceTable>(p => p.IsActive, true))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

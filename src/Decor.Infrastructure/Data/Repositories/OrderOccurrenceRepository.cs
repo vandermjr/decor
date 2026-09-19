@@ -11,9 +11,13 @@ public class OrderOccurrenceRepository(
     Func<FluentCommandBuilder> createCommandBuilder,
     ITransactionalOrderRepository orderRepository) : IOrderOccurrenceRepository
 {
+    private readonly IDatabaseConnection _dbConnection = dbConnection;
+    private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+    private readonly ITransactionalOrderRepository _orderRepository = orderRepository;
+
     public int Save(OrderOccurrence entity)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         if (entity.OccurrenceID != 0)
         {
             var (sql, parameters) = BuildUpdate(entity);
@@ -27,7 +31,7 @@ public class OrderOccurrenceRepository(
 
     public async Task<int> SaveAsync(OrderOccurrence entity, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         if (entity.OccurrenceID != 0)
         {
             var (sql, parameters) = BuildUpdate(entity);
@@ -41,12 +45,12 @@ public class OrderOccurrenceRepository(
 
     public async Task<int> RegisterAsync(OrderOccurrence occurrence, Order order, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
         try
         {
-            var orderRows = await orderRepository.SaveAsync(order, connection, transaction, cancellationToken);
+            var orderRows = await _orderRepository.SaveAsync(order, connection, transaction, cancellationToken);
             if (orderRows != 1)
                 throw new InvalidOperationException("Não foi possível atualizar os prazos do pedido.");
 
@@ -65,21 +69,21 @@ public class OrderOccurrenceRepository(
     public int Delete(int id)
     {
         var (sql, parameters) = BuildDelete(id);
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return connection.Execute(sql, parameters);
     }
 
     public async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = BuildDelete(id);
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
     public IEnumerable<OrderOccurrence> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = BuildSearch(arg, null, null);
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return connection.Query<OrderOccurrence>(sql, parameters);
     }
 
@@ -87,34 +91,34 @@ public class OrderOccurrenceRepository(
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = BuildSearch(arg, (uint)pageSize, (uint)((page - 1) * pageSize));
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return (await connection.QueryAsync<OrderOccurrence>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }
 
     public async Task<IReadOnlyList<OrderOccurrence>> GetHistoryForOrderAsync(int orderId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder()
+        var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderOccurrence>())
             .From<OrderOccurrence>()
             .Where(w => w.Equals<OrderOccurrence>(o => o.OrderID, orderId))
             .OrderBy("oo.RegisteredAt DESC")
             .Build();
-        using var connection = dbConnection.CreateConnection();
+        using var connection = _dbConnection.CreateConnection();
         return (await connection.QueryAsync<OrderOccurrence>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
     }
 
     private (string Sql, object Parameters) BuildInsert(OrderOccurrence entity)
-        => createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
+        => _createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
 
     private (string Sql, object Parameters) BuildUpdate(OrderOccurrence entity)
-        => createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, entity.OccurrenceID)).Build();
+        => _createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, entity.OccurrenceID)).Build();
 
     private (string Sql, object Parameters) BuildDelete(int id)
-        => createCommandBuilder().Delete<OrderOccurrence>().Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, id)).Build();
+        => _createCommandBuilder().Delete<OrderOccurrence>().Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, id)).Build();
 
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)
     {
-        var builder = createCommandBuilder()
+        var builder = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderOccurrence>())
             .From<OrderOccurrence>()
             .Where(w => w.WithDynamicSearchFilter<OrderOccurrence, OrderOccurrence>(arg, o => o.OccurrenceID, o => o.Observation))
