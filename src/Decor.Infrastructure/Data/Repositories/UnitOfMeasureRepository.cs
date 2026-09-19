@@ -17,18 +17,14 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
         if (entity.UnitOfMeasureID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<UnitOfMeasure>()
-                .Set(entity)
-                .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, entity.UnitOfMeasureID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, entity.UnitOfMeasureID))
                 .Build();
             return connection.Execute(sql, parameters);
         }
 
         var (insertSql, insertParameters) = _createCommandBuilder()
-            .Insert()
-            .Into<UnitOfMeasure>()
-            .Values(entity)
+            .Insert(i => i.Entity(entity))
             .ReturningGeneratedId()
             .Build();
 
@@ -42,18 +38,14 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
         if (entity.UnitOfMeasureID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<UnitOfMeasure>()
-                .Set(entity)
-                .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, entity.UnitOfMeasureID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, entity.UnitOfMeasureID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
 
         var (insertSql, insertParameters) = _createCommandBuilder()
-            .Insert()
-            .Into<UnitOfMeasure>()
-            .Values(entity)
+            .Insert(i => i.Entity(entity))
             .ReturningGeneratedId()
             .Build();
 
@@ -65,7 +57,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<UnitOfMeasure>()
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, id))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -76,7 +68,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<UnitOfMeasure>()
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, id))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -118,7 +110,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<UnitOfMeasure>())
             .From<UnitOfMeasure>()
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -132,8 +124,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
             .From<UnitOfMeasure>()
             .Where(w =>
             {
-                w.Equals((UnitOfMeasure u) => u.Code, code);
-                w.NotEquals((UnitOfMeasure u) => u.UnitOfMeasureID, currentUnitOfMeasureId);
+                w.Equals<UnitOfMeasure>(u => u.Code, code);
+                w.NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId);
             })
             .Build();
 
@@ -148,8 +140,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
             .From<UnitOfMeasure>()
             .Where(w =>
             {
-                w.Equals((UnitOfMeasure u) => u.Code, code);
-                w.NotEquals((UnitOfMeasure u) => u.UnitOfMeasureID, currentUnitOfMeasureId);
+                w.Equals<UnitOfMeasure>(u => u.Code, code);
+                w.NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId);
             })
             .Build();
 
@@ -160,10 +152,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public int Deactivate(int unitOfMeasureId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Update()
-            .Table<UnitOfMeasure>()
-            .Set((UnitOfMeasure u) => u.IsActive, false)
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Update(u => u.Entity<UnitOfMeasure>(uom => uom.IsActive, false))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -173,10 +163,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public async Task<int> DeactivateAsync(int unitOfMeasureId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Update()
-            .Table<UnitOfMeasure>()
-            .Set((UnitOfMeasure u) => u.IsActive, false)
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Update(u => u.Entity<UnitOfMeasure>(uom => uom.IsActive, false))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -186,10 +174,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public int Activate(int unitOfMeasureId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Update()
-            .Table<UnitOfMeasure>()
-            .Set((UnitOfMeasure u) => u.IsActive, true)
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Update(u => u.Entity<UnitOfMeasure>(uom => uom.IsActive, true))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -199,10 +185,8 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public async Task<int> ActivateAsync(int unitOfMeasureId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Update()
-            .Table<UnitOfMeasure>()
-            .Set((UnitOfMeasure u) => u.IsActive, true)
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Update(u => u.Entity<UnitOfMeasure>(uom => uom.IsActive, true))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

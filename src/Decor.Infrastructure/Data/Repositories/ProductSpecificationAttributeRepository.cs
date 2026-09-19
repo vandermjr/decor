@@ -15,8 +15,8 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = attribute.AttributeID != 0
-            ? _createCommandBuilder().Update().Table<ProductSpecificationAttribute>().Set(attribute).Where(w => w.Equals((ProductSpecificationAttribute a) => a.AttributeID, attribute.AttributeID)).Build()
-            : _createCommandBuilder().Insert().Into<ProductSpecificationAttribute>().Values(attribute).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(attribute)).Where(w => w.Equals<ProductSpecificationAttribute>(a => a.AttributeID, attribute.AttributeID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(attribute)).Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -24,8 +24,8 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
     public async Task<int> SaveAsync(ProductSpecificationAttribute attribute, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = attribute.AttributeID != 0
-            ? _createCommandBuilder().Update().Table<ProductSpecificationAttribute>().Set(attribute).Where(w => w.Equals((ProductSpecificationAttribute a) => a.AttributeID, attribute.AttributeID)).Build()
-            : _createCommandBuilder().Insert().Into<ProductSpecificationAttribute>().Values(attribute).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(attribute)).Where(w => w.Equals<ProductSpecificationAttribute>(a => a.AttributeID, attribute.AttributeID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(attribute)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

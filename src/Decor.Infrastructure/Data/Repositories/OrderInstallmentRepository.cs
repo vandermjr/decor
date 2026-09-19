@@ -17,19 +17,15 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
         if (installment.InstallmentID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<OrderInstallment>()
-                .Set(installment)
-                .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID))
+                .Update(u => u.Entity(installment))
+                .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, installment.InstallmentID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<OrderInstallment>()
-                .Values(installment)
+                .Insert(i => i.Entity(installment))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -44,19 +40,15 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
         if (installment.InstallmentID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<OrderInstallment>()
-                .Set(installment)
-                .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installment.InstallmentID))
+                .Update(u => u.Entity(installment))
+                .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, installment.InstallmentID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<OrderInstallment>()
-                .Values(installment)
+                .Insert(i => i.Entity(installment))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -69,7 +61,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, id))
+            .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, id))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -80,7 +72,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, id))
+            .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -122,7 +114,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.OrderID, orderId))
+            .Where(w => w.Equals<OrderInstallment>(i => i.OrderID, orderId))
             .OrderBy("oi.InstallmentNumber ASC")
             .Build();
 
@@ -136,7 +128,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.InstallmentID, installmentId))
+            .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, installmentId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

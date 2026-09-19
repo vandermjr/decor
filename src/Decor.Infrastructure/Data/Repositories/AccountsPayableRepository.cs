@@ -12,8 +12,8 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         using var connection = dbConnection.CreateConnection();
         var (sql, parameters) = entity.AccountsPayableID == 0
-            ? createCommandBuilder().Insert().Into<AccountsPayable>().Values(entity).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update().Table<AccountsPayable>().Set(entity).Where(w => w.Equals((AccountsPayable a) => a.AccountsPayableID, entity.AccountsPayableID)).Build();
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
         if (entity.AccountsPayableID == 0) entity.AccountsPayableID = connection.QuerySingle<int>(sql, parameters);
         return 1;
     }
@@ -22,8 +22,8 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         using var connection = dbConnection.CreateConnection();
         var (sql, parameters) = entity.AccountsPayableID == 0
-            ? createCommandBuilder().Insert().Into<AccountsPayable>().Values(entity).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update().Table<AccountsPayable>().Set(entity).Where(w => w.Equals((AccountsPayable a) => a.AccountsPayableID, entity.AccountsPayableID)).Build();
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, entity.AccountsPayableID)).Build();
         if (entity.AccountsPayableID == 0)
         {
             entity.AccountsPayableID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

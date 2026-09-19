@@ -15,8 +15,8 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = brand.BrandID != 0
-            ? _createCommandBuilder().Update().Table<Brand>().Set(brand).Where(w => w.Equals((Brand b) => b.BrandID, brand.BrandID)).Build()
-            : _createCommandBuilder().Insert().Into<Brand>().Values(brand).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(brand)).Where(w => w.Equals<Brand>(b => b.BrandID, brand.BrandID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(brand)).Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -24,8 +24,8 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public async Task<int> SaveAsync(Brand brand, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = brand.BrandID != 0
-            ? _createCommandBuilder().Update().Table<Brand>().Set(brand).Where(w => w.Equals((Brand b) => b.BrandID, brand.BrandID)).Build()
-            : _createCommandBuilder().Insert().Into<Brand>().Values(brand).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(brand)).Where(w => w.Equals<Brand>(b => b.BrandID, brand.BrandID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(brand)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -96,8 +96,8 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
             .From<Brand>()
             .Where(w =>
             {
-                w.Equals((Brand b) => b.BrandName, brandName);
-                w.NotEquals((Brand b) => b.BrandID, currentBrandID);
+                w.Equals<Brand>(b => b.BrandName, brandName);
+                w.NotEquals<Brand>(b => b.BrandID, currentBrandID);
             })
             .Build();
 

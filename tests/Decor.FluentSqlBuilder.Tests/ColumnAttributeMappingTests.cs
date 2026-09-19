@@ -121,10 +121,8 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Update_WithCustomColumnAttribute_ShouldUseColumnNamesInSetAndWhere()
         {
             var (sql, parameters) = CreateCommandBuilder()
-                .Update()
-                .Table<CustomMappedProduct>()
-                .Set((CustomMappedProduct p) => p.Description, "Novo Nome")
-                .Where(w => w.Equals((CustomMappedProduct p) => p.ProductID, 1))
+                .Update(u => u.Entity<CustomMappedProduct>(p => p.Description, "Novo Nome"))
+                .Where(w => w.Equals<CustomMappedProduct>(p => p.ProductID, 1))
                 .Build();
 
             sql.Should().Contain("UPDATE tb_produtos AS cmp");

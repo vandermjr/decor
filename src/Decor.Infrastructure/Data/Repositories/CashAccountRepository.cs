@@ -12,8 +12,8 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     {
         var builder = createCommandBuilder();
         var (sql, parameters) = account.CashAccountID == 0
-            ? builder.Insert().Into<CashAccount>().Values(account).ReturningGeneratedId().Build()
-            : builder.Update().Table<CashAccount>().Set(account).Where(w => w.Equals((CashAccount a) => a.CashAccountID, account.CashAccountID)).Build();
+            ? builder.Insert(i => i.Entity(account)).ReturningGeneratedId().Build()
+            : builder.Update(u => u.Entity(account)).Where(w => w.Equals<CashAccount>(a => a.CashAccountID, account.CashAccountID)).Build();
         using var connection = databaseConnection.CreateConnection();
         if (account.CashAccountID == 0)
         {
@@ -51,8 +51,8 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
 
     public async Task<int> DeactivateAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
-        var (sql, parameters) = createCommandBuilder().Update().Table<CashAccount>().Set((CashAccount a) => a.IsActive, false)
-            .Where(w => w.Equals((CashAccount a) => a.CashAccountID, cashAccountId)).Build();
+        var (sql, parameters) = createCommandBuilder().Update(u => u.Entity<CashAccount>(a => a.IsActive, false))
+            .Where(w => w.Equals<CashAccount>(a => a.CashAccountID, cashAccountId)).Build();
         using var connection = databaseConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }

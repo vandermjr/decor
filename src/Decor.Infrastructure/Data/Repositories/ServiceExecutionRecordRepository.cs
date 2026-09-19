@@ -12,8 +12,8 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     {
         using var connection = dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? createCommandBuilder().Insert().Into<ServiceExecutionRecord>().Values(entity).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update().Table<ServiceExecutionRecord>().Set(entity).Where(w => w.Equals((ServiceExecutionRecord r) => r.ExecutionID, entity.ExecutionID)).Build();
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = connection.QuerySingle<int>(sql, parameters);
@@ -26,8 +26,8 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     {
         using var connection = dbConnection.CreateConnection();
         var (sql, parameters) = entity.ExecutionID == 0
-            ? createCommandBuilder().Insert().Into<ServiceExecutionRecord>().Values(entity).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update().Table<ServiceExecutionRecord>().Set(entity).Where(w => w.Equals((ServiceExecutionRecord r) => r.ExecutionID, entity.ExecutionID)).Build();
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, entity.ExecutionID)).Build();
         if (entity.ExecutionID == 0)
         {
             entity.ExecutionID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

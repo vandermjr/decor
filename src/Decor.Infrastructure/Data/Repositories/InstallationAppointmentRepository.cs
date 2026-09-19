@@ -20,8 +20,8 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
     {
         using var connection = dbConnection.CreateConnection();
         var (sql, parameters) = entity.AppointmentID == 0
-            ? createCommandBuilder().Insert().Into<InstallationAppointment>().Values(entity).ReturningGeneratedId().Build()
-            : createCommandBuilder().Update().Table<InstallationAppointment>().Set(entity).Where(w => w.Equals((InstallationAppointment a) => a.AppointmentID, entity.AppointmentID)).Build();
+            ? createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build()
+            : createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<InstallationAppointment>(a => a.AppointmentID, entity.AppointmentID)).Build();
         if (entity.AppointmentID == 0)
         {
             entity.AppointmentID = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -77,8 +77,8 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
         using var transaction = connection.BeginTransaction();
         try
         {
-            var update = createCommandBuilder().Update().Table<InstallationAppointment>().Set(appointment).Where(w => w.Equals((InstallationAppointment a) => a.AppointmentID, appointment.AppointmentID)).Build();
-            var insert = createCommandBuilder().Insert().Into<AppointmentReschedule>().Values(reschedule).ReturningGeneratedId().Build();
+            var update = createCommandBuilder().Update(u => u.Entity(appointment)).Where(w => w.Equals<InstallationAppointment>(a => a.AppointmentID, appointment.AppointmentID)).Build();
+            var insert = createCommandBuilder().Insert(i => i.Entity(reschedule)).ReturningGeneratedId().Build();
             var updated = await connection.ExecuteAsync(new CommandDefinition(update.Sql, update.Parameters, transaction, cancellationToken: cancellationToken));
             if (updated != 1) throw new InvalidOperationException("O agendamento não foi encontrado ou não pôde ser atualizado.");
             reschedule.RescheduleID = await connection.QuerySingleAsync<int>(new CommandDefinition(insert.Sql, insert.Parameters, transaction, cancellationToken: cancellationToken));

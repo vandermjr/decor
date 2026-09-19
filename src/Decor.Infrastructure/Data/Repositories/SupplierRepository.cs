@@ -15,8 +15,8 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
         using var conn = _dbConnection.CreateConnection();
 
         var (sql, parameters) = supplier.SupplierID != 0
-            ? _createCommandBuilder().Update().Table<Supplier>().Set(supplier).Where(w => w.Equals((Supplier s) => s.SupplierID, supplier.SupplierID)).Build()
-            : _createCommandBuilder().Insert().Into<Supplier>().Values(supplier).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(supplier)).Where(w => w.Equals<Supplier>(s => s.SupplierID, supplier.SupplierID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(supplier)).Build();
 
         return conn.Execute(sql, parameters);
     }
@@ -24,8 +24,8 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public async Task<int> SaveAsync(Supplier supplier, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = supplier.SupplierID != 0
-            ? _createCommandBuilder().Update().Table<Supplier>().Set(supplier).Where(w => w.Equals((Supplier s) => s.SupplierID, supplier.SupplierID)).Build()
-            : _createCommandBuilder().Insert().Into<Supplier>().Values(supplier).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(supplier)).Where(w => w.Equals<Supplier>(s => s.SupplierID, supplier.SupplierID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(supplier)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

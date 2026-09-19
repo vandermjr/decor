@@ -17,19 +17,15 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         if (entity.RequestID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<TailorQuotationRequest>()
-                .Set(entity)
-                .Where(w => w.Equals((TailorQuotationRequest r) => r.RequestID, entity.RequestID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, entity.RequestID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<TailorQuotationRequest>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -44,19 +40,15 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         if (entity.RequestID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<TailorQuotationRequest>()
-                .Set(entity)
-                .Where(w => w.Equals((TailorQuotationRequest r) => r.RequestID, entity.RequestID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, entity.RequestID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<TailorQuotationRequest>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -69,7 +61,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<TailorQuotationRequest>()
-            .Where(w => w.Equals((TailorQuotationRequest r) => r.RequestID, id))
+            .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, id))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -80,7 +72,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<TailorQuotationRequest>()
-            .Where(w => w.Equals((TailorQuotationRequest r) => r.RequestID, id))
+            .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -122,7 +114,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
-            .Where(w => w.Equals((TailorQuotationRequest r) => r.RequestID, requestId))
+            .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, requestId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -140,7 +132,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
-            .Where(w => w.Equals((TailorQuotationRequest r) => r.QuoteItemID, quoteItemId))
+            .Where(w => w.Equals<TailorQuotationRequest>(r => r.QuoteItemID, quoteItemId))
             .OrderBy("r.RequestID ASC")
             .Build();
 
@@ -155,7 +147,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
             .Join(j => j.Inner<TailorQuotationRequest, QuoteItem>((r, qi) => r.QuoteItemID == qi.QuoteItemID))
-            .Where(w => w.Equals((QuoteItem qi) => qi.QuoteSectionID, quoteSectionId))
+            .Where(w => w.Equals<QuoteItem>(qi => qi.QuoteSectionID, quoteSectionId))
             .OrderBy("r.RequestID ASC")
             .Build();
 
@@ -170,19 +162,15 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         if (revision.RevisionID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<TailorQuotationRevision>()
-                .Set(revision)
-                .Where(w => w.Equals((TailorQuotationRevision r) => r.RevisionID, revision.RevisionID))
+                .Update(u => u.Entity(revision))
+                .Where(w => w.Equals<TailorQuotationRevision>(r => r.RevisionID, revision.RevisionID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<TailorQuotationRevision>()
-                .Values(revision)
+                .Insert(i => i.Entity(revision))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -196,7 +184,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<TailorQuotationRevision>())
             .From<TailorQuotationRevision>()
-            .Where(w => w.Equals((TailorQuotationRevision rev) => rev.RequestID, requestId))
+            .Where(w => w.Equals<TailorQuotationRevision>(rev => rev.RequestID, requestId))
             .OrderBy("rev.RevisionNumber ASC")
             .Build();
 
@@ -210,7 +198,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<TailorQuotationRevision>())
             .From<TailorQuotationRevision>()
-            .Where(w => w.Equals((TailorQuotationRevision revision) => revision.RevisionID, revisionId))
+            .Where(w => w.Equals<TailorQuotationRevision>(revision => revision.RevisionID, revisionId))
             .Build();
         using var connection = _dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<TailorQuotationRevision>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

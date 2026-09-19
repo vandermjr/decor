@@ -42,8 +42,8 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public int Save(Group group)
     {
         var (sql, parameters) = group.GroupID != 0
-            ? _createCommandBuilder().Update().Table<Group>().Set(group).Where(w => w.Equals((Group g) => g.GroupID, group.GroupID)).Build()
-            : _createCommandBuilder().Insert().Into<Group>().Values(group).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(group)).Where(w => w.Equals<Group>(g => g.GroupID, group.GroupID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(group)).Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Execute(sql, parameters);
     }
@@ -73,8 +73,8 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<int> SaveAsync(Group group, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = group.GroupID != 0
-            ? _createCommandBuilder().Update().Table<Group>().Set(group).Where(w => w.Equals((Group g) => g.GroupID, group.GroupID)).Build()
-            : _createCommandBuilder().Insert().Into<Group>().Values(group).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(group)).Where(w => w.Equals<Group>(g => g.GroupID, group.GroupID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(group)).Build();
         return await ExecuteWriteAsync(sql, parameters, cancellationToken);
     }
 
@@ -82,7 +82,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Group>()
-            .Where(w => w.Equals((Group g) => g.GroupID, id))
+            .Where(w => w.Equals<Group>(g => g.GroupID, id))
             .Build();
         return await ExecuteWriteAsync(sql, parameters, cancellationToken);
     }

@@ -17,8 +17,8 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
         using var connection = _dbConnection.CreateConnection();
 
         var (sql, parameters) = component.ComponentID != 0
-            ? _createCommandBuilder().Update().Table<ProductKitComponent>().Set(component).Where(w => w.Equals((ProductKitComponent c) => c.ComponentID, component.ComponentID)).Build()
-            : _createCommandBuilder().Insert().Into<ProductKitComponent>().Values(component).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(component)).Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(component)).Build();
 
         return connection.Execute(sql, parameters);
     }
@@ -26,8 +26,8 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public async Task<int> SaveAsync(ProductKitComponent component, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = component.ComponentID != 0
-            ? _createCommandBuilder().Update().Table<ProductKitComponent>().Set(component).Where(w => w.Equals((ProductKitComponent c) => c.ComponentID, component.ComponentID)).Build()
-            : _createCommandBuilder().Insert().Into<ProductKitComponent>().Values(component).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(component)).Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, component.ComponentID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(component)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -37,7 +37,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<ProductKitComponent>()
-            .Where(w => w.Equals((ProductKitComponent c) => c.ComponentID, componentId))
+            .Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, componentId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -48,7 +48,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<ProductKitComponent>()
-            .Where(w => w.Equals((ProductKitComponent c) => c.ComponentID, componentId))
+            .Where(w => w.Equals<ProductKitComponent>(c => c.ComponentID, componentId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -90,7 +90,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<ProductKitComponent>())
             .From<ProductKitComponent>()
-            .Where(w => w.Equals((ProductKitComponent c) => c.KitProductID, kitProductId))
+            .Where(w => w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId))
             .OrderBy("pkc.DisplayOrder ASC")
             .Build();
 
@@ -109,7 +109,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
             })
             .From<ProductKitComponent>()
             .Join(j => j.Inner<ProductKitComponent, Product>((c, p) => c.ComponentProductID == p.ProductID))
-            .Where(w => w.Equals((ProductKitComponent c) => c.KitProductID, kitProductId))
+            .Where(w => w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -124,8 +124,8 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
             .From<ProductKitComponent>()
             .Where(w =>
             {
-                w.Equals((ProductKitComponent c) => c.KitProductID, kitProductId);
-                w.Equals((ProductKitComponent c) => c.ComponentProductID, componentProductId);
+                w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId);
+                w.Equals<ProductKitComponent>(c => c.ComponentProductID, componentProductId);
             })
             .Build();
 

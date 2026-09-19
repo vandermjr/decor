@@ -17,19 +17,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (entity.QuoteID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<Quote>()
-                .Set(entity)
-                .Where(w => w.Equals((Quote q) => q.QuoteID, entity.QuoteID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<Quote>(q => q.QuoteID, entity.QuoteID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<Quote>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -44,19 +40,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (entity.QuoteID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<Quote>()
-                .Set(entity)
-                .Where(w => w.Equals((Quote q) => q.QuoteID, entity.QuoteID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<Quote>(q => q.QuoteID, entity.QuoteID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<Quote>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -69,7 +61,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Quote>()
-            .Where(w => w.Equals((Quote q) => q.QuoteID, id))
+            .Where(w => w.Equals<Quote>(q => q.QuoteID, id))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -80,7 +72,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Quote>()
-            .Where(w => w.Equals((Quote q) => q.QuoteID, id))
+            .Where(w => w.Equals<Quote>(q => q.QuoteID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -122,7 +114,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<Quote>())
             .From<Quote>()
-            .Where(w => w.Equals((Quote q) => q.QuoteID, quoteId))
+            .Where(w => w.Equals<Quote>(q => q.QuoteID, quoteId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -139,7 +131,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (secSql, secParams) = _createCommandBuilder()
             .Select(s => s.AllColumns<QuoteSection>())
             .From<QuoteSection>()
-            .Where(w => w.Equals((QuoteSection s) => s.QuoteID, quoteId))
+            .Where(w => w.Equals<QuoteSection>(s => s.QuoteID, quoteId))
             .OrderBy("s.QuoteSectionID ASC")
             .Build();
 
@@ -151,7 +143,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             var (itemSql, itemParams) = _createCommandBuilder()
                 .Select(s => s.AllColumns<QuoteItem>())
                 .From<QuoteItem>()
-                .Where(w => w.Equals((QuoteItem i) => i.QuoteSectionID, section.QuoteSectionID))
+                .Where(w => w.Equals<QuoteItem>(i => i.QuoteSectionID, section.QuoteSectionID))
                 .OrderBy("i.QuoteItemID ASC")
                 .Build();
 
@@ -163,7 +155,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 var (valSql, valParams) = _createCommandBuilder()
                     .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
                     .From<QuoteItemSpecificationValue>()
-                    .Where(w => w.Equals((QuoteItemSpecificationValue v) => v.QuoteItemID, item.QuoteItemID))
+                    .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.QuoteItemID, item.QuoteItemID))
                     .OrderBy("v.ValueID ASC")
                     .Build();
 
@@ -183,7 +175,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<QuoteSection>())
             .From<QuoteSection>()
-            .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, item.QuoteSectionID))
+            .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, item.QuoteSectionID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -195,7 +187,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<QuoteSection>())
             .From<QuoteSection>()
-            .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, quoteSectionId))
+            .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, quoteSectionId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -207,7 +199,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<QuoteItem>())
             .From<QuoteItem>()
-            .Where(w => w.Equals((QuoteItem i) => i.QuoteItemID, quoteItemId))
+            .Where(w => w.Equals<QuoteItem>(i => i.QuoteItemID, quoteItemId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -219,7 +211,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
             .From<QuoteItemSpecificationValue>()
-            .Where(w => w.Equals((QuoteItemSpecificationValue v) => v.QuoteItemID, quoteItemId))
+            .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.QuoteItemID, quoteItemId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -233,19 +225,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (section.QuoteSectionID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<QuoteSection>()
-                .Set(section)
-                .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, section.QuoteSectionID))
+                .Update(u => u.Entity(section))
+                .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, section.QuoteSectionID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<QuoteSection>()
-                .Values(section)
+                .Insert(i => i.Entity(section))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -258,12 +246,12 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (section.QuoteSectionID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update().Table<QuoteSection>().Set(section)
-                .Where(w => w.Equals((QuoteSection s) => s.QuoteSectionID, section.QuoteSectionID)).Build();
+            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(section))
+                .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, section.QuoteSectionID)).Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<QuoteSection>().Values(section).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(section)).ReturningGeneratedId().Build();
         section.QuoteSectionID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }
@@ -274,19 +262,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (item.QuoteItemID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<QuoteItem>()
-                .Set(item)
-                .Where(w => w.Equals((QuoteItem i) => i.QuoteItemID, item.QuoteItemID))
+                .Update(u => u.Entity(item))
+                .Where(w => w.Equals<QuoteItem>(i => i.QuoteItemID, item.QuoteItemID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<QuoteItem>()
-                .Values(item)
+                .Insert(i => i.Entity(item))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -301,19 +285,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (value.ValueID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<QuoteItemSpecificationValue>()
-                .Set(value)
-                .Where(w => w.Equals((QuoteItemSpecificationValue v) => v.ValueID, value.ValueID))
+                .Update(u => u.Entity(value))
+                .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.ValueID, value.ValueID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<QuoteItemSpecificationValue>()
-                .Values(value)
+                .Insert(i => i.Entity(value))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

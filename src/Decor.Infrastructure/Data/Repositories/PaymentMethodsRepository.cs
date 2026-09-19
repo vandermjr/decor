@@ -17,19 +17,15 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         if (paymentMethod.PaymentMethodID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<PaymentMethod>()
-                .Set(paymentMethod)
-                .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID))
+                .Update(u => u.Entity(paymentMethod))
+                .Where(w => w.Equals<PaymentMethod>(p => p.PaymentMethodID, paymentMethod.PaymentMethodID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<PaymentMethod>()
-                .Values(paymentMethod)
+                .Insert(i => i.Entity(paymentMethod))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -44,19 +40,15 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         if (paymentMethod.PaymentMethodID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<PaymentMethod>()
-                .Set(paymentMethod)
-                .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, paymentMethod.PaymentMethodID))
+                .Update(u => u.Entity(paymentMethod))
+                .Where(w => w.Equals<PaymentMethod>(p => p.PaymentMethodID, paymentMethod.PaymentMethodID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<PaymentMethod>()
-                .Values(paymentMethod)
+                .Insert(i => i.Entity(paymentMethod))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -69,7 +61,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<PaymentMethod>()
-            .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, id))
+            .Where(w => w.Equals<PaymentMethod>(p => p.PaymentMethodID, id))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -80,7 +72,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<PaymentMethod>()
-            .Where(w => w.Equals((PaymentMethod p) => p.PaymentMethodID, id))
+            .Where(w => w.Equals<PaymentMethod>(p => p.PaymentMethodID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -122,7 +114,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.PaymentMethodID, paymentMethodId))
+            .Where(w => w.Equals<OrderInstallment>(i => i.PaymentMethodID, paymentMethodId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -134,7 +126,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<OrderInstallment>()
-            .Where(w => w.Equals((OrderInstallment i) => i.PaymentMethodID, paymentMethodId))
+            .Where(w => w.Equals<OrderInstallment>(i => i.PaymentMethodID, paymentMethodId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -149,8 +141,8 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .From<PaymentMethod>()
             .Where(w =>
             {
-                w.Equals((PaymentMethod p) => p.Name, name);
-                w.NotEquals((PaymentMethod p) => p.PaymentMethodID, currentPaymentMethodId);
+                w.Equals<PaymentMethod>(p => p.Name, name);
+                w.NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId);
             })
             .Build();
 
@@ -165,8 +157,8 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .From<PaymentMethod>()
             .Where(w =>
             {
-                w.Equals((PaymentMethod p) => p.Name, name);
-                w.NotEquals((PaymentMethod p) => p.PaymentMethodID, currentPaymentMethodId);
+                w.Equals<PaymentMethod>(p => p.Name, name);
+                w.NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId);
             })
             .Build();
 

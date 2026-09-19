@@ -40,8 +40,8 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public int Save(Class @class)
     {
         var (sql, parameters) = @class.ClassID != 0
-            ? _createCommandBuilder().Update().Table<Class>().Set(@class).Where(w => w.Equals((Class cl) => cl.ClassID, @class.ClassID)).Build()
-            : _createCommandBuilder().Insert().Into<Class>().Values(@class).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(@class)).Where(w => w.Equals<Class>(cl => cl.ClassID, @class.ClassID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(@class)).Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Execute(sql, parameters);
     }
@@ -71,8 +71,8 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<int> SaveAsync(Class @class, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = @class.ClassID != 0
-            ? _createCommandBuilder().Update().Table<Class>().Set(@class).Where(w => w.Equals((Class cl) => cl.ClassID, @class.ClassID)).Build()
-            : _createCommandBuilder().Insert().Into<Class>().Values(@class).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(@class)).Where(w => w.Equals<Class>(cl => cl.ClassID, @class.ClassID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(@class)).Build();
         return await ExecuteWriteAsync(sql, parameters, cancellationToken);
     }
 

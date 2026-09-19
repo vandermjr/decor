@@ -17,19 +17,15 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
         if (reservation.ReservationID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<StockReservation>()
-                .Set(reservation)
-                .Where(w => w.Equals((StockReservation r) => r.ReservationID, reservation.ReservationID))
+                .Update(u => u.Entity(reservation))
+                .Where(w => w.Equals<StockReservation>(r => r.ReservationID, reservation.ReservationID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<StockReservation>()
-                .Values(reservation)
+                .Insert(i => i.Entity(reservation))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -44,19 +40,15 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
         if (reservation.ReservationID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<StockReservation>()
-                .Set(reservation)
-                .Where(w => w.Equals((StockReservation r) => r.ReservationID, reservation.ReservationID))
+                .Update(u => u.Entity(reservation))
+                .Where(w => w.Equals<StockReservation>(r => r.ReservationID, reservation.ReservationID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<StockReservation>()
-                .Values(reservation)
+                .Insert(i => i.Entity(reservation))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -69,7 +61,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<StockReservation>()
-            .Where(w => w.Equals((StockReservation r) => r.ReservationID, reservationId))
+            .Where(w => w.Equals<StockReservation>(r => r.ReservationID, reservationId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -80,7 +72,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<StockReservation>()
-            .Where(w => w.Equals((StockReservation r) => r.ReservationID, reservationId))
+            .Where(w => w.Equals<StockReservation>(r => r.ReservationID, reservationId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -122,7 +114,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
-            .Where(w => w.Equals((StockReservation sr) => sr.ReservationID, reservationId))
+            .Where(w => w.Equals<StockReservation>(sr => sr.ReservationID, reservationId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -134,7 +126,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
-            .Where(w => w.Equals((StockReservation sr) => sr.OrderItemID, orderItemId))
+            .Where(w => w.Equals<StockReservation>(sr => sr.OrderItemID, orderItemId))
             .OrderBy("sr.ReservationID DESC")
             .Build();
 
@@ -149,7 +141,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
             .Join(j => j.Inner<StockReservation, OrderItem>((sr, oi) => sr.OrderItemID == oi.OrderItemID))
-            .Where(w => w.Equals((OrderItem oi) => oi.OrderID, orderId))
+            .Where(w => w.Equals<OrderItem>(oi => oi.OrderID, orderId))
             .OrderBy("sr.ReservationID ASC")
             .Build();
 
@@ -166,8 +158,8 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .Join(j => j.Inner<StockReservation, OrderItem>((sr, oi) => sr.OrderItemID == oi.OrderItemID))
             .Where(w =>
             {
-                w.Equals((OrderItem oi) => oi.OrderID, orderId);
-                w.Equals((StockReservation sr) => sr.Status, StockReservationStatus.Active);
+                w.Equals<OrderItem>(oi => oi.OrderID, orderId);
+                w.Equals<StockReservation>(sr => sr.Status, StockReservationStatus.Active);
             })
             .OrderBy("sr.ReservationID ASC")
             .Build();
@@ -184,8 +176,8 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .From<StockReservation>()
             .Where(w =>
             {
-                w.Equals((StockReservation sr) => sr.OrderItemID, orderItemId);
-                w.Equals((StockReservation sr) => sr.Status, StockReservationStatus.Active);
+                w.Equals<StockReservation>(sr => sr.OrderItemID, orderItemId);
+                w.Equals<StockReservation>(sr => sr.Status, StockReservationStatus.Active);
             })
             .Build();
 
@@ -200,9 +192,9 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .From<StockReservation>()
             .Where(w =>
             {
-                w.Equals((StockReservation sr) => sr.ProductID, productId);
-                w.Equals((StockReservation sr) => sr.StockLocationID, stockLocationId);
-                w.Equals((StockReservation sr) => sr.Status, StockReservationStatus.Active);
+                w.Equals<StockReservation>(sr => sr.ProductID, productId);
+                w.Equals<StockReservation>(sr => sr.StockLocationID, stockLocationId);
+                w.Equals<StockReservation>(sr => sr.Status, StockReservationStatus.Active);
             })
             .OrderBy("sr.ReservationID ASC")
             .Build();

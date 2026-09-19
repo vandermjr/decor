@@ -17,19 +17,15 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (entity.OrderID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<Order>()
-                .Set(entity)
-                .Where(w => w.Equals((Order o) => o.OrderID, entity.OrderID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<Order>(o => o.OrderID, entity.OrderID))
                 .Build();
             return conn.Execute(sql, parameters);
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<Order>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = conn.QuerySingle<int>(sql, parameters);
@@ -49,19 +45,15 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (entity.OrderID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<Order>()
-                .Set(entity)
-                .Where(w => w.Equals((Order o) => o.OrderID, entity.OrderID))
+                .Update(u => u.Entity(entity))
+                .Where(w => w.Equals<Order>(o => o.OrderID, entity.OrderID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<Order>()
-                .Values(entity)
+                .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
@@ -74,7 +66,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Order>()
-            .Where(w => w.Equals((Order o) => o.OrderID, id))
+            .Where(w => w.Equals<Order>(o => o.OrderID, id))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -85,7 +77,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Order>()
-            .Where(w => w.Equals((Order o) => o.OrderID, id))
+            .Where(w => w.Equals<Order>(o => o.OrderID, id))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -127,7 +119,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<Order>())
             .From<Order>()
-            .Where(w => w.Equals((Order o) => o.OrderID, orderId))
+            .Where(w => w.Equals<Order>(o => o.OrderID, orderId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -144,7 +136,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (itemSql, itemParams) = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderItem>())
             .From<OrderItem>()
-            .Where(w => w.Equals((OrderItem i) => i.OrderID, orderId))
+            .Where(w => w.Equals<OrderItem>(i => i.OrderID, orderId))
             .OrderBy("oi.OrderItemID ASC")
             .Build();
 
@@ -156,7 +148,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
             var (valSql, valParams) = _createCommandBuilder()
                 .Select(s => s.AllColumns<OrderItemSpecificationValue>())
                 .From<OrderItemSpecificationValue>()
-                .Where(w => w.Equals((OrderItemSpecificationValue v) => v.OrderItemID, item.OrderItemID))
+                .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.OrderItemID, item.OrderItemID))
                 .OrderBy("oisv.ValueID ASC")
                 .Build();
 
@@ -172,7 +164,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<Order>())
             .From<Order>()
-            .Where(w => w.Equals((Order o) => o.QuoteSectionID, quoteSectionId))
+            .Where(w => w.Equals<Order>(o => o.QuoteSectionID, quoteSectionId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -184,7 +176,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<OrderItem>())
             .From<OrderItem>()
-            .Where(w => w.Equals((OrderItem i) => i.OrderItemID, orderItemId))
+            .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, orderItemId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -197,19 +189,15 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (item.OrderItemID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<OrderItem>()
-                .Set(item)
-                .Where(w => w.Equals((OrderItem i) => i.OrderItemID, item.OrderItemID))
+                .Update(u => u.Entity(item))
+                .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, item.OrderItemID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<OrderItem>()
-                .Values(item)
+                .Insert(i => i.Entity(item))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -222,12 +210,12 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (item.OrderItemID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update().Table<OrderItem>().Set(item)
-                .Where(w => w.Equals((OrderItem i) => i.OrderItemID, item.OrderItemID)).Build();
+            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(item))
+                .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, item.OrderItemID)).Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<OrderItem>().Values(item).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(item)).ReturningGeneratedId().Build();
         item.OrderItemID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }
@@ -238,19 +226,15 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (value.ValueID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Update()
-                .Table<OrderItemSpecificationValue>()
-                .Set(value)
-                .Where(w => w.Equals((OrderItemSpecificationValue v) => v.ValueID, value.ValueID))
+                .Update(u => u.Entity(value))
+                .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.ValueID, value.ValueID))
                 .Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         }
         else
         {
             var (sql, parameters) = _createCommandBuilder()
-                .Insert()
-                .Into<OrderItemSpecificationValue>()
-                .Values(value)
+                .Insert(i => i.Entity(value))
                 .ReturningGeneratedId()
                 .Build();
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -263,12 +247,12 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (value.ValueID != 0)
         {
-            var (sql, parameters) = _createCommandBuilder().Update().Table<OrderItemSpecificationValue>().Set(value)
-                .Where(w => w.Equals((OrderItemSpecificationValue v) => v.ValueID, value.ValueID)).Build();
+            var (sql, parameters) = _createCommandBuilder().Update(u => u.Entity(value))
+                .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.ValueID, value.ValueID)).Build();
             return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        var (insertSql, insertParameters) = _createCommandBuilder().Insert().Into<OrderItemSpecificationValue>().Values(value).ReturningGeneratedId().Build();
+        var (insertSql, insertParameters) = _createCommandBuilder().Insert(i => i.Entity(value)).ReturningGeneratedId().Build();
         value.ValueID = await connection.QuerySingleAsync<int>(new CommandDefinition(insertSql, insertParameters, transaction, cancellationToken: cancellationToken));
         return 1;
     }

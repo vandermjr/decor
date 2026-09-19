@@ -16,8 +16,8 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
         using var connection = _dbConnection.CreateConnection();
 
         var (sql, parameters) = purchaseOrder.PurchaseOrderID != 0
-            ? _createCommandBuilder().Update().Table<PurchaseOrder>().Set(purchaseOrder).Where(w => w.Equals((PurchaseOrder po) => po.PurchaseOrderID, purchaseOrder.PurchaseOrderID)).Build()
-            : _createCommandBuilder().Insert().Into<PurchaseOrder>().Values(purchaseOrder).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(purchaseOrder)).Where(w => w.Equals<PurchaseOrder>(po => po.PurchaseOrderID, purchaseOrder.PurchaseOrderID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(purchaseOrder)).Build();
 
         return connection.Execute(sql, parameters);
     }
@@ -25,8 +25,8 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
     public async Task<int> SaveAsync(PurchaseOrder purchaseOrder, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = purchaseOrder.PurchaseOrderID != 0
-            ? _createCommandBuilder().Update().Table<PurchaseOrder>().Set(purchaseOrder).Where(w => w.Equals((PurchaseOrder po) => po.PurchaseOrderID, purchaseOrder.PurchaseOrderID)).Build()
-            : _createCommandBuilder().Insert().Into<PurchaseOrder>().Values(purchaseOrder).Build();
+            ? _createCommandBuilder().Update(u => u.Entity(purchaseOrder)).Where(w => w.Equals<PurchaseOrder>(po => po.PurchaseOrderID, purchaseOrder.PurchaseOrderID)).Build()
+            : _createCommandBuilder().Insert(i => i.Entity(purchaseOrder)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -36,7 +36,7 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<PurchaseOrder>()
-            .Where(w => w.Equals((PurchaseOrder po) => po.PurchaseOrderID, purchaseOrderId))
+            .Where(w => w.Equals<PurchaseOrder>(po => po.PurchaseOrderID, purchaseOrderId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -47,7 +47,7 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<PurchaseOrder>()
-            .Where(w => w.Equals((PurchaseOrder po) => po.PurchaseOrderID, purchaseOrderId))
+            .Where(w => w.Equals<PurchaseOrder>(po => po.PurchaseOrderID, purchaseOrderId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

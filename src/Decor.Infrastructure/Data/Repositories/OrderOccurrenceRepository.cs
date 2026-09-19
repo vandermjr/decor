@@ -96,7 +96,7 @@ public class OrderOccurrenceRepository(
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.AllColumns<OrderOccurrence>())
             .From<OrderOccurrence>()
-            .Where(w => w.Equals((OrderOccurrence o) => o.OrderID, orderId))
+            .Where(w => w.Equals<OrderOccurrence>(o => o.OrderID, orderId))
             .OrderBy("oo.RegisteredAt DESC")
             .Build();
         using var connection = dbConnection.CreateConnection();
@@ -104,13 +104,13 @@ public class OrderOccurrenceRepository(
     }
 
     private (string Sql, object Parameters) BuildInsert(OrderOccurrence entity)
-        => createCommandBuilder().Insert().Into<OrderOccurrence>().Values(entity).ReturningGeneratedId().Build();
+        => createCommandBuilder().Insert(i => i.Entity(entity)).ReturningGeneratedId().Build();
 
     private (string Sql, object Parameters) BuildUpdate(OrderOccurrence entity)
-        => createCommandBuilder().Update().Table<OrderOccurrence>().Set(entity).Where(w => w.Equals((OrderOccurrence o) => o.OccurrenceID, entity.OccurrenceID)).Build();
+        => createCommandBuilder().Update(u => u.Entity(entity)).Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, entity.OccurrenceID)).Build();
 
     private (string Sql, object Parameters) BuildDelete(int id)
-        => createCommandBuilder().Delete<OrderOccurrence>().Where(w => w.Equals((OrderOccurrence o) => o.OccurrenceID, id)).Build();
+        => createCommandBuilder().Delete<OrderOccurrence>().Where(w => w.Equals<OrderOccurrence>(o => o.OccurrenceID, id)).Build();
 
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)
     {

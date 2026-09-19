@@ -21,9 +21,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         {
             var get = conn.GetType();
             var (sql, parameters) = _createCommandBuilder()
-                .Update().Table<Product>()
-                .Set(product)
-                .Where(w => w.Equals((Product p) => p.ProductID, product.ProductID))
+                .Update(u => u.Entity(product))
+                .Where(w => w.Equals<Product>(p => p.ProductID, product.ProductID))
                 .Build();
 
             result = conn.Execute(sql, parameters);
@@ -43,8 +42,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     {
         var query = _createCommandBuilder();
         var (sql, parameters) = product.ProductID > 0
-            ? query.Update().Table<Product>().Set(product).Where(w => w.Equals((Product p) => p.ProductID, product.ProductID)).Build()
-            : query.Insert().Into<Product>().Values(product).Build();
+            ? query.Update(u => u.Entity(product)).Where(w => w.Equals<Product>(p => p.ProductID, product.ProductID)).Build()
+            : query.Insert(i => i.Entity(product)).Build();
 
         using var connection = _dbConnection.CreateConnection();
         return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -85,7 +84,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             })
             .Where(w =>
             {
-                w.Equals((Product p) => p.IsActive, true);
+                w.Equals<Product>(p => p.IsActive, true);
                 var filter = w.WithDynamicFullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
                 queryContext.IsSingleIdSearch = filter.IsIdSearch;
                 filter.OrderByRelevanceDescending();
@@ -147,7 +146,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             })
             .Where(w =>
             {
-                w.Equals((Product p) => p.IsActive, true);
+                w.Equals<Product>(p => p.IsActive, true);
                 var filter = w.WithDynamicFullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
                 queryContext.IsSingleIdSearch = filter.IsIdSearch;
                 filter.OrderByRelevanceDescending();
@@ -191,7 +190,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<Brand>()
-            .Where(w => w.Equals((Brand b) => b.BrandID, marcaID))            
+            .Where(w => w.Equals<Brand>(b => b.BrandID, marcaID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -204,7 +203,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<Subgroup>()
-            .Where(w => w.Equals((Subgroup sg) => sg.SubgroupID, subgroupID))            
+            .Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroupID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -217,7 +216,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<UnitOfMeasure>()
-            .Where(w => w.Equals((UnitOfMeasure u) => u.UnitOfMeasureID, unitOfMeasureId))
+            .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -232,8 +231,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .From<Product>()
             .Where(w =>
             {
-                w.Equals((Product p) => p.ProductID, productId);
-                w.Equals((Product p) => p.ProductType, ProductType.Service);
+                w.Equals<Product>(p => p.ProductID, productId);
+                w.Equals<Product>(p => p.ProductType, ProductType.Service);
             })
             .Build();
 
@@ -249,8 +248,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .From<Product>()
             .Where(w =>
             {
-                w.Equals((Product p) => p.ProductID, productId);
-                w.Equals((Product p) => p.ProductType, ProductType.Good);
+                w.Equals<Product>(p => p.ProductID, productId);
+                w.Equals<Product>(p => p.ProductType, ProductType.Good);
             })
             .Build();
 
