@@ -51,7 +51,7 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<AccountsPayable?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<AccountsPayable>()).From<AccountsPayable>()
-            .Where(w => w.Equals((AccountsPayable a) => a.AccountsPayableID, id)).Build();
+            .Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, id)).Build();
         using var connection = dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<AccountsPayable>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }

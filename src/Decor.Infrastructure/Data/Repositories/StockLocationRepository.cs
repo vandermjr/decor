@@ -35,7 +35,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<StockLocation>()
-            .Where(w => w.Equals((StockLocation sl) => sl.StockLocationID, stockLocationId))
+            .Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocationId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<StockLocation>()
-            .Where(w => w.Equals((StockLocation sl) => sl.StockLocationID, stockLocationId))
+            .Where(w => w.Equals<StockLocation>(sl => sl.StockLocationID, stockLocationId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

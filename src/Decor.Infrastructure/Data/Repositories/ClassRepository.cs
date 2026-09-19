@@ -50,7 +50,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Class>()
-            .Where(w => w.Equals((Class cl) => cl.ClassID, id))
+            .Where(w => w.Equals<Class>(cl => cl.ClassID, id))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Execute(sql, parameters);
@@ -80,7 +80,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Class>()
-            .Where(w => w.Equals((Class cl) => cl.ClassID, id))
+            .Where(w => w.Equals<Class>(cl => cl.ClassID, id))
             .Build();
         return await ExecuteWriteAsync(sql, parameters, cancellationToken);
     }

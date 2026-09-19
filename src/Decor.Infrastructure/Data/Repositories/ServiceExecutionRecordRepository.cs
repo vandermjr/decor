@@ -45,7 +45,7 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<ServiceExecutionRecord>())
             .From<ServiceExecutionRecord>()
-            .Where(w => w.Equals((ServiceExecutionRecord r) => r.ExecutionID, executionId)).Build();
+            .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, executionId)).Build();
         using var connection = dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
@@ -55,7 +55,7 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.AllColumns<ServiceExecutionRecord>())
             .From<ServiceExecutionRecord>()
-            .Where(w => w.Equals((ServiceExecutionRecord r) => r.AppointmentID, appointmentId))
+            .Where(w => w.Equals<ServiceExecutionRecord>(r => r.AppointmentID, appointmentId))
             .Build();
         using var connection = dbConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<ServiceExecutionRecord>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

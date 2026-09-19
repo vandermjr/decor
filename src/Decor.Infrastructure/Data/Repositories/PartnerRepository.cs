@@ -35,7 +35,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Partner>()
-            .Where(w => w.Equals((Partner p) => p.PartnerID, partnerId))
+            .Where(w => w.Equals<Partner>(p => p.PartnerID, partnerId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Partner>()
-            .Where(w => w.Equals((Partner p) => p.PartnerID, partnerId))
+            .Where(w => w.Equals<Partner>(p => p.PartnerID, partnerId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

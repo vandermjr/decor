@@ -35,7 +35,7 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Supplier>()
-            .Where(w => w.Equals((Supplier s) => s.SupplierID, supplierId))
+            .Where(w => w.Equals<Supplier>(s => s.SupplierID, supplierId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Supplier>()
-            .Where(w => w.Equals((Supplier s) => s.SupplierID, supplierId))
+            .Where(w => w.Equals<Supplier>(s => s.SupplierID, supplierId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

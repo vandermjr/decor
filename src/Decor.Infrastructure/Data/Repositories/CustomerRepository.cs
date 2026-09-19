@@ -35,7 +35,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Customer>()
-            .Where(w => w.Equals((Customer c) => c.CustomerID, customerId))
+            .Where(w => w.Equals<Customer>(c => c.CustomerID, customerId))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -46,7 +46,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         var (sql, parameters) = _createCommandBuilder()
             .Delete<Customer>()
-            .Where(w => w.Equals((Customer c) => c.CustomerID, customerId))
+            .Where(w => w.Equals<Customer>(c => c.CustomerID, customerId))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

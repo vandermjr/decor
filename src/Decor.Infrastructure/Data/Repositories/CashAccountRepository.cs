@@ -26,7 +26,7 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     public async Task<CashAccount?> GetByIdAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.AllColumns<CashAccount>()).From<CashAccount>()
-            .Where(w => w.Equals((CashAccount a) => a.CashAccountID, cashAccountId)).Build();
+            .Where(w => w.Equals<CashAccount>(a => a.CashAccountID, cashAccountId)).Build();
         using var connection = databaseConnection.CreateConnection();
         return await connection.QuerySingleOrDefaultAsync<CashAccount>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
@@ -42,8 +42,8 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     {
         var (sql, parameters) = createCommandBuilder().Select(s => s.Count()).From<CashAccount>().Where(w =>
         {
-            w.Equals((CashAccount a) => a.Name, name);
-            w.NotEquals((CashAccount a) => a.CashAccountID, currentCashAccountId);
+            w.Equals<CashAccount>(a => a.Name, name);
+            w.NotEquals<CashAccount>(a => a.CashAccountID, currentCashAccountId);
         }).Build();
         using var connection = databaseConnection.CreateConnection();
         return await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken)) > 0;
