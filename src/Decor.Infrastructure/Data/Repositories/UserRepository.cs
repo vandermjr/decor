@@ -13,11 +13,9 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         var (sql, parameters) = createCommandBuilder()
             .Update(u => u.Entity<UserAccount>(user => user.PasswordHash, passwordHash)
                 .Entity<UserAccount>(user => user.MustChangePassword, mustChangePassword))
-            .Where(w =>
-            {
-                w.Equals<UserAccount>(u => u.UserID, userId);
-                w.Equals<UserAccount>(u => u.IsActive, true);
-            })
+            .Where(w => w
+                .Equals<UserAccount>(u => u.UserID, userId)
+                .Equals<UserAccount>(u => u.IsActive, true))
             .Build();
 
         using var connection = databaseConnection.CreateConnection();
@@ -30,11 +28,9 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         var (sql, parameters) = createCommandBuilder()
             .Select(s => s.WithColumns<UserAccount>(u => u.PasswordHash))
             .From<UserAccount>()
-            .Where(w =>
-            {
-                w.Equals<UserAccount>(u => u.Username, username);
-                w.Equals<UserAccount>(u => u.IsActive, true);
-            })
+            .Where(w => w
+                .Equals<UserAccount>(u => u.Username, username)
+                .Equals<UserAccount>(u => u.IsActive, true))
             .Take(1)
             .Build();
 
@@ -89,11 +85,9 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Select(s => s
                 .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
                 .From<ApplicationUser>()
-                .Where(w =>
-                {
-                    w.Equals<ApplicationUser>(u => u.Username, username);
-                    w.Equals<ApplicationUser>(u => u.IsActive, true);
-                })
+                .Where(w => w
+                    .Equals<ApplicationUser>(u => u.Username, username)
+                    .Equals<ApplicationUser>(u => u.IsActive, true))
                 .Take(1))
             .Select(s => s
                 .WithColumns<Role>(r => r.RoleName)
@@ -103,11 +97,9 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                     j.Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID);
                     j.Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID);
                 })
-                .Where(w =>
-                {
-                    w.Equals<ApplicationUser>(u => u.Username, username);
-                    w.Equals<ApplicationUser>(u => u.IsActive, true);
-                }))
+                .Where(w => w
+                    .Equals<ApplicationUser>(u => u.Username, username)
+                    .Equals<ApplicationUser>(u => u.IsActive, true)))
             .Select(s => s
                 .Distinct()
                 .Column("effective.PermissionCode")
