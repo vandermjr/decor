@@ -74,20 +74,27 @@ var (sql, parameters) = queryBuilder
 3. INSERT
 var newUser = new User { Name = "Maria" };
 var (sql, parameters) = queryBuilder
-    .InsertInto<User>()
-    .Values(newUser)
+    .Insert(i => i.Entity(newUser))
     .Build();
 
 // SQL gerado:
 // INSERT INTO users (Name)
 // VALUES (@Name);
 
+var users = new[]
+{
+    new User { Name = "Maria" },
+    new User { Name = "José" }
+};
+var (batchSql, batchParameters) = queryBuilder
+    .Insert(i => i.Entities(users))
+    .Build();
+
 4. UPDATE
 var updatedUser = new User { Name = "José da Silva" };
 var (sql, parameters) = queryBuilder
-    .Update<User>()
-    .Set(u => u.Name, updatedUser.Name)
-    .Where<User>(u => u.Id).Equals(10)
+    .Update(u => u.Entity<User>(u => u.Name, updatedUser.Name))
+    .Where(w => w.Equals<User>(u => u.Id, 10))
     .Build();
 
 // SQL gerado:
