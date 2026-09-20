@@ -62,7 +62,9 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
             .Select(s => s.AllColumns<CashTransaction>())
             .From<CashTransaction>()
             .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId))
-            .OrderBy("ct.TransactionDate ASC, ct.CashTransactionID ASC")
+            .OrderBy(o => o
+                .Ascending<CashTransaction>(ct => ct.TransactionDate)
+                .Ascending<CashTransaction>(ct => ct.CashTransactionID))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
         return (await connection.QueryAsync<CashTransaction>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();

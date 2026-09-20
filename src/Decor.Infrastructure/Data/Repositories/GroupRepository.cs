@@ -17,7 +17,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .From<Group>()
             .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
-            .OrderBy("g.GroupName ASC")
+            .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Group>(sql, parameters);
@@ -30,7 +30,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName, g => g.FamilyID))
             .From<Group>()
             .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
-            .OrderBy("g.GroupName ASC")
+            .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -69,7 +69,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .From<Group>()
             .Where(w => w.WithDynamicSearchFilter<Group, Group>(arg, g => g.GroupID, g => g.GroupName))
-            .OrderBy("g.GroupName ASC")
+            .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Group>(sql, parameters);
@@ -104,7 +104,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .From<Group>()
             .Where(w => w.WithDynamicSearchFilter<Group, Group>(arg, g => g.GroupID, g => g.GroupName))
-            .OrderBy("g.GroupName ASC")
+            .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

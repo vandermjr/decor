@@ -18,7 +18,7 @@ public sealed class RoleAdministrationRepository(IDatabaseConnection databaseCon
             .From<Permission>()
             .Join(j => j.Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID))
             .Where(w => w.Equals<RolePermission>(rp => rp.RoleID, roleId))
-            .OrderBy("p.PermissionCode ASC")
+            .OrderBy(o => o.Ascending<Permission>(p => p.PermissionCode))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();

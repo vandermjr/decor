@@ -85,7 +85,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
             .Where(w => w.WithDynamicSearchFilter<TailorQuotationRequest, TailorQuotationRequest>(arg, r => r.RequestID, r => r.RequestID))
-            .OrderBy("r.RequestID ASC")
+            .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -99,7 +99,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
             .Where(w => w.WithDynamicSearchFilter<TailorQuotationRequest, TailorQuotationRequest>(arg, r => r.RequestID, r => r.RequestID))
-            .OrderBy("r.RequestID ASC")
+            .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -133,7 +133,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<TailorQuotationRequest>())
             .From<TailorQuotationRequest>()
             .Where(w => w.Equals<TailorQuotationRequest>(r => r.QuoteItemID, quoteItemId))
-            .OrderBy("r.RequestID ASC")
+            .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -148,7 +148,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .From<TailorQuotationRequest>()
             .Join(j => j.Inner<TailorQuotationRequest, QuoteItem>((r, qi) => r.QuoteItemID == qi.QuoteItemID))
             .Where(w => w.Equals<QuoteItem>(qi => qi.QuoteSectionID, quoteSectionId))
-            .OrderBy("r.RequestID ASC")
+            .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -185,7 +185,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<TailorQuotationRevision>())
             .From<TailorQuotationRevision>()
             .Where(w => w.Equals<TailorQuotationRevision>(rev => rev.RequestID, requestId))
-            .OrderBy("rev.RevisionNumber ASC")
+            .OrderBy(o => o.Ascending<TailorQuotationRevision>(rev => rev.RevisionNumber))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

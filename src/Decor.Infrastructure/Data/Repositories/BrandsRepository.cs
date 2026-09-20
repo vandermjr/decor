@@ -70,7 +70,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
             .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .From<Brand>()
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
-            .OrderBy("b.BrandName ASC")
+            .OrderBy(o => o.Ascending<Brand>(b => b.BrandName))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
             .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .From<Brand>()
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
-            .OrderBy("b.BrandName ASC")
+            .OrderBy(o => o.Ascending<Brand>(b => b.BrandName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

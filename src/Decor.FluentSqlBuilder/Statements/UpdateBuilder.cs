@@ -146,8 +146,7 @@ namespace Decor.FluentSqlBuilder.Statements
         /// <returns>O UpdateBuilder para encadeamento.</returns>
         public UpdateBuilder Where(Action<WhereClauseBuilder> action)
         {
-            // Passa as funções de delegação para o WhereClauseBuilder
-            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, SetDynamicOrderByColumn, _dialect);
+            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, null, _dialect);
             action(whereBuilder);
             return this;
         }
@@ -199,10 +198,6 @@ namespace Decor.FluentSqlBuilder.Statements
             return _rootCommandBuilder.GetAliasForType(entityType);
         }
 
-        // Não há ORDER BY dinâmico para UPDATE. Implementação vazia.
-        internal void SetDynamicOrderByColumn(string columnWithDirection)
-        {
-            // UPDATE não tem ORDER BY dinâmico. Ignorar.
-        }
+        // UPDATE não usa ordering estruturado; o callback é mantido apenas para compatibilidade da assinatura.
     }
 }

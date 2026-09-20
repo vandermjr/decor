@@ -22,8 +22,8 @@ namespace Decor.FluentSqlBuilder.Statements
         private readonly List<string> _selectColumns = [];
         private readonly List<(string Predicate, string Operator)> _predicatesWithOperators = [];
         private readonly List<(string JoinKeyword, string Clause)> _joinClauses = [];
-        private string _orderByClause = "";
-        internal string _dynamicOrderByColumn = "";
+        private readonly List<OrderDefinition> _structuredOrderings = [];
+        private string _legacyOrderByClause = "";
         private uint? _takeCount = null;
         private uint? _dynamicTakeCount = null;
         private uint? _skipCount = null;
@@ -202,21 +202,63 @@ namespace Decor.FluentSqlBuilder.Statements
 
         public SelectBuilder Where(Action<WhereClauseBuilder> action)
         {
-            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, SetDynamicOrderByColumn, _dialect, SetDynamicTake);
+            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, AddStructuredOrdering, _dialect, SetDynamicTake);
             action(whereBuilder);
             return this;
         }
 
         public SelectBuilder OrderBy(string orderByClause)
         {
-            _orderByClause = orderByClause;
-            _dynamicOrderByColumn = "";
+            _legacyOrderByClause = orderByClause;
             return this;
         }
 
-        internal void SetDynamicOrderByColumn(string columnWithDirection)
+        public SelectBuilder OrderBy(Action<OrderByBuilder> action)
         {
-            _dynamicOrderByColumn = columnWithDirection;
+            ArgumentNullException.ThrowIfNull(action);
+            var orderByBuilder = new OrderByBuilder(AddStructuredOrdering);
+            action(orderByBuilder);
+            return this;
+        }
+
+        internal void AddStructuredOrdering(OrderDefinition orderDefinition)
+        {
+            ArgumentNullException.ThrowIfNull(orderDefinition);
+
+            if (orderDefinition.IsRelevance)
+            {
+                var existingRelevance = _structuredOrderings.FirstOrDefault(o => o.IsRelevance);
+                if (existingRelevance is not null)
+                {
+                    _structuredOrderings.Remove(existingRelevance);
+                }
+
+                _structuredOrderings.Insert(0, orderDefinition);
+                return;
+            }
+
+            _structuredOrderings.Add(orderDefinition);
+        }
+
+        private string BuildStructuredOrderSql(OrderDefinition orderDefinition)
+        {
+            if (orderDefinition.IsRelevance)
+            {
+                string directionSql = orderDefinition.Direction == SortDirection.Ascending
+                    ? _dialect.Keywords.ASC
+                    : _dialect.Keywords.DESC;
+
+                return $"{orderDefinition.RelevanceExpression} {directionSql}";
+            }
+
+            string alias = _aliasRegistry.GetOrAddAlias(orderDefinition.EntityType!);
+            var propertyInfo = ExpressionHelper.GetPropertyInfo(orderDefinition.PropertySelector!);
+            string columnName = ExpressionHelper.GetColumnName(propertyInfo, _aliasRegistry);
+            string directionSql2 = orderDefinition.Direction == SortDirection.Ascending
+                ? _dialect.Keywords.ASC
+                : _dialect.Keywords.DESC;
+
+            return $"{alias}.{columnName} {directionSql2}";
         }
 
         internal void SetDynamicTake(uint count) => _dynamicTakeCount = count;
@@ -316,13 +358,13 @@ namespace Decor.FluentSqlBuilder.Statements
             if (!_isCountQuery)
             {
                 // ORDER BY clause
-                if (!string.IsNullOrEmpty(_orderByClause))
+                if (_structuredOrderings.Count > 0)
                 {
-                    _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_orderByClause}\n");
+                    _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {string.Join(",\n    ", _structuredOrderings.Select(BuildStructuredOrderSql))}\n");
                 }
-                else if (!string.IsNullOrEmpty(_dynamicOrderByColumn))
+                else if (!string.IsNullOrEmpty(_legacyOrderByClause))
                 {
-                    _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_dynamicOrderByColumn}\n");
+                    _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_legacyOrderByClause}\n");
                 }
                 else
                 {

@@ -17,7 +17,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
-            .OrderBy("s.SubgroupName ASC")
+            .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Subgroup>(sql, parameters);
@@ -30,7 +30,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName, sg => sg.GroupID))
             .From<Subgroup>()
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
-            .OrderBy("s.SubgroupName ASC")
+            .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -69,7 +69,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
-            .OrderBy("s.SubgroupName ASC")
+            .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Subgroup>(sql, parameters);
@@ -104,7 +104,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .From<Subgroup>()
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
-            .OrderBy("s.SubgroupName ASC")
+            .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

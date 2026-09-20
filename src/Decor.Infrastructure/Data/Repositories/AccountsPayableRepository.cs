@@ -59,7 +59,7 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
             .Select(s => s.AllColumns<AccountsPayable>())
             .From<AccountsPayable>()
             .Where(w => w.WithDynamicSearchFilter<AccountsPayable, AccountsPayable>(arg, a => a.AccountsPayableID, a => a.PayeeID))
-            .OrderBy("ap.AccountsPayableID ASC")
+            .OrderBy(o => o.Ascending<AccountsPayable>(a => a.AccountsPayableID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

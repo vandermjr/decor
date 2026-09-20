@@ -29,7 +29,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
             .Select(s => s.AllColumns<StockBalance>())
             .From<StockBalance>()
             .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, productId))
-            .OrderBy("sb.StockLocationID ASC")
+            .OrderBy(o => o.Ascending<StockBalance>(sb => sb.StockLocationID))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();
@@ -43,7 +43,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
             .Select(s => s.AllColumns<StockBalance>())
             .From<StockBalance>()
             .Where(w => w.Equals<StockBalance>(sb => sb.StockLocationID, stockLocationId))
-            .OrderBy("sb.ProductID ASC")
+            .OrderBy(o => o.Ascending<StockBalance>(sb => sb.ProductID))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();

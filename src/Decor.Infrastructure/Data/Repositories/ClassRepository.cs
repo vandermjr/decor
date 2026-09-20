@@ -16,7 +16,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
-            .OrderBy("c.ClassName ASC")
+            .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Class>(sql, parameters);
@@ -28,7 +28,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
-            .OrderBy("c.ClassName ASC")
+            .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -67,7 +67,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
-            .OrderBy("c.ClassName ASC")
+            .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
         return conn.Query<Class>(sql, parameters);
@@ -102,7 +102,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .From<Class>()
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
-            .OrderBy("c.ClassName ASC")
+            .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

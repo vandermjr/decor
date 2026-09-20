@@ -101,7 +101,7 @@ public class OrderOccurrenceRepository(
             .Select(s => s.AllColumns<OrderOccurrence>())
             .From<OrderOccurrence>()
             .Where(w => w.Equals<OrderOccurrence>(o => o.OrderID, orderId))
-            .OrderBy("oo.RegisteredAt DESC")
+            .OrderBy(o => o.Descending<OrderOccurrence>(e => e.RegisteredAt))
             .Build();
         using var connection = _dbConnection.CreateConnection();
         return (await connection.QueryAsync<OrderOccurrence>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();
@@ -131,7 +131,7 @@ public class OrderOccurrenceRepository(
             .Select(s => s.AllColumns<OrderOccurrence>())
             .From<OrderOccurrence>()
             .Where(w => w.WithDynamicSearchFilter<OrderOccurrence, OrderOccurrence>(arg, o => o.OccurrenceID, o => o.Observation))
-            .OrderBy("oo.RegisteredAt DESC");
+            .OrderBy(o => o.Descending<OrderOccurrence>(e => e.RegisteredAt));
         if (take.HasValue) builder.Take(take.Value);
         if (skip.HasValue) builder.Skip(skip.Value);
         return builder.Build();

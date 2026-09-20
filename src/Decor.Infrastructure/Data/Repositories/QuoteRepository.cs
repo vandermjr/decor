@@ -85,7 +85,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<Quote>())
             .From<Quote>()
             .Where(w => w.WithDynamicSearchFilter<Quote, Quote>(arg, q => q.QuoteID, q => q.Notes))
-            .OrderBy("q.QuoteID ASC")
+            .OrderBy(o => o.Ascending<Quote>(q => q.QuoteID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -99,7 +99,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<Quote>())
             .From<Quote>()
             .Where(w => w.WithDynamicSearchFilter<Quote, Quote>(arg, q => q.QuoteID, q => q.Notes))
-            .OrderBy("q.QuoteID ASC")
+            .OrderBy(o => o.Ascending<Quote>(q => q.QuoteID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -132,7 +132,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<QuoteSection>())
             .From<QuoteSection>()
             .Where(w => w.Equals<QuoteSection>(s => s.QuoteID, quoteId))
-            .OrderBy("s.QuoteSectionID ASC")
+            .OrderBy(o => o.Ascending<QuoteSection>(s => s.QuoteSectionID))
             .Build();
 
         var sections = (await connection.QueryAsync<QuoteSection>(new CommandDefinition(secSql, secParams, cancellationToken: cancellationToken))).ToList();
@@ -144,7 +144,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Select(s => s.AllColumns<QuoteItem>())
                 .From<QuoteItem>()
                 .Where(w => w.Equals<QuoteItem>(i => i.QuoteSectionID, section.QuoteSectionID))
-                .OrderBy("i.QuoteItemID ASC")
+                .OrderBy(o => o.Ascending<QuoteItem>(i => i.QuoteItemID))
                 .Build();
 
             var items = (await connection.QueryAsync<QuoteItem>(new CommandDefinition(itemSql, itemParams, cancellationToken: cancellationToken))).ToList();
@@ -156,7 +156,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
                     .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
                     .From<QuoteItemSpecificationValue>()
                     .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.QuoteItemID, item.QuoteItemID))
-                    .OrderBy("v.ValueID ASC")
+                    .OrderBy(o => o.Ascending<QuoteItemSpecificationValue>(v => v.ValueID))
                     .Build();
 
                 var values = (await connection.QueryAsync<QuoteItemSpecificationValue>(new CommandDefinition(valSql, valParams, cancellationToken: cancellationToken))).ToList();

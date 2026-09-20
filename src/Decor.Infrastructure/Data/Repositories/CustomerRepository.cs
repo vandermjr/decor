@@ -70,7 +70,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Customer>())
             .From<Customer>()
             .Where(w => w.WithDynamicSearchFilter<Customer, Customer>(arg, c => c.CustomerID, c => c.Name))
-            .OrderBy("c.Name ASC")
+            .OrderBy(o => o.Ascending<Customer>(c => c.Name))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Customer>())
             .From<Customer>()
             .Where(w => w.WithDynamicSearchFilter<Customer, Customer>(arg, c => c.CustomerID, c => c.Name))
-            .OrderBy("c.Name ASC")
+            .OrderBy(o => o.Ascending<Customer>(c => c.Name))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

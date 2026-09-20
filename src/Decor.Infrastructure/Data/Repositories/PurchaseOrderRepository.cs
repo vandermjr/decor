@@ -70,7 +70,7 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
             .Select(s => s.AllColumns<PurchaseOrder>())
             .From<PurchaseOrder>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrder, PurchaseOrder>(arg, po => po.PurchaseOrderID, po => po.SupplierID))
-            .OrderBy("po.OrderDate DESC")
+            .OrderBy(o => o.Descending<PurchaseOrder>(po => po.OrderDate))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class PurchaseOrderRepository(IDatabaseConnection dbConnection, Func<Flue
             .Select(s => s.AllColumns<PurchaseOrder>())
             .From<PurchaseOrder>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrder, PurchaseOrder>(arg, po => po.PurchaseOrderID, po => po.SupplierID))
-            .OrderBy("po.OrderDate DESC")
+            .OrderBy(o => o.Descending<PurchaseOrder>(po => po.OrderDate))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

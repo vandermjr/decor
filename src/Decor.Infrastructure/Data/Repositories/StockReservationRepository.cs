@@ -85,7 +85,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
             .Where(w => w.WithDynamicSearchFilter<StockReservation, StockReservation>(arg, sr => sr.ReservationID, sr => sr.ReservationID))
-            .OrderBy("sr.ReservationID DESC")
+            .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -99,7 +99,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
             .Where(w => w.WithDynamicSearchFilter<StockReservation, StockReservation>(arg, sr => sr.ReservationID, sr => sr.ReservationID))
-            .OrderBy("sr.ReservationID DESC")
+            .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -127,7 +127,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<StockReservation>())
             .From<StockReservation>()
             .Where(w => w.Equals<StockReservation>(sr => sr.OrderItemID, orderItemId))
-            .OrderBy("sr.ReservationID DESC")
+            .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -142,7 +142,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
             .From<StockReservation>()
             .Join(j => j.Inner<StockReservation, OrderItem>((sr, oi) => sr.OrderItemID == oi.OrderItemID))
             .Where(w => w.Equals<OrderItem>(oi => oi.OrderID, orderId))
-            .OrderBy("sr.ReservationID ASC")
+            .OrderBy(o => o.Ascending<StockReservation>(sr => sr.ReservationID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -161,7 +161,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
                 w.Equals<OrderItem>(oi => oi.OrderID, orderId);
                 w.Equals<StockReservation>(sr => sr.Status, StockReservationStatus.Active);
             })
-            .OrderBy("sr.ReservationID ASC")
+            .OrderBy(o => o.Ascending<StockReservation>(sr => sr.ReservationID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -196,7 +196,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
                 w.Equals<StockReservation>(sr => sr.StockLocationID, stockLocationId);
                 w.Equals<StockReservation>(sr => sr.Status, StockReservationStatus.Active);
             })
-            .OrderBy("sr.ReservationID ASC")
+            .OrderBy(o => o.Ascending<StockReservation>(sr => sr.ReservationID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

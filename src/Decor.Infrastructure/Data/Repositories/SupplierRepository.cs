@@ -70,7 +70,7 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Supplier>())
             .From<Supplier>()
             .Where(w => w.WithDynamicSearchFilter<Supplier, Supplier>(arg, s => s.SupplierID, s => s.CorporateName))
-            .OrderBy("s.CorporateName ASC")
+            .OrderBy(o => o.Ascending<Supplier>(s => s.CorporateName))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class SupplierRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Supplier>())
             .From<Supplier>()
             .Where(w => w.WithDynamicSearchFilter<Supplier, Supplier>(arg, s => s.SupplierID, s => s.CorporateName))
-            .OrderBy("s.CorporateName ASC")
+            .OrderBy(o => o.Ascending<Supplier>(s => s.CorporateName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

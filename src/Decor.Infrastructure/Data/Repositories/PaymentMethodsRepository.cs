@@ -85,7 +85,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .Select(s => s.AllColumns<PaymentMethod>())
             .From<PaymentMethod>()
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
-            .OrderBy("pm.Name ASC")
+            .OrderBy(o => o.Ascending<PaymentMethod>(pm => pm.Name))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -99,7 +99,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
             .Select(s => s.AllColumns<PaymentMethod>())
             .From<PaymentMethod>()
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
-            .OrderBy("pm.Name ASC")
+            .OrderBy(o => o.Ascending<PaymentMethod>(pm => pm.Name))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

@@ -94,7 +94,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
             .Select(s => s.AllColumns<AppointmentReschedule>())
             .From<AppointmentReschedule>()
             .Where(w => w.Equals<AppointmentReschedule>(r => r.AppointmentID, appointmentId))
-            .OrderBy("ar.RegisteredAt ASC")
+            .OrderBy(o => o.Ascending<AppointmentReschedule>(r => r.RegisteredAt))
             .Build();
         using var connection = _dbConnection.CreateConnection();
         return (await connection.QueryAsync<AppointmentReschedule>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();

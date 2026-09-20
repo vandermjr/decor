@@ -25,7 +25,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         }
 
         var (sql, parameters) = query
-            .OrderBy("au.Username ASC")
+            .OrderBy(o => o.Ascending<ApplicationUser>(u => u.Username))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();
@@ -49,14 +49,16 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .From<Role>()
                 .Join(j => j.Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID))
                 .Where(w => w.Equals<UserRole>(ur => ur.UserID, userId))
-                .OrderBy("r.HierarchyLevel DESC, r.RoleName ASC"))
+                .OrderBy(o => o
+                    .Descending<Role>(r => r.HierarchyLevel)
+                    .Ascending<Role>(r => r.RoleName)))
             .Select(s => s
                 .WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode)
                 .WithColumns<UserPermissionOverride>(o => o.IsGranted)
                 .From<UserPermissionOverride>()
                 .Join(j => j.Inner<UserPermissionOverride, Permission>((o, p) => o.PermissionID == p.PermissionID))
                 .Where(w => w.Equals<UserPermissionOverride>(o => o.UserID, userId))
-                .OrderBy("p.PermissionID ASC"))
+                .OrderBy(o => o.Ascending<Permission>(p => p.PermissionID)))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();
@@ -248,7 +250,9 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
             .From<Role>()
-            .OrderBy("r.HierarchyLevel DESC, r.RoleName ASC")
+            .OrderBy(o => o
+                .Descending<Role>(r => r.HierarchyLevel)
+                .Ascending<Role>(r => r.RoleName))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<AdministrativeRoleDTO>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
@@ -260,7 +264,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .From<Permission>()
-            .OrderBy("p.PermissionCode ASC")
+            .OrderBy(o => o.Ascending<Permission>(p => p.PermissionCode))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
         var result = await connection.QueryAsync<AdministrativePermissionDTO>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

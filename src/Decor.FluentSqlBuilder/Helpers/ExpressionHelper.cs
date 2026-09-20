@@ -13,6 +13,13 @@ public static class ExpressionHelper
     {
         ArgumentNullException.ThrowIfNull(propertySelector);
 
+        return GetPropertyInfo((LambdaExpression)propertySelector);
+    }
+
+    public static PropertyInfo GetPropertyInfo(LambdaExpression propertySelector)
+    {
+        ArgumentNullException.ThrowIfNull(propertySelector);
+
         Expression body = propertySelector.Body;
 
         if (body is UnaryExpression unaryExpression)

@@ -54,8 +54,7 @@ namespace Decor.FluentSqlBuilder.Statements
         /// <returns>O DeleteBuilder para encadeamento.</returns>
         public DeleteBuilder Where(Action<WhereClauseBuilder> action)
         {
-            // Passa as funções de delegação para o WhereClauseBuilder
-            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, SetDynamicOrderByColumn, _dialect);
+            var whereBuilder = new WhereClauseBuilder(_predicatesWithOperators, _parameters, _aliasRegistry, null, _dialect);
             action(whereBuilder);
             return this;
         }
@@ -104,11 +103,6 @@ namespace Decor.FluentSqlBuilder.Statements
             return _rootCommandBuilder.GetAliasForType(entityType);
         }
 
-        // Não há ORDER BY dinâmico para DELETE, mas o WhereClauseBuilder espera a Action.
-        // Implementação vazia ou throw se for um cenário inválido.
-        internal void SetDynamicOrderByColumn(string columnWithDirection)
-        {
-            // DELETE não tem ORDER BY dinâmico. Ignorar.
-        }
+        // DELETE não usa ordering estruturado; o callback é mantido apenas para compatibilidade da assinatura.
     }
 }

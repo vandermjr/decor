@@ -49,7 +49,9 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
             .Select(s => s.AllColumns<GoodsReceipt>())
             .From<GoodsReceipt>()
             .Where(w => w.Equals<GoodsReceipt>(gr => gr.PurchaseOrderItemID, purchaseOrderItemId))
-            .OrderBy("gr.ReceiptDate ASC, gr.GoodsReceiptID ASC")
+            .OrderBy(o => o
+                .Ascending<GoodsReceipt>(gr => gr.ReceiptDate)
+                .Ascending<GoodsReceipt>(gr => gr.GoodsReceiptID))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();

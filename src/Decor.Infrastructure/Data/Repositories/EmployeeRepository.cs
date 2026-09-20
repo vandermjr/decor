@@ -70,7 +70,7 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Employee>())
             .From<Employee>()
             .Where(w => w.WithDynamicSearchFilter<Employee, Employee>(arg, e => e.EmployeeID, e => e.Name))
-            .OrderBy("e.Name ASC")
+            .OrderBy(o => o.Ascending<Employee>(e => e.Name))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
             .Select(s => s.AllColumns<Employee>())
             .From<Employee>()
             .Where(w => w.WithDynamicSearchFilter<Employee, Employee>(arg, e => e.EmployeeID, e => e.Name))
-            .OrderBy("e.Name ASC")
+            .OrderBy(o => o.Ascending<Employee>(e => e.Name))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

@@ -75,7 +75,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
             .Select(s => s.AllColumns<PurchaseOrderInstallment>())
             .From<PurchaseOrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderInstallment, PurchaseOrderInstallment>(arg, i => i.InstallmentID, i => i.PurchaseOrderID))
-            .OrderBy("poi.InstallmentID ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentID))
             .Build();
         using var connection = _dbConnection.CreateConnection();
         return connection.Query<PurchaseOrderInstallment>(sql, parameters);
@@ -88,7 +88,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
             .Select(s => s.AllColumns<PurchaseOrderInstallment>())
             .From<PurchaseOrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderInstallment, PurchaseOrderInstallment>(arg, i => i.InstallmentID, i => i.PurchaseOrderID))
-            .OrderBy("poi.InstallmentID ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -103,7 +103,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
             .Select(s => s.AllColumns<PurchaseOrderInstallment>())
             .From<PurchaseOrderInstallment>()
             .Where(w => w.Equals<PurchaseOrderInstallment>(i => i.PurchaseOrderID, purchaseOrderId))
-            .OrderBy("poi.InstallmentNumber ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentNumber))
             .Build();
         using var connection = _dbConnection.CreateConnection();
         var result = await connection.QueryAsync<PurchaseOrderInstallment>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));

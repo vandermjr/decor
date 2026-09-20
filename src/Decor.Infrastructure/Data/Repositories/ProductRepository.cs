@@ -4,6 +4,7 @@ using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
 using Decor.Infrastructure.Data.Utils;
 using Decor.FluentSqlBuilder;
+using Decor.FluentSqlBuilder.Statements;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
@@ -182,6 +183,102 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             }, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
         var products = result.ToList();
         return queryContext.IsSingleIdSearch ? products.Take(1).ToArray() : products;
+    }
+
+    public IEnumerable<Product> SearchGetBy(string? arg, Filters<Product> filters)
+    {
+        ArgumentNullException.ThrowIfNull(filters);
+        var queryContext = _queryContextFactory();
+        var (sql, parameters) = BuildSearchQuery(arg, queryContext, filters)
+            .Take(10000)
+            .Build();
+
+        using var conn = _dbConnection.CreateConnection();
+        var result = conn.Query<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
+            sql,
+            map: MapProduct,
+            param: parameters,
+            splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
+
+        return result.QuerySingleOrMany(queryContext);
+    }
+
+    public async Task<IReadOnlyList<Product>> SearchGetByAsync(
+        string? arg,
+        Filters<Product> filters,
+        int page = 1,
+        int pageSize = 100,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filters);
+        ValidatePage(page, pageSize);
+        var queryContext = _queryContextFactory();
+        var (sql, parameters) = BuildSearchQuery(arg, queryContext, filters)
+            .Take((uint)pageSize)
+            .Skip((uint)((page - 1) * pageSize))
+            .Build();
+
+        using var connection = _dbConnection.CreateConnection();
+        var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
+            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken),
+            map: MapProduct,
+            splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
+        var products = result.ToList();
+        return queryContext.IsSingleIdSearch ? products.Take(1).ToArray() : products;
+    }
+
+    private SelectBuilder BuildSearchQuery(string? arg, IQueryContext queryContext, Filters<Product> filters)
+    {
+        var query = _createCommandBuilder()
+            .Select(s =>
+            {
+                s.ExceptColumns<Product>(p => p.BrandID);
+                s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
+                s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName);
+                s.WithColumns<Family>(fa => fa.FamilyID, fa => fa.FamilyName);
+                s.WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName);
+                s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName);
+                s.WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description);
+            })
+            .From<Product>()
+            .Join(j =>
+            {
+                j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID);
+                j.Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID);
+                j.Left<Product, UnitOfMeasure>((p, u) => p.StockUnitID == u.UnitOfMeasureID);
+                j.Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID);
+                j.Left<Group, Family>((gr, fa) => gr.FamilyID == fa.FamilyID);
+                j.Left<Family, Class>((fa, cl) => fa.ClassID == cl.ClassID);
+            })
+            .Where(w =>
+            {
+                w.Equals<Product>(p => p.IsActive, true);
+                var search = w.WithDynamicFullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
+                queryContext.IsSingleIdSearch = search.IsIdSearch;
+                search.OrderByRelevanceDescending();
+            });
+
+        query.OrderBy(o => o.Apply(filters));
+        return query;
+    }
+
+    private static Product MapProduct(Product product, Brand brand, Class @class, Family family, Group group, Subgroup subgroup, UnitOfMeasure stockUnit)
+    {
+        if (brand != null) { product.Brand = brand; product.BrandID = brand.BrandID; }
+        if (subgroup != null)
+        {
+            family.Class = @class;
+            group.Family = family;
+            subgroup.Group = group;
+            product.Subgroup = subgroup;
+            product.SubgroupID = subgroup.SubgroupID;
+        }
+        if (stockUnit != null)
+        {
+            product.StockUnit = stockUnit;
+            product.StockUnitID = stockUnit.UnitOfMeasureID;
+        }
+        return product;
     }
 
     private static void ValidatePage(int page, int pageSize)

@@ -70,7 +70,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
             .Select(s => s.AllColumns<Partner>())
             .From<Partner>()
             .Where(w => w.WithDynamicSearchFilter<Partner, Partner>(arg, p => p.PartnerID, p => p.Name))
-            .OrderBy("p.Name ASC")
+            .OrderBy(o => o.Ascending<Partner>(p => p.Name))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
             .Select(s => s.AllColumns<Partner>())
             .From<Partner>()
             .Where(w => w.WithDynamicSearchFilter<Partner, Partner>(arg, p => p.PartnerID, p => p.Name))
-            .OrderBy("p.Name ASC")
+            .OrderBy(o => o.Ascending<Partner>(p => p.Name))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

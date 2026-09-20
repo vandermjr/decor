@@ -8,7 +8,7 @@ namespace Decor.FluentSqlBuilder.Clauses
     {
         internal readonly List<(string Predicate, string Operator)> _predicatesWithOperators;
         internal readonly Dictionary<string, object?> _parameters;
-        private readonly Action<string>? _onSetDynamicOrderByColumn;
+        private readonly Action<OrderDefinition>? _onSetOrderDefinition;
         private readonly Action<uint>? _onSetDynamicTake;
         private readonly TableAliasRegistry _aliasRegistry;
         private readonly IDialect _dialect;
@@ -19,14 +19,14 @@ namespace Decor.FluentSqlBuilder.Clauses
             List<(string Predicate, string Operator)> predicatesWithOperators,
             Dictionary<string, object?> parameters,
             TableAliasRegistry aliasRegistry,
-            Action<string>? onSetDynamicOrderByColumn,
+            Action<OrderDefinition>? onSetOrderDefinition,
             IDialect dialect,
             Action<uint>? onSetDynamicTake = null)
         {
             _predicatesWithOperators = predicatesWithOperators;
             _parameters = parameters;
             _aliasRegistry = aliasRegistry;
-            _onSetDynamicOrderByColumn = onSetDynamicOrderByColumn;
+            _onSetOrderDefinition = onSetOrderDefinition;
             _dialect = dialect;
             _onSetDynamicTake = onSetDynamicTake;
 
@@ -58,9 +58,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
 
-            _onSetDynamicOrderByColumn?.Invoke($"{alias}.{columnName}");
-
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         /// <summary>
@@ -82,9 +80,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.NOT_EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
 
-            _onSetDynamicOrderByColumn?.Invoke($"{alias}.{columnName}");
-
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         /// <summary>
@@ -112,9 +108,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LIKE} {likePattern}");
             _parameters[paramName] = value;
 
-            _onSetDynamicOrderByColumn?.Invoke($"{alias}.{columnName}");
-
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         /// <summary>
@@ -141,9 +135,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LIKE} {likePattern}");
             _parameters[paramName] = value;
 
-            _onSetDynamicOrderByColumn?.Invoke($"{alias}.{columnName}");
-
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         /// <summary>
@@ -170,9 +162,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LIKE} {likePattern}");
             _parameters[paramName] = value;
 
-            _onSetDynamicOrderByColumn?.Invoke($"{alias}.{columnName}");
-
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         /// <summary>
@@ -236,7 +226,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             // Se arg for nulo/vazio, nenhuma condição WHERE é adicionada.
             // columnForOrderBy permanece vazio, isIdSearch permanece false.
 
-            resultChainBuilder = new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, columnForOrderBy, _dialect)
+            resultChainBuilder = new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TIdEntity), idPropertySelector, _dialect)
             {
                 IsIdSearch = isIdSearch
             };
@@ -278,7 +268,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             AddPredicate(expression);
             _parameters[parameterName] = searchTerm;
 
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, string.Empty, _dialect, expression);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, null, null, _dialect, expression);
         }
 
         public WhereConditionChainBuilder WithDynamicFullTextSearch<TIdEntity, TStringEntity>(
@@ -290,7 +280,7 @@ namespace Decor.FluentSqlBuilder.Clauses
         {
             if (string.IsNullOrWhiteSpace(arg))
             {
-                return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, string.Empty, _dialect);
+                return new WhereConditionChainBuilder(this, _onSetOrderDefinition, null, null, _dialect);
             }
 
             if (int.TryParse(arg, out var id))
@@ -346,7 +336,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             groupSql.Append(')');
 
             AddPredicate(groupSql.ToString());
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, string.Empty, _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, null, null, _dialect);
         }
 
         public WhereConditionChainBuilder GreaterThan<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object value)
@@ -359,7 +349,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.GREATER_THAN} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder LessThan<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object value)
@@ -372,7 +362,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LESS_THAN} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder GreaterThanOrEquals<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object value)
@@ -385,7 +375,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.GREATER_THAN_OR_EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder LessThanOrEquals<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object value)
@@ -398,7 +388,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LESS_THAN_OR_EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
             _parameters[paramName] = value;
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder In<TEntity>(Expression<Func<TEntity, object?>> propertySelector, IEnumerable<object> values)
@@ -418,7 +408,7 @@ namespace Decor.FluentSqlBuilder.Clauses
                 _parameters[paramName] = val;
             }
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.IN} ({string.Join(", ", parameterNames)})");
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder IsNull<TEntity>(Expression<Func<TEntity, object?>> propertySelector)
@@ -428,7 +418,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.IS} {_dialect.Keywords.NULL}");
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         public WhereConditionChainBuilder IsNotNull<TEntity>(Expression<Func<TEntity, object?>> propertySelector)
@@ -438,7 +428,7 @@ namespace Decor.FluentSqlBuilder.Clauses
             string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
 
             AddPredicate($"{alias}.{columnName} {_dialect.Keywords.IS} {_dialect.Keywords.NOT_NULL}");
-            return new WhereConditionChainBuilder(this, _onSetDynamicOrderByColumn, $"{alias}.{columnName}", _dialect);
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TEntity), propertySelector, _dialect);
         }
 
         // Este método OrderBy é um aviso, pois o OrderBy real deve ser no QueryBuilder principal.

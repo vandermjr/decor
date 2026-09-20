@@ -84,7 +84,9 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
             .Select(s => s.AllColumns<StockMovement>())
             .From<StockMovement>()
             .Where(w => w.Equals<StockMovement>(sm => sm.ProductID, productId))
-            .OrderBy("sm.MovementDate DESC, sm.StockMovementID DESC")
+            .OrderBy(o => o
+                .Descending<StockMovement>(sm => sm.MovementDate)
+                .Descending<StockMovement>(sm => sm.StockMovementID))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();
@@ -98,7 +100,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
             .Select(s => s.AllColumns<StockMovement>())
             .From<StockMovement>()
             .Where(w => w.Equals<StockMovement>(sm => sm.TransferID, transferId))
-            .OrderBy("sm.StockMovementID ASC")
+            .OrderBy(o => o.Ascending<StockMovement>(sm => sm.StockMovementID))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();

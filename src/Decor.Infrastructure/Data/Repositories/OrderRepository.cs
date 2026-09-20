@@ -90,7 +90,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<Order>())
             .From<Order>()
             .Where(w => w.WithDynamicSearchFilter<Order, Order>(arg, o => o.OrderID, o => o.OrderID))
-            .OrderBy("o.OrderID ASC")
+            .OrderBy(o => o.Ascending<Order>(o => o.OrderID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -104,7 +104,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<Order>())
             .From<Order>()
             .Where(w => w.WithDynamicSearchFilter<Order, Order>(arg, o => o.OrderID, o => o.OrderID))
-            .OrderBy("o.OrderID ASC")
+            .OrderBy(o => o.Ascending<Order>(o => o.OrderID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -137,7 +137,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Select(s => s.AllColumns<OrderItem>())
             .From<OrderItem>()
             .Where(w => w.Equals<OrderItem>(i => i.OrderID, orderId))
-            .OrderBy("oi.OrderItemID ASC")
+            .OrderBy(o => o.Ascending<OrderItem>(oi => oi.OrderItemID))
             .Build();
 
         var items = (await connection.QueryAsync<OrderItem>(new CommandDefinition(itemSql, itemParams, cancellationToken: cancellationToken))).ToList();
@@ -149,7 +149,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Select(s => s.AllColumns<OrderItemSpecificationValue>())
                 .From<OrderItemSpecificationValue>()
                 .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.OrderItemID, item.OrderItemID))
-                .OrderBy("oisv.ValueID ASC")
+                .OrderBy(o => o.Ascending<OrderItemSpecificationValue>(oisv => oisv.ValueID))
                 .Build();
 
             var values = (await connection.QueryAsync<OrderItemSpecificationValue>(new CommandDefinition(valSql, valParams, cancellationToken: cancellationToken))).ToList();

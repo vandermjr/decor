@@ -81,7 +81,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
             .Select(s => s.AllColumns<UnitOfMeasure>())
             .From<UnitOfMeasure>()
             .Where(w => w.WithDynamicSearchFilter<UnitOfMeasure, UnitOfMeasure>(arg, u => u.UnitOfMeasureID, u => u.Code))
-            .OrderBy("u.Code ASC")
+            .OrderBy(o => o.Ascending<UnitOfMeasure>(u => u.Code))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -95,7 +95,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
             .Select(s => s.AllColumns<UnitOfMeasure>())
             .From<UnitOfMeasure>()
             .Where(w => w.WithDynamicSearchFilter<UnitOfMeasure, UnitOfMeasure>(arg, u => u.UnitOfMeasureID, u => u.Code))
-            .OrderBy("u.Code ASC")
+            .OrderBy(o => o.Ascending<UnitOfMeasure>(u => u.Code))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

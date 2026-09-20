@@ -70,7 +70,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
             .Select(s => s.AllColumns<StockLocation>())
             .From<StockLocation>()
             .Where(w => w.WithDynamicSearchFilter<StockLocation, StockLocation>(arg, sl => sl.StockLocationID, sl => sl.Name))
-            .OrderBy("sl.Name ASC")
+            .OrderBy(o => o.Ascending<StockLocation>(sl => sl.Name))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
             .Select(s => s.AllColumns<StockLocation>())
             .From<StockLocation>()
             .Where(w => w.WithDynamicSearchFilter<StockLocation, StockLocation>(arg, sl => sl.StockLocationID, sl => sl.Name))
-            .OrderBy("sl.Name ASC")
+            .OrderBy(o => o.Ascending<StockLocation>(sl => sl.Name))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

@@ -85,7 +85,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
-            .OrderBy("oi.InstallmentID ASC")
+            .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentID))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -99,7 +99,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
-            .OrderBy("oi.InstallmentID ASC")
+            .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -115,7 +115,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OrderInstallment>())
             .From<OrderInstallment>()
             .Where(w => w.Equals<OrderInstallment>(i => i.OrderID, orderId))
-            .OrderBy("oi.InstallmentNumber ASC")
+            .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentNumber))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

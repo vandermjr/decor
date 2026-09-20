@@ -128,7 +128,7 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
             .Select(s => s.AllColumns<OccurrenceReason>())
             .From<OccurrenceReason>()
             .Where(w => w.WithDynamicSearchFilter<OccurrenceReason, OccurrenceReason>(arg, r => r.ReasonID, r => r.Description))
-            .OrderBy("or1.Description ASC");
+            .OrderBy(o => o.Ascending<OccurrenceReason>(r => r.Description));
         if (take.HasValue) builder.Take(take.Value);
         if (skip.HasValue) builder.Skip(skip.Value);
         return builder.Build();

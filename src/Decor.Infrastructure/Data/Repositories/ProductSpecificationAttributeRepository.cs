@@ -70,7 +70,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
             .Select(s => s.AllColumns<ProductSpecificationAttribute>())
             .From<ProductSpecificationAttribute>()
             .Where(w => w.WithDynamicSearchFilter<ProductSpecificationAttribute, ProductSpecificationAttribute>(arg, a => a.AttributeID, a => a.Name))
-            .OrderBy("a.DisplayOrder ASC")
+            .OrderBy(o => o.Ascending<ProductSpecificationAttribute>(a => a.DisplayOrder))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
             .Select(s => s.AllColumns<ProductSpecificationAttribute>())
             .From<ProductSpecificationAttribute>()
             .Where(w => w.WithDynamicSearchFilter<ProductSpecificationAttribute, ProductSpecificationAttribute>(arg, a => a.AttributeID, a => a.Name))
-            .OrderBy("a.DisplayOrder ASC")
+            .OrderBy(o => o.Ascending<ProductSpecificationAttribute>(a => a.DisplayOrder))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();

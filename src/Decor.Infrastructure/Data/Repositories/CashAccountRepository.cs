@@ -48,7 +48,7 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.AllColumns<CashAccount>())
             .From<CashAccount>()
-            .OrderBy("ca.Name ASC")
+            .OrderBy(o => o.Ascending<CashAccount>(a => a.Name))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
         return (await connection.QueryAsync<CashAccount>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken))).AsList();

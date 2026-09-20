@@ -70,7 +70,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PurchaseOrderItem>())
             .From<PurchaseOrderItem>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderItem, PurchaseOrderItem>(arg, poi => poi.PurchaseOrderItemID, poi => poi.ProductID))
-            .OrderBy("poi.PurchaseOrderItemID ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PurchaseOrderItem>())
             .From<PurchaseOrderItem>()
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderItem, PurchaseOrderItem>(arg, poi => poi.PurchaseOrderItemID, poi => poi.ProductID))
-            .OrderBy("poi.PurchaseOrderItemID ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -100,7 +100,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PurchaseOrderItem>())
             .From<PurchaseOrderItem>()
             .Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderID, purchaseOrderId))
-            .OrderBy("poi.PurchaseOrderItemID ASC")
+            .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

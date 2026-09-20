@@ -70,7 +70,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PartnerPriceTable>())
             .From<PartnerPriceTable>()
             .Where(w => w.WithDynamicSearchFilter<PartnerPriceTable, PartnerPriceTable>(arg, p => p.PriceTableID, p => p.PartnerID))
-            .OrderBy("ppt.PriceTableID ASC")
+            .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -84,7 +84,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PartnerPriceTable>())
             .From<PartnerPriceTable>()
             .Where(w => w.WithDynamicSearchFilter<PartnerPriceTable, PartnerPriceTable>(arg, p => p.PriceTableID, p => p.PartnerID))
-            .OrderBy("ppt.PriceTableID ASC")
+            .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -124,7 +124,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
             .Select(s => s.AllColumns<PartnerPriceTable>())
             .From<PartnerPriceTable>()
             .Where(w => w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId))
-            .OrderBy("ppt.PriceTableID ASC")
+            .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();

@@ -6,8 +6,9 @@ namespace Decor.FluentSqlBuilder.Clauses
     public class WhereConditionChainBuilder
     {
         private readonly WhereClauseBuilder _parentWhereBuilder;
-        private readonly Action<string>? _onSetDynamicOrderByColumn;
-        private readonly string _columnForOrderBy; // Esta string pode ser vazia se nenhum filtro foi aplicado
+        private readonly Action<OrderDefinition>? _onSetOrderDefinition;
+        private readonly Type? _entityType;
+        private readonly LambdaExpression? _propertySelector;
         private readonly IDialect _dialect;
         private readonly string? _relevanceExpression;
 
@@ -17,11 +18,12 @@ namespace Decor.FluentSqlBuilder.Clauses
         /// </summary>
         public bool IsIdSearch { get; internal set; }
 
-        internal WhereConditionChainBuilder(WhereClauseBuilder parentWhereBuilder, Action<string>? onSetDynamicOrderByColumn, string columnForOrderBy, IDialect dialect, string? relevanceExpression = null)
+        internal WhereConditionChainBuilder(WhereClauseBuilder parentWhereBuilder, Action<OrderDefinition>? onSetOrderDefinition, Type? entityType, LambdaExpression? propertySelector, IDialect dialect, string? relevanceExpression = null)
         {
             _parentWhereBuilder = parentWhereBuilder;
-            _onSetDynamicOrderByColumn = onSetDynamicOrderByColumn;
-            _columnForOrderBy = columnForOrderBy;
+            _onSetOrderDefinition = onSetOrderDefinition;
+            _entityType = entityType;
+            _propertySelector = propertySelector;
             _dialect = dialect;
             _relevanceExpression = relevanceExpression;
             IsIdSearch = false; // Valor padrão
@@ -112,9 +114,9 @@ namespace Decor.FluentSqlBuilder.Clauses
         /// <returns>O WhereClauseBuilder pai para continuar encadeando condições.</returns>
         public WhereClauseBuilder OrderByAscending()
         {
-            if (!string.IsNullOrEmpty(_columnForOrderBy)) // NOVO: Só define se a coluna não é vazia
+            if (_entityType is not null && _propertySelector is not null)
             {
-                _onSetDynamicOrderByColumn?.Invoke($"{_columnForOrderBy} {_dialect.Keywords.ASC}");
+                _onSetOrderDefinition?.Invoke(OrderDefinition.ForProperty(_entityType, _propertySelector, SortDirection.Ascending));
             }
             return _parentWhereBuilder;
         }
@@ -126,9 +128,9 @@ namespace Decor.FluentSqlBuilder.Clauses
         /// <returns>O WhereClauseBuilder pai para continuar encadeando condições.</returns>
         public WhereClauseBuilder OrderByDescending()
         {
-            if (!string.IsNullOrEmpty(_columnForOrderBy)) // NOVO: Só define se a coluna não é vazia
+            if (_entityType is not null && _propertySelector is not null)
             {
-                _onSetDynamicOrderByColumn?.Invoke($"{_columnForOrderBy} {_dialect.Keywords.DESC}");
+                _onSetOrderDefinition?.Invoke(OrderDefinition.ForProperty(_entityType, _propertySelector, SortDirection.Descending));
             }
             return _parentWhereBuilder;
         }
@@ -137,7 +139,7 @@ namespace Decor.FluentSqlBuilder.Clauses
         {
             if (!string.IsNullOrEmpty(_relevanceExpression))
             {
-                _onSetDynamicOrderByColumn?.Invoke($"{_relevanceExpression} {_dialect.Keywords.DESC}");
+                _onSetOrderDefinition?.Invoke(OrderDefinition.ForRelevance(_relevanceExpression, SortDirection.Descending));
             }
             else
             {

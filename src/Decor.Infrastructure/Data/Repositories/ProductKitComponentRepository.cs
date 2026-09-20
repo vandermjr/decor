@@ -71,7 +71,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
             .Select(s => s.AllColumns<ProductKitComponent>())
             .From<ProductKitComponent>()
             .Where(w => w.WithDynamicSearchFilter<ProductKitComponent, ProductKitComponent>(arg, c => c.ComponentID, c => c.KitProductID))
-            .OrderBy("pkc.ComponentID ASC")
+            .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.ComponentID))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
@@ -85,7 +85,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
             .Select(s => s.AllColumns<ProductKitComponent>())
             .From<ProductKitComponent>()
             .Where(w => w.WithDynamicSearchFilter<ProductKitComponent, ProductKitComponent>(arg, c => c.ComponentID, c => c.KitProductID))
-            .OrderBy("pkc.ComponentID ASC")
+            .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.ComponentID))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
             .Build();
@@ -101,7 +101,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
             .Select(s => s.AllColumns<ProductKitComponent>())
             .From<ProductKitComponent>()
             .Where(w => w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId))
-            .OrderBy("pkc.DisplayOrder ASC")
+            .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.DisplayOrder))
             .Build();
 
         using var connection = _dbConnection.CreateConnection();
