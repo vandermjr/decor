@@ -15,7 +15,7 @@ public interface IOrderRepository : IRepository<Order>
 
 public interface ITransactionalOrderRepository
 {
-    Task<int> SaveAsync(Order entity, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default);
-    Task<int> SaveOrderItemAsync(OrderItem item, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default);
-    Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, IDbConnection connection, IDbTransaction transaction, CancellationToken cancellationToken = default);
+    Task<int> SaveAsync(Order entity, IDbConnection connection, IDbTransaction? transaction, CancellationToken cancellationToken = default);
+    Task<int> SaveOrderItemAsync(OrderItem item, IDbConnection connection, IDbTransaction? transaction, CancellationToken cancellationToken = default);
+    Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, IDbConnection connection, IDbTransaction? transaction, CancellationToken cancellationToken = default);
 }

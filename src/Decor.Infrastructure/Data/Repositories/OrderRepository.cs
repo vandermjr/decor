@@ -40,7 +40,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         return await SaveAsync(entity, connection, null, cancellationToken);
     }
 
-    public async Task<int> SaveAsync(Order entity, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task<int> SaveAsync(Order entity, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
     {
         if (entity.OrderID != 0)
         {
@@ -199,7 +199,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         }
     }
 
-    public async Task<int> SaveOrderItemAsync(OrderItem item, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task<int> SaveOrderItemAsync(OrderItem item, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
     {
         if (item.OrderItemID != 0)
         {
@@ -241,7 +241,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         }
     }
 
-    public async Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task<int> SaveSpecificationValueAsync(OrderItemSpecificationValue value, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
     {
         if (value.ValueID != 0)
         {

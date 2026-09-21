@@ -107,6 +107,65 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
+        public void FromSubquery_ShouldPreserveTake()
+        {
+            var source = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID))
+                .OrderBy("p.ProductID ASC")
+                .Take(10)
+                .ForUpdate();
+
+            var (sql, _) = CreateBuilder()
+                .Select<Product>()
+                .AllColumns()
+                .FromSubquery(source, "paged")
+                .Build();
+
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString(
+                "FROM (SELECT p.ProductID FROM products AS p LIMIT 10) AS paged"));
+            NormalizeSqlString(sql).Should().NotContain("ORDERBY");
+            NormalizeSqlString(sql).Should().NotContain("FORUPDATE");
+        }
+
+        [Fact]
+        public void FromSubquery_ShouldPreserveSkip()
+        {
+            var source = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID))
+                .OrderBy("p.ProductID ASC")
+                .Skip(5);
+
+            var (sql, _) = CreateBuilder()
+                .Select<Product>()
+                .AllColumns()
+                .FromSubquery(source, "paged")
+                .Build();
+
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString(
+                $"FROM (SELECT p.ProductID FROM products AS p LIMIT {uint.MaxValue} OFFSET 5) AS paged"));
+            NormalizeSqlString(sql).Should().NotContain("ORDERBY");
+            NormalizeSqlString(sql).Should().NotContain("FORUPDATE");
+        }
+
+        [Fact]
+        public void Union_WithSameParameterNameAndDifferentValues_ShouldThrow()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID))
+                .Where(w => w.Equals<Product>(p => p.ProductID, 1));
+
+            var second = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID))
+                .Where(w => w.Equals<Product>(p => p.ProductID, 2));
+
+            var act = () => first.Union(second).BuildInline();
+
+            act.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("*ProductID*valores diferentes*");
+        }
+
+        [Fact]
         public void Join_Left_WithCompoundAndCondition_ShouldGenerateLeftJoinWithParameterizedConstant()
         {
             var (sql, parameters) = CreateBuilder()

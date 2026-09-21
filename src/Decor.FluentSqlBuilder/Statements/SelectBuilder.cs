@@ -290,15 +290,16 @@ namespace Decor.FluentSqlBuilder.Statements
         }
 
         /// <summary>
-        /// Constrói a instrução sem o terminador ';' nem cláusulas de ORDER BY/paginação/lock hint,
+        /// Constrói a instrução sem o terminador ';', ORDER BY ou lock hint.
+        /// A paginação é preservada para manter a semântica de subqueries paginadas,
         /// para uso como subconsulta (FROM) ou membro de UNION. Ver <see cref="ISqlSource"/>.
         /// </summary>
         public (string Sql, Dictionary<string, object?> Parameters) BuildInline()
         {
-            return (BuildSql(includeTail: false), _parameters);
+            return (BuildSql(includeTail: false, includePagination: true), _parameters);
         }
 
-        private string BuildSql(bool includeTail)
+        private string BuildSql(bool includeTail, bool includePagination = false)
         {
             if (string.IsNullOrEmpty(_sourceTable))
             {
@@ -343,8 +344,9 @@ namespace Decor.FluentSqlBuilder.Statements
                 _sqlBuilder.Append('\n');
             }
 
-            // Subconsultas/membros de UNION não recebem ORDER BY, paginação ou lock hint próprios.
-            if (!includeTail)
+            // Subconsultas/membros de UNION não recebem ORDER BY ou lock hint próprios.
+            // A paginação é preservada quando a consulta é usada como fonte derivada.
+            if (!includeTail && !includePagination)
             {
                 return _sqlBuilder.ToString();
             }
@@ -353,15 +355,15 @@ namespace Decor.FluentSqlBuilder.Statements
             if (!_isCountQuery)
             {
                 // ORDER BY clause
-                if (_structuredOrderings.Count > 0)
+                if (includeTail && _structuredOrderings.Count > 0)
                 {
                     _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {string.Join(",\n    ", _structuredOrderings.Select(BuildStructuredOrderSql))}\n");
                 }
-                else if (!string.IsNullOrEmpty(_legacyOrderByClause))
+                else if (includeTail && !string.IsNullOrEmpty(_legacyOrderByClause))
                 {
                     _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_legacyOrderByClause}\n");
                 }
-                else
+                else if (includeTail)
                 {
                     if (!_isDerivedSource && EntityRootType is Type rootEntityType)
                     {
@@ -384,7 +386,7 @@ namespace Decor.FluentSqlBuilder.Statements
                     _sqlBuilder.Append(paginationClause);
                 }
 
-                if (_forUpdate)
+                if (includeTail && _forUpdate)
                 {
                     if (!string.IsNullOrEmpty(paginationClause))
                     {
@@ -393,7 +395,7 @@ namespace Decor.FluentSqlBuilder.Statements
                     _sqlBuilder.Append(_dialect.BuildLockHint());
                 }
             }
-            else if (_forUpdate)
+            else if (includeTail && _forUpdate)
             {
                 _sqlBuilder.Append(_dialect.BuildLockHint());
             }
