@@ -267,11 +267,12 @@ namespace Decor.FluentSqlBuilder.Clauses
             var expression = _dialect.BuildFullTextSearch(columns, parameterName, mode);
             AddPredicate(expression);
             _parameters[parameterName] = searchTerm;
+            _onSetOrderDefinition?.Invoke(OrderDefinition.ForRelevance(expression, SortDirection.Descending));
 
             return new WhereConditionChainBuilder(this, _onSetOrderDefinition, null, null, _dialect, expression);
         }
 
-        public WhereConditionChainBuilder WithDynamicFullTextSearch<TIdEntity, TStringEntity>(
+        public WhereConditionChainBuilder FullTextSearch<TIdEntity, TStringEntity>(
             string? arg,
             Expression<Func<TIdEntity, object?>> idPropertySelector,
             params Expression<Func<TStringEntity, object?>>[] textPropertySelectors)

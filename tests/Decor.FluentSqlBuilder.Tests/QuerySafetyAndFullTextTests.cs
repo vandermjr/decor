@@ -78,16 +78,15 @@ public sealed class QuerySafetyAndFullTextTests
     }
 
     [Fact]
-    public void DynamicFullTextSearch_WithId_ShouldUseEqualityAndLimitOne()
+    public void FullTextSearch_WithId_ShouldUseEqualityAndLimitOne()
     {
         var (sql, parameters) = CreateBuilder()
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
-            .Where(where => where.WithDynamicFullTextSearch<SearchProduct, SearchProduct>(
+            .Where(where => where.FullTextSearch<SearchProduct, SearchProduct>(
                 "42",
                 p => p.ProductID,
-                p => p.Description)
-                .OrderByRelevanceDescending())
+                p => p.Description))
             .Build();
 
         sql.Should().Contain("WHERE sp.ProductID = @ProductID");
@@ -105,8 +104,7 @@ public sealed class QuerySafetyAndFullTextTests
             .Select(select => select.AllColumns<SearchProduct>())
             .From<SearchProduct>()
             .Where(where => where.FullText<SearchProduct>(searchTerm, p => p.Description,
-                p => p.ManufacturerRef)
-                .OrderByRelevanceDescending())
+                p => p.ManufacturerRef))
             .Take(25)
             .Skip(50)
             .Build();
@@ -129,7 +127,6 @@ public sealed class QuerySafetyAndFullTextTests
             .Where(where =>
             {
                 where.FullText<SearchProduct>("cimento", p => p.Description)
-                    .OrderByRelevanceDescending()
                     .And()
                     .Equals<SearchProduct>(p => p.IsActive, true);
             })

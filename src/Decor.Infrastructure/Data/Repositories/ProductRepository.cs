@@ -2,9 +2,7 @@
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
-using Decor.Infrastructure.Data.Utils;
 using Decor.FluentSqlBuilder;
-using Decor.FluentSqlBuilder.Statements;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
@@ -90,9 +88,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Where(w =>
             {
                 w.Equals<Product>(p => p.IsActive, true);
-                var filter = w.WithDynamicFullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
+                var filter = w.FullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
                 queryContext.IsSingleIdSearch = filter.IsIdSearch;
-                filter.OrderByRelevanceDescending();
             })
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
@@ -172,11 +169,9 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<Product>()
-            .Where(w =>
-            {
-                w.Equals<Product>(p => p.ProductID, productId);
-                w.Equals<Product>(p => p.ProductType, ProductType.Service);
-            })
+            .Where(w => w
+                .Equals<Product>(p => p.ProductID, productId)
+                .Equals<Product>(p => p.ProductType, ProductType.Service))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();
@@ -189,11 +184,9 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var (sql, parameters) = _createCommandBuilder()
             .Select(s => s.Count())
             .From<Product>()
-            .Where(w =>
-            {
-                w.Equals<Product>(p => p.ProductID, productId);
-                w.Equals<Product>(p => p.ProductType, ProductType.Good);
-            })
+            .Where(w => w
+                .Equals<Product>(p => p.ProductID, productId)
+                .Equals<Product>(p => p.ProductType, ProductType.Good))
             .Build();
 
         using var conn = _dbConnection.CreateConnection();

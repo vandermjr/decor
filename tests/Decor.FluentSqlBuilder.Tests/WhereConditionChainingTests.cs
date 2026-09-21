@@ -114,14 +114,13 @@ public sealed class WhereConditionChainingTests
     }
 
     [Fact]
-    public void FullText_OrderByRelevance_RemainsSupported()
+    public void FullText_AddsRelevanceOrderingAutomatically()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
             .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .From<ChainEntity>()
             .Where(w => w
-                .FullText<ChainEntity>("chair", e => e.Description!)
-                .OrderByRelevanceDescending())
+                .FullText<ChainEntity>("chair", e => e.Description!))
             .Build();
 
         sql.Should().Contain("MATCH(ce.Description) AGAINST (@FullTextSearch IN NATURAL LANGUAGE MODE)");

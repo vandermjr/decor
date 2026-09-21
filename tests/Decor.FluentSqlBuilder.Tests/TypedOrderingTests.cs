@@ -81,7 +81,7 @@ public class TypedOrderingTests
         var (sql, parameters) = FluentCommandBuilder.Create()
             .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
             .From<Product>()
-            .Where(w => w.FullText<Product>("cimento", p => p.Description).OrderByRelevanceDescending())
+            .Where(w => w.FullText<Product>("cimento", p => p.Description))
             .OrderBy(o => o.Apply(filters))
             .Build();
 
@@ -89,6 +89,43 @@ public class TypedOrderingTests
         Assert.True(sql.IndexOf("MATCH(p.Description) AGAINST (@FullTextSearch IN NATURAL LANGUAGE MODE) DESC", StringComparison.Ordinal) < sql.IndexOf("p.Description ASC", StringComparison.Ordinal));
         Assert.True(sql.IndexOf("p.Description ASC", StringComparison.Ordinal) < sql.IndexOf("p.ProductID DESC", StringComparison.Ordinal));
         Assert.Contains("FullTextSearch", parameters.Keys);
+    }
+
+    [Fact]
+    public void FullTextRelevancePrecedesExplicitOrderingWhenConfiguredFirst()
+    {
+        var (sql, _) = FluentCommandBuilder.Create()
+            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
+            .From<Product>()
+            .OrderBy(o => o.Ascending<Product>(p => p.ProductID))
+            .Where(w => w.FullText<Product>("cimento", p => p.Description))
+            .Build();
+
+        var relevanceIndex = sql.IndexOf("MATCH(p.Description) AGAINST (@FullTextSearch IN NATURAL LANGUAGE MODE) DESC", StringComparison.Ordinal);
+        var explicitIndex = sql.IndexOf("p.ProductID ASC", StringComparison.Ordinal);
+
+        Assert.True(relevanceIndex >= 0);
+        Assert.True(explicitIndex > relevanceIndex);
+    }
+
+    [Fact]
+    public void FullTextRelevancePrecedesDynamicOrderingWhenFiltersConfiguredFirst()
+    {
+        var filters = new Filters<Product>();
+        filters.Add<Product>(p => p.ProductID, SortDirection.Descending);
+
+        var (sql, _) = FluentCommandBuilder.Create()
+            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
+            .From<Product>()
+            .OrderBy(o => o.Apply(filters))
+            .Where(w => w.FullText<Product>("cimento", p => p.Description))
+            .Build();
+
+        var relevanceIndex = sql.IndexOf("MATCH(p.Description) AGAINST (@FullTextSearch IN NATURAL LANGUAGE MODE) DESC", StringComparison.Ordinal);
+        var dynamicIndex = sql.IndexOf("p.ProductID DESC", StringComparison.Ordinal);
+
+        Assert.True(relevanceIndex >= 0);
+        Assert.True(dynamicIndex > relevanceIndex);
     }
 
     [Fact]

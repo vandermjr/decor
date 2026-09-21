@@ -63,13 +63,13 @@ namespace Decor.FluentSqlBuilder.Clauses
             params Expression<Func<TEntity, object?>>[] propertySelectors)
             => _parentWhereBuilder.FullText(searchTerm, mode, propertySelectors);
 
-        public WhereConditionChainBuilder WithDynamicFullTextSearch<TIdEntity, TStringEntity>(
+        public WhereConditionChainBuilder FullTextSearch<TIdEntity, TStringEntity>(
             string? arg,
             Expression<Func<TIdEntity, object?>> idPropertySelector,
             params Expression<Func<TStringEntity, object?>>[] textPropertySelectors)
             where TIdEntity : class
             where TStringEntity : class
-            => _parentWhereBuilder.WithDynamicFullTextSearch(arg, idPropertySelector, textPropertySelectors);
+            => _parentWhereBuilder.FullTextSearch(arg, idPropertySelector, textPropertySelectors);
 
         public WhereConditionChainBuilder GreaterThan<TEntity>(Expression<Func<TEntity, object?>> propertySelector, object value)
             => _parentWhereBuilder.GreaterThan(propertySelector, value);
@@ -135,18 +135,5 @@ namespace Decor.FluentSqlBuilder.Clauses
             return _parentWhereBuilder;
         }
 
-        public WhereClauseBuilder OrderByRelevanceDescending()
-        {
-            if (!string.IsNullOrEmpty(_relevanceExpression))
-            {
-                _onSetOrderDefinition?.Invoke(OrderDefinition.ForRelevance(_relevanceExpression, SortDirection.Descending));
-            }
-            else
-            {
-                OrderByAscending();
-            }
-
-            return _parentWhereBuilder;
-        }
     }
 }
