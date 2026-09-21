@@ -20,14 +20,12 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var (sql, parameters) = CreateBuilder()
                 .Batch()
-                .Select(s => s
+                .Select<Role>(s => s
                     .WithColumns<Role>(r => r.RoleID, r => r.RoleName)
-                    .From<Role>()
                     .Where(w => w.Equals<Role>(r => r.RoleID, 1))
                     .OrderBy("r.RoleName ASC"))
-                .Select(s => s
+                .Select<Permission>(s => s
                     .WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode)
-                    .From<Permission>()
                     .Where(w => w.Equals<Permission>(p => p.PermissionID, 2))
                     .OrderBy("p.PermissionCode ASC"))
                 .Build();
@@ -49,13 +47,11 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Union_WithTwoSelects_ShouldCombineWithUnionKeywordAndMergeParameters()
         {
             var first = CreateBuilder()
-                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-                .From<Permission>()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
             var second = CreateBuilder()
-                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-                .From<Permission>()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 5));
 
             var (sql, parameters) = first.Union(second).BuildInline();
@@ -69,20 +65,18 @@ namespace Decor.FluentSqlBuilder.Tests
         public void FromSubquery_WithUnionAndDistinctColumn_ShouldWrapAsDerivedTable()
         {
             var roleBased = CreateBuilder()
-                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-                .From<Permission>()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
             var overrideBased = CreateBuilder()
-                .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-                .From<Permission>()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionCode))
                 .Where(w => w.Equals<Permission>(p => p.PermissionID, 7));
 
             var union = roleBased.Union(overrideBased);
 
             var (sql, parameters) = CreateBuilder()
                 .Batch()
-                .Select(s => s
+                .Select<Permission>(s => s
                     .Distinct()
                     .Column("effective.PermissionCode")
                     .FromSubquery(union, "effective"))
@@ -96,11 +90,27 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
+        public void FromSubquery_AfterAllColumns_ShouldUseCurrentSourceAlias()
+        {
+            var source = CreateBuilder()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionCode));
+
+            var (sql, parameters) = CreateBuilder()
+                .Select<Permission>()
+                .AllColumns()
+                .FromSubquery(source, "effective")
+                .Build();
+
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("SELECT effective.* FROM (SELECT p.PermissionCode FROM permissions AS p) AS effective"));
+            NormalizeSqlString(sql).Should().NotContain("p.*");
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
         public void Join_Left_WithCompoundAndCondition_ShouldGenerateLeftJoinWithParameterizedConstant()
         {
             var (sql, parameters) = CreateBuilder()
-                .Select(s => s.AllColumns<Permission>())
-                .From<Permission>()
+                .Select<Permission>(s => s.AllColumns<Permission>())
                 .Join(j => j.Left<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID && rp.RoleID == 5))
                 .Build();
 
@@ -113,8 +123,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Where_Group_ShouldWrapConditionsInParentheses()
         {
             var (sql, parameters) = CreateBuilder()
-                .Select(s => s.WithColumns<Permission>(p => p.PermissionID))
-                .From<Permission>()
+                .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionID))
                 .Where(w =>
                 {
                     w.Equals<Permission>(p => p.PermissionID, 1);
@@ -137,8 +146,7 @@ namespace Decor.FluentSqlBuilder.Tests
             // Reproduz o caso do item 11: um LEFT JOIN cujo ON referencia duas entidades
             // já presentes na consulta (Permission e UserRole), além da entidade sendo unida (UserPermissionOverride).
             var (sql, parameters) = CreateBuilder()
-                .Select(s => s.AllColumns<Permission>())
-                .From<Permission>()
+                .Select<Permission>(s => s.AllColumns<Permission>())
                 .Join(j =>
                 {
                     j.Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID);

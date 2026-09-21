@@ -16,9 +16,9 @@ namespace Decor.FluentSqlBuilder.Statements
         private readonly Dictionary<string, object?> _parameters = [];
 
         // Estado da query SELECT (migrado de FluentCommandBuilder)
-        private string _fromTable = "";
-        private string _fromAlias = "";
-        private Type? _fromEntityType;
+        private string _sourceTable = "";
+        private string _sourceAlias = "";
+        private bool _isDerivedSource;
         private readonly List<string> _selectColumns = [];
         private readonly List<(string Predicate, string Operator)> _predicatesWithOperators = [];
         private readonly List<(string JoinKeyword, string Clause)> _joinClauses = [];
@@ -32,6 +32,8 @@ namespace Decor.FluentSqlBuilder.Statements
         private bool _forUpdate = false;
         private SelectClauseBuilder? _selectClauseBuilder;
 
+        protected virtual Type? EntityRootType => null;
+
         internal SelectBuilder(FluentCommandBuilder rootCommandBuilder, TableAliasRegistry aliasRegistry, IDialect dialect)
         {
             _rootCommandBuilder = rootCommandBuilder;
@@ -39,20 +41,11 @@ namespace Decor.FluentSqlBuilder.Statements
             _dialect = dialect;
         }
 
-        public SelectBuilder Select(Action<SelectClauseBuilder> action)
-        {
-            _selectClauseBuilder = null;
-            _selectColumns.Clear();
-            ConfigureSelect(action);
-
-            return this;
-        }
-
-        private void ConfigureSelect(Action<SelectClauseBuilder> action)
+        protected void ConfigureSelect(Action<SelectClauseBuilder> action)
         {
             ArgumentNullException.ThrowIfNull(action);
 
-            _selectClauseBuilder ??= new SelectClauseBuilder(_selectColumns, _aliasRegistry, _dialect, _fromAlias);
+            _selectClauseBuilder ??= new SelectClauseBuilder(_selectColumns, _aliasRegistry, _dialect, () => _sourceAlias);
             action(_selectClauseBuilder);
 
             // Consulta agregada: COUNT/SUM ignoram ORDER BY/paginação e seguem o mesmo padrão de seleção especial.
@@ -61,6 +54,8 @@ namespace Decor.FluentSqlBuilder.Statements
                  _selectColumns[0].StartsWith(_dialect.Keywords.SUM, StringComparison.OrdinalIgnoreCase));
             _isDistinct = _selectClauseBuilder._isDistinct;
         }
+
+        internal void Configure(Action<SelectClauseBuilder> action) => ConfigureSelect(action);
 
         public SelectBuilder WithColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
         {
@@ -153,16 +148,15 @@ namespace Decor.FluentSqlBuilder.Statements
             return this;
         }
 
-        public SelectBuilder From<TEntity>()
+        protected void SetEntityRoot<TEntity>()
         {
             Type entityType = typeof(TEntity);
             string alias = _aliasRegistry.GetOrAddAlias(entityType);
             string tableName = _aliasRegistry.GetTableName(entityType);
 
-            _fromTable = tableName;
-            _fromAlias = alias;
-            _fromEntityType = entityType;
-            return this;
+            _sourceTable = tableName;
+            _sourceAlias = alias;
+            _isDerivedSource = false;
         }
 
         /// <summary>
@@ -177,9 +171,10 @@ namespace Decor.FluentSqlBuilder.Statements
             var (sql, parameters) = subquery.BuildInline();
             ParameterHelper.MergeParameters(_parameters, parameters);
 
-            _fromTable = $"({sql})";
-            _fromAlias = alias;
-            _fromEntityType = null;
+            _sourceTable = $"({sql})";
+            _sourceAlias = alias;
+            _isDerivedSource = true;
+            _selectClauseBuilder?.UpdateSourceAlias(alias);
             return this;
         }
 
@@ -305,13 +300,13 @@ namespace Decor.FluentSqlBuilder.Statements
 
         private string BuildSql(bool includeTail)
         {
-            if (string.IsNullOrEmpty(_fromTable))
+            if (string.IsNullOrEmpty(_sourceTable))
             {
                 throw new InvalidOperationException($"A cláusula {_dialect.Keywords.FROM} deve ser especificada para uma declaração {_dialect.Keywords.SELECT}.");
             }
             if (_selectColumns.Count == 0)
             {
-                throw new InvalidOperationException($"Nenhuma coluna foi especificada para a seleção. Use {_dialect.Keywords.SELECT}(s => s.WithColumns<TEntity>(...)) ou {_dialect.Keywords.SELECT}(s => s.AllColumns<TEntity>()).");
+                throw new InvalidOperationException($"Nenhuma coluna foi especificada para a seleção. Use Select<TEntity>().WithColumns(...) ou Select<TEntity>().AllColumns().");
             }
 
             _sqlBuilder.Clear();
@@ -324,7 +319,7 @@ namespace Decor.FluentSqlBuilder.Statements
             _sqlBuilder.Append('\n');
 
             // FROM clause
-            _sqlBuilder.Append($"{_dialect.Keywords.FROM}\n    {_fromTable} {_dialect.Keywords.AS} {_fromAlias}\n");
+            _sqlBuilder.Append($"{_dialect.Keywords.FROM}\n    {_sourceTable} {_dialect.Keywords.AS} {_sourceAlias}\n");
 
             // JOIN clauses
             foreach (var join in _joinClauses)
@@ -368,16 +363,16 @@ namespace Decor.FluentSqlBuilder.Statements
                 }
                 else
                 {
-                    if (_fromEntityType != null)
+                    if (!_isDerivedSource && EntityRootType is Type rootEntityType)
                     {
-                        string? pkColumnName = ParameterHelper.GetPrimaryKeyColumnName(_fromEntityType, _aliasRegistry);
+                        string? pkColumnName = ParameterHelper.GetPrimaryKeyColumnName(rootEntityType, _aliasRegistry);
                         if (!string.IsNullOrEmpty(pkColumnName))
                         {
-                            _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_fromAlias}.{pkColumnName} {_dialect.Keywords.ASC}\n");
+                            _sqlBuilder.Append($"{_dialect.Keywords.ORDER_BY}\n    {_sourceAlias}.{pkColumnName} {_dialect.Keywords.ASC}\n");
                         }
                         else
                         {
-                            throw new InvalidOperationException($"Não foi possível determinar a chave primária para o tipo '{_fromEntityType.Name}' para ordenação padrão. Por favor, especifique uma propriedade com [Key] ou use .OrderBy() explicitamente.");
+                            throw new InvalidOperationException($"Não foi possível determinar a chave primária para o tipo '{rootEntityType.Name}' para ordenação padrão. Por favor, especifique uma propriedade com [Key] ou use .OrderBy() explicitamente.");
                         }
                     }
                 }
@@ -409,6 +404,95 @@ namespace Decor.FluentSqlBuilder.Statements
         internal string GetAliasForType(Type entityType)
         {
             return _rootCommandBuilder.GetAliasForType(entityType);
+        }
+    }
+
+    public sealed class SelectBuilder<TEntity> : SelectBuilder
+    {
+        protected override Type EntityRootType => typeof(TEntity);
+
+        internal SelectBuilder(FluentCommandBuilder rootCommandBuilder, TableAliasRegistry aliasRegistry, IDialect dialect)
+            : base(rootCommandBuilder, aliasRegistry, dialect)
+        {
+            SetEntityRoot<TEntity>();
+        }
+
+        public SelectBuilder<TEntity> WithColumns(params Expression<Func<TEntity, object?>>[] expressions)
+        {
+            ConfigureSelect(select => select.WithColumns(expressions));
+            return this;
+        }
+
+        public SelectBuilder<TEntity> AllColumns(bool explicitColumns)
+        {
+            ConfigureSelect(select => select.AllColumns<TEntity>(explicitColumns));
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> AllColumns()
+        {
+            ConfigureSelect(select => select.AllColumns());
+            return this;
+        }
+
+        public SelectBuilder<TEntity> ExceptColumns(params Expression<Func<TEntity, object?>>[] expressions)
+        {
+            ConfigureSelect(select => select.ExceptColumns(expressions));
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> Where(Action<WhereClauseBuilder> action)
+        {
+            base.Where(action);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> Join(Action<JoinClauseBuilder> action)
+        {
+            base.Join(action);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> OrderBy(string orderByClause)
+        {
+            base.OrderBy(orderByClause);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> OrderBy(Action<OrderByBuilder> action)
+        {
+            base.OrderBy(action);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> Take(uint count)
+        {
+            base.Take(count);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> Skip(uint count)
+        {
+            base.Skip(count);
+            return this;
+        }
+
+        public new SelectBuilder<TEntity> ForUpdate()
+        {
+            base.ForUpdate();
+            return this;
+        }
+
+        public SelectBuilder<TEntity> Sum(Expression<Func<TEntity, object?>> expression)
+        {
+            base.Sum<TEntity>(expression);
+            return this;
+        }
+
+        public SelectBuilder<TEntity> Sum(Expression<Func<TEntity, object?>> expression, string? resultAlias)
+        {
+            base.Sum<TEntity>(expression, resultAlias);
+            return this;
         }
     }
 }

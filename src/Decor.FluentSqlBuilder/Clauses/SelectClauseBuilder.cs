@@ -20,14 +20,15 @@ namespace Decor.FluentSqlBuilder.Clauses
         private readonly Dictionary<Type, SelectIntent> _selectionIntent = [];
         internal bool _isCountQuery = false;
         internal bool _isDistinct = false;
-        private readonly string _fromAlias;
+        private readonly Func<string> _sourceAliasProvider;
+        private int? _rootAllColumnsIndex;
 
-        internal SelectClauseBuilder(List<string> selectColumns, TableAliasRegistry aliasRegistry, IDialect dialect, string fromAlias)
+        internal SelectClauseBuilder(List<string> selectColumns, TableAliasRegistry aliasRegistry, IDialect dialect, Func<string> sourceAliasProvider)
         {
             _selectColumns = selectColumns;
             _aliasRegistry = aliasRegistry;
             _dialect = dialect;
-            _fromAlias = fromAlias;
+            _sourceAliasProvider = sourceAliasProvider;
         }
 
         /// <summary>
@@ -97,21 +98,30 @@ namespace Decor.FluentSqlBuilder.Clauses
             return AllColumns<TEntity>(explicitColumns: false);
         }
 
-        // NOVO: Select(s => s.AllColumns()) -> gera 'SELECT alias.*' para a tabela FROM
         public SelectClauseBuilder AllColumns()
         {
             if (_selectionIntent.Count != 0)
             {
                 throw new InvalidOperationException("Não é possível usar AllColumns() com outras seleções de colunas.");
             }
-            if (string.IsNullOrEmpty(_fromAlias))
+            string sourceAlias = _sourceAliasProvider();
+            if (string.IsNullOrEmpty(sourceAlias))
             {
-                throw new InvalidOperationException("A cláusula From deve ser especificada antes de AllColumns().");
+                throw new InvalidOperationException("A entidade raiz deve ser especificada antes de AllColumns().");
             }
 
-            _selectColumns.Add($"{_fromAlias}.{_dialect.Keywords.ASTERISK}");
+            _selectColumns.Add($"{sourceAlias}.{_dialect.Keywords.ASTERISK}");
+            _rootAllColumnsIndex = _selectColumns.Count - 1;
             _selectionIntent[typeof(object)] = SelectIntent.AllColumnsOnly; // Usa um tipo genérico para marcar
             return this;
+        }
+
+        internal void UpdateSourceAlias(string sourceAlias)
+        {
+            if (_rootAllColumnsIndex is int index)
+            {
+                _selectColumns[index] = $"{sourceAlias}.{_dialect.Keywords.ASTERISK}";
+            }
         }
 
         public SelectClauseBuilder ExceptColumns<TEntity>(params Expression<Func<TEntity, object?>>[] expressions)
