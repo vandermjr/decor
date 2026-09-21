@@ -87,8 +87,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Order> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Order>())
-            .From<Order>()
+            .Select<Order>(s => s.AllColumns<Order>())
             .Where(w => w.WithDynamicSearchFilter<Order, Order>(arg, o => o.OrderID, o => o.OrderID))
             .OrderBy(o => o.Ascending<Order>(o => o.OrderID))
             .Build();
@@ -101,8 +100,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Order>())
-            .From<Order>()
+            .Select<Order>(s => s.AllColumns<Order>())
             .Where(w => w.WithDynamicSearchFilter<Order, Order>(arg, o => o.OrderID, o => o.OrderID))
             .OrderBy(o => o.Ascending<Order>(o => o.OrderID))
             .Take((uint)pageSize)
@@ -117,8 +115,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<Order?> GetByIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Order>())
-            .From<Order>()
+            .Select<Order>(s => s.AllColumns<Order>())
             .Where(w => w.Equals<Order>(o => o.OrderID, orderId))
             .Build();
 
@@ -134,8 +131,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         using var connection = _dbConnection.CreateConnection();
 
         var (itemSql, itemParams) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderItem>())
-            .From<OrderItem>()
+            .Select<OrderItem>(s => s.AllColumns<OrderItem>())
             .Where(w => w.Equals<OrderItem>(i => i.OrderID, orderId))
             .OrderBy(o => o.Ascending<OrderItem>(oi => oi.OrderItemID))
             .Build();
@@ -146,8 +142,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
         foreach (var item in items)
         {
             var (valSql, valParams) = _createCommandBuilder()
-                .Select(s => s.AllColumns<OrderItemSpecificationValue>())
-                .From<OrderItemSpecificationValue>()
+                .Select<OrderItemSpecificationValue>(s => s.AllColumns<OrderItemSpecificationValue>())
                 .Where(w => w.Equals<OrderItemSpecificationValue>(v => v.OrderItemID, item.OrderItemID))
                 .OrderBy(o => o.Ascending<OrderItemSpecificationValue>(oisv => oisv.ValueID))
                 .Build();
@@ -162,8 +157,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<Order?> GetByQuoteSectionIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Order>())
-            .From<Order>()
+            .Select<Order>(s => s.AllColumns<Order>())
             .Where(w => w.Equals<Order>(o => o.QuoteSectionID, quoteSectionId))
             .Build();
 
@@ -174,8 +168,7 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<OrderItem?> GetOrderItemByIdAsync(int orderItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderItem>())
-            .From<OrderItem>()
+            .Select<OrderItem>(s => s.AllColumns<OrderItem>())
             .Where(w => w.Equals<OrderItem>(i => i.OrderItemID, orderItemId))
             .Build();
 

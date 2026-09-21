@@ -48,8 +48,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<CashTransaction?> GetByIdAsync(int cashTransactionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<CashTransaction>())
-            .From<CashTransaction>()
+            .Select<CashTransaction>(s => s.AllColumns<CashTransaction>())
             .Where(w => w.Equals<CashTransaction>(t => t.CashTransactionID, cashTransactionId))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
@@ -59,8 +58,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
     public async Task<IReadOnlyList<CashTransaction>> GetByCashAccountAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<CashTransaction>())
-            .From<CashTransaction>()
+            .Select<CashTransaction>(s => s.AllColumns<CashTransaction>())
             .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId))
             .OrderBy(o => o
                 .Ascending<CashTransaction>(ct => ct.TransactionDate)
@@ -77,8 +75,7 @@ public sealed class CashTransactionRepository(IDatabaseConnection databaseConnec
             $"WHEN ct.TransactionType = {(int)CashTransactionType.Expense} THEN -ct.Amount ELSE 0 END";
 
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Sum(balanceExpression, "Balance"))
-            .From<CashTransaction>()
+            .Select<CashTransaction>(s => s.Sum(balanceExpression, "Balance"))
             .Where(w => w.Equals<CashTransaction>(t => t.CashAccountID, cashAccountId))
             .Build();
 

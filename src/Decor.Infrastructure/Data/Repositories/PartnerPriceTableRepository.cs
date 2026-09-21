@@ -67,8 +67,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public IEnumerable<PartnerPriceTable> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PartnerPriceTable>())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.AllColumns<PartnerPriceTable>())
             .Where(w => w.WithDynamicSearchFilter<PartnerPriceTable, PartnerPriceTable>(arg, p => p.PriceTableID, p => p.PartnerID))
             .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Build();
@@ -81,8 +80,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PartnerPriceTable>())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.AllColumns<PartnerPriceTable>())
             .Where(w => w.WithDynamicSearchFilter<PartnerPriceTable, PartnerPriceTable>(arg, p => p.PriceTableID, p => p.PartnerID))
             .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Take((uint)pageSize)
@@ -97,8 +95,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public async Task<PartnerPriceTable?> GetByIdAsync(int priceTableId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PartnerPriceTable>())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.AllColumns<PartnerPriceTable>())
             .Where(w => w.Equals<PartnerPriceTable>(p => p.PriceTableID, priceTableId))
             .Build();
 
@@ -109,8 +106,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public async Task<PartnerPriceTable?> GetActiveByPartnerAndGroupAsync(int partnerId, int groupId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PartnerPriceTable>())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.AllColumns<PartnerPriceTable>())
             .Where(w => w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId).Equals<PartnerPriceTable>(p => p.GroupID, groupId).Equals<PartnerPriceTable>(p => p.IsActive, true))
             .Build();
 
@@ -121,8 +117,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public async Task<IEnumerable<PartnerPriceTable>> GetByPartnerIdAsync(int partnerId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PartnerPriceTable>())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.AllColumns<PartnerPriceTable>())
             .Where(w => w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId))
             .OrderBy(o => o.Ascending<PartnerPriceTable>(p => p.PriceTableID))
             .Build();
@@ -135,8 +130,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public bool ActiveEntryExists(int partnerId, int groupId, int currentPriceTableId = 0)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.Count())
             .Where(w =>
             {
                 w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId);
@@ -157,8 +151,7 @@ public class PartnerPriceTableRepository(IDatabaseConnection dbConnection, Func<
     public async Task<bool> ActiveEntryExistsAsync(int partnerId, int groupId, int currentPriceTableId = 0, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<PartnerPriceTable>()
+            .Select<PartnerPriceTable>(s => s.Count())
             .Where(w =>
             {
                 w.Equals<PartnerPriceTable>(p => p.PartnerID, partnerId);

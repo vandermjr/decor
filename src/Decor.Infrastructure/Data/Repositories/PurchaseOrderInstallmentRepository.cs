@@ -72,8 +72,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
     public IEnumerable<PurchaseOrderInstallment> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderInstallment>())
-            .From<PurchaseOrderInstallment>()
+            .Select<PurchaseOrderInstallment>(s => s.AllColumns<PurchaseOrderInstallment>())
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderInstallment, PurchaseOrderInstallment>(arg, i => i.InstallmentID, i => i.PurchaseOrderID))
             .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentID))
             .Build();
@@ -85,8 +84,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderInstallment>())
-            .From<PurchaseOrderInstallment>()
+            .Select<PurchaseOrderInstallment>(s => s.AllColumns<PurchaseOrderInstallment>())
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderInstallment, PurchaseOrderInstallment>(arg, i => i.InstallmentID, i => i.PurchaseOrderID))
             .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentID))
             .Take((uint)pageSize)
@@ -100,8 +98,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
     public async Task<IReadOnlyList<PurchaseOrderInstallment>> GetByPurchaseOrderIdAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderInstallment>())
-            .From<PurchaseOrderInstallment>()
+            .Select<PurchaseOrderInstallment>(s => s.AllColumns<PurchaseOrderInstallment>())
             .Where(w => w.Equals<PurchaseOrderInstallment>(i => i.PurchaseOrderID, purchaseOrderId))
             .OrderBy(o => o.Ascending<PurchaseOrderInstallment>(i => i.InstallmentNumber))
             .Build();
@@ -113,8 +110,7 @@ public class PurchaseOrderInstallmentRepository(IDatabaseConnection dbConnection
     public async Task<PurchaseOrderInstallment?> GetByIdAsync(int installmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderInstallment>())
-            .From<PurchaseOrderInstallment>()
+            .Select<PurchaseOrderInstallment>(s => s.AllColumns<PurchaseOrderInstallment>())
             .Where(w => w.Equals<PurchaseOrderInstallment>(i => i.InstallmentID, installmentId))
             .Build();
         using var connection = _dbConnection.CreateConnection();

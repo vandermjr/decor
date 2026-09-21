@@ -68,15 +68,16 @@ namespace Decor.FluentSqlBuilder
         }
 
         // --- Método de fábrica para SELECT ---
-        /// <summary>
-        /// Inicia a construção de uma declaração SELECT e permite a configuração de colunas.
-        /// </summary>
-        /// <param name="action">Uma ação para configurar o SelectClauseBuilder.</param>
-        /// <returns>Um SelectBuilder para encadeamento.</returns>
-        public SelectBuilder Select(Action<SelectClauseBuilder> action)
+        public SelectBuilder<TEntity> Select<TEntity>()
         {
-            var selectBuilder = new SelectBuilder(this, _aliasRegistry, _dialect);
-            selectBuilder.Select(action);
+            return new SelectBuilder<TEntity>(this, _aliasRegistry, _dialect);
+        }
+
+        public SelectBuilder<TEntity> Select<TEntity>(Action<SelectBuilder<TEntity>> action)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            var selectBuilder = Select<TEntity>();
+            action(selectBuilder);
             return selectBuilder;
         }
 

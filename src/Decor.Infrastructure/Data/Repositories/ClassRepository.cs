@@ -14,8 +14,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Class> GetAll()
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
-            .From<Class>()
+            .Select<Class>(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Build();
         using var conn = _dbConnection.CreateConnection();
@@ -26,8 +25,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
-            .From<Class>()
+            .Select<Class>(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Take((uint)pageSize)
             .Skip((uint)((page - 1) * pageSize))
@@ -64,8 +62,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Class> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
-            .From<Class>()
+            .Select<Class>(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Build();
@@ -99,8 +96,7 @@ public class ClassRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
-            .From<Class>()
+            .Select<Class>(s => s.WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName))
             .Where(w => w.WithDynamicSearchFilter<Class, Class>(arg, cl => cl.ClassID, cl => cl.ClassName))
             .OrderBy(o => o.Ascending<Class>(cl => cl.ClassName))
             .Take((uint)pageSize)

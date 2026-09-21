@@ -67,8 +67,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Customer> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Customer>())
-            .From<Customer>()
+            .Select<Customer>(s => s.AllColumns<Customer>())
             .Where(w => w.WithDynamicSearchFilter<Customer, Customer>(arg, c => c.CustomerID, c => c.Name))
             .OrderBy(o => o.Ascending<Customer>(c => c.Name))
             .Build();
@@ -81,8 +80,7 @@ public class CustomerRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Customer>())
-            .From<Customer>()
+            .Select<Customer>(s => s.AllColumns<Customer>())
             .Where(w => w.WithDynamicSearchFilter<Customer, Customer>(arg, c => c.CustomerID, c => c.Name))
             .OrderBy(o => o.Ascending<Customer>(c => c.Name))
             .Take((uint)pageSize)

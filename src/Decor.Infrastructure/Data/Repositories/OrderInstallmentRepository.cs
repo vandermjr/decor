@@ -82,8 +82,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     public IEnumerable<OrderInstallment> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderInstallment>())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.AllColumns<OrderInstallment>())
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
             .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentID))
             .Build();
@@ -96,8 +95,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderInstallment>())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.AllColumns<OrderInstallment>())
             .Where(w => w.WithDynamicSearchFilter<OrderInstallment, OrderInstallment>(arg, i => i.InstallmentID, i => i.OrderID))
             .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentID))
             .Take((uint)pageSize)
@@ -112,8 +110,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<IReadOnlyList<OrderInstallment>> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderInstallment>())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.AllColumns<OrderInstallment>())
             .Where(w => w.Equals<OrderInstallment>(i => i.OrderID, orderId))
             .OrderBy(o => o.Ascending<OrderInstallment>(oi => oi.InstallmentNumber))
             .Build();
@@ -126,8 +123,7 @@ public class OrderInstallmentRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<OrderInstallment?> GetByIdAsync(int installmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderInstallment>())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.AllColumns<OrderInstallment>())
             .Where(w => w.Equals<OrderInstallment>(i => i.InstallmentID, installmentId))
             .Build();
 

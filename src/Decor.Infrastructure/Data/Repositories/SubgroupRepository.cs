@@ -14,8 +14,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Subgroup> GetByGroupId(int groupId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
-            .From<Subgroup>()
+            .Select<Subgroup>(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
             .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Build();
@@ -27,8 +26,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName, sg => sg.GroupID))
-            .From<Subgroup>()
+            .Select<Subgroup>(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName, sg => sg.GroupID))
             .Where(w => w.Equals<Subgroup>(sg => sg.GroupID, groupId))
             .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Take((uint)pageSize)
@@ -66,8 +64,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Subgroup> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
-            .From<Subgroup>()
+            .Select<Subgroup>(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
             .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Build();
@@ -101,8 +98,7 @@ public class SubgroupRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
-            .From<Subgroup>()
+            .Select<Subgroup>(s => s.WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName))
             .Where(w => w.WithDynamicSearchFilter<Subgroup, Subgroup>(arg, sg => sg.SubgroupID, sg => sg.SubgroupName))
             .OrderBy(o => o.Ascending<Subgroup>(s => s.SubgroupName))
             .Take((uint)pageSize)

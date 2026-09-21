@@ -98,8 +98,7 @@ public class OrderOccurrenceRepository(
     public async Task<IReadOnlyList<OrderOccurrence>> GetHistoryForOrderAsync(int orderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderOccurrence>())
-            .From<OrderOccurrence>()
+            .Select<OrderOccurrence>(s => s.AllColumns<OrderOccurrence>())
             .Where(w => w.Equals<OrderOccurrence>(o => o.OrderID, orderId))
             .OrderBy(o => o.Descending<OrderOccurrence>(e => e.RegisteredAt))
             .Build();
@@ -128,8 +127,7 @@ public class OrderOccurrenceRepository(
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)
     {
         var builder = _createCommandBuilder()
-            .Select(s => s.AllColumns<OrderOccurrence>())
-            .From<OrderOccurrence>()
+            .Select<OrderOccurrence>(s => s.AllColumns<OrderOccurrence>())
             .Where(w => w.WithDynamicSearchFilter<OrderOccurrence, OrderOccurrence>(arg, o => o.OccurrenceID, o => o.Observation))
             .OrderBy(o => o.Descending<OrderOccurrence>(e => e.RegisteredAt));
         if (take.HasValue) builder.Take(take.Value);

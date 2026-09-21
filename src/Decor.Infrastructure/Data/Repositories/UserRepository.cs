@@ -29,8 +29,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
     public async Task<string?> GetPasswordHashByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<UserAccount>(u => u.PasswordHash))
-            .From<UserAccount>()
+            .Select<UserAccount>(s => s.WithColumns(u => u.PasswordHash))
             .Where(w => w
                 .Equals<UserAccount>(u => u.Username, username)
                 .Equals<UserAccount>(u => u.IsActive, true))
@@ -45,8 +44,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
     {
         // Permissões concedidas por role, respeitando um override negativo/positivo do próprio usuário.
         var permissionsByRole = _createCommandBuilder()
-            .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-            .From<Permission>()
+            .Select<Permission>(s => s.WithColumns(p => p.PermissionCode))
             .Join(j => j
                 .Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID)
                 .Inner<RolePermission, UserRole>((rp, ur) => ur.RoleID == rp.RoleID)
@@ -62,8 +60,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
 
         // Permissões concedidas exclusivamente por override positivo, mesmo sem nenhuma role que as conceda.
         var permissionsByOverride = _createCommandBuilder()
-            .Select(s => s.WithColumns<Permission>(p => p.PermissionCode))
-            .From<Permission>()
+            .Select<Permission>(s => s.WithColumns(p => p.PermissionCode))
             .Join(j => j
                 .Inner<Permission, UserPermissionOverride>((p, o) => p.PermissionID == o.PermissionID && o.IsGranted == true)
                 .Inner<UserPermissionOverride, ApplicationUser>((o, u) => u.UserID == o.UserID))
@@ -75,23 +72,21 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
 
         var (sql, parameters) = _createCommandBuilder()
             .Batch()
-            .Select(s => s
-                .WithColumns<ApplicationUser>(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
-                .From<ApplicationUser>()
+            .Select<ApplicationUser>(s => s
+                .WithColumns(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
                 .Where(w => w
                     .Equals<ApplicationUser>(u => u.Username, username)
                     .Equals<ApplicationUser>(u => u.IsActive, true))
                 .Take(1))
-            .Select(s => s
-                .WithColumns<Role>(r => r.RoleName)
-                .From<Role>()
+            .Select<Role>(s => s
+                .WithColumns(r => r.RoleName)
                 .Join(j => j
                     .Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID)
                     .Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID))
                 .Where(w => w
                     .Equals<ApplicationUser>(u => u.Username, username)
                     .Equals<ApplicationUser>(u => u.IsActive, true)))
-            .Select(s => s
+            .Select<Permission>(s => s
                 .Distinct()
                 .Column("effective.PermissionCode")
                 .FromSubquery(effectivePermissions, "effective"))

@@ -68,8 +68,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public IEnumerable<ProductKitComponent> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ProductKitComponent>())
-            .From<ProductKitComponent>()
+            .Select<ProductKitComponent>(s => s.AllColumns<ProductKitComponent>())
             .Where(w => w.WithDynamicSearchFilter<ProductKitComponent, ProductKitComponent>(arg, c => c.ComponentID, c => c.KitProductID))
             .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.ComponentID))
             .Build();
@@ -82,8 +81,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ProductKitComponent>())
-            .From<ProductKitComponent>()
+            .Select<ProductKitComponent>(s => s.AllColumns<ProductKitComponent>())
             .Where(w => w.WithDynamicSearchFilter<ProductKitComponent, ProductKitComponent>(arg, c => c.ComponentID, c => c.KitProductID))
             .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.ComponentID))
             .Take((uint)pageSize)
@@ -98,8 +96,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public async Task<IEnumerable<ProductKitComponent>> GetByKitProductIdAsync(int kitProductId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ProductKitComponent>())
-            .From<ProductKitComponent>()
+            .Select<ProductKitComponent>(s => s.AllColumns<ProductKitComponent>())
             .Where(w => w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId))
             .OrderBy(o => o.Ascending<ProductKitComponent>(c => c.DisplayOrder))
             .Build();
@@ -112,12 +109,11 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public async Task<IEnumerable<KitComponentPricingDTO>> GetPricingByKitProductIdAsync(int kitProductId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s =>
+            .Select<ProductKitComponent>(s =>
             {
                 s.WithColumns<ProductKitComponent>(c => c.Quantity);
                 s.WithColumns<Product>(p => p.SalePrice);
             })
-            .From<ProductKitComponent>()
             .Join(j => j.Inner<ProductKitComponent, Product>((c, p) => c.ComponentProductID == p.ProductID))
             .Where(w => w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId))
             .Build();
@@ -130,8 +126,7 @@ public class ProductKitComponentRepository(IDatabaseConnection dbConnection, Fun
     public bool RelationExists(int kitProductId, int componentProductId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<ProductKitComponent>()
+            .Select<ProductKitComponent>(s => s.Count())
             .Where(w =>
             {
                 w.Equals<ProductKitComponent>(c => c.KitProductID, kitProductId);

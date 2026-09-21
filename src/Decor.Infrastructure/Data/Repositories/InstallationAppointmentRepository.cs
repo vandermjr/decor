@@ -59,8 +59,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
     public async Task<InstallationAppointment?> GetByIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<InstallationAppointment>())
-            .From<InstallationAppointment>()
+            .Select<InstallationAppointment>(s => s.AllColumns<InstallationAppointment>())
             .Where(w => w.Equals<InstallationAppointment>(a => a.AppointmentID, appointmentId))
             .Build();
         using var connection = _dbConnection.CreateConnection();
@@ -91,8 +90,7 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
     public async Task<IReadOnlyList<AppointmentReschedule>> GetReschedulesAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<AppointmentReschedule>())
-            .From<AppointmentReschedule>()
+            .Select<AppointmentReschedule>(s => s.AllColumns<AppointmentReschedule>())
             .Where(w => w.Equals<AppointmentReschedule>(r => r.AppointmentID, appointmentId))
             .OrderBy(o => o.Ascending<AppointmentReschedule>(r => r.RegisteredAt))
             .Build();

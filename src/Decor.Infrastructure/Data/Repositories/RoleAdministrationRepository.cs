@@ -14,8 +14,7 @@ public sealed class RoleAdministrationRepository(IDatabaseConnection databaseCon
     public async Task<IReadOnlyList<AdministrativePermissionDTO>> GetPermissionsAsync(int roleId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
-            .From<Permission>()
+            .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .Join(j => j.Inner<Permission, RolePermission>((p, rp) => p.PermissionID == rp.PermissionID))
             .Where(w => w.Equals<RolePermission>(rp => rp.RoleID, roleId))
             .OrderBy(o => o.Ascending<Permission>(p => p.PermissionCode))

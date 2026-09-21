@@ -22,8 +22,7 @@ public sealed class WhereConditionChainingTests
     public void Equals_CanChainWithImplicitAnd()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .Equals<ChainEntity>(e => e.EntityID, 1)
                 .Equals<ChainEntity>(e => e.IsActive, true))
@@ -37,8 +36,7 @@ public sealed class WhereConditionChainingTests
     public void Equals_Or_Contains_CanChain()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .Equals<ChainEntity>(e => e.EntityID, 1)
                 .Or()
@@ -53,8 +51,7 @@ public sealed class WhereConditionChainingTests
     public void IsNull_Or_Equals_CanChain()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .IsNull<ChainEntity>(e => e.Description)
                 .Or()
@@ -69,8 +66,7 @@ public sealed class WhereConditionChainingTests
     public void GreaterThan_LessThan_CanChain()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .GreaterThan<ChainEntity>(e => e.Amount, 10)
                 .LessThan<ChainEntity>(e => e.Amount, 100))
@@ -84,8 +80,7 @@ public sealed class WhereConditionChainingTests
     public void In_CanChainWithAnotherCondition()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .In<ChainEntity>(e => e.CategoryID, new object[] { 2, 3 })
                 .Equals<ChainEntity>(e => e.IsActive, true))
@@ -99,8 +94,7 @@ public sealed class WhereConditionChainingTests
     public void Group_CanBeChained()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .Equals<ChainEntity>(e => e.IsActive, true)
                 .Group(g => g
@@ -117,8 +111,7 @@ public sealed class WhereConditionChainingTests
     public void FullText_AddsRelevanceOrderingAutomatically()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .FullText<ChainEntity>("chair", e => e.Description!))
             .Build();
@@ -133,8 +126,7 @@ public sealed class WhereConditionChainingTests
     public void WithDynamicSearchFilter_CanBeFollowedByAnotherCondition()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .WithDynamicSearchFilter<ChainEntity, ChainEntity>("chair", e => e.EntityID, e => e.Description!)
                 .Equals<ChainEntity>(e => e.IsActive, true))
@@ -148,8 +140,7 @@ public sealed class WhereConditionChainingTests
     public void RepeatedPropertyNames_ReceiveUniqueParameters()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .Equals<ChainEntity>(e => e.Description, "first")
                 .Equals<ChainEntity>(e => e.Description, "second"))
@@ -163,8 +154,7 @@ public sealed class WhereConditionChainingTests
     public void DifferentEntities_CanBeChainedInOneWhere()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ChainEntity>(e => e.EntityID))
-            .From<ChainEntity>()
+            .Select<ChainEntity>(s => s.WithColumns<ChainEntity>(e => e.EntityID))
             .Where(w => w
                 .Equals<ChainEntity>(e => e.EntityID, 1)
                 .Equals<OtherEntity>(e => e.OtherID, 2))

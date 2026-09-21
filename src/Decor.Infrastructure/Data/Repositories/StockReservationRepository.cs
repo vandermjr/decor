@@ -82,8 +82,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public IEnumerable<StockReservation> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w => w.WithDynamicSearchFilter<StockReservation, StockReservation>(arg, sr => sr.ReservationID, sr => sr.ReservationID))
             .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Build();
@@ -96,8 +95,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w => w.WithDynamicSearchFilter<StockReservation, StockReservation>(arg, sr => sr.ReservationID, sr => sr.ReservationID))
             .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Take((uint)pageSize)
@@ -112,8 +110,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<StockReservation?> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w => w.Equals<StockReservation>(sr => sr.ReservationID, reservationId))
             .Build();
 
@@ -124,8 +121,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<IEnumerable<StockReservation>> GetByOrderItemIdAsync(int orderItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w => w.Equals<StockReservation>(sr => sr.OrderItemID, orderItemId))
             .OrderBy(o => o.Descending<StockReservation>(e => e.ReservationID))
             .Build();
@@ -138,8 +134,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<IReadOnlyList<StockReservation>> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Join(j => j.Inner<StockReservation, OrderItem>((sr, oi) => sr.OrderItemID == oi.OrderItemID))
             .Where(w => w.Equals<OrderItem>(oi => oi.OrderID, orderId))
             .OrderBy(o => o.Ascending<StockReservation>(sr => sr.ReservationID))
@@ -153,8 +148,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<IReadOnlyList<StockReservation>> GetActiveByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Join(j => j.Inner<StockReservation, OrderItem>((sr, oi) => sr.OrderItemID == oi.OrderItemID))
             .Where(w =>
             {
@@ -172,8 +166,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<StockReservation?> GetActiveByOrderItemIdAsync(int orderItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w =>
             {
                 w.Equals<StockReservation>(sr => sr.OrderItemID, orderItemId);
@@ -188,8 +181,7 @@ public class StockReservationRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<IEnumerable<StockReservation>> GetActiveByProductAndLocationAsync(int productId, int stockLocationId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockReservation>())
-            .From<StockReservation>()
+            .Select<StockReservation>(s => s.AllColumns<StockReservation>())
             .Where(w =>
             {
                 w.Equals<StockReservation>(sr => sr.ProductID, productId);

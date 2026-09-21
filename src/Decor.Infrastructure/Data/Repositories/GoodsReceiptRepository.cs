@@ -34,8 +34,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
     public async Task<GoodsReceipt?> GetByIdAsync(int goodsReceiptId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<GoodsReceipt>())
-            .From<GoodsReceipt>()
+            .Select<GoodsReceipt>(s => s.AllColumns<GoodsReceipt>())
             .Where(w => w.Equals<GoodsReceipt>(gr => gr.GoodsReceiptID, goodsReceiptId))
             .Build();
 
@@ -46,8 +45,7 @@ public sealed class GoodsReceiptRepository(IDatabaseConnection databaseConnectio
     public async Task<IEnumerable<GoodsReceipt>> GetByPurchaseOrderItemIdAsync(int purchaseOrderItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<GoodsReceipt>())
-            .From<GoodsReceipt>()
+            .Select<GoodsReceipt>(s => s.AllColumns<GoodsReceipt>())
             .Where(w => w.Equals<GoodsReceipt>(gr => gr.PurchaseOrderItemID, purchaseOrderItemId))
             .OrderBy(o => o
                 .Ascending<GoodsReceipt>(gr => gr.ReceiptDate)

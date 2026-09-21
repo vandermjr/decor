@@ -73,8 +73,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Arrange & Act
             var (sql, parameters) = FluentCommandBuilder.Create(new MariaDBDialect())
-                .Select(s => s.WithColumns<Product>(prod => prod.ProductID, item => item.Description))
-                .From<Product>()
+                .Select<Product>(s => s.WithColumns<Product>(prod => prod.ProductID, item => item.Description))
                 .Where(w => w.Equals<Product>(anyVarName => anyVarName.ProductID, 123))
                 .Build();
 
@@ -121,8 +120,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
                 .RegisterColumn<ExplicitColumnEntity>(nameof(ExplicitColumnEntity.Value), "registered_column")
-                .Select(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
-                .From<ExplicitColumnEntity>()
+                .Select<ExplicitColumnEntity>(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
                 .Build();
 
             sql.Should().Contain("e.registered_column");
@@ -133,8 +131,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
                 .RegisterColumn<ExplicitColumnEntity>(nameof(ExplicitColumnEntity.Value), "registered_column")
-                .Select(s => s.AllColumns<ExplicitColumnEntity>(explicitColumns: true))
-                .From<ExplicitColumnEntity>()
+                .Select<ExplicitColumnEntity>(s => s.AllColumns<ExplicitColumnEntity>(explicitColumns: true))
                 .Build();
 
             sql.Should().Contain("e.registered_column AS Value");
@@ -145,8 +142,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void ColumnAttribute_ShouldRemainTheFallbackWithoutExplicitRegistration()
         {
             var (sql, _) = FluentCommandBuilder.Create(new MariaDBDialect())
-                .Select(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
-                .From<ExplicitColumnEntity>()
+                .Select<ExplicitColumnEntity>(s => s.WithColumns<ExplicitColumnEntity>(e => e.Value))
                 .Build();
 
             sql.Should().Contain("e.attribute_column AS Value");

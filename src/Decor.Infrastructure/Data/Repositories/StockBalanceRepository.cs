@@ -14,8 +14,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
     public async Task<StockBalance?> GetByProductAndLocationAsync(int productId, int stockLocationId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockBalance>())
-            .From<StockBalance>()
+            .Select<StockBalance>(s => s.AllColumns<StockBalance>())
             .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, productId).Equals<StockBalance>(sb => sb.StockLocationID, stockLocationId))
             .Build();
 
@@ -26,8 +25,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
     public async Task<IEnumerable<StockBalance>> GetByProductAsync(int productId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockBalance>())
-            .From<StockBalance>()
+            .Select<StockBalance>(s => s.AllColumns<StockBalance>())
             .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, productId))
             .OrderBy(o => o.Ascending<StockBalance>(sb => sb.StockLocationID))
             .Build();
@@ -40,8 +38,7 @@ public sealed class StockBalanceRepository(IDatabaseConnection databaseConnectio
     public async Task<IEnumerable<StockBalance>> GetByLocationAsync(int stockLocationId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockBalance>())
-            .From<StockBalance>()
+            .Select<StockBalance>(s => s.AllColumns<StockBalance>())
             .Where(w => w.Equals<StockBalance>(sb => sb.StockLocationID, stockLocationId))
             .OrderBy(o => o.Ascending<StockBalance>(sb => sb.ProductID))
             .Build();

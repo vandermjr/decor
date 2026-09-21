@@ -35,8 +35,7 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     public async Task<CashAccount?> GetByIdAsync(int cashAccountId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<CashAccount>())
-            .From<CashAccount>()
+            .Select<CashAccount>(s => s.AllColumns<CashAccount>())
             .Where(w => w.Equals<CashAccount>(a => a.CashAccountID, cashAccountId))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
@@ -46,8 +45,7 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     public async Task<IReadOnlyList<CashAccount>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<CashAccount>())
-            .From<CashAccount>()
+            .Select<CashAccount>(s => s.AllColumns<CashAccount>())
             .OrderBy(o => o.Ascending<CashAccount>(a => a.Name))
             .Build();
         using var connection = _databaseConnection.CreateConnection();
@@ -57,8 +55,7 @@ public sealed class CashAccountRepository(IDatabaseConnection databaseConnection
     public async Task<bool> NameExistsAsync(string name, int currentCashAccountId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<CashAccount>()
+            .Select<CashAccount>(s => s.Count())
             .Where(w => w.Equals<CashAccount>(a => a.Name, name).NotEquals<CashAccount>(a => a.CashAccountID, currentCashAccountId))
             .Build();
         using var connection = _databaseConnection.CreateConnection();

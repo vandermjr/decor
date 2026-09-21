@@ -67,8 +67,7 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
     public IEnumerable<Employee> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Employee>())
-            .From<Employee>()
+            .Select<Employee>(s => s.AllColumns<Employee>())
             .Where(w => w.WithDynamicSearchFilter<Employee, Employee>(arg, e => e.EmployeeID, e => e.Name))
             .OrderBy(o => o.Ascending<Employee>(e => e.Name))
             .Build();
@@ -81,8 +80,7 @@ public class EmployeeRepository(IDatabaseConnection dbConnection, Func<FluentCom
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Employee>())
-            .From<Employee>()
+            .Select<Employee>(s => s.AllColumns<Employee>())
             .Where(w => w.WithDynamicSearchFilter<Employee, Employee>(arg, e => e.EmployeeID, e => e.Name))
             .OrderBy(o => o.Ascending<Employee>(e => e.Name))
             .Take((uint)pageSize)

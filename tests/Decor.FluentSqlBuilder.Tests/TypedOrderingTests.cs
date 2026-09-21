@@ -9,8 +9,7 @@ public class TypedOrderingTests
     public void OrderBySupportsMultipleTypedCriteria()
     {
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username))
-            .From<ApplicationUser>()
+            .Select<ApplicationUser>(s => s.WithColumns<ApplicationUser>(u => u.UserID, u => u.Username))
             .OrderBy(o => o
                 .Ascending<ApplicationUser>(u => u.Username)
                 .Descending<ApplicationUser>(u => u.UserID))
@@ -28,12 +27,11 @@ public class TypedOrderingTests
         filters.Add<Brand>(b => b.BrandName, SortDirection.Descending);
 
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s =>
+            .Select<Product>(s =>
             {
                 s.WithColumns<Product>(p => p.ProductID, p => p.Description);
                 s.WithColumns<Brand>(b => b.BrandName);
             })
-            .From<Product>()
             .Join(j => j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID))
             .OrderBy(o => o.Apply(filters))
             .Build();
@@ -52,12 +50,11 @@ public class TypedOrderingTests
         filters.Add<Product>(p => p.ProductID, SortDirection.Descending);
 
         var (sql, _) = FluentCommandBuilder.Create()
-            .Select(s =>
+            .Select<Product>(s =>
             {
                 s.WithColumns<Product>(p => p.ProductID, p => p.Description);
                 s.WithColumns<Brand>(b => b.BrandName);
             })
-            .From<Product>()
             .Join(j => j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID))
             .OrderBy(o => o.Apply(filters))
             .Build();
@@ -79,8 +76,7 @@ public class TypedOrderingTests
         filters.Add<Product>(p => p.ProductID, SortDirection.Descending);
 
         var (sql, parameters) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
-            .From<Product>()
+            .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
             .Where(w => w.FullText<Product>("cimento", p => p.Description))
             .OrderBy(o => o.Apply(filters))
             .Build();
@@ -95,8 +91,7 @@ public class TypedOrderingTests
     public void FullTextRelevancePrecedesExplicitOrderingWhenConfiguredFirst()
     {
         var (sql, _) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
-            .From<Product>()
+            .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
             .OrderBy(o => o.Ascending<Product>(p => p.ProductID))
             .Where(w => w.FullText<Product>("cimento", p => p.Description))
             .Build();
@@ -115,8 +110,7 @@ public class TypedOrderingTests
         filters.Add<Product>(p => p.ProductID, SortDirection.Descending);
 
         var (sql, _) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
-            .From<Product>()
+            .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
             .OrderBy(o => o.Apply(filters))
             .Where(w => w.FullText<Product>("cimento", p => p.Description))
             .Build();
@@ -135,8 +129,7 @@ public class TypedOrderingTests
         filters.Add<Product>(p => p.Description, SortDirection.Ascending);
 
         var (sql, _) = FluentCommandBuilder.Create()
-            .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
-            .From<Product>()
+            .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
             .OrderBy("p.ProductID DESC")
             .OrderBy(o => o.Apply(filters))
             .Build();

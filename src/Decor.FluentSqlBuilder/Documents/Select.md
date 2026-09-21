@@ -3,8 +3,8 @@ var builder = FluentCommandBuilder.Create(new MariaDBDialect());
 
 // Cria a query SELECT com todas as colunas
 var (sql, parameters) = builder
-    .Select(s => s.AllColumns<Product>())
-    .From<Product>()
+    .Select<Product>()
+    .AllColumns()
     .Build();
 
 // SQL gerado:
@@ -12,8 +12,8 @@ var (sql, parameters) = builder
 
 // Cria a query SELECT com colunas específicas
 var (sql, parameters) = builder
-    .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description, p => p.StockQuantity))
-    .From<Product>()
+    .Select<Product>()
+    .WithColumns(p => p.ProductID, p => p.Description, p => p.StockQuantity)
     .Build();
 
 // SQL gerado:
@@ -21,13 +21,8 @@ var (sql, parameters) = builder
 
 // Cria a query SELECT em um bloco de código com filtros e joins
 var (sql, parameters) = builder
-    .Select(s =>
-    {
-        s.WithColumns<Product>(p => p.ProductID);
-        s.WithColumns<Product>(p => p.Description);
-        s.WithColumns<Product>(p => p.IsActive);
-    })
-    .From<Product>()
+    .Select<Product>()
+    .WithColumns(p => p.ProductID, p => p.Description, p => p.IsActive)
     .Where(w => w.Equals<Product>(p => p.IsActive, true))
     .Build();
 

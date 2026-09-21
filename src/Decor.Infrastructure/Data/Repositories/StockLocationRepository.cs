@@ -67,8 +67,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
     public IEnumerable<StockLocation> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockLocation>())
-            .From<StockLocation>()
+            .Select<StockLocation>(s => s.AllColumns<StockLocation>())
             .Where(w => w.WithDynamicSearchFilter<StockLocation, StockLocation>(arg, sl => sl.StockLocationID, sl => sl.Name))
             .OrderBy(o => o.Ascending<StockLocation>(sl => sl.Name))
             .Build();
@@ -81,8 +80,7 @@ public class StockLocationRepository(IDatabaseConnection dbConnection, Func<Flue
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockLocation>())
-            .From<StockLocation>()
+            .Select<StockLocation>(s => s.AllColumns<StockLocation>())
             .Where(w => w.WithDynamicSearchFilter<StockLocation, StockLocation>(arg, sl => sl.StockLocationID, sl => sl.Name))
             .OrderBy(o => o.Ascending<StockLocation>(sl => sl.Name))
             .Take((uint)pageSize)

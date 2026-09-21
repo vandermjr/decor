@@ -45,8 +45,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_ExplicitColumnsWithCustomColumnAttribute_ShouldUseColumnNamesWithAlias()
         {
             var (sql, _) = CreateCommandBuilder()
-                .Select(s => s.WithColumns<CustomMappedProduct>(p => p.ProductID, p => p.Description))
-                .From<CustomMappedProduct>()
+                .Select<CustomMappedProduct>(s => s.WithColumns<CustomMappedProduct>(p => p.ProductID, p => p.Description))
                 .Build();
 
             sql.Should().Contain("cmp.id_produto AS ProductID");
@@ -59,8 +58,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_AllExplicitColumnsWithCustomColumnAttribute_ShouldUseColumnNames()
         {
             var (sql, _) = CreateCommandBuilder()
-                .Select(s => s.AllColumns<CustomMappedProduct>(explicitColumns: true))
-                .From<CustomMappedProduct>()
+                .Select<CustomMappedProduct>(s => s.AllColumns<CustomMappedProduct>(explicitColumns: true))
                 .Build();
 
             sql.Should().Contain("cmp.id_produto AS ProductID");
@@ -73,8 +71,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Where_WithCustomColumnAttribute_ShouldUseColumnNameInPredicate()
         {
             var (sql, parameters) = CreateCommandBuilder()
-                .Select(s => s.AllColumns<CustomMappedProduct>())
-                .From<CustomMappedProduct>()
+                .Select<CustomMappedProduct>(s => s.AllColumns<CustomMappedProduct>())
                 .Where(w => w.Equals<CustomMappedProduct>(p => p.Description, "Detergente"))
                 .Build();
 
@@ -86,8 +83,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Join_WithCustomColumnAttribute_ShouldUseColumnNameInOnClause()
         {
             var (sql, _) = CreateCommandBuilder()
-                .Select(s => s.WithColumns<CustomMappedProduct>(p => p.Description))
-                .From<CustomMappedProduct>()
+                .Select<CustomMappedProduct>(s => s.WithColumns<CustomMappedProduct>(p => p.Description))
                 .Join(j => j.Inner<CustomMappedProduct, CustomMappedBrand>((p, b) => p.BrandID == b.BrandID))
                 .Build();
 

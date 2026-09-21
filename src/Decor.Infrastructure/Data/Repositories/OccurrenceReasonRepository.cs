@@ -71,8 +71,7 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<OccurrenceReason?> GetByIdAsync(int reasonId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<OccurrenceReason>())
-            .From<OccurrenceReason>()
+            .Select<OccurrenceReason>(s => s.AllColumns<OccurrenceReason>())
             .Where(w => w.Equals<OccurrenceReason>(r => r.ReasonID, reasonId))
             .Build();
         using var connection = _dbConnection.CreateConnection();
@@ -89,8 +88,7 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
     public async Task<bool> IsInUseAsync(int reasonId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<OrderOccurrence>()
+            .Select<OrderOccurrence>(s => s.Count())
             .Where(w => w.Equals<OrderOccurrence>(o => o.ReasonID, reasonId))
             .Build();
         using var connection = _dbConnection.CreateConnection();
@@ -117,16 +115,14 @@ public class OccurrenceReasonRepository(IDatabaseConnection dbConnection, Func<F
 
     private (string Sql, object Parameters) BuildDescriptionExists(string description, int currentReasonId)
         => _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<OccurrenceReason>()
+            .Select<OccurrenceReason>(s => s.Count())
             .Where(w => w.Equals<OccurrenceReason>(r => r.Description, description).NotEquals<OccurrenceReason>(r => r.ReasonID, currentReasonId))
             .Build();
 
     private (string Sql, object Parameters) BuildSearch(string? arg, uint? take, uint? skip)
     {
         var builder = _createCommandBuilder()
-            .Select(s => s.AllColumns<OccurrenceReason>())
-            .From<OccurrenceReason>()
+            .Select<OccurrenceReason>(s => s.AllColumns<OccurrenceReason>())
             .Where(w => w.WithDynamicSearchFilter<OccurrenceReason, OccurrenceReason>(arg, r => r.ReasonID, r => r.Description))
             .OrderBy(o => o.Ascending<OccurrenceReason>(r => r.Description));
         if (take.HasValue) builder.Take(take.Value);

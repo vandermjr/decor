@@ -24,8 +24,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void IsNull_ShouldGenerateIsNullPredicate()
     {
         var (sql, _) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.IsNull<SearchProduct>(p => p.Description))
             .Build();
 
@@ -36,8 +35,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void IsNotNull_ShouldGenerateIsNotNullPredicate()
     {
         var (sql, _) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.IsNotNull<SearchProduct>(p => p.Description))
             .Build();
 
@@ -81,8 +79,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void FullTextSearch_WithId_ShouldUseEqualityAndLimitOne()
     {
         var (sql, parameters) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.FullTextSearch<SearchProduct, SearchProduct>(
                 "42",
                 p => p.ProductID,
@@ -101,8 +98,7 @@ public sealed class QuerySafetyAndFullTextTests
         var searchTerm = "cimento branco' OR 1=1 --";
 
         var (sql, parameters) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.FullText<SearchProduct>(searchTerm, p => p.Description,
                 p => p.ManufacturerRef))
             .Take(25)
@@ -122,8 +118,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void FullText_WithOneColumnAndAdditionalWhere_ShouldComposePredicates()
     {
         var (sql, parameters) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where =>
             {
                 where.FullText<SearchProduct>("cimento", p => p.Description)
@@ -140,8 +135,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void FullText_InBooleanMode_ShouldGeneratePrefixCapableSql()
     {
         var (sql, parameters) = CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.FullText<SearchProduct>(
                 "ciment*",
                 FullTextSearchMode.Boolean,
@@ -156,8 +150,7 @@ public sealed class QuerySafetyAndFullTextTests
     public void FullText_WithEmptySearchTerm_ShouldThrow()
     {
         Action action = () => CreateBuilder()
-            .Select(select => select.AllColumns<SearchProduct>())
-            .From<SearchProduct>()
+            .Select<SearchProduct>(select => select.AllColumns<SearchProduct>())
             .Where(where => where.FullText<SearchProduct>("   ", p => p.Description));
 
         action.Should().Throw<ArgumentException>()

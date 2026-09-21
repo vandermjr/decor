@@ -26,11 +26,11 @@ namespace Decor.FluentSqlBuilder.Statements
         /// Adiciona uma instrução SELECT independente ao lote, lida como mais um result set
         /// (ex: via SqlMapper.GridReader.ReadAsync&lt;T&gt;() do Dapper).
         /// </summary>
-        public BatchQueryBuilder Select(Action<SelectBuilder> configure)
+        public BatchQueryBuilder Select<TEntity>(Action<SelectBuilder<TEntity>> configure)
         {
             ArgumentNullException.ThrowIfNull(configure);
 
-            var statement = new SelectBuilder(_rootCommandBuilder, _aliasRegistry, _dialect);
+            var statement = new SelectBuilder<TEntity>(_rootCommandBuilder, _aliasRegistry, _dialect);
             configure(statement);
             _statements.Add(statement);
             return this;

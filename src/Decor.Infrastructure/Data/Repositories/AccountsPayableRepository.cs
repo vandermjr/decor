@@ -56,8 +56,7 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
         if (pageSize is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(pageSize));
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<AccountsPayable>())
-            .From<AccountsPayable>()
+            .Select<AccountsPayable>(s => s.AllColumns<AccountsPayable>())
             .Where(w => w.WithDynamicSearchFilter<AccountsPayable, AccountsPayable>(arg, a => a.AccountsPayableID, a => a.PayeeID))
             .OrderBy(o => o.Ascending<AccountsPayable>(a => a.AccountsPayableID))
             .Take((uint)pageSize)
@@ -70,8 +69,7 @@ public class AccountsPayableRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<AccountsPayable?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<AccountsPayable>())
-            .From<AccountsPayable>()
+            .Select<AccountsPayable>(s => s.AllColumns<AccountsPayable>())
             .Where(w => w.Equals<AccountsPayable>(a => a.AccountsPayableID, id))
             .Build();
         using var connection = _dbConnection.CreateConnection();

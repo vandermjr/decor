@@ -25,12 +25,59 @@ namespace Decor.FluentSqlBuilder.Tests
         }
 
         [Fact]
+        public void Select_TypedRoot_ShouldInferRootColumnsAndDefaultOrder()
+        {
+            var (sql, parameters) = _builder
+                .Select<Product>()
+                .WithColumns(p => p.ProductID, p => p.Description)
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.ProductID, p.Description FROM products AS p ORDER BY p.ProductID ASC;"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Select_TypedRoot_ShouldSupportAllColumnsWithoutFrom()
+        {
+            var (sql, parameters) = _builder
+                .Select<Product>()
+                .AllColumns()
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.* FROM products AS p ORDER BY p.ProductID ASC;"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Select_TypedRoot_ShouldAllowExplicitSecondaryEntity()
+        {
+            var (sql, parameters) = _builder
+                .Select<Product>()
+                .WithColumns(p => p.ProductID)
+                .WithColumns<Brand>(b => b.BrandID)
+                .Join(j => j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID))
+                .Build();
+
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("SELECT p.ProductID, b.BrandID FROM products AS p INNER JOIN brands AS b ON p.BrandID = b.BrandID"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Select_TypedRoot_ShouldSupportCountAndTypedSum()
+        {
+            var (countSql, _) = _builder.Select<Brand>().Count().Build();
+            var (sumSql, _) = _builder.Select<Product>().Sum(p => p.StockQuantity).Build();
+
+            NormalizeSqlString(countSql).Should().Be(NormalizeSqlString("SELECT COUNT(*) FROM brands AS b;"));
+            NormalizeSqlString(sumSql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) FROM products AS p;"));
+        }
+
+        [Fact]
         public void Select_AllColumns_ShouldGenerateAsterisk()
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.AllColumns<Product>())
-                .From<Product>()
+                .Select<Product>(s => s.AllColumns<Product>())
                 .Build();
 
             // Assert
@@ -43,8 +90,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.AllColumns<Product>(true))
-                .From<Product>()
+                .Select<Product>(s => s.AllColumns<Product>(true))
                 .Build();
 
             // Assert
@@ -58,8 +104,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
-                .From<Product>()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
                 .Build();
 
             // Assert
@@ -72,12 +117,11 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s =>
+                .Select<Product>(s =>
                 {
                     s.WithColumns<Product>(p => p.ProductID);
                     s.WithColumns<Brand>(b => b.BrandName);
                 })
-                .From<Product>()
                 .Join(j => j.Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID))
                 .Build();
 
@@ -91,8 +135,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.AllColumns<Product>(true).ExceptColumns<Product>(p => p.Description, p => p.Barcode))
-                .From<Product>()
+                .Select<Product>(s => s.AllColumns<Product>(true).ExceptColumns<Product>(p => p.Description, p => p.Barcode))
                 .Build();
 
             // Assert
@@ -106,8 +149,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.Count())
-                .From<Product>()
+                .Select<Product>(s => s.Count())
                 .Build();
 
             // Assert
@@ -120,8 +162,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.Count(1))
-                .From<Product>()
+                .Select<Product>(s => s.Count(1))
                 .Build();
 
             // Assert
@@ -134,8 +175,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.Count<Product>(p => p.ProductID))
-                .From<Product>()
+                .Select<Product>(s => s.Count<Product>(p => p.ProductID))
                 .Build();
 
             // Assert
@@ -148,8 +188,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select(s => s.Count<Product>(p => p.Description, true))
-                .From<Product>()
+                .Select<Product>(s => s.Count<Product>(p => p.Description, true))
                 .Build();
 
             // Assert
@@ -161,8 +200,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_SumTypedColumn_ShouldGenerateSumOnColumn()
         {
             var (sql, parameters) = _builder
-                .Select(s => s.Sum<Product>(p => p.StockQuantity))
-                .From<Product>()
+                .Select<Product>(s => s.Sum<Product>(p => p.StockQuantity))
                 .Build();
 
             NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) FROM products AS p;"));
@@ -173,8 +211,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_SumWithAlias_ShouldGenerateSumWithAlias()
         {
             var (sql, parameters) = _builder
-                .Select(s => s.Sum<Product>(p => p.StockQuantity, "TotalStock"))
-                .From<Product>()
+                .Select<Product>(s => s.Sum<Product>(p => p.StockQuantity, "TotalStock"))
                 .Build();
 
             NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT SUM(p.StockQuantity) AS TotalStock FROM products AS p;"));
@@ -185,8 +222,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_SumWithWhere_ShouldGenerateSumFilteredQuery()
         {
             var (sql, parameters) = _builder
-                .Select(s => s.Sum<Product>(p => p.StockQuantity))
-                .From<Product>()
+                .Select<Product>(s => s.Sum<Product>(p => p.StockQuantity))
                 .Where(w => w.Equals<Product>(p => p.BrandID, 10))
                 .Build();
 
@@ -201,8 +237,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void Select_ExceptWithoutExplicitAllColumns_ShouldSelectRemainingColumns()
         {
             var (sql, parameters) = _builder
-                .Select(s => s.ExceptColumns<Product>(p => p.ProductID))
-                .From<Product>()
+                .Select<Product>(s => s.ExceptColumns<Product>(p => p.ProductID))
                 .Build();
 
             NormalizeSqlString(sql).Should().Contain(
@@ -215,12 +250,11 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act & Assert
             Action act = () => _builder
-                .Select(s =>
+                .Select<Product>(s =>
                 {
                     s.WithColumns<Product>(p => p.ProductID);
                     s.AllColumns<Product>();
                 })
-                .From<Product>()
                 .Build();
 
             act.Should().Throw<InvalidOperationException>()
@@ -232,12 +266,11 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act & Assert
             Action act = () => _builder
-                .Select(s =>
+                .Select<Product>(s =>
                 {
                     s.WithColumns<Product>(p => p.ProductID);
                     s.Count();
                 })
-                .From<Product>()
                 .Build();
 
             act.Should().Throw<InvalidOperationException>()

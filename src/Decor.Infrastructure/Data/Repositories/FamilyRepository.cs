@@ -14,8 +14,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public IEnumerable<Family> GetByClassId(int classId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName))
-            .From<Family>()
+            .Select<Family>(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName))
             .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy(o => o.Ascending<Family>(f => f.FamilyName))
             .Build();
@@ -27,8 +26,7 @@ public class FamilyRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName, f => f.ClassID))
-            .From<Family>()
+            .Select<Family>(s => s.WithColumns<Family>(f => f.FamilyID, f => f.FamilyName, f => f.ClassID))
             .Where(w => w.Equals<Family>(f => f.ClassID, classId))
             .OrderBy(o => o.Ascending<Family>(f => f.FamilyName))
             .Take((uint)pageSize)

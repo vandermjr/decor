@@ -14,8 +14,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Group> GetByFamilyId(int familyId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
-            .From<Group>()
+            .Select<Group>(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
             .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Build();
@@ -27,8 +26,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName, g => g.FamilyID))
-            .From<Group>()
+            .Select<Group>(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName, g => g.FamilyID))
             .Where(w => w.Equals<Group>(g => g.FamilyID, familyId))
             .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Take((uint)pageSize)
@@ -66,8 +64,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Group> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
-            .From<Group>()
+            .Select<Group>(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .Where(w => w.WithDynamicSearchFilter<Group, Group>(arg, g => g.GroupID, g => g.GroupName))
             .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Build();
@@ -101,8 +98,7 @@ public class GroupRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
-            .From<Group>()
+            .Select<Group>(s => s.WithColumns<Group>(g => g.GroupID, g => g.GroupName))
             .Where(w => w.WithDynamicSearchFilter<Group, Group>(arg, g => g.GroupID, g => g.GroupName))
             .OrderBy(o => o.Ascending<Group>(g => g.GroupName))
             .Take((uint)pageSize)

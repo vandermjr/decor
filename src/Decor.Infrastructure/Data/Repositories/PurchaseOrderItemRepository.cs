@@ -67,8 +67,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
     public IEnumerable<PurchaseOrderItem> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderItem>())
-            .From<PurchaseOrderItem>()
+            .Select<PurchaseOrderItem>(s => s.AllColumns<PurchaseOrderItem>())
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderItem, PurchaseOrderItem>(arg, poi => poi.PurchaseOrderItemID, poi => poi.ProductID))
             .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Build();
@@ -81,8 +80,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderItem>())
-            .From<PurchaseOrderItem>()
+            .Select<PurchaseOrderItem>(s => s.AllColumns<PurchaseOrderItem>())
             .Where(w => w.WithDynamicSearchFilter<PurchaseOrderItem, PurchaseOrderItem>(arg, poi => poi.PurchaseOrderItemID, poi => poi.ProductID))
             .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Take((uint)pageSize)
@@ -97,8 +95,7 @@ public class PurchaseOrderItemRepository(IDatabaseConnection dbConnection, Func<
     public async Task<IEnumerable<PurchaseOrderItem>> GetByPurchaseOrderIdAsync(int purchaseOrderId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PurchaseOrderItem>())
-            .From<PurchaseOrderItem>()
+            .Select<PurchaseOrderItem>(s => s.AllColumns<PurchaseOrderItem>())
             .Where(w => w.Equals<PurchaseOrderItem>(poi => poi.PurchaseOrderID, purchaseOrderId))
             .OrderBy(o => o.Ascending<PurchaseOrderItem>(poi => poi.PurchaseOrderItemID))
             .Build();

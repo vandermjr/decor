@@ -69,7 +69,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         ValidatePage(page, pageSize);
         var queryContext = _queryContextFactory();
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s
+            .Select<Product>(s => s
                 .ExceptColumns<Product>(p => p.BrandID)
                 .WithColumns<Brand>(b => b.BrandID, b => b.BrandName)
                 .WithColumns<Class>(cl => cl.ClassID, cl => cl.ClassName)
@@ -77,7 +77,6 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 .WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName)
                 .WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName)
                 .WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description))
-            .From<Product>()
             .Join(j => j
                 .Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID)
                 .Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID)
@@ -128,8 +127,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public bool BrandExists(int marcaID)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<Brand>()
+            .Select<Brand>(s => s.Count())
             .Where(w => w.Equals<Brand>(b => b.BrandID, marcaID))
             .Build();
 
@@ -141,8 +139,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public bool SubgroupExists(int subgroupID)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<Subgroup>()
+            .Select<Subgroup>(s => s.Count())
             .Where(w => w.Equals<Subgroup>(sg => sg.SubgroupID, subgroupID))
             .Build();
 
@@ -154,8 +151,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public bool UnitOfMeasureExists(int unitOfMeasureId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.Count())
             .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
@@ -167,8 +163,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public bool ServiceProductExists(int productId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<Product>()
+            .Select<Product>(s => s.Count())
             .Where(w => w
                 .Equals<Product>(p => p.ProductID, productId)
                 .Equals<Product>(p => p.ProductType, ProductType.Service))
@@ -182,8 +177,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public bool GoodProductExists(int productId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<Product>()
+            .Select<Product>(s => s.Count())
             .Where(w => w
                 .Equals<Product>(p => p.ProductID, productId)
                 .Equals<Product>(p => p.ProductType, ProductType.Good))

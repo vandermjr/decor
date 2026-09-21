@@ -67,8 +67,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
     public IEnumerable<ProductSpecificationAttribute> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ProductSpecificationAttribute>())
-            .From<ProductSpecificationAttribute>()
+            .Select<ProductSpecificationAttribute>(s => s.AllColumns<ProductSpecificationAttribute>())
             .Where(w => w.WithDynamicSearchFilter<ProductSpecificationAttribute, ProductSpecificationAttribute>(arg, a => a.AttributeID, a => a.Name))
             .OrderBy(o => o.Ascending<ProductSpecificationAttribute>(a => a.DisplayOrder))
             .Build();
@@ -81,8 +80,7 @@ public class ProductSpecificationAttributeRepository(IDatabaseConnection dbConne
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ProductSpecificationAttribute>())
-            .From<ProductSpecificationAttribute>()
+            .Select<ProductSpecificationAttribute>(s => s.AllColumns<ProductSpecificationAttribute>())
             .Where(w => w.WithDynamicSearchFilter<ProductSpecificationAttribute, ProductSpecificationAttribute>(arg, a => a.AttributeID, a => a.Name))
             .OrderBy(o => o.Ascending<ProductSpecificationAttribute>(a => a.DisplayOrder))
             .Take((uint)pageSize)

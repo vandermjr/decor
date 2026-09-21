@@ -67,8 +67,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public IEnumerable<Brand> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
-            .From<Brand>()
+            .Select<Brand>(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
             .OrderBy(o => o.Ascending<Brand>(b => b.BrandName))
             .Build();
@@ -81,8 +80,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
-            .From<Brand>()
+            .Select<Brand>(s => s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName))
             .Where(w => w.WithDynamicSearchFilter<Brand, Brand>(arg, b => b.BrandID, b => b.BrandName))
             .OrderBy(o => o.Ascending<Brand>(b => b.BrandName))
             .Take((uint)pageSize)
@@ -103,8 +101,7 @@ public class BrandsRepository(IDatabaseConnection dbConnection, Func<FluentComma
     public bool NameExists(string? brandName, int currentBrandID)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<Brand>()
+            .Select<Brand>(s => s.Count())
             .Where(w =>
             {
                 w.Equals<Brand>(b => b.BrandName, brandName);

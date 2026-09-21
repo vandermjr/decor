@@ -82,8 +82,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public IEnumerable<PaymentMethod> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PaymentMethod>())
-            .From<PaymentMethod>()
+            .Select<PaymentMethod>(s => s.AllColumns<PaymentMethod>())
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
             .OrderBy(o => o.Ascending<PaymentMethod>(pm => pm.Name))
             .Build();
@@ -96,8 +95,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<PaymentMethod>())
-            .From<PaymentMethod>()
+            .Select<PaymentMethod>(s => s.AllColumns<PaymentMethod>())
             .Where(w => w.WithDynamicSearchFilter<PaymentMethod, PaymentMethod>(arg, p => p.PaymentMethodID, p => p.Name))
             .OrderBy(o => o.Ascending<PaymentMethod>(pm => pm.Name))
             .Take((uint)pageSize)
@@ -112,8 +110,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public bool IsInUse(int paymentMethodId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.Count())
             .Where(w => w.Equals<OrderInstallment>(i => i.PaymentMethodID, paymentMethodId))
             .Build();
 
@@ -124,8 +121,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public async Task<bool> IsInUseAsync(int paymentMethodId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<OrderInstallment>()
+            .Select<OrderInstallment>(s => s.Count())
             .Where(w => w.Equals<OrderInstallment>(i => i.PaymentMethodID, paymentMethodId))
             .Build();
 
@@ -137,8 +133,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public bool NameExists(string name, int currentPaymentMethodId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<PaymentMethod>()
+            .Select<PaymentMethod>(s => s.Count())
             .Where(w => w.Equals<PaymentMethod>(p => p.Name, name).NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
             .Build();
 
@@ -149,8 +144,7 @@ public class PaymentMethodsRepository(IDatabaseConnection dbConnection, Func<Flu
     public async Task<bool> NameExistsAsync(string name, int currentPaymentMethodId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<PaymentMethod>()
+            .Select<PaymentMethod>(s => s.Count())
             .Where(w => w.Equals<PaymentMethod>(p => p.Name, name).NotEquals<PaymentMethod>(p => p.PaymentMethodID, currentPaymentMethodId))
             .Build();
 

@@ -69,8 +69,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
     public async Task<StockMovement?> GetByIdAsync(int stockMovementId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockMovement>())
-            .From<StockMovement>()
+            .Select<StockMovement>(s => s.AllColumns<StockMovement>())
             .Where(w => w.Equals<StockMovement>(sm => sm.StockMovementID, stockMovementId))
             .Build();
 
@@ -81,8 +80,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
     public async Task<IEnumerable<StockMovement>> GetByProductAsync(int productId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockMovement>())
-            .From<StockMovement>()
+            .Select<StockMovement>(s => s.AllColumns<StockMovement>())
             .Where(w => w.Equals<StockMovement>(sm => sm.ProductID, productId))
             .OrderBy(o => o
                 .Descending<StockMovement>(sm => sm.MovementDate)
@@ -97,8 +95,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
     public async Task<IEnumerable<StockMovement>> GetByTransferIdAsync(Guid transferId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockMovement>())
-            .From<StockMovement>()
+            .Select<StockMovement>(s => s.AllColumns<StockMovement>())
             .Where(w => w.Equals<StockMovement>(sm => sm.TransferID, transferId))
             .OrderBy(o => o.Ascending<StockMovement>(sm => sm.StockMovementID))
             .Build();
@@ -134,8 +131,7 @@ public sealed class StockMovementRepository(IDatabaseConnection databaseConnecti
     private async Task ApplyMovementToBalanceAsync(IDbConnection connection, IDbTransaction transaction, StockMovement movement, CancellationToken cancellationToken)
     {
         var (lockSql, lockParameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<StockBalance>())
-            .From<StockBalance>()
+            .Select<StockBalance>(s => s.AllColumns<StockBalance>())
             .Where(w => w.Equals<StockBalance>(sb => sb.ProductID, movement.ProductID).Equals<StockBalance>(sb => sb.StockLocationID, movement.StockLocationID))
             .ForUpdate()
             .Build();

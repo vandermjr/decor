@@ -82,8 +82,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public IEnumerable<TailorQuotationRequest> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRequest>())
-            .From<TailorQuotationRequest>()
+            .Select<TailorQuotationRequest>(s => s.AllColumns<TailorQuotationRequest>())
             .Where(w => w.WithDynamicSearchFilter<TailorQuotationRequest, TailorQuotationRequest>(arg, r => r.RequestID, r => r.RequestID))
             .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Build();
@@ -96,8 +95,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRequest>())
-            .From<TailorQuotationRequest>()
+            .Select<TailorQuotationRequest>(s => s.AllColumns<TailorQuotationRequest>())
             .Where(w => w.WithDynamicSearchFilter<TailorQuotationRequest, TailorQuotationRequest>(arg, r => r.RequestID, r => r.RequestID))
             .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Take((uint)pageSize)
@@ -112,8 +110,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<TailorQuotationRequest?> GetByIdAsync(int requestId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRequest>())
-            .From<TailorQuotationRequest>()
+            .Select<TailorQuotationRequest>(s => s.AllColumns<TailorQuotationRequest>())
             .Where(w => w.Equals<TailorQuotationRequest>(r => r.RequestID, requestId))
             .Build();
 
@@ -130,8 +127,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<IReadOnlyList<TailorQuotationRequest>> GetByQuoteItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRequest>())
-            .From<TailorQuotationRequest>()
+            .Select<TailorQuotationRequest>(s => s.AllColumns<TailorQuotationRequest>())
             .Where(w => w.Equals<TailorQuotationRequest>(r => r.QuoteItemID, quoteItemId))
             .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
             .Build();
@@ -144,8 +140,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<IReadOnlyList<TailorQuotationRequest>> GetByQuoteSectionIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRequest>())
-            .From<TailorQuotationRequest>()
+            .Select<TailorQuotationRequest>(s => s.AllColumns<TailorQuotationRequest>())
             .Join(j => j.Inner<TailorQuotationRequest, QuoteItem>((r, qi) => r.QuoteItemID == qi.QuoteItemID))
             .Where(w => w.Equals<QuoteItem>(qi => qi.QuoteSectionID, quoteSectionId))
             .OrderBy(o => o.Ascending<TailorQuotationRequest>(r => r.RequestID))
@@ -182,8 +177,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<IReadOnlyList<TailorQuotationRevision>> GetRevisionsByRequestIdAsync(int requestId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRevision>())
-            .From<TailorQuotationRevision>()
+            .Select<TailorQuotationRevision>(s => s.AllColumns<TailorQuotationRevision>())
             .Where(w => w.Equals<TailorQuotationRevision>(rev => rev.RequestID, requestId))
             .OrderBy(o => o.Ascending<TailorQuotationRevision>(rev => rev.RevisionNumber))
             .Build();
@@ -196,8 +190,7 @@ public class TailorQuotationRepository(IDatabaseConnection dbConnection, Func<Fl
     public async Task<TailorQuotationRevision?> GetRevisionByIdAsync(int revisionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<TailorQuotationRevision>())
-            .From<TailorQuotationRevision>()
+            .Select<TailorQuotationRevision>(s => s.AllColumns<TailorQuotationRevision>())
             .Where(w => w.Equals<TailorQuotationRevision>(revision => revision.RevisionID, revisionId))
             .Build();
         using var connection = _dbConnection.CreateConnection();

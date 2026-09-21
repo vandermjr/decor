@@ -78,8 +78,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public IEnumerable<UnitOfMeasure> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<UnitOfMeasure>())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.AllColumns<UnitOfMeasure>())
             .Where(w => w.WithDynamicSearchFilter<UnitOfMeasure, UnitOfMeasure>(arg, u => u.UnitOfMeasureID, u => u.Code))
             .OrderBy(o => o.Ascending<UnitOfMeasure>(u => u.Code))
             .Build();
@@ -92,8 +91,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<UnitOfMeasure>())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.AllColumns<UnitOfMeasure>())
             .Where(w => w.WithDynamicSearchFilter<UnitOfMeasure, UnitOfMeasure>(arg, u => u.UnitOfMeasureID, u => u.Code))
             .OrderBy(o => o.Ascending<UnitOfMeasure>(u => u.Code))
             .Take((uint)pageSize)
@@ -108,8 +106,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public async Task<UnitOfMeasure?> GetByIdAsync(int unitOfMeasureId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<UnitOfMeasure>())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.AllColumns<UnitOfMeasure>())
             .Where(w => w.Equals<UnitOfMeasure>(u => u.UnitOfMeasureID, unitOfMeasureId))
             .Build();
 
@@ -120,8 +117,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public bool CodeExists(string code, int currentUnitOfMeasureId)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.Count())
             .Where(w => w.Equals<UnitOfMeasure>(u => u.Code, code).NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId))
             .Build();
 
@@ -132,8 +128,7 @@ public sealed class UnitOfMeasureRepository(IDatabaseConnection dbConnection, Fu
     public async Task<bool> CodeExistsAsync(string code, int currentUnitOfMeasureId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.Count())
-            .From<UnitOfMeasure>()
+            .Select<UnitOfMeasure>(s => s.Count())
             .Where(w => w.Equals<UnitOfMeasure>(u => u.Code, code).NotEquals<UnitOfMeasure>(u => u.UnitOfMeasureID, currentUnitOfMeasureId))
             .Build();
 

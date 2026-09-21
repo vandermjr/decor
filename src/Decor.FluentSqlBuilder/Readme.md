@@ -52,9 +52,9 @@ var queryBuilder = QueryBuilder.Query()
 Este exemplo demonstra como construir uma consulta SELECT com JOIN, WHERE, ORDER BY e paginação.
 
 var (sql, parameters) = queryBuilder
-    .Select<User>(u => new { u.Id, u.Name }) // Seleciona colunas específicas da entidade User
+    .Select<User>()
+    .WithColumns(u => u.Id, u => u.Name) // Seleciona colunas específicas da entidade User
     .AllColumns<Address>() // Seleciona todas as colunas da entidade Address
-    .From<User>()
     .InnerJoin<User, Address>((u, a) => u.Id == a.UserId)
     .Where<User>(u => u.Name).Like.Contains("joão")
     .And<Address>(a => a.Street).Equals("Rua Principal")
@@ -118,7 +118,6 @@ Use o método Count para obter o número total de registros.
 // Exemplo de COUNT(1)
 var (sql, parameters) = queryBuilder
     .Select<User>().Count(1)
-    .From<User>()
     .Where<User>(u => u.Name).Like.Contains("Maria")
     .Build();
 

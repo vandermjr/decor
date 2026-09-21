@@ -67,8 +67,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
     public IEnumerable<Partner> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Partner>())
-            .From<Partner>()
+            .Select<Partner>(s => s.AllColumns<Partner>())
             .Where(w => w.WithDynamicSearchFilter<Partner, Partner>(arg, p => p.PartnerID, p => p.Name))
             .OrderBy(o => o.Ascending<Partner>(p => p.Name))
             .Build();
@@ -81,8 +80,7 @@ public class PartnerRepository(IDatabaseConnection dbConnection, Func<FluentComm
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Partner>())
-            .From<Partner>()
+            .Select<Partner>(s => s.AllColumns<Partner>())
             .Where(w => w.WithDynamicSearchFilter<Partner, Partner>(arg, p => p.PartnerID, p => p.Name))
             .OrderBy(o => o.Ascending<Partner>(p => p.Name))
             .Take((uint)pageSize)

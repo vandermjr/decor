@@ -59,8 +59,7 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     public async Task<ServiceExecutionRecord?> GetByIdAsync(int executionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ServiceExecutionRecord>())
-            .From<ServiceExecutionRecord>()
+            .Select<ServiceExecutionRecord>(s => s.AllColumns<ServiceExecutionRecord>())
             .Where(w => w.Equals<ServiceExecutionRecord>(r => r.ExecutionID, executionId))
             .Build();
         using var connection = _dbConnection.CreateConnection();
@@ -70,8 +69,7 @@ public class ServiceExecutionRecordRepository(IDatabaseConnection dbConnection, 
     public async Task<ServiceExecutionRecord?> GetByAppointmentIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<ServiceExecutionRecord>())
-            .From<ServiceExecutionRecord>()
+            .Select<ServiceExecutionRecord>(s => s.AllColumns<ServiceExecutionRecord>())
             .Where(w => w.Equals<ServiceExecutionRecord>(r => r.AppointmentID, appointmentId))
             .Build();
         using var connection = _dbConnection.CreateConnection();

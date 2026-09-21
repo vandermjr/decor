@@ -82,8 +82,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public IEnumerable<Quote> SearchGetBy(string? arg = null)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Quote>())
-            .From<Quote>()
+            .Select<Quote>(s => s.AllColumns<Quote>())
             .Where(w => w.WithDynamicSearchFilter<Quote, Quote>(arg, q => q.QuoteID, q => q.Notes))
             .OrderBy(o => o.Ascending<Quote>(q => q.QuoteID))
             .Build();
@@ -96,8 +95,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         ValidatePage(page, pageSize);
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Quote>())
-            .From<Quote>()
+            .Select<Quote>(s => s.AllColumns<Quote>())
             .Where(w => w.WithDynamicSearchFilter<Quote, Quote>(arg, q => q.QuoteID, q => q.Notes))
             .OrderBy(o => o.Ascending<Quote>(q => q.QuoteID))
             .Take((uint)pageSize)
@@ -112,8 +110,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<Quote?> GetByIdAsync(int quoteId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<Quote>())
-            .From<Quote>()
+            .Select<Quote>(s => s.AllColumns<Quote>())
             .Where(w => w.Equals<Quote>(q => q.QuoteID, quoteId))
             .Build();
 
@@ -129,8 +126,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         using var connection = _dbConnection.CreateConnection();
 
         var (secSql, secParams) = _createCommandBuilder()
-            .Select(s => s.AllColumns<QuoteSection>())
-            .From<QuoteSection>()
+            .Select<QuoteSection>(s => s.AllColumns<QuoteSection>())
             .Where(w => w.Equals<QuoteSection>(s => s.QuoteID, quoteId))
             .OrderBy(o => o.Ascending<QuoteSection>(s => s.QuoteSectionID))
             .Build();
@@ -141,8 +137,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         foreach (var section in sections)
         {
             var (itemSql, itemParams) = _createCommandBuilder()
-                .Select(s => s.AllColumns<QuoteItem>())
-                .From<QuoteItem>()
+                .Select<QuoteItem>(s => s.AllColumns<QuoteItem>())
                 .Where(w => w.Equals<QuoteItem>(i => i.QuoteSectionID, section.QuoteSectionID))
                 .OrderBy(o => o.Ascending<QuoteItem>(i => i.QuoteItemID))
                 .Build();
@@ -153,8 +148,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             foreach (var item in items)
             {
                 var (valSql, valParams) = _createCommandBuilder()
-                    .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
-                    .From<QuoteItemSpecificationValue>()
+                    .Select<QuoteItemSpecificationValue>(s => s.AllColumns<QuoteItemSpecificationValue>())
                     .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.QuoteItemID, item.QuoteItemID))
                     .OrderBy(o => o.Ascending<QuoteItemSpecificationValue>(v => v.ValueID))
                     .Build();
@@ -173,8 +167,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
         if (item == null) return null;
 
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<QuoteSection>())
-            .From<QuoteSection>()
+            .Select<QuoteSection>(s => s.AllColumns<QuoteSection>())
             .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, item.QuoteSectionID))
             .Build();
 
@@ -185,8 +178,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<QuoteSection?> GetSectionByIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<QuoteSection>())
-            .From<QuoteSection>()
+            .Select<QuoteSection>(s => s.AllColumns<QuoteSection>())
             .Where(w => w.Equals<QuoteSection>(s => s.QuoteSectionID, quoteSectionId))
             .Build();
 
@@ -197,8 +189,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<QuoteItem?> GetItemByIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<QuoteItem>())
-            .From<QuoteItem>()
+            .Select<QuoteItem>(s => s.AllColumns<QuoteItem>())
             .Where(w => w.Equals<QuoteItem>(i => i.QuoteItemID, quoteItemId))
             .Build();
 
@@ -209,8 +200,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<IEnumerable<QuoteItemSpecificationValue>> GetSpecificationValuesByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
-            .Select(s => s.AllColumns<QuoteItemSpecificationValue>())
-            .From<QuoteItemSpecificationValue>()
+            .Select<QuoteItemSpecificationValue>(s => s.AllColumns<QuoteItemSpecificationValue>())
             .Where(w => w.Equals<QuoteItemSpecificationValue>(v => v.QuoteItemID, quoteItemId))
             .Build();
 
