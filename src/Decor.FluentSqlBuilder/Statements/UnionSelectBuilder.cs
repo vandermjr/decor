@@ -46,7 +46,7 @@ namespace Decor.FluentSqlBuilder.Statements
                 }
 
                 var (sql, memberParameters) = source.BuildInline();
-                parts.Add(sql);
+                parts.Add(source is SelectBuilder { HasPagination: true } ? $"({sql})" : sql);
                 ParameterHelper.MergeParameters(parameters, memberParameters);
             }
 

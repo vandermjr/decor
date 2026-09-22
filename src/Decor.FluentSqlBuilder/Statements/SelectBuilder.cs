@@ -299,6 +299,9 @@ namespace Decor.FluentSqlBuilder.Statements
             return (BuildSql(includeTail: false, includePagination: true), _parameters);
         }
 
+        internal bool HasPagination => !_isCountQuery &&
+            !string.IsNullOrEmpty(_dialect.BuildPagination(_dynamicTakeCount ?? _takeCount, _skipCount));
+
         private string BuildSql(bool includeTail, bool includePagination = false)
         {
             if (string.IsNullOrEmpty(_sourceTable))

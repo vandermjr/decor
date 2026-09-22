@@ -57,8 +57,145 @@ namespace Decor.FluentSqlBuilder.Tests
             var (sql, parameters) = first.Union(second).BuildInline();
 
             NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("UNION"));
+            NormalizeSqlString(sql).Should().NotContain(NormalizeSqlString("(SELECT"));
             NormalizeSqlString(sql).Should().NotContain(";");
             parameters.Should().ContainSingle().Which.Value.Should().Be(5);
+        }
+
+        [Fact]
+        public void Union_WithTakeOnFirstMember_ShouldPlaceLimitBeforeUnion()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Take(10));
+            var second = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID));
+
+            var (sql, parameters) = first.Union(second).BuildInline();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString(@"(SELECT
+                p.ProductID
+            FROM
+                products AS p
+            LIMIT 10)
+            UNION
+            SELECT
+                p.ProductID
+            FROM
+                products AS p"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Union_WithSkipOnFirstMember_ShouldPlaceOffsetBeforeUnion()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Skip(5));
+            var second = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID));
+
+            var (sql, parameters) = first.Union(second).BuildInline();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString($@"(SELECT
+                p.ProductID
+            FROM
+                products AS p
+            LIMIT {uint.MaxValue} OFFSET 5)
+            UNION
+            SELECT
+                p.ProductID
+            FROM
+                products AS p"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Union_WithTakeAndSkipOnFirstMember_ShouldPlacePaginationBeforeUnion()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Take(10)
+                    .Skip(5));
+            var second = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID));
+
+            var (sql, parameters) = first.Union(second).BuildInline();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString(@"(SELECT
+                p.ProductID
+            FROM
+                products AS p
+            LIMIT 10 OFFSET 5)
+            UNION
+            SELECT
+                p.ProductID
+            FROM
+                products AS p"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Union_WithPaginationOnBothMembers_ShouldPlaceEachPaginationInItsMember()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Take(10));
+            var second = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Take(20));
+
+            var (sql, parameters) = first.Union(second).BuildInline();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString(@"(SELECT
+                p.ProductID
+            FROM
+                products AS p
+            LIMIT 10)
+            UNION
+            (SELECT
+                p.ProductID
+            FROM
+                products AS p
+            LIMIT 20)"));
+            parameters.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void FromSubquery_WithUnionAndTakeOnFirstMember_ShouldWrapWholeUnion()
+        {
+            var first = CreateBuilder()
+                .Select<Product>(s => s
+                    .WithColumns<Product>(p => p.ProductID)
+                    .Take(10));
+            var second = CreateBuilder()
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID));
+
+            var (sql, parameters) = CreateBuilder()
+                .Select<Product>(s => s
+                    .Column("paged.ProductID")
+                    .FromSubquery(first.Union(second), "paged"))
+                .Build();
+
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString(@"SELECT
+                paged.ProductID
+            FROM
+                ((SELECT
+                    p.ProductID
+                FROM
+                    products AS p
+                LIMIT 10)
+                UNION
+                SELECT
+                    p.ProductID
+                FROM
+                    products AS p) AS paged;"));
+            parameters.Should().BeEmpty();
         }
 
         [Fact]
