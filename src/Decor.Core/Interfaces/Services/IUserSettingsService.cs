@@ -1,12 +1,10 @@
 ﻿using Decor.Core.Configuration;
+using Decor.Core.Common;
 
 namespace Decor.Core.Interfaces.Services;
 public interface IUserSettingsService
 {
-    // Carrega as configurações do usuário do arquivo.
-    // Se o arquivo não existir, retorna as configurações padrão.
-    ApplicationSettings LoadSettings();
-
-    // Salva as configurações do usuário no arquivo.
-    Task SaveSettingsAsync(ApplicationSettings settings);
+    Task<UserSettings> GetAsync(CancellationToken cancellationToken = default);
+    Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default);
+    Task SetLanguageAsync(string language, CancellationToken cancellationToken = default);
 }

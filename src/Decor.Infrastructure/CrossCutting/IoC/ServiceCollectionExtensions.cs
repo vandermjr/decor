@@ -29,7 +29,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient(sp => FluentCommandBuilder.Create(sp.GetRequiredService<IDialect>()));
         services.AddTransient<Func<FluentCommandBuilder>>(sp => () => sp.GetRequiredService<FluentCommandBuilder>());
         services.AddTransient<IUserSettingsRepository, UserSettingsRepository>();
-        services.AddSingleton<IUserSettingsService, JsonUserSettingsService>();
         services.AddTransient<IDatabaseBackupService, DatabaseBackupService>();
 
         // Como o QueryContext mantém estado por requisição (ou por operação de query),

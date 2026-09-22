@@ -5,12 +5,14 @@ using Avalonia.Input.Platform;
 using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Services;
+using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.Views;
 
 public partial class LoginWindow : Window
 {
     private readonly INavigationService? _navigationService;
+    private readonly IThemeService? _themeService;
 
     public LoginWindow()
     {
@@ -27,17 +29,19 @@ public partial class LoginWindow : Window
         UsernameTextBox.CaretIndex = UsernameTextBox.Text?.Length ?? 0;
     }
 
-    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService)
+    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService)
         : this()
     {
         DataContext = viewModel;
         _navigationService = navigationService;
+        _themeService = themeService;
         viewModel.LoginSucceeded += OnLoginSucceeded;
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
     }
 
-    private void OnLoginSucceeded(object? sender, EventArgs e)
+    private async void OnLoginSucceeded(object? sender, EventArgs e)
     {
+        await _themeService!.InitializeAsync();
         var mainWindow = _navigationService!.Resolve<MainWindow>();
         if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = mainWindow;

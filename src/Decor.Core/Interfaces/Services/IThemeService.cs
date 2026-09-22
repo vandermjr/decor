@@ -13,6 +13,8 @@ public interface IThemeService
     /// </summary>
     event Action<DecorThemeStyle>? ThemeChanged;
 
+    Task InitializeAsync(CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Define um novo tema para a aplicação, o que irá disparar o evento ThemeChanged.
     /// </summary>

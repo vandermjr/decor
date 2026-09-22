@@ -1,6 +1,5 @@
 using Avalonia;
 using Decor.Application.CrossCutting.IoC;
-using Decor.Core.Configuration;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
 using Decor.AvaloniaUI.Services;
@@ -27,10 +26,6 @@ internal static class Program
             .UseContentRoot(AppContext.BaseDirectory)
             .ConfigureServices((context, services) =>
             {
-                services.Configure<ApplicationSettings>(
-                    context.Configuration.GetSection(
-                        ConfigurationKeys.ApplicationSettingsSection));
-
                 services.AddInfrastructureServices(context.Configuration);
                 services.AddApplicationServices();
                 services.AddTransient<ProductsViewModel>();
