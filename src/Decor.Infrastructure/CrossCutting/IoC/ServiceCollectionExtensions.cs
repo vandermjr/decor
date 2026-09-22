@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDialect, MariaDBDialect>();
         services.AddTransient(sp => FluentCommandBuilder.Create(sp.GetRequiredService<IDialect>()));
         services.AddTransient<Func<FluentCommandBuilder>>(sp => () => sp.GetRequiredService<FluentCommandBuilder>());
+        services.AddTransient<IUserSettingsRepository, UserSettingsRepository>();
         services.AddSingleton<IUserSettingsService, JsonUserSettingsService>();
         services.AddTransient<IDatabaseBackupService, DatabaseBackupService>();
 
