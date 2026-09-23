@@ -33,6 +33,7 @@ internal static class Program
                 services.AddTransient<TermDeliveryViewModel>();
                 services.AddTransient<ClassificationsViewModel>();
                 services.AddTransient<UsersViewModel>();
+                services.AddTransient<RolesViewModel>();
                 services.AddTransient<CreateUserViewModel>();
                 services.AddTransient<DatabaseMaintenanceViewModel>();
                 services.AddTransient<ProductsView>();
@@ -40,6 +41,7 @@ internal static class Program
                 services.AddTransient<TermDeliveryView>();
                 services.AddTransient<ClassificationsView>();
                 services.AddTransient<UsersView>();
+                services.AddTransient<RolesView>();
                 services.AddTransient<DatabaseMaintenanceView>();
                 services.AddTransient<CreateUserWindow>();
                 services.AddTransient<MainViewModel>();

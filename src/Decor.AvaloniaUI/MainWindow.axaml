@@ -14,16 +14,6 @@
     </Flyout>
   </Window.Resources>
   <Window.Styles>
-    <Style Selector="Button.activity-bar-button">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Width" Value="48"/>
-      <Setter Property="Height" Value="48"/>
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="CornerRadius" Value="0"/>
-      <Setter Property="HorizontalContentAlignment" Value="Center"/>
-      <Setter Property="VerticalContentAlignment" Value="Center"/>
-    </Style>
     <Style Selector="Button.top-menu-button">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
@@ -116,6 +106,9 @@
                 <Separator/>
                 <MenuItem Header="Manutenção do banco de dados" Command="{Binding ShowDatabaseMaintenanceCommand}"/>
                 <MenuItem Header="Gerenciamento de contas" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
+                <MenuItem Header="Administração" IsVisible="{Binding CanViewRoles}">
+                  <MenuItem Header="Grupos de Permissões" Command="{Binding ShowRolesCommand}"/>
+                </MenuItem>
               </MenuFlyout>
             </Button.Flyout>
               <Path Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.25" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -125,65 +118,14 @@
       </Grid>
     </Border>
 
-    <Grid Grid.Row="1" ColumnDefinitions="48,*">
-      <Border Grid.Column="0"
+    <Grid Grid.Row="1" ColumnDefinitions="*">
+      <Border Grid.Column="0" IsVisible="False"
               Background="{DynamicResource DecorSurfaceBrush}"
               BorderBrush="{DynamicResource DecorBorderBrush}"
               BorderThickness="0,0,1,0">
         <Grid RowDefinitions="*,Auto">
           <StackPanel Grid.Row="1" VerticalAlignment="Bottom" IsVisible="False">
-            <Button Classes="activity-bar-button"
-                    Cursor="Hand"
-                    ToolTip.Tip="Notificações"
-                    Command="{Binding ShowNotificationsCommand}">
-              <Button.Flyout>
-                <Flyout Placement="Right" ShowMode="Transient">
-                  <Border Padding="14" MinWidth="220" Background="{DynamicResource DecorSurfaceRaisedBrush}">
-                    <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                  </Border>
-                </Flyout>
-              </Button.Flyout>
-              <Path Fill="{DynamicResource DecorTextBrush}"
-                    Width="20" Height="20"
-                    Stretch="Uniform"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Data="M12,22A2.5,2.5 0 0,0 14.45,20H9.55A2.5,2.5 0 0,0 12,22M18,16V10A6,6 0 0,0 13,4.1V3A1,1 0 0,0 11,3V4.1A6,6 0 0,0 6,10V16L4,18V19H20V18L18,16M8,10A4,4 0 0,1 16,10V16H8V10Z"/>
-            </Button>
-            <Button Classes="activity-bar-button"
-                    Cursor="Hand"
-                    ToolTip.Tip="{Binding UserDisplayNameWithRole, FallbackValue=Conta}">
-              <Button.Flyout>
-                <MenuFlyout Placement="Right">
-                  <MenuItem Header="{Binding UserDisplayNameWithRole}">
-                    <MenuItem Header="Alterar senha" Command="{Binding ChangePasswordCommand}"/>
-                    <MenuItem Header="Sair da sessão" Command="{Binding SignOutCommand}"/>
-                  </MenuItem>
-                </MenuFlyout>
-              </Button.Flyout>
-              <Border Width="26" Height="26" CornerRadius="13"
-                      Background="{DynamicResource DecorAccentBrush}">
-                <TextBlock Text="{Binding UserInitials}"
-                           Foreground="{DynamicResource DecorSelectionForegroundBrush}"
-                           FontSize="{DynamicResource DecorFontSizeSmall}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
-              </Border>
-            </Button>
-            <Button Classes="activity-bar-button"
-                    Cursor="Hand"
-                    ToolTip.Tip="Configurações">
-              <Button.Flyout>
-                <MenuFlyout Placement="Right">
-                  <MenuItem Header="Tema">
-                    <MenuItem Header="Claro" ToggleType="Radio" IsChecked="{Binding IsLightTheme}" Command="{Binding UseLightThemeCommand}"/>
-                    <MenuItem Header="Escuro" ToggleType="Radio" IsChecked="{Binding IsDarkTheme}" Command="{Binding UseDarkThemeCommand}"/>
-                  </MenuItem>
-                  <Separator/>
-                  <MenuItem Header="Manutenção do banco de dados" Command="{Binding ShowDatabaseMaintenanceCommand}"/>
-                  <MenuItem Header="Gerenciamento de contas" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
-                </MenuFlyout>
-              </Button.Flyout>
+            <Button IsVisible="False">
               <Path Fill="{DynamicResource DecorTextBrush}"
                     Width="20" Height="20"
                     Stretch="Uniform"
@@ -194,8 +136,7 @@
           </StackPanel>
         </Grid>
       </Border>
-
-      <Grid Grid.Column="1" RowDefinitions="Auto,*">
+      <Grid Grid.Column="0" RowDefinitions="Auto,*">
       <StackPanel Grid.RowSpan="2" IsVisible="{Binding IsHomeVisible}"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"

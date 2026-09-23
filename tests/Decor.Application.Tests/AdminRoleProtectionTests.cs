@@ -10,6 +10,44 @@ namespace Decor.Application.Tests;
 public sealed class AdminRoleProtectionTests
 {
     [Fact]
+    public async Task RoleAdministrationService_GetAllPermissionsAsync_WhenAuthorized_ReturnsCatalogInRepositoryOrder()
+    {
+        var permissions = new[]
+        {
+            new AdministrativePermissionDTO(2, DecorPermissions.UsersView, "Consultar usuários"),
+            new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, "Consultar produtos")
+        };
+        var context = new AuthenticatedUserContext();
+        context.SignIn(CreateUser(SystemRoleDefaults.Administrator));
+        var service = new RoleAdministrationService(
+            new FakeUserAdministrationRepository([], permissions),
+            new TrackingRoleAdministrationRepository(),
+            context,
+            new SelectiveAuthorizationService(DecorPermissions.RolesView));
+
+        var result = await service.GetAllPermissionsAsync();
+
+        result.Should().BeAssignableTo<IReadOnlyList<AdministrativePermissionDTO>>();
+        result.Should().Equal(permissions);
+    }
+
+    [Fact]
+    public async Task RoleAdministrationService_GetAllPermissionsAsync_WhenMissingRolesView_Throws()
+    {
+        var context = new AuthenticatedUserContext();
+        context.SignIn(CreateUser(SystemRoleDefaults.Administrator));
+        var service = new RoleAdministrationService(
+            new FakeUserAdministrationRepository([], []),
+            new TrackingRoleAdministrationRepository(),
+            context,
+            new SelectiveAuthorizationService());
+
+        var act = async () => await service.GetAllPermissionsAsync();
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
     public async Task RoleAdministrationService_WhenAdministratorRoleLosesRequiredPermission_Throws()
     {
         var adminRoleId = 1;
@@ -166,5 +204,14 @@ public sealed class AdminRoleProtectionTests
         public bool CanCreate(string resource) => true;
         public bool CanEdit(string resource) => true;
         public bool CanDelete(string resource) => true;
+    }
+
+    private sealed class SelectiveAuthorizationService(params string[] permissions) : IAuthorizationService
+    {
+        public bool HasPermission(string permissionCode) => permissions.Contains(permissionCode, StringComparer.OrdinalIgnoreCase);
+        public bool CanView(string resource) => false;
+        public bool CanCreate(string resource) => false;
+        public bool CanEdit(string resource) => false;
+        public bool CanDelete(string resource) => false;
     }
 }

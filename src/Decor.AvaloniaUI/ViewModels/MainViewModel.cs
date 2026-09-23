@@ -37,11 +37,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
+        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
         UseLightThemeCommand = new RelayCommand(() => IsDarkTheme = false);
         UseDarkThemeCommand = new RelayCommand(() => IsDarkTheme = true);
-        ShowNotificationsCommand = new RelayCommand(() => { });
 
         var username = authenticatedUserContext.User?.Username ?? string.Empty;
         UserDisplayName = string.IsNullOrWhiteSpace(username)
@@ -111,15 +111,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ShowClassificationsCommand { get; }
     public ICommand ChangePasswordCommand { get; }
     public ICommand ShowUsersCommand { get; }
+    public ICommand ShowRolesCommand { get; }
     public ICommand ShowDatabaseMaintenanceCommand { get; }
     public ICommand SignOutCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
-    public ICommand ShowNotificationsCommand { get; }
     public string UserDisplayName { get; }
     public string UserDisplayNameWithRole { get; }
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
+    public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
 
