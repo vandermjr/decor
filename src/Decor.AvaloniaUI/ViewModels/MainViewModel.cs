@@ -38,7 +38,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
-        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()));
+        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
         UseLightThemeCommand = new RelayCommand(() => IsDarkTheme = false);
         UseDarkThemeCommand = new RelayCommand(() => IsDarkTheme = true);

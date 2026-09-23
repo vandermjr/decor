@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.5" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -27,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Decor.Application\Decor.Application.csproj" />
+    <ProjectReference Include="..\..\src\Decor.AvaloniaUI\Decor.AvaloniaUI.csproj" />
     <ProjectReference Include="..\..\src\Decor.Core\Decor.Core.csproj" />
   </ItemGroup>
 
