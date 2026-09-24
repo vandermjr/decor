@@ -60,45 +60,15 @@ public partial class MainWindow : Window
             document.ActivateCommand.Execute(null);
     }
 
-    private void Notifications_PointerEntered(object? sender, PointerEventArgs eventArgs)
+    private void NotificationsMenuItem_Click(object? sender, RoutedEventArgs eventArgs)
     {
-        if (sender is Border notificationBorder)
-            SetNotificationHover(notificationBorder);
-    }
-
-    private void Notifications_PointerMoved(object? sender, PointerEventArgs eventArgs)
-    {
-        if (sender is Border notificationBorder)
-            SetNotificationHover(notificationBorder);
-    }
-
-    private void Notifications_PointerExited(object? sender, PointerEventArgs eventArgs)
-    {
-        if (sender is Border notificationBorder && !notificationBorder.Bounds.Contains(eventArgs.GetPosition(notificationBorder)))
-        {
-            notificationBorder.Classes.Remove("is-hovered");
-            notificationBorder.ClearValue(Border.BackgroundProperty);
-        }
-    }
-
-    private static void SetNotificationHover(Border notificationBorder)
-    {
-        if (!notificationBorder.Classes.Contains("is-hovered"))
-            notificationBorder.Classes.Add("is-hovered");
-
-        notificationBorder.Background = new SolidColorBrush(Color.Parse("#39424D"));
-    }
-
-    private void Notifications_PointerPressed(object? sender, PointerPressedEventArgs eventArgs)
-    {
-        if (sender is Control notificationControl && Resources["NotificationsFlyout"] is Flyout notificationsFlyout)
-            notificationsFlyout.ShowAt(notificationControl);
+        if (sender is MenuItem notificationMenuItem && Resources["NotificationsFlyout"] is Flyout notificationsFlyout)
+            notificationsFlyout.ShowAt(notificationMenuItem);
     }
 
     private void InitializeStatusBarDiagnosticInstrumentation()
     {
         MonitorControl(StatusBarFirstPageButton, "PaginationFirst");
-        MonitorControl(StatusBarNotificationsBorder, "Notifications");
         MonitorControl(MainMenuRegistrationsButton, "MainMenuRegistrations");
     }
 
