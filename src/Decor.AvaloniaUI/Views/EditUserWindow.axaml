@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        x:Class="Decor.AvaloniaUI.Views.EditUserWindow"
+        x:DataType="vm:EditUserViewModel"
+        Title="Decor — Editar usuário"
+        Width="520"
+        Height="420"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <Grid Margin="28" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Editar usuário" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Atualize o usuário e o nome de exibição." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <StackPanel Grid.Row="1" Spacing="6">
+      <TextBlock Text="Usuário"/>
+      <TextBox TabIndex="0" Text="{Binding Username}" MaxLength="50" IsEnabled="{Binding CanEditFields}"/>
+    </StackPanel>
+    <StackPanel Grid.Row="2" Spacing="6">
+      <TextBlock Text="Nome"/>
+      <TextBox TabIndex="1" Text="{Binding DisplayName}" MaxLength="100" IsEnabled="{Binding CanEditFields}"/>
+    </StackPanel>
+    <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}">
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
+    </Border>
+    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <ProgressBar Width="100" Height="3" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
+      <Button TabIndex="2" Content="Cancelar" Command="{Binding CancelCommand}"/>
+      <Button TabIndex="3" Content="Salvar" Command="{Binding SaveCommand}"/>
+    </StackPanel>
+  </Grid>
+</Window>
