@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        x:Class="Decor.AvaloniaUI.Views.EditUserRolesWindow"
+        x:DataType="vm:EditUserRolesViewModel"
+        Title="Decor — Grupo de Permissões"
+        Width="520"
+        Height="560"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <Grid Margin="28" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Grupo de Permissões" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Selecione os grupos de permissões que serão atribuídos a este usuário." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1">
+      <ItemsControl ItemsSource="{Binding Roles}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:EditUserRoleOption">
+            <CheckBox TabIndex="0" IsChecked="{Binding IsSelected}" IsEnabled="{Binding $parent[Window].DataContext.CanEditFields}">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding Role.RoleName}"/>
+                <TextBlock Text="{Binding Role.Description}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding Role.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+              </StackPanel>
+            </CheckBox>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <Border Grid.Row="2" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}">
+      <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
+    </Border>
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <ProgressBar Width="100" Height="3" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
+      <Button TabIndex="1" Content="Cancelar" Command="{Binding CancelCommand}"/>
+      <Button TabIndex="2" Content="Salvar" Command="{Binding SaveCommand}"/>
+    </StackPanel>
+  </Grid>
+</Window>
