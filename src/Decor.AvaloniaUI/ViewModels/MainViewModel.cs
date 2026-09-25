@@ -43,15 +43,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         UseLightThemeCommand = new RelayCommand(() => IsDarkTheme = false);
         UseDarkThemeCommand = new RelayCommand(() => IsDarkTheme = true);
 
-        var username = authenticatedUserContext.User?.Username ?? string.Empty;
-        UserDisplayName = string.IsNullOrWhiteSpace(username)
-            ? authenticatedUserContext.User?.DisplayName ?? string.Empty
-            : username;
+        var user = authenticatedUserContext.User;
+        var username = user?.Username ?? string.Empty;
+        UserDisplayName = string.IsNullOrWhiteSpace(user?.DisplayName)
+            ? username
+            : user.DisplayName;
+        UserUsername = username;
         UserInitials = InitialsOf(UserDisplayName);
-        var primaryRole = authenticatedUserContext.User?.Roles.FirstOrDefault();
-        UserDisplayNameWithRole = string.IsNullOrWhiteSpace(primaryRole)
+        UserPrimaryRole = user?.Roles.FirstOrDefault() ?? string.Empty;
+        UserDisplayNameWithRole = string.IsNullOrWhiteSpace(UserPrimaryRole)
             ? UserDisplayName
-            : $"{UserDisplayName} ({primaryRole})";
+            : $"{UserDisplayName} ({UserPrimaryRole})";
 
         OpenDocuments.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasOpenDocuments));
         ApplyCurrentTheme();
@@ -117,10 +119,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
     public string UserDisplayName { get; }
+    public string UserUsername { get; }
+    public string UserPrimaryRole { get; }
     public string UserDisplayNameWithRole { get; }
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
+    public bool CanViewDatabaseMaintenance => ((RelayCommand)ShowDatabaseMaintenanceCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
 

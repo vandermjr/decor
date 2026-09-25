@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
@@ -60,10 +59,16 @@ public partial class MainWindow : Window
             document.ActivateCommand.Execute(null);
     }
 
-    private void NotificationsMenuItem_Click(object? sender, RoutedEventArgs eventArgs)
+    private void NotificationsButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs)
     {
-        if (sender is MenuItem notificationMenuItem && Resources["NotificationsFlyout"] is Flyout notificationsFlyout)
-            notificationsFlyout.ShowAt(notificationMenuItem);
+        if (sender is Button notificationsButton && Resources["NotificationsFlyout"] is Flyout notificationsFlyout)
+            notificationsFlyout.ShowAt(notificationsButton);
+    }
+
+    private void UserButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs)
+    {
+        if (sender is Button userButton && Resources["UserFlyout"] is Flyout userFlyout)
+            userFlyout.ShowAt(userButton);
     }
 
     private void InitializeStatusBarDiagnosticInstrumentation()
