@@ -62,20 +62,23 @@ public sealed class EditUserViewModel : INotifyPropertyChanged
         try
         {
             await _userAdministrationService.UpdateAsync(_userId, Username, DisplayName);
-            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
         catch (MySqlException ex) when (ex.Number == 1062)
         {
             ErrorMessage = "Já existe um usuário com este username.";
+            return;
         }
         catch (Exception)
         {
             ErrorMessage = "Não foi possível atualizar o usuário.";
+            return;
         }
         finally
         {
             IsBusy = false;
         }
+
+        CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void RaiseCommandStates()
