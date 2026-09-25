@@ -18,87 +18,78 @@
       </Border>
     </Flyout>
     <Flyout x:Key="UserFlyout" Placement="BottomEdgeAlignedRight" ShowMode="Transient">
-      <Border Width="240" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+      <Border MinWidth="380" MaxWidth="420" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="14">
         <StackPanel>
-          <StackPanel Margin="14,14,14,12" Spacing="10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource DecorAccentBrush}">
-                <TextBlock Text="{Binding UserInitials}" Foreground="{DynamicResource DecorSelectionForegroundBrush}" FontSize="{DynamicResource DecorFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <Border Padding="20,20,20,18" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+              <Border Width="64" Height="64" CornerRadius="32" Background="{DynamicResource DecorAccentBrush}">
+                <TextBlock Text="{Binding UserInitials}" Foreground="{DynamicResource DecorSelectionForegroundBrush}" FontSize="18" FontWeight="{DynamicResource DecorFontWeightHeading}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
               </Border>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                <TextBlock Text="{Binding UserDisplayName}" FontWeight="{DynamicResource DecorFontWeightHeading}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Text="{Binding UserUsername}" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding UserDisplayName}" FontWeight="{DynamicResource DecorFontWeightHeading}" FontSize="17" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding UserUsername}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextTrimming="CharacterEllipsis"/>
               </StackPanel>
             </Grid>
+          </Border>
 
-            <Border Padding="8,8" Background="{DynamicResource DecorControlBrush}" CornerRadius="4">
-              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                <Path Data="M 12,2 L 20,5 V 11 C 20,16 16.5,19.5 12,21 C 7.5,19.5 4,16 4,11 V 5 Z M 12,5 V 18" Fill="{DynamicResource DecorAccentBrush}" Width="15" Height="17" Stretch="Uniform" VerticalAlignment="Center"/>
-                <StackPanel Grid.Column="1" Spacing="2">
-                  <TextBlock Text="Grupo de permissões" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
-                  <TextBlock Text="{Binding UserPrimaryRole}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                </StackPanel>
+          <Border Margin="16,16,16,0" Padding="14,11" MinHeight="64" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="10">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <Path Data="M 12,2 L 20,5 V 11 C 20,16 16.5,19.5 12,21 C 7.5,19.5 4,16 4,11 V 5 Z M 12,5 V 18" Fill="{DynamicResource DecorAccentBrush}" Width="17" Height="19" Stretch="Uniform" VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="Grupo de permissões" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
+                <TextBlock Text="{Binding UserPrimaryRole}" FontWeight="{DynamicResource DecorFontWeightHeading}" FontSize="15" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Border Margin="0,16,0,0" Padding="0" Background="Transparent">
+            <StackPanel>
+              <Button Classes="user-flyout-action" IsEnabled="False">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                  <Path Grid.Column="0" Data="M 12,12 A 4,4 0 1 0 12,4 A 4,4 0 0 0 12,12 M 4,21 C 4.5,17 7.5,15 12,15 C 16.5,15 19.5,17 20,21" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="Meu perfil" VerticalAlignment="Center"/>
+                  <Path Grid.Column="2" Data="M 5,4 L 9,8 L 5,12" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"/>
+                </Grid>
+              </Button>
+              <Button Classes="user-flyout-action" IsEnabled="False">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                  <Path Grid.Column="0" Data="M 12,3 L 13.5,5.2 A 7.5,7.5 0 0 1 16,6.7 L 18.6,6.2 L 20,8.6 L 18.1,10.5 A 7.5,7.5 0 0 1 18.1,13.5 L 20,15.4 L 18.6,17.8 L 16,17.3 A 7.5,7.5 0 0 1 13.5,18.8 L 12,21 L 9.2,20.2 L 8.8,17.7 A 7.5,7.5 0 0 1 6.5,15.5 L 4,16 L 2.8,13.2 L 4.7,11 A 7.5,7.5 0 0 1 4.7,9 L 2.8,6.8 L 4,4 L 6.5,4.5 A 7.5,7.5 0 0 1 8.8,2.3 L 9.2,-.2 Z M 12,15 A 3,3 0 1 0 12,9 A 3,3 0 0 0 12,15" Fill="{DynamicResource DecorTextMutedBrush}" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="Preferências" VerticalAlignment="Center"/>
+                  <Path Grid.Column="2" Data="M 5,4 L 9,8 L 5,12" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"/>
+                </Grid>
+              </Button>
+              <Button Classes="user-flyout-action" Command="{Binding ChangePasswordCommand}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                  <Path Grid.Column="0" Data="M 14,10 A 4,4 0 1 0 6,10 A 4,4 0 0 0 14,10 M 13,13 L 21,13 L 21,16 L 18,16 L 18,19 L 15,19 L 15,16 L 13,16 Z" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="Alterar senha" VerticalAlignment="Center"/>
+                </Grid>
+              </Button>
+            </StackPanel>
+          </Border>
+
+          <Border Height="1" Margin="0,16,0,0" Background="{DynamicResource DecorBorderBrush}"/>
+
+          <Border Margin="0,0,0,0" Padding="0">
+            <Button Classes="user-flyout-action user-flyout-logout" Command="{Binding SignOutCommand}">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Path Grid.Column="0" Data="M 13,4 H 5 V 20 H 13 M 12,12 H 21 M 18,9 L 21,12 L 18,15" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Sair da sessão" VerticalAlignment="Center"/>
               </Grid>
-            </Border>
-          </StackPanel>
-
-          <Separator/>
-
-          <StackPanel Margin="8,6" Spacing="1">
-            <Button Classes="user-flyout-action" IsEnabled="False">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path Data="M 12,12 A 4,4 0 1 0 12,4 A 4,4 0 0 0 12,12 M 4,21 C 4.5,17 7.5,15 12,15 C 16.5,15 19.5,17 20,21" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform"/>
-                <TextBlock Text="Meu perfil" VerticalAlignment="Center"/>
-              </StackPanel>
             </Button>
-            <Button Classes="user-flyout-action" IsEnabled="False">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path Data="M 12,3 L 13.5,5.2 A 7.5,7.5 0 0 1 16,6.7 L 18.6,6.2 L 20,8.6 L 18.1,10.5 A 7.5,7.5 0 0 1 18.1,13.5 L 20,15.4 L 18.6,17.8 L 16,17.3 A 7.5,7.5 0 0 1 13.5,18.8 L 12,21 L 9.2,20.2 L 8.8,17.7 A 7.5,7.5 0 0 1 6.5,15.5 L 4,16 L 2.8,13.2 L 4.7,11 A 7.5,7.5 0 0 1 4.7,9 L 2.8,6.8 L 4,4 L 6.5,4.5 A 7.5,7.5 0 0 1 8.8,2.3 L 9.2,-.2 Z M 12,15 A 3,3 0 1 0 12,9 A 3,3 0 0 0 12,15" Fill="{DynamicResource DecorTextMutedBrush}" Width="18" Height="18" Stretch="Uniform"/>
-                <TextBlock Text="Preferências" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-            <Button Classes="user-flyout-action" Command="{Binding ChangePasswordCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path Data="M 14,10 A 4,4 0 1 0 6,10 A 4,4 0 0 0 14,10 M 13,13 L 21,13 L 21,16 L 18,16 L 18,19 L 15,19 L 15,16 L 13,16 Z" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform"/>
-                <TextBlock Text="Alterar senha" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-          </StackPanel>
+          </Border>
 
-          <Separator/>
-
-          <StackPanel Margin="8,6" Spacing="1">
-            <Button Classes="user-flyout-action" IsEnabled="False">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path Data="M 12,3 A 9,9 0 1 0 12,21 A 9,9 0 0 0 12,3 M 12,8 V 13 M 12,16 V 16.5" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform"/>
-                <TextBlock Text="Sobre o sistema" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-          </StackPanel>
-
-          <Separator/>
-
-          <StackPanel Margin="8,6" Spacing="1">
-            <Button Classes="user-flyout-action" Command="{Binding SignOutCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Path Data="M 13,4 H 5 V 20 H 13 M 12,12 H 21 M 18,9 L 21,12 L 18,15" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform"/>
-                <TextBlock Text="Sair da sessão" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-          </StackPanel>
-
-          <Border Padding="14,8" Background="{DynamicResource DecorControlBrush}">
+          <Border Padding="14,10,14,12" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="Decor" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" VerticalAlignment="Center"/>
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                <Ellipse Width="7" Height="7" Fill="#35B779"/>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Ellipse Width="6" Height="6" Fill="{DynamicResource DecorAccentBrush}"/>
                 <TextBlock Text="Online" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
               </StackPanel>
             </Grid>
           </Border>
         </StackPanel>
       </Border>
-      </Flyout>
+    </Flyout>
   </Window.Resources>
   <Window.Styles>
     <Style Selector="Button.top-menu-button">
@@ -139,16 +130,25 @@
     <Style Selector="Button.user-flyout-action">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="HorizontalContentAlignment" Value="Left"/>
-      <Setter Property="Padding" Value="6,5"/>
-      <Setter Property="MinHeight" Value="32"/>
-      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Padding" Value="16,12"/>
+      <Setter Property="MinHeight" Value="46"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
     </Style>
     <Style Selector="Button.user-flyout-action:pointerover">
       <Setter Property="Background" Value="{DynamicResource DecorControlBrush}"/>
     </Style>
     <Style Selector="Button.user-flyout-action:disabled">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Opacity" Value="0.6"/>
+    </Style>
+    <Style Selector="Button.user-flyout-logout">
+      <Setter Property="Padding" Value="16,13"/>
+      <Setter Property="MinHeight" Value="48"/>
     </Style>
     <Style Selector="Menu.top-menu > MenuItem">
       <Setter Property="Padding" Value="6,3"/>
