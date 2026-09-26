@@ -1,37 +1,60 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
-public sealed class RolePermissionItemViewModel
+public sealed class RolePermissionToggle
 {
     public required AdministrativePermissionDTO Permission { get; init; }
-    public bool IsGranted { get; init; }
-    public string StateText => IsGranted ? "Concedida" : "Não concedida";
+    public bool IsGranted { get; set; }
+    public string ModuleName => Permission.PermissionCode.Split('.', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
+    public string NormalizedAction => Permission.PermissionCode.Contains('.') ? Permission.PermissionCode.Split('.', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[1] : Permission.PermissionCode;
+    public string ActionDisplayName => NormalizedAction switch
+    {
+        "View" => "Ver",
+        "Create" => "Criar",
+        "Edit" => "Editar",
+        "Delete" => "Deletar",
+        "Activate" => "Ativar",
+        "Deactivate" => "Desativar",
+        "AssignRoles" => "Atribuir grupos",
+        "ManagePermissions" => "Gerenciar permissões",
+        "RestorePermissions" => "Restaurar permissões",
+        "ResetPassword" => "Redefinir senha",
+        "Approve" => "Aprovar",
+        "Cancel" => "Cancelar",
+        "Close" => "Encerrar",
+        _ => NormalizedAction
+    };
 }
 
 public sealed class RolesViewModel : INotifyPropertyChanged
 {
     private readonly IRoleAdministrationService _roleAdministrationService;
-    private CancellationTokenSource? _permissionsCancellation;
     private AdministrativeRoleDTO? _selectedRole;
+    private string? _selectedModule;
+    private string? _selectedAction;
     private bool _isLoading;
-    private bool _isPermissionsLoading;
+    private bool _isSaving;
     private string? _errorMessage;
+    private IReadOnlyList<RolePermissionToggle> _catalog = [];
 
     public RolesViewModel(IRoleAdministrationService roleAdministrationService)
     {
         _roleAdministrationService = roleAdministrationService;
+        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => SelectedRole is not null && !IsLoading && !IsSaving);
     }
 
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
-    public ObservableCollection<RolePermissionItemViewModel> Permissions { get; } = [];
-    public bool HasRoles => Roles.Count > 0;
-        public bool HasNoRoles => !IsLoading && Roles.Count == 0;
-    public bool HasNoPermissions => !IsPermissionsLoading && Permissions.Count == 0;
+    public ObservableCollection<string> Modules { get; } = [];
+    public ObservableCollection<string> Actions { get; } = [];
+    public ObservableCollection<RolePermissionToggle> Permissions { get; } = [];
+
+    public ICommand SaveCommand { get; private set; }
 
     public AdministrativeRoleDTO? SelectedRole
     {
@@ -39,34 +62,72 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         set
         {
             if (!SetField(ref _selectedRole, value)) return;
+            _selectedModule = null;
+            _selectedAction = null;
+            Modules.Clear();
+            Actions.Clear();
             Permissions.Clear();
-            OnPropertyChanged(nameof(HasSelectedRole));
-            OnPropertyChanged(nameof(HasPermissions));
-            _ = LoadPermissionsAsync(value);
+            if (SaveCommand is RelayCommand relay)
+                relay.RaiseCanExecuteChanged();
+            if (value is not null)
+                _ = LoadPermissionsAsync(value.RoleID);
+        }
+    }
+
+    public string? SelectedModule
+    {
+        get => _selectedModule;
+        set
+        {
+            if (!SetField(ref _selectedModule, value)) return;
+            _selectedAction = null;
+            Actions.Clear();
+            Permissions.Clear();
+            if (value is not null)
+            {
+                var options = _catalog.Where(item => item.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase));
+                foreach (var action in options.Select(item => item.NormalizedAction).Distinct(StringComparer.OrdinalIgnoreCase))
+                    Actions.Add(action);
+                if (Actions.Count > 0)
+                    SelectedAction = Actions.First();
+            }
+        }
+    }
+
+    public string? SelectedAction
+    {
+        get => _selectedAction;
+        set
+        {
+            if (!SetField(ref _selectedAction, value)) return;
+            Permissions.Clear();
+            if (value is not null && SelectedModule is not null)
+            {
+                foreach (var permission in _catalog
+                             .Where(item => item.ModuleName.Equals(SelectedModule, StringComparison.OrdinalIgnoreCase)
+                                 && item.NormalizedAction.Equals(value, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Permissions.Add(new RolePermissionToggle
+                    {
+                        Permission = permission.Permission,
+                        IsGranted = permission.IsGranted
+                    });
+                }
+            }
         }
     }
 
     public bool HasSelectedRole => SelectedRole is not null;
-    public bool HasPermissions => Permissions.Count > 0;
-
     public bool IsLoading
     {
         get => _isLoading;
-        private set
-        {
-            if (!SetField(ref _isLoading, value)) return;
-            OnPropertyChanged(nameof(HasNoRoles));
-        }
+        private set => SetField(ref _isLoading, value);
     }
 
-    public bool IsPermissionsLoading
+    public bool IsSaving
     {
-        get => _isPermissionsLoading;
-        private set
-        {
-            if (!SetField(ref _isPermissionsLoading, value)) return;
-            OnPropertyChanged(nameof(HasNoPermissions));
-        }
+        get => _isSaving;
+        private set => SetField(ref _isSaving, value);
     }
 
     public string? ErrorMessage
@@ -92,8 +153,6 @@ public sealed class RolesViewModel : INotifyPropertyChanged
             Roles.Clear();
             foreach (var role in await _roleAdministrationService.GetRolesAsync())
                 Roles.Add(role);
-            OnPropertyChanged(nameof(HasRoles));
-                OnPropertyChanged(nameof(HasNoRoles));
         }
         catch (Exception)
         {
@@ -102,74 +161,77 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         finally
         {
             IsLoading = false;
+            if (SaveCommand is RelayCommand relay)
+                relay.RaiseCanExecuteChanged();
         }
     }
 
-    private async Task LoadPermissionsAsync(AdministrativeRoleDTO? role)
+    private async Task LoadPermissionsAsync(int roleId)
     {
-        _permissionsCancellation?.Cancel();
-        _permissionsCancellation?.Dispose();
-        _permissionsCancellation = null;
-
-        if (role is null)
-        {
-            IsPermissionsLoading = false;
-            return;
-        }
-
-        var cancellation = new CancellationTokenSource();
-        _permissionsCancellation = cancellation;
-        IsPermissionsLoading = true;
+        IsLoading = true;
         ErrorMessage = null;
-
         try
         {
-            var allPermissionsTask = _roleAdministrationService.GetAllPermissionsAsync(cancellation.Token);
-            var grantedPermissionsTask = _roleAdministrationService.GetPermissionsAsync(role.RoleID, cancellation.Token);
-            await Task.WhenAll(allPermissionsTask, grantedPermissionsTask);
+            var grantedPermissions = await _roleAdministrationService.GetPermissionsAsync(roleId);
+            var allPermissions = await _roleAdministrationService.GetAllPermissionsAsync();
+            var permissionSet = grantedPermissions.Select(permission => permission.PermissionID).ToHashSet();
 
-            if (cancellation.IsCancellationRequested || !ReferenceEquals(SelectedRole, role)) return;
-
-            var grantedPermissionIds = grantedPermissionsTask.Result
-                .Select(permission => permission.PermissionID)
-                .ToHashSet();
-
-            Permissions.Clear();
-            OnPropertyChanged(nameof(HasNoPermissions));
-            foreach (var permission in allPermissionsTask.Result.OrderBy(permission => permission.PermissionCode, StringComparer.OrdinalIgnoreCase))
-            {
-                Permissions.Add(new RolePermissionItemViewModel
+            _catalog = allPermissions
+                .Select(permission => new RolePermissionToggle
                 {
                     Permission = permission,
-                    IsGranted = grantedPermissionIds.Contains(permission.PermissionID)
-                });
-            }
+                    IsGranted = permissionSet.Contains(permission.PermissionID)
+                })
+                .OrderBy(item => item.ModuleName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.NormalizedAction, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.Permission.PermissionCode, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
 
-            OnPropertyChanged(nameof(HasPermissions));
-            OnPropertyChanged(nameof(HasNoPermissions));
-        }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-        {
+            Modules.Clear();
+            foreach (var module in _catalog.Select(item => item.ModuleName).Distinct(StringComparer.OrdinalIgnoreCase))
+                Modules.Add(module);
+
+            if (Modules.Count > 0)
+                SelectedModule = Modules.First();
         }
         catch (Exception)
         {
-            if (!cancellation.IsCancellationRequested && ReferenceEquals(SelectedRole, role))
-            {
-                Permissions.Clear();
-                OnPropertyChanged(nameof(HasPermissions));
-                OnPropertyChanged(nameof(HasNoPermissions));
-                ErrorMessage = "Não foi possível carregar as permissions do grupo.";
-            }
+            ErrorMessage = "Não foi possível carregar as permissões do grupo.";
         }
         finally
         {
-            if (ReferenceEquals(_permissionsCancellation, cancellation))
-            {
-                _permissionsCancellation = null;
-                IsPermissionsLoading = false;
-            }
+            IsLoading = false;
+            if (SaveCommand is RelayCommand relay)
+                relay.RaiseCanExecuteChanged();
+        }
+    }
 
-            cancellation.Dispose();
+    private async Task SaveAsync()
+    {
+        if (SelectedRole is null) return;
+
+        IsSaving = true;
+        ErrorMessage = null;
+        try
+        {
+            var permissionIds = Permissions
+                .Where(item => item.IsGranted)
+                .Select(item => item.Permission.PermissionID)
+                .Distinct()
+                .ToArray();
+
+            await _roleAdministrationService.ReplacePermissionsAsync(SelectedRole.RoleID, permissionIds);
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Não foi possível salvar as permissões do grupo.";
+        }
+        finally
+        {
+            IsSaving = false;
+            if (SaveCommand is RelayCommand relay)
+                relay.RaiseCanExecuteChanged();
+            _ = LoadPermissionsAsync(SelectedRole.RoleID);
         }
     }
 
@@ -178,7 +240,9 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        if (EqualityComparer<T>.Default.Equals(field, value))
+            return false;
+
         field = value;
         OnPropertyChanged(propertyName);
         return true;
