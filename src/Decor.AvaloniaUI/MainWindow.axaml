@@ -45,20 +45,6 @@
 
           <Border Margin="0,16,0,0" Padding="0" Background="Transparent">
             <StackPanel>
-              <Button Classes="user-flyout-action" IsEnabled="False">
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                  <Path Grid.Column="0" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.Profile}}" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
-                  <TextBlock Grid.Column="1" Text="Meu perfil" VerticalAlignment="Center"/>
-                  <Path Grid.Column="2" Data="M 5,4 L 9,8 L 5,12" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"/>
-                </Grid>
-              </Button>
-              <Button Classes="user-flyout-action" IsEnabled="False">
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                  <Path Grid.Column="0" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.Preferences}}" Fill="{DynamicResource DecorTextMutedBrush}" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
-                  <TextBlock Grid.Column="1" Text="Preferências" VerticalAlignment="Center"/>
-                  <Path Grid.Column="2" Data="M 5,4 L 9,8 L 5,12" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"/>
-                </Grid>
-              </Button>
               <Button Classes="user-flyout-action" Command="{Binding ChangePasswordCommand}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                   <Path Grid.Column="0" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.ChangePassword}}" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
