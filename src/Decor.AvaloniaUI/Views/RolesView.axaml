@@ -23,7 +23,7 @@
 
       <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Módulos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Text="Áreas" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ListBox Grid.Row="1" ItemsSource="{Binding Modules}" SelectedItem="{Binding SelectedModule, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate>
@@ -35,9 +35,10 @@
       </Border>
 
       <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Ações" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction, Mode=TwoWay}">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <TextBlock Text="Telas" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Grid.Row="1" Text="{Binding SelectedScreenGroupName}" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8" IsVisible="{Binding HasSelectedScreenGroup}"/>
+          <ListBox Grid.Row="2" ItemsSource="{Binding Screens}" SelectedItem="{Binding SelectedScreen, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding}"/>
@@ -49,13 +50,13 @@
 
       <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,Auto,*">
-          <TextBlock Text="Permissões" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Text="Ações" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ItemsControl Grid.Row="2" ItemsSource="{Binding Permissions}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:RolePermissionToggle">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,4">
                   <CheckBox IsChecked="{Binding IsGranted}"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Permission.PermissionCode}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="{Binding PermissionDisplayName}" VerticalAlignment="Center"/>
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

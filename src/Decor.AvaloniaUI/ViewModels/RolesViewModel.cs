@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
@@ -11,36 +12,83 @@ public sealed class RolePermissionToggle
 {
     public required AdministrativePermissionDTO Permission { get; init; }
     public bool IsGranted { get; set; }
-    public string ModuleName => Permission.PermissionCode.Split('.', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
-    public string NormalizedAction => Permission.PermissionCode.Contains('.') ? Permission.PermissionCode.Split('.', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[1] : Permission.PermissionCode;
-    public string ActionDisplayName => NormalizedAction switch
+    public string? AreaName { get; init; }
+    public string? ScreenName { get; init; }
+    public string PermissionDisplayName => !string.IsNullOrWhiteSpace(Permission.Description)
+        ? Permission.Description.Trim()
+        : ResolveActionLabel(Permission.PermissionCode);
+
+    public static string ResolveActionLabel(string? permissionCode)
     {
-        "View" => "Ver",
-        "Create" => "Criar",
-        "Edit" => "Editar",
-        "Delete" => "Deletar",
-        "Activate" => "Ativar",
-        "Deactivate" => "Desativar",
-        "AssignRoles" => "Atribuir grupos",
-        "ManagePermissions" => "Gerenciar permissões",
-        "RestorePermissions" => "Restaurar permissões",
-        "ResetPassword" => "Redefinir senha",
-        "Approve" => "Aprovar",
-        "Cancel" => "Cancelar",
-        "Close" => "Encerrar",
-        _ => NormalizedAction
-    };
+        return permissionCode switch
+        {
+            DecorPermissions.ProductsView => "Consultar produtos",
+            DecorPermissions.ProductsCreate => "Criar produto",
+            DecorPermissions.ProductsEdit => "Editar produto",
+            DecorPermissions.BrandsView => "Consultar marcas",
+            DecorPermissions.BrandsCreate => "Criar marca",
+            DecorPermissions.BrandsEdit => "Editar marca",
+            DecorPermissions.BrandsDelete => "Excluir marca",
+            DecorPermissions.ClassificationsView => "Consultar classificações",
+            DecorPermissions.TermDeliveryView => "Consultar termo de entrega",
+            DecorPermissions.UsersView => "Consultar usuários",
+            DecorPermissions.UsersCreate => "Criar usuário",
+            DecorPermissions.UsersEdit => "Editar usuário",
+            DecorPermissions.UsersActivate => "Ativar usuário",
+            DecorPermissions.UsersDeactivate => "Desativar usuário",
+            DecorPermissions.UsersAssignRoles => "Atribuir grupos",
+            DecorPermissions.UsersManagePermissions => "Gerenciar permissões de usuários",
+            DecorPermissions.UsersResetPassword => "Redefinir senha de usuário",
+            DecorPermissions.UsersRestorePermissions => "Restaurar permissões de usuário",
+            DecorPermissions.RolesView => "Consultar grupos de permissões",
+            DecorPermissions.RolesEdit => "Editar grupo de permissões",
+            DecorPermissions.RolesManagePermissions => "Gerenciar permissões de grupos",
+            DecorPermissions.RolesRestoreDefaults => "Restaurar permissões padrão",
+            DecorPermissions.DatabaseMaintenanceView => "Consultar manutenção do banco de dados",
+            _ => "Permissão"
+        };
+    }
 }
 
 public sealed class RolesViewModel : INotifyPropertyChanged
 {
+    private sealed record NavigationScreen(string Name, IReadOnlyList<string> PermissionCodes);
+    private sealed record NavigationArea(string Name, IReadOnlyList<NavigationScreen> Screens, string? ScreenGroupName = null);
+
+    private static readonly IReadOnlyList<NavigationArea> Navigation =
+    [
+        new("Cadastros",
+        [
+            new("Produtos", [DecorPermissions.ProductsView, DecorPermissions.ProductsCreate, DecorPermissions.ProductsEdit]),
+            new("Marcas", [DecorPermissions.BrandsView, DecorPermissions.BrandsCreate, DecorPermissions.BrandsEdit, DecorPermissions.BrandsDelete]),
+            new("Classificações", [DecorPermissions.ClassificationsView])
+        ]),
+        new("Comercial",
+        [
+            new("Termo de Entrega", [DecorPermissions.TermDeliveryView])
+        ]),
+        new("Configurações",
+        [
+            new("Usuários", [DecorPermissions.UsersView, DecorPermissions.UsersCreate, DecorPermissions.UsersEdit, DecorPermissions.UsersActivate, DecorPermissions.UsersDeactivate, DecorPermissions.UsersAssignRoles, DecorPermissions.UsersManagePermissions, DecorPermissions.UsersResetPassword, DecorPermissions.UsersRestorePermissions]),
+            new("Grupos de Permissões", [DecorPermissions.RolesView, DecorPermissions.RolesEdit, DecorPermissions.RolesManagePermissions, DecorPermissions.RolesRestoreDefaults]),
+            new("Manutenção do Banco de Dados", [DecorPermissions.DatabaseMaintenanceView])
+        ], "Administração do Sistema")
+    ];
+
+    private static readonly IReadOnlyDictionary<string, (string AreaName, string ScreenName)> PermissionLocations =
+        Navigation
+            .SelectMany(area => area.Screens.SelectMany(screen => screen.PermissionCodes
+                .Select(code => (Code: code, AreaName: area.Name, ScreenName: screen.Name))))
+            .ToDictionary(item => item.Code, item => (item.AreaName, item.ScreenName), StringComparer.OrdinalIgnoreCase);
+
     private readonly IRoleAdministrationService _roleAdministrationService;
     private AdministrativeRoleDTO? _selectedRole;
     private string? _selectedModule;
-    private string? _selectedAction;
+    private string? _selectedScreen;
     private bool _isLoading;
     private bool _isSaving;
     private string? _errorMessage;
+    private int _permissionLoadVersion;
     private IReadOnlyList<RolePermissionToggle> _catalog = [];
 
     public RolesViewModel(IRoleAdministrationService roleAdministrationService)
@@ -51,7 +99,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
     public ObservableCollection<string> Modules { get; } = [];
-    public ObservableCollection<string> Actions { get; } = [];
+    public ObservableCollection<string> Screens { get; } = [];
     public ObservableCollection<RolePermissionToggle> Permissions { get; } = [];
 
     public ICommand SaveCommand { get; private set; }
@@ -63,14 +111,21 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _selectedRole, value)) return;
             _selectedModule = null;
-            _selectedAction = null;
+            _selectedScreen = null;
+            OnPropertyChanged(nameof(SelectedScreenGroupName));
+            OnPropertyChanged(nameof(HasSelectedScreenGroup));
             Modules.Clear();
-            Actions.Clear();
+            Screens.Clear();
             Permissions.Clear();
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
             if (value is not null)
-                _ = LoadPermissionsAsync(value.RoleID);
+                _ = LoadPermissionsAsync(value.RoleID, ++_permissionLoadVersion);
+            else
+            {
+                _permissionLoadVersion++;
+                IsLoading = false;
+            }
         }
     }
 
@@ -80,42 +135,46 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         set
         {
             if (!SetField(ref _selectedModule, value)) return;
-            _selectedAction = null;
-            Actions.Clear();
+            OnPropertyChanged(nameof(SelectedScreenGroupName));
+            OnPropertyChanged(nameof(HasSelectedScreenGroup));
+            _selectedScreen = null;
+            Screens.Clear();
             Permissions.Clear();
             if (value is not null)
             {
-                var options = _catalog.Where(item => item.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase));
-                foreach (var action in options.Select(item => item.NormalizedAction).Distinct(StringComparer.OrdinalIgnoreCase))
-                    Actions.Add(action);
-                if (Actions.Count > 0)
-                    SelectedAction = Actions.First();
+                var area = Navigation.FirstOrDefault(item => item.Name.Equals(value, StringComparison.OrdinalIgnoreCase));
+                if (area is null) return;
+                foreach (var screen in area.Screens)
+                    Screens.Add(screen.Name);
+                if (Screens.Count > 0)
+                    SelectedScreen = Screens.First();
             }
         }
     }
 
-    public string? SelectedAction
+    public string? SelectedScreen
     {
-        get => _selectedAction;
+        get => _selectedScreen;
         set
         {
-            if (!SetField(ref _selectedAction, value)) return;
+            if (!SetField(ref _selectedScreen, value)) return;
             Permissions.Clear();
             if (value is not null && SelectedModule is not null)
             {
                 foreach (var permission in _catalog
-                             .Where(item => item.ModuleName.Equals(SelectedModule, StringComparison.OrdinalIgnoreCase)
-                                 && item.NormalizedAction.Equals(value, StringComparison.OrdinalIgnoreCase)))
+                             .Where(item => string.Equals(item.AreaName, SelectedModule, StringComparison.OrdinalIgnoreCase)
+                                 && string.Equals(item.ScreenName, value, StringComparison.OrdinalIgnoreCase)))
                 {
-                    Permissions.Add(new RolePermissionToggle
-                    {
-                        Permission = permission.Permission,
-                        IsGranted = permission.IsGranted
-                    });
+                    Permissions.Add(permission);
                 }
             }
         }
     }
+
+    public string? SelectedScreenGroupName => Navigation
+        .FirstOrDefault(item => string.Equals(item.Name, SelectedModule, StringComparison.OrdinalIgnoreCase))?
+        .ScreenGroupName;
+    public bool HasSelectedScreenGroup => !string.IsNullOrWhiteSpace(SelectedScreenGroupName);
 
     public bool HasSelectedRole => SelectedRole is not null;
     public bool IsLoading
@@ -166,7 +225,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task LoadPermissionsAsync(int roleId)
+    private async Task LoadPermissionsAsync(int roleId, int requestVersion)
     {
         IsLoading = true;
         ErrorMessage = null;
@@ -176,62 +235,80 @@ public sealed class RolesViewModel : INotifyPropertyChanged
             var allPermissions = await _roleAdministrationService.GetAllPermissionsAsync();
             var permissionSet = grantedPermissions.Select(permission => permission.PermissionID).ToHashSet();
 
-            _catalog = allPermissions
-                .Select(permission => new RolePermissionToggle
+            var catalog = allPermissions
+                .Select(permission =>
                 {
-                    Permission = permission,
-                    IsGranted = permissionSet.Contains(permission.PermissionID)
+                    PermissionLocations.TryGetValue(permission.PermissionCode, out var location);
+                    return new RolePermissionToggle
+                    {
+                        Permission = permission,
+                        IsGranted = permissionSet.Contains(permission.PermissionID),
+                        AreaName = location.AreaName,
+                        ScreenName = location.ScreenName
+                    };
                 })
-                .OrderBy(item => item.ModuleName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(item => item.NormalizedAction, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(item => item.Permission.PermissionCode, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item.PermissionDisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
+            if (!IsCurrentPermissionLoad(roleId, requestVersion))
+                return;
+
+            _catalog = catalog;
             Modules.Clear();
-            foreach (var module in _catalog.Select(item => item.ModuleName).Distinct(StringComparer.OrdinalIgnoreCase))
-                Modules.Add(module);
+            foreach (var area in Navigation)
+                Modules.Add(area.Name);
 
             if (Modules.Count > 0)
                 SelectedModule = Modules.First();
         }
         catch (Exception)
         {
-            ErrorMessage = "Não foi possível carregar as permissões do grupo.";
+            if (IsCurrentPermissionLoad(roleId, requestVersion))
+                ErrorMessage = "Não foi possível carregar as permissões do grupo.";
         }
         finally
         {
-            IsLoading = false;
-            if (SaveCommand is RelayCommand relay)
-                relay.RaiseCanExecuteChanged();
+            if (IsCurrentPermissionLoad(roleId, requestVersion))
+            {
+                IsLoading = false;
+                if (SaveCommand is RelayCommand relay)
+                    relay.RaiseCanExecuteChanged();
+            }
         }
     }
+
+    private bool IsCurrentPermissionLoad(int roleId, int requestVersion)
+        => requestVersion == _permissionLoadVersion && SelectedRole?.RoleID == roleId;
 
     private async Task SaveAsync()
     {
         if (SelectedRole is null) return;
 
+        var roleId = SelectedRole.RoleID;
         IsSaving = true;
         ErrorMessage = null;
         try
         {
-            var permissionIds = Permissions
+            var permissionIds = _catalog
                 .Where(item => item.IsGranted)
                 .Select(item => item.Permission.PermissionID)
                 .Distinct()
                 .ToArray();
 
-            await _roleAdministrationService.ReplacePermissionsAsync(SelectedRole.RoleID, permissionIds);
+            await _roleAdministrationService.ReplacePermissionsAsync(roleId, permissionIds);
+            if (SelectedRole?.RoleID == roleId)
+                _ = LoadPermissionsAsync(roleId, ++_permissionLoadVersion);
         }
         catch (Exception)
         {
-            ErrorMessage = "Não foi possível salvar as permissões do grupo.";
+            if (SelectedRole?.RoleID == roleId)
+                ErrorMessage = "Não foi possível salvar as permissões do grupo.";
         }
         finally
         {
             IsSaving = false;
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
-            _ = LoadPermissionsAsync(SelectedRole.RoleID);
         }
     }
 
