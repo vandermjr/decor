@@ -6,12 +6,16 @@ using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
 using Decor.AvaloniaUI.Services;
+using Decor.AvaloniaUI.Icons;
 using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI;
 
 public partial class MainWindow : Window
 {
+    public static Geometry PermissionGroupIconGeometry =>
+        DecorIconCatalog.Get(DecorIconId.Forms.PermissionGroups);
+
     public MainWindow()
     {
         InitializeComponent();
