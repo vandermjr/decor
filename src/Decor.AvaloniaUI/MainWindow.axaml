@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
-        xmlns:local="using:Decor.AvaloniaUI"
+        xmlns:icons="using:Decor.AvaloniaUI.Icons"
         x:Class="Decor.AvaloniaUI.MainWindow"
         Title="Decor"
         Width="1200"
@@ -35,7 +35,7 @@
 
           <Border Margin="16,16,16,0" Padding="14,11" MinHeight="64" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="10">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <Path Data="{x:Static local:MainWindow.PermissionGroupIconGeometry}" Fill="{DynamicResource DecorAccentBrush}" Width="17" Height="19" Stretch="Uniform" VerticalAlignment="Center"/>
+              <Path Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+Forms.PermissionGroups}}" Fill="{DynamicResource DecorAccentBrush}" Width="17" Height="19" Stretch="Uniform" VerticalAlignment="Center"/>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                 <TextBlock Text="Grupo de permissões" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
                 <TextBlock Text="{Binding UserPrimaryRole}" FontWeight="{DynamicResource DecorFontWeightHeading}" FontSize="15" TextTrimming="CharacterEllipsis"/>
