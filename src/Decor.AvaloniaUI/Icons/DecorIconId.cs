@@ -38,5 +38,21 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Edit { get; } = new("Actions.Edit");
         public static DecorIconId Delete { get; } = new("Actions.Delete");
         public static DecorIconId Generic { get; } = new("Actions.Generic");
+        public static DecorIconId Copy { get; } = new("Actions.Copy");
+    }
+
+    public static class User
+    {
+        public static DecorIconId Profile { get; } = new("User.Profile");
+        public static DecorIconId Preferences { get; } = new("User.Preferences");
+        public static DecorIconId ChangePassword { get; } = new("User.ChangePassword");
+        public static DecorIconId Notifications { get; } = new("User.Notifications");
+        public static DecorIconId SignOut { get; } = new("User.SignOut");
+    }
+
+    public static class Common
+    {
+        public static DecorIconId Calendar { get; } = new("Common.Calendar");
+        public static DecorIconId Clock { get; } = new("Common.Clock");
     }
 }

@@ -32,7 +32,17 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Create] = CreateGeometry("M 12,3 L 12,21 M 3,12 L 21,12"),
             [DecorIconId.Actions.Edit] = CreateGeometry("M 4,16.5 L 3,21 L 7.5,20 L 19.5,8 L 16,4.5 Z M 14.5,6 L 18,9.5"),
             [DecorIconId.Actions.Delete] = CreateGeometry("M 5,7 L 19,7 L 18,21 L 6,21 Z M 3,4 L 21,4 M 9,4 L 10,2 L 14,2 L 15,4 M 10,10 L 10,17 M 14,10 L 14,17"),
-            [DecorIconId.Actions.Generic] = CreateGeometry("M 5,4 L 19,4 L 19,20 L 5,20 Z M 9,9 L 15,9 M 9,12 L 15,12 M 9,15 L 13,15")
+            [DecorIconId.Actions.Generic] = CreateGeometry("M 5,4 L 19,4 L 19,20 L 5,20 Z M 9,9 L 15,9 M 9,12 L 15,12 M 9,15 L 13,15"),
+            [DecorIconId.Actions.Copy] = CreateGeometry("M 8,7 L 20,7 L 20,21 L 8,21 Z M 4,3 L 16,3 L 16,17 L 4,17 Z"),
+
+            [DecorIconId.User.Profile] = CreateGeometry("M 12,12 A 4,4 0 1 0 12,4 A 4,4 0 0 0 12,12 M 4,21 C 4.5,17 7.5,15 12,15 C 16.5,15 19.5,17 20,21"),
+            [DecorIconId.User.Preferences] = CreateGeometry("M 12,3 L 13.5,5.2 A 7.5,7.5 0 0 1 16,6.7 L 18.6,6.2 L 20,8.6 L 18.1,10.5 A 7.5,7.5 0 0 1 18.1,13.5 L 20,15.4 L 18.6,17.8 L 16,17.3 A 7.5,7.5 0 0 1 13.5,18.8 L 12,21 L 9.2,20.2 L 8.8,17.7 A 7.5,7.5 0 0 1 6.5,15.5 L 4,16 L 2.8,13.2 L 4.7,11 A 7.5,7.5 0 0 1 4.7,9 L 2.8,6.8 L 4,4 L 6.5,4.5 A 7.5,7.5 0 0 1 8.8,2.3 L 9.2,-.2 Z M 12,15 A 3,3 0 1 0 12,9 A 3,3 0 0 0 12,15"),
+            [DecorIconId.User.ChangePassword] = CreateGeometry("M 14,10 A 4,4 0 1 0 6,10 A 4,4 0 0 0 14,10 M 13,13 L 21,13 L 21,16 L 18,16 L 18,19 L 15,19 L 15,16 L 13,16 Z"),
+            [DecorIconId.User.Notifications] = CreateGeometry("M 12,3 A 2,2 0 0 0 10,5 C 7.8,5.8 6,7.9 6,10.5 V 16 L 4,18 H 20 L 18,16 V 10.5 C 18,7.9 16.2,5.8 14,5 A 2,2 0 0 0 12,3 Z M 9.5,20 A 2.5,2.5 0 0 0 14.5,20 Z"),
+            [DecorIconId.User.SignOut] = CreateGeometry("M 13,4 H 5 V 20 H 13 M 12,12 H 21 M 18,9 L 21,12 L 18,15"),
+
+            [DecorIconId.Common.Calendar] = CreateGeometry("M7,2V4H17V2H19V4H20A2,2 0,0 1,22 6V20A2,2 0,0 1,20 22H4A2,2 0,0 1,2 20V6A2,2 0,0 1,4 4H5V2H7M4,9V20H20V9H4M6,11H8V13H6V11M10,11H12V13H10V11M14,11H16V13H14V11M6,15H8V17H6V15M10,15H12V17H10V15M14,15H16V17H14V15Z"),
+            [DecorIconId.Common.Clock] = CreateGeometry("M12,20A8,8 0,1 0,12 4A8,8 0,0 0,12 20M12,2A10,10 0,1 1,12 22A10,10 0,0 1,12 2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z")
         });
 
     private static readonly IReadOnlyList<DecorIconId> RegisteredIds = Array.AsReadOnly(Geometries.Keys.ToArray());

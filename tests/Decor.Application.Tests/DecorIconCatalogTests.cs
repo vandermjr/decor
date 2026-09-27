@@ -40,11 +40,44 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Create,
             DecorIconId.Actions.Edit,
             DecorIconId.Actions.Delete,
-            DecorIconId.Actions.Generic
+            DecorIconId.Actions.Generic,
+            DecorIconId.Actions.Copy,
+            DecorIconId.User.Profile,
+            DecorIconId.User.Preferences,
+            DecorIconId.User.ChangePassword,
+            DecorIconId.User.Notifications,
+            DecorIconId.User.SignOut,
+            DecorIconId.Common.Calendar,
+            DecorIconId.Common.Clock
         ];
 
         Assert.Equal(expectedIds.Length, DecorIconCatalog.Ids.Count);
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
+    }
+
+    [Fact]
+    public void New_semantic_ids_are_registered_in_their_expected_categories()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        (DecorIconId Id, string Category)[] newIds =
+        [
+            (DecorIconId.Actions.Copy, "Actions."),
+            (DecorIconId.User.Profile, "User."),
+            (DecorIconId.User.Preferences, "User."),
+            (DecorIconId.User.ChangePassword, "User."),
+            (DecorIconId.User.Notifications, "User."),
+            (DecorIconId.User.SignOut, "User."),
+            (DecorIconId.Common.Calendar, "Common."),
+            (DecorIconId.Common.Clock, "Common.")
+        ];
+
+        Assert.All(newIds, item =>
+        {
+            Assert.Contains(item.Id, DecorIconCatalog.Ids);
+            Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(item.Id));
+            Assert.StartsWith(item.Category, item.Id.Value);
+        });
     }
 
     [Fact]
