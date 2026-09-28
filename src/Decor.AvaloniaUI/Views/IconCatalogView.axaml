@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.IconCatalogView"
+             x:DataType="vm:IconCatalogViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.icon-card">
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="Width" Value="170"/>
+      <Setter Property="Height" Value="176"/>
+      <Setter Property="Margin" Value="0,0,12,12"/>
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="18" Spacing="22">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Catálogo de Ícones" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+        <TextBlock Text="Catálogo interno de inspeção visual dos ícones vetoriais do Decor. Nenhum item é gerado manualmente; a lista é obtida diretamente do catálogo atual." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+      </StackPanel>
+
+      <ItemsControl ItemsSource="{Binding FamilyGroups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:IconCatalogFamilyViewModel">
+            <Border Margin="0,0,0,18" Padding="0" Background="Transparent">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding Name}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:IconCatalogItemViewModel">
+                      <Border Classes="icon-card">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                          <Path Data="{Binding Geometry}"
+                                Width="42"
+                                Height="42"
+                                Stretch="Uniform"
+                                Fill="{DynamicResource DecorTextBrush}"
+                                Stroke="{DynamicResource DecorTextBrush}"
+                                StrokeThickness="1.1"
+                                StrokeLineJoin="Round"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+
+                          <TextBlock Text="{Binding Name}"
+                                     FontWeight="{DynamicResource DecorFontWeightHeading}"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"/>
+
+                          <TextBlock Text="{Binding FullId}"
+                                     Foreground="{DynamicResource DecorTextMutedBrush}"
+                                     FontSize="{DynamicResource DecorFontSizeCaption}"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"
+                                     TextTrimming="CharacterEllipsis"
+                                     MaxWidth="140"/>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

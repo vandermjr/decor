@@ -81,6 +81,19 @@ public class DecorIconCatalogTests
     }
 
     [Fact]
+    public void Catalog_groups_expose_all_registered_families_and_ids()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        var groups = DecorIconCatalog.GetFamilyGroups();
+
+        Assert.Equal(["Application", "Modules", "Forms", "Actions", "User", "Common"], groups.Select(group => group.Name).ToArray());
+        Assert.Equal(DecorIconCatalog.Ids.Count, groups.Sum(group => group.Ids.Count));
+        Assert.All(groups, group => Assert.NotEmpty(group.Ids));
+        Assert.All(DecorIconCatalog.Ids, id => Assert.Contains(id, groups.SelectMany(group => group.Ids)));
+    }
+
+    [Fact]
     public void Unknown_semantic_id_is_rejected()
     {
         Assert.Throws<KeyNotFoundException>(() => DecorIconCatalog.Get(new DecorIconId("Actions.Unknown")));

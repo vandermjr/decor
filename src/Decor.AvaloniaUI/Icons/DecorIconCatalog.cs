@@ -5,6 +5,8 @@ namespace Decor.AvaloniaUI.Icons;
 
 public static class DecorIconCatalog
 {
+    private static readonly IReadOnlyList<string> FamilyOrder = ["Application", "Modules", "Forms", "Actions", "User", "Common"];
+
     private static readonly IReadOnlyDictionary<DecorIconId, Lazy<Geometry>> Geometries =
         new ReadOnlyDictionary<DecorIconId, Lazy<Geometry>>(new Dictionary<DecorIconId, Lazy<Geometry>>
         {
@@ -49,6 +51,21 @@ public static class DecorIconCatalog
 
     public static IReadOnlyList<DecorIconId> Ids => RegisteredIds;
 
+    public static IReadOnlyList<DecorIconCatalogFamily> GetFamilyGroups()
+    {
+        var familyIds = FamilyOrder
+            .Select(name => new DecorIconCatalogFamily(
+                name,
+                RegisteredIds
+                    .Where(id => id.Value.StartsWith(name + ".", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(id => id.Value, StringComparer.OrdinalIgnoreCase)
+                    .ToArray()))
+            .Where(group => group.Ids.Count > 0)
+            .ToArray();
+
+        return familyIds;
+    }
+
     public static Geometry Get(DecorIconId id) => Geometries.TryGetValue(id, out var geometry)
         ? geometry.Value
         : throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
@@ -57,3 +74,5 @@ public static class DecorIconCatalog
         () => Geometry.Parse(path),
         LazyThreadSafetyMode.ExecutionAndPublication);
 }
+
+public sealed record DecorIconCatalogFamily(string Name, IReadOnlyList<DecorIconId> Ids);

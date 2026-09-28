@@ -39,6 +39,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
+        ShowIconCatalogCommand = new RelayCommand(() => OpenSingletonDocument("icon-catalog", "Catálogo de Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
         UseLightThemeCommand = new RelayCommand(() => IsDarkTheme = false);
         UseDarkThemeCommand = new RelayCommand(() => IsDarkTheme = true);
@@ -115,6 +116,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ShowUsersCommand { get; }
     public ICommand ShowRolesCommand { get; }
     public ICommand ShowDatabaseMaintenanceCommand { get; }
+    public ICommand ShowIconCatalogCommand { get; }
     public ICommand SignOutCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
@@ -126,6 +128,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
     public bool CanViewDatabaseMaintenance => ((RelayCommand)ShowDatabaseMaintenanceCommand).CanExecute(null);
+    public bool CanViewIconCatalog => ((RelayCommand)ShowIconCatalogCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
 
@@ -184,6 +187,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private void ActivateDocument(WorkspaceDocumentViewModel document) => ActiveDocument = document;
 
     private void RequestPasswordChange() => PasswordChangeRequested?.Invoke(this, EventArgs.Empty);
+
+    private bool IsAdministrator()
+    {
+        var roles = _authenticatedUserContext.User?.Roles ?? [];
+        return roles.Contains(SystemRoleDefaults.Administrator, StringComparer.OrdinalIgnoreCase);
+    }
 
     private static string InitialsOf(string? name)
     {
