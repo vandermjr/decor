@@ -9,6 +9,7 @@ namespace Decor.AvaloniaUI;
 public partial class App : Avalonia.Application
 {
     private readonly IServiceProvider _services;
+    public IServiceProvider Services => _services;
 
     public App(IServiceProvider services)
     {

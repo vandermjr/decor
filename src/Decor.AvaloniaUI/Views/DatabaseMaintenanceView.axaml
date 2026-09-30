@@ -78,7 +78,7 @@
                             </Border>
                           </Flyout>
                         </Button.Flyout>
-                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+Common.Calendar}}"/>
+                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Calendar}"/>
                       </Button>
                     </Grid>
                   </Border>
@@ -98,7 +98,7 @@
                             </Border>
                           </Flyout>
                         </Button.Flyout>
-                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+Common.Clock}}"/>
+                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Clock}"/>
                       </Button>
                     </Grid>
                   </Border>

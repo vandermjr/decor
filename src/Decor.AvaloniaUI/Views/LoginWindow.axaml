@@ -35,7 +35,7 @@
                 ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
                 Click="CopyErrorButton_OnClick">
           <PathIcon Width="16" Height="16"
-                    Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+Actions.Copy}}" />
+                    icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Copy}" />
         </Button>
       </Grid>
     </Border>

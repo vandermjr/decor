@@ -2,6 +2,7 @@ using Decor.Core.Common;
 using Decor.Core.Configuration;
 using Decor.Core.Interfaces.Repositories;
 using Decor.Core.Interfaces.Services;
+using System.Globalization;
 
 namespace Decor.Application.Services;
 
@@ -19,7 +20,10 @@ public sealed class UserSettingsService(
         return new UserSettings
         {
             Theme = ParseTheme(settings.GetValueOrDefault(DecorUserSettings.Theme)?.SettingValue),
-            Language = ParseLanguage(settings.GetValueOrDefault(DecorUserSettings.Language)?.SettingValue)
+            Language = ParseLanguage(settings.GetValueOrDefault(DecorUserSettings.Language)?.SettingValue),
+            IconAppearance = ParseIconAppearance(
+                settings.GetValueOrDefault(DecorUserSettings.IconWeight)?.SettingValue,
+                settings.GetValueOrDefault(DecorUserSettings.IconStrokeThickness)?.SettingValue)
         };
     }
 
@@ -28,6 +32,12 @@ public sealed class UserSettingsService(
 
     public Task SetLanguageAsync(string language, CancellationToken cancellationToken = default) =>
         SetAsync(DecorUserSettings.Language, language, cancellationToken);
+
+    public async Task SetIconAppearanceAsync(IconAppearance appearance, CancellationToken cancellationToken = default)
+    {
+        await SetAsync(DecorUserSettings.IconWeight, appearance.MaterialSymbolWeight.ToString(CultureInfo.InvariantCulture), cancellationToken);
+        await SetAsync(DecorUserSettings.IconStrokeThickness, appearance.StrokeThickness.ToString("0.0", CultureInfo.InvariantCulture), cancellationToken);
+    }
 
     private Task SetAsync(string key, string value, CancellationToken cancellationToken)
     {
@@ -40,7 +50,8 @@ public sealed class UserSettingsService(
     private static UserSettings Defaults() => new()
     {
         Theme = DecorDefaults.Theme,
-        Language = DecorDefaults.DefaultLanguage.Name
+        Language = DecorDefaults.DefaultLanguage.Name,
+        IconAppearance = IconAppearance.Default
     };
 
     private static DecorThemeStyle ParseTheme(string? value) =>
@@ -50,4 +61,14 @@ public sealed class UserSettingsService(
 
     private static string ParseLanguage(string? value) =>
         string.IsNullOrWhiteSpace(value) ? DecorDefaults.DefaultLanguage.Name : value;
+
+    private static IconAppearance ParseIconAppearance(string? weightValue, string? strokeValue)
+    {
+        var defaults = IconAppearance.Default;
+        var hasValidWeight = int.TryParse(weightValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var weight)
+            && weight is >= 100 and <= 700 && weight % 100 == 0;
+        var hasValidStroke = double.TryParse(strokeValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var stroke)
+            && stroke is >= 0 and <= 3;
+        return new IconAppearance(hasValidWeight ? weight : defaults.MaterialSymbolWeight, hasValidStroke ? Math.Round(stroke, 1, MidpointRounding.AwayFromZero) : defaults.StrokeThickness);
+    }
 }

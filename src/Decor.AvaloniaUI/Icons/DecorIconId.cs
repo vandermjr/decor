@@ -33,11 +33,17 @@ public readonly record struct DecorIconId(string Value)
 
     public static class Actions
     {
+        public static DecorIconId Search { get; } = new("Actions.Search");
         public static DecorIconId View { get; } = new("Actions.View");
         public static DecorIconId Create { get; } = new("Actions.Create");
         public static DecorIconId Edit { get; } = new("Actions.Edit");
         public static DecorIconId Delete { get; } = new("Actions.Delete");
-        public static DecorIconId Generic { get; } = new("Actions.Generic");
+        public static DecorIconId Save { get; } = new("Actions.Save");
+        public static DecorIconId Cancel { get; } = new("Actions.Cancel");
+        public static DecorIconId Add { get; } = new("Actions.Add");
+        public static DecorIconId Remove { get; } = new("Actions.Remove");
+        public static DecorIconId Report { get; } = new("Actions.Report");
+        public static DecorIconId Close { get; } = new("Actions.Close");
         public static DecorIconId Copy { get; } = new("Actions.Copy");
     }
 
@@ -54,5 +60,17 @@ public readonly record struct DecorIconId(string Value)
     {
         public static DecorIconId Calendar { get; } = new("Common.Calendar");
         public static DecorIconId Clock { get; } = new("Common.Clock");
+        public static DecorIconId Folder { get; } = new("Common.Folder");
+        public static DecorIconId Database { get; } = new("Common.Database");
+        public static DecorIconId Backup { get; } = new("Common.Backup");
+    }
+
+    public static class Navigation
+    {
+        public static DecorIconId FirstPage { get; } = new("Navigation.FirstPage");
+        public static DecorIconId PreviousPage { get; } = new("Navigation.PreviousPage");
+        public static DecorIconId NextPage { get; } = new("Navigation.NextPage");
+        public static DecorIconId LastPage { get; } = new("Navigation.LastPage");
+        public static DecorIconId Dropdown { get; } = new("Navigation.Dropdown");
     }
 }

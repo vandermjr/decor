@@ -35,7 +35,7 @@
 
           <Border Margin="16,16,16,0" Padding="14,11" MinHeight="64" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="10">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <Path Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+Forms.PermissionGroups}}" Fill="{DynamicResource DecorAccentBrush}" Width="17" Height="19" Stretch="Uniform" VerticalAlignment="Center"/>
+              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}" Fill="{DynamicResource DecorAccentBrush}" Width="17" Height="19" Stretch="Uniform" VerticalAlignment="Center"/>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                 <TextBlock Text="Grupo de permissões" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
                 <TextBlock Text="{Binding UserPrimaryRole}" FontWeight="{DynamicResource DecorFontWeightHeading}" FontSize="15" TextTrimming="CharacterEllipsis"/>
@@ -47,7 +47,7 @@
             <StackPanel>
               <Button Classes="user-flyout-action" Command="{Binding ChangePasswordCommand}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Path Grid.Column="0" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.ChangePassword}}" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.ChangePassword}" Stroke="{DynamicResource DecorTextMutedBrush}" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
                   <TextBlock Grid.Column="1" Text="Alterar senha" VerticalAlignment="Center"/>
                 </Grid>
               </Button>
@@ -59,7 +59,7 @@
           <Border Margin="0,0,0,0" Padding="0">
             <Button Classes="user-flyout-action user-flyout-logout" Command="{Binding SignOutCommand}">
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                <Path Grid.Column="0" Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.SignOut}}" Stroke="{DynamicResource DecorTextMutedBrush}" StrokeThickness="1.8" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignOut}" Stroke="{DynamicResource DecorTextMutedBrush}" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Sair da sessão" VerticalAlignment="Center"/>
               </Grid>
             </Button>
@@ -236,7 +236,7 @@
                   Cursor="Hand"
                   ToolTip.Tip="Notificações"
                   Click="NotificationsButton_Click">
-            <Path Data="{icons:DecorIcon Id={x:Static icons:DecorIconId+User.Notifications}}"
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Notifications}"
                   Fill="{DynamicResource DecorTextBrush}"
                   Width="16"
                   Height="18"

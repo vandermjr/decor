@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
 
         // A injeção do IThemeService permanece manual pois é Singleton
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IIconAppearanceService, IconAppearanceService>();
         services.AddSingleton<IAuthenticatedUserContext, AuthenticatedUserContext>();
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();

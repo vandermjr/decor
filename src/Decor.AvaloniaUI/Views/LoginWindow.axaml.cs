@@ -13,6 +13,7 @@ public partial class LoginWindow : Window
 {
     private readonly INavigationService? _navigationService;
     private readonly IThemeService? _themeService;
+    private readonly IIconAppearanceService? _iconAppearanceService;
 
     public LoginWindow()
     {
@@ -29,12 +30,13 @@ public partial class LoginWindow : Window
         UsernameTextBox.CaretIndex = UsernameTextBox.Text?.Length ?? 0;
     }
 
-    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService)
+    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService, IIconAppearanceService iconAppearanceService)
         : this()
     {
         DataContext = viewModel;
         _navigationService = navigationService;
         _themeService = themeService;
+        _iconAppearanceService = iconAppearanceService;
         viewModel.LoginSucceeded += OnLoginSucceeded;
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
     }
@@ -42,6 +44,7 @@ public partial class LoginWindow : Window
     private async void OnLoginSucceeded(object? sender, EventArgs e)
     {
         await _themeService!.InitializeAsync();
+        await _iconAppearanceService!.InitializeAsync();
         var mainWindow = _navigationService!.Resolve<MainWindow>();
         if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.MainWindow = mainWindow;

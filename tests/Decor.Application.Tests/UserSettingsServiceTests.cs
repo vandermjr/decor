@@ -146,6 +146,24 @@ public sealed class UserSettingsServiceTests
         repository.LastSet.Should().Be((7, DecorUserSettings.Language, "en-US", UserSettingValueType.String));
     }
 
+    [Fact]
+    public async Task GetAsync_LoadsPersistedIconAppearance()
+    {
+        var repository = new FakeUserSettingsRepository
+        {
+            Settings = new Dictionary<string, UserSetting>
+            {
+                [DecorUserSettings.IconWeight] = Setting(DecorUserSettings.IconWeight, "600"),
+                [DecorUserSettings.IconStrokeThickness] = Setting(DecorUserSettings.IconStrokeThickness, "1.3")
+            }
+        };
+        var service = new UserSettingsService(repository, AuthenticatedContext(7));
+
+        var settings = await service.GetAsync();
+
+        settings.IconAppearance.Should().Be(new IconAppearance(600, 1.3));
+    }
+
     private static RecordingAuthenticatedUserContext AuthenticatedContext(int userId)
     {
         var context = new RecordingAuthenticatedUserContext();

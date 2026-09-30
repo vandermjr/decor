@@ -23,6 +23,30 @@
         <TextBlock Text="Catálogo interno de inspeção visual dos ícones vetoriais do Decor. Nenhum item é gerado manualmente; a lista é obtida diretamente do catálogo atual." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
       </StackPanel>
 
+      <Border Background="{DynamicResource DecorSurfaceRaisedBrush}"
+              BorderBrush="{DynamicResource DecorBorderBrush}"
+              BorderThickness="1"
+              CornerRadius="10"
+              Padding="14">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Bancada de espessura" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Peso do ícone" VerticalAlignment="Center"/>
+            <Slider Grid.Row="0" Grid.Column="1"
+                    Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True"
+                    Value="{Binding IconWeight, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Espessura do Stroke" VerticalAlignment="Center"/>
+            <Slider Grid.Row="1" Grid.Column="1"
+                    Minimum="0" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                    Value="{Binding StrokeThickness, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding StrokeThicknessDisplay}" VerticalAlignment="Center"/>
+          </Grid>
+          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Aplicar"/>
+        </StackPanel>
+      </Border>
+
       <ItemsControl ItemsSource="{Binding FamilyGroups}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:IconCatalogFamilyViewModel">
@@ -46,8 +70,7 @@
                                 Stretch="Uniform"
                                 Fill="{DynamicResource DecorTextBrush}"
                                 Stroke="{DynamicResource DecorTextBrush}"
-                                StrokeThickness="1.1"
-                                StrokeLineJoin="Round"
+                                StrokeThickness="{Binding StrokeThickness}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"/>
 
