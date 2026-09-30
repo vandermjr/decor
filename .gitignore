@@ -4,6 +4,10 @@
 *.user
 *.suo
 
+# Python bytecode/cache
+__pycache__/
+*.pyc
+
 # Visual Studio
 .vs/
 
@@ -33,6 +37,9 @@ TestResults/
 
 # Generated documentation/artifacts
 artifacts/
+
+# Material Symbols generator cache
+tools/material-symbols/
 
 # Pastas fora do controle de versão (decisão do orquestrador)
 /Md/
