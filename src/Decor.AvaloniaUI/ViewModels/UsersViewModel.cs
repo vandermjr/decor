@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
@@ -11,47 +12,10 @@ public sealed class UserCascadePermissionItem
 {
     public required AdministrativePermissionDTO Permission { get; init; }
     public bool IsGranted { get; set; }
-    public string ModuleName => GetModuleName(Permission.PermissionCode);
-    public string ScreenName => GetScreenName(Permission.PermissionCode);
-    public string ActionDisplayName => GetActionDisplayName(Permission.PermissionCode);
-
-    public static string GetModuleName(string permissionCode)
-    {
-        var parts = permissionCode.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return parts.Length > 0 ? parts[0] : permissionCode;
-    }
-
-    public static string GetScreenName(string permissionCode)
-    {
-        var parts = permissionCode.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return parts.Length > 1 ? parts[1] : permissionCode;
-    }
-
-    public static string GetActionDisplayName(string permissionCode)
-    {
-        var action = GetScreenName(permissionCode);
-        return action switch
-        {
-            "View" => "Ver",
-            "Create" => "Criar",
-            "Edit" => "Editar",
-            "Delete" => "Deletar",
-            "Activate" => "Ativar",
-            "Deactivate" => "Desativar",
-            "AssignRoles" => "Atribuir grupos",
-            "ManagePermissions" => "Gerenciar permissões",
-            "RestorePermissions" => "Restaurar permissões",
-            "ResetPassword" => "Redefinir senha",
-            "Register" => "Registrar",
-            "Approve" => "Aprovar",
-            "Cancel" => "Cancelar",
-            "Respond" => "Responder",
-            "Close" => "Encerrar",
-            "Release" => "Liberar",
-            "Update" => "Atualizar",
-            _ => action
-        };
-    }
+    public DecorPermissionPresentation Presentation => DecorPermissionPresentationCatalog.Describe(Permission.PermissionCode);
+    public string ModuleName => Presentation.ModuleName;
+    public string FormName => Presentation.FormName;
+    public string ActionDisplayName => Presentation.ActionName;
 }
 
 public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
@@ -64,7 +28,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
     private AdministrativeUserDTO? _selectedUser;
     private AdministrativeRoleDTO? _selectedRole;
     private string? _selectedModule;
-    private string? _selectedScreen;
+    private string? _selectedForm;
     private IReadOnlyList<UserCascadePermissionItem> _rolePermissionCatalog = [];
 
     public UsersViewModel(IUserAdministrationService userAdministrationService, IRoleAdministrationService roleAdministrationService)
@@ -89,7 +53,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
     public ObservableCollection<AdministrativeUserDTO> Users { get; } = [];
     public ObservableCollection<AdministrativeRoleDTO> UserRoles { get; } = [];
     public ObservableCollection<string> Modules { get; } = [];
-    public ObservableCollection<string> Screens { get; } = [];
+    public ObservableCollection<string> Forms { get; } = [];
     public ObservableCollection<UserCascadePermissionItem> Permissions { get; } = [];
 
     public ICommand SearchCommand { get; private set; }
@@ -158,9 +122,9 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         {
             if (!SetField(ref _selectedRole, value)) return;
             _selectedModule = null;
-            _selectedScreen = null;
+            _selectedForm = null;
             Modules.Clear();
-            Screens.Clear();
+            Forms.Clear();
             Permissions.Clear();
             OnPropertyChanged(nameof(HasSelectionSummary));
             if (value is not null)
@@ -176,33 +140,33 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         set
         {
             if (!SetField(ref _selectedModule, value)) return;
-            _selectedScreen = null;
-            Screens.Clear();
+            _selectedForm = null;
+            Forms.Clear();
             Permissions.Clear();
             if (value is not null)
             {
                 var filtered = GetPermissionsForSelectedRole().Where(p => p.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase)).ToArray();
-                foreach (var screen in filtered.Select(p => p.ScreenName).Distinct(StringComparer.OrdinalIgnoreCase))
-                    Screens.Add(screen);
-                if (Screens.Count > 0)
-                    SelectedScreen = Screens.First();
+                foreach (var form in filtered.Select(p => p.FormName).Distinct(StringComparer.OrdinalIgnoreCase))
+                    Forms.Add(form);
+                if (Forms.Count > 0)
+                    SelectedForm = Forms.First();
             }
             OnPropertyChanged(nameof(HasSelectionSummary));
         }
     }
 
-    public string? SelectedScreen
+    public string? SelectedForm
     {
-        get => _selectedScreen;
+        get => _selectedForm;
         set
         {
-            if (!SetField(ref _selectedScreen, value)) return;
+            if (!SetField(ref _selectedForm, value)) return;
             Permissions.Clear();
             if (value is not null && SelectedModule is not null)
             {
                 var filtered = GetPermissionsForSelectedRole()
-                    .Where(p => p.ModuleName.Equals(SelectedModule, StringComparison.OrdinalIgnoreCase) && p.ScreenName.Equals(value, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(p => p.Permission.PermissionCode, StringComparer.OrdinalIgnoreCase)
+                    .Where(p => p.ModuleName.Equals(SelectedModule, StringComparison.OrdinalIgnoreCase) && p.FormName.Equals(value, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(p => p.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
 
                 foreach (var permission in filtered)
@@ -212,7 +176,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         }
     }
 
-    public bool HasSelectionSummary => SelectedUser is not null || SelectedRole is not null || SelectedModule is not null || SelectedScreen is not null;
+    public bool HasSelectionSummary => SelectedUser is not null || SelectedRole is not null || SelectedModule is not null || SelectedForm is not null;
     public bool ShowToggleUserConfirmation { get; private set; }
     public string ToggleActiveConfirmationMessage { get; private set; } = string.Empty;
     public string ToggleActiveButtonText => SelectedUser is not null && SelectedUser.IsActive ? "Desativar usuário" : "Ativar usuário";
@@ -322,12 +286,12 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
                 })
                 .Where(permission => permission.ModuleName.Length > 0)
                 .OrderBy(permission => permission.ModuleName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(permission => permission.ScreenName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(permission => permission.Permission.PermissionCode, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(permission => permission.FormName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(permission => permission.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
             Modules.Clear();
-            foreach (var module in _rolePermissionCatalog.Select(item => item.ModuleName).Distinct(StringComparer.OrdinalIgnoreCase))
+            foreach (var module in DecorPermissionPresentationCatalog.ModuleNames.Where(module => _rolePermissionCatalog.Any(item => item.ModuleName == module)))
                 Modules.Add(module);
 
             if (Modules.Count > 0)
@@ -416,7 +380,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         SelectedUser = null;
         UserRoles.Clear();
         Modules.Clear();
-        Screens.Clear();
+        Forms.Clear();
         Permissions.Clear();
         SelectedRole = null;
         StatusMessage = "Nenhum usuário selecionado.";
@@ -427,7 +391,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         UserRoles.Clear();
         SelectedRole = null;
         Modules.Clear();
-        Screens.Clear();
+        Forms.Clear();
         Permissions.Clear();
     }
 

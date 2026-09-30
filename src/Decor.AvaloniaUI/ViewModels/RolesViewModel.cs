@@ -12,79 +12,18 @@ public sealed class RolePermissionToggle
 {
     public required AdministrativePermissionDTO Permission { get; init; }
     public bool IsGranted { get; set; }
-    public string? AreaName { get; init; }
-    public string? ScreenName { get; init; }
-    public string PermissionDisplayName => !string.IsNullOrWhiteSpace(Permission.Description)
-        ? Permission.Description.Trim()
-        : ResolveActionLabel(Permission.PermissionCode);
-
-    public static string ResolveActionLabel(string? permissionCode)
-    {
-        return permissionCode switch
-        {
-            DecorPermissions.ProductsView => "Consultar produtos",
-            DecorPermissions.ProductsCreate => "Criar produto",
-            DecorPermissions.ProductsEdit => "Editar produto",
-            DecorPermissions.BrandsView => "Consultar marcas",
-            DecorPermissions.BrandsCreate => "Criar marca",
-            DecorPermissions.BrandsEdit => "Editar marca",
-            DecorPermissions.BrandsDelete => "Excluir marca",
-            DecorPermissions.ClassificationsView => "Consultar classificações",
-            DecorPermissions.TermDeliveryView => "Consultar termo de entrega",
-            DecorPermissions.UsersView => "Consultar usuários",
-            DecorPermissions.UsersCreate => "Criar usuário",
-            DecorPermissions.UsersEdit => "Editar usuário",
-            DecorPermissions.UsersActivate => "Ativar usuário",
-            DecorPermissions.UsersDeactivate => "Desativar usuário",
-            DecorPermissions.UsersAssignRoles => "Atribuir grupos",
-            DecorPermissions.UsersManagePermissions => "Gerenciar permissões de usuários",
-            DecorPermissions.UsersResetPassword => "Redefinir senha de usuário",
-            DecorPermissions.UsersRestorePermissions => "Restaurar permissões de usuário",
-            DecorPermissions.RolesView => "Consultar grupos de permissões",
-            DecorPermissions.RolesEdit => "Editar grupo de permissões",
-            DecorPermissions.RolesManagePermissions => "Gerenciar permissões de grupos",
-            DecorPermissions.RolesRestoreDefaults => "Restaurar permissões padrão",
-            DecorPermissions.DatabaseMaintenanceView => "Consultar manutenção do banco de dados",
-            _ => "Permissão"
-        };
-    }
+    public DecorPermissionPresentation Presentation => DecorPermissionPresentationCatalog.Describe(Permission.PermissionCode);
+    public string ModuleName => Presentation.ModuleName;
+    public string FormName => Presentation.FormName;
+    public string ActionDisplayName => Presentation.ActionName;
 }
 
 public sealed class RolesViewModel : INotifyPropertyChanged
 {
-    private sealed record NavigationScreen(string Name, IReadOnlyList<string> PermissionCodes);
-    private sealed record NavigationArea(string Name, IReadOnlyList<NavigationScreen> Screens, string? ScreenGroupName = null);
-
-    private static readonly IReadOnlyList<NavigationArea> Navigation =
-    [
-        new("Cadastros",
-        [
-            new("Produtos", [DecorPermissions.ProductsView, DecorPermissions.ProductsCreate, DecorPermissions.ProductsEdit]),
-            new("Marcas", [DecorPermissions.BrandsView, DecorPermissions.BrandsCreate, DecorPermissions.BrandsEdit, DecorPermissions.BrandsDelete]),
-            new("Classificações", [DecorPermissions.ClassificationsView])
-        ]),
-        new("Comercial",
-        [
-            new("Termo de Entrega", [DecorPermissions.TermDeliveryView])
-        ]),
-        new("Configurações",
-        [
-            new("Usuários", [DecorPermissions.UsersView, DecorPermissions.UsersCreate, DecorPermissions.UsersEdit, DecorPermissions.UsersActivate, DecorPermissions.UsersDeactivate, DecorPermissions.UsersAssignRoles, DecorPermissions.UsersManagePermissions, DecorPermissions.UsersResetPassword, DecorPermissions.UsersRestorePermissions]),
-            new("Grupos de Permissões", [DecorPermissions.RolesView, DecorPermissions.RolesEdit, DecorPermissions.RolesManagePermissions, DecorPermissions.RolesRestoreDefaults]),
-            new("Manutenção do Banco de Dados", [DecorPermissions.DatabaseMaintenanceView])
-        ], "Administração do Sistema")
-    ];
-
-    private static readonly IReadOnlyDictionary<string, (string AreaName, string ScreenName)> PermissionLocations =
-        Navigation
-            .SelectMany(area => area.Screens.SelectMany(screen => screen.PermissionCodes
-                .Select(code => (Code: code, AreaName: area.Name, ScreenName: screen.Name))))
-            .ToDictionary(item => item.Code, item => (item.AreaName, item.ScreenName), StringComparer.OrdinalIgnoreCase);
-
     private readonly IRoleAdministrationService _roleAdministrationService;
     private AdministrativeRoleDTO? _selectedRole;
     private string? _selectedModule;
-    private string? _selectedScreen;
+    private string? _selectedForm;
     private bool _isLoading;
     private bool _isSaving;
     private string? _errorMessage;
@@ -99,7 +38,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
     public ObservableCollection<string> Modules { get; } = [];
-    public ObservableCollection<string> Screens { get; } = [];
+    public ObservableCollection<string> Forms { get; } = [];
     public ObservableCollection<RolePermissionToggle> Permissions { get; } = [];
 
     public ICommand SaveCommand { get; private set; }
@@ -111,11 +50,9 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _selectedRole, value)) return;
             _selectedModule = null;
-            _selectedScreen = null;
-            OnPropertyChanged(nameof(SelectedScreenGroupName));
-            OnPropertyChanged(nameof(HasSelectedScreenGroup));
+            _selectedForm = null;
             Modules.Clear();
-            Screens.Clear();
+            Forms.Clear();
             Permissions.Clear();
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
@@ -135,46 +72,37 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         set
         {
             if (!SetField(ref _selectedModule, value)) return;
-            OnPropertyChanged(nameof(SelectedScreenGroupName));
-            OnPropertyChanged(nameof(HasSelectedScreenGroup));
-            _selectedScreen = null;
-            Screens.Clear();
+            _selectedForm = null;
+            Forms.Clear();
             Permissions.Clear();
             if (value is not null)
             {
-                var area = Navigation.FirstOrDefault(item => item.Name.Equals(value, StringComparison.OrdinalIgnoreCase));
-                if (area is null) return;
-                foreach (var screen in area.Screens)
-                    Screens.Add(screen.Name);
-                if (Screens.Count > 0)
-                    SelectedScreen = Screens.First();
+                foreach (var form in _catalog.Where(item => item.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase))
+                             .Select(item => item.FormName).Distinct(StringComparer.OrdinalIgnoreCase))
+                    Forms.Add(form);
+                if (Forms.Count > 0) SelectedForm = Forms.First();
             }
         }
     }
 
-    public string? SelectedScreen
+    public string? SelectedForm
     {
-        get => _selectedScreen;
+        get => _selectedForm;
         set
         {
-            if (!SetField(ref _selectedScreen, value)) return;
+            if (!SetField(ref _selectedForm, value)) return;
             Permissions.Clear();
             if (value is not null && SelectedModule is not null)
             {
                 foreach (var permission in _catalog
-                             .Where(item => string.Equals(item.AreaName, SelectedModule, StringComparison.OrdinalIgnoreCase)
-                                 && string.Equals(item.ScreenName, value, StringComparison.OrdinalIgnoreCase)))
+                             .Where(item => string.Equals(item.ModuleName, SelectedModule, StringComparison.OrdinalIgnoreCase)
+                                 && string.Equals(item.FormName, value, StringComparison.OrdinalIgnoreCase)))
                 {
                     Permissions.Add(permission);
                 }
             }
         }
     }
-
-    public string? SelectedScreenGroupName => Navigation
-        .FirstOrDefault(item => string.Equals(item.Name, SelectedModule, StringComparison.OrdinalIgnoreCase))?
-        .ScreenGroupName;
-    public bool HasSelectedScreenGroup => !string.IsNullOrWhiteSpace(SelectedScreenGroupName);
 
     public bool HasSelectedRole => SelectedRole is not null;
     public bool IsLoading
@@ -238,16 +166,15 @@ public sealed class RolesViewModel : INotifyPropertyChanged
             var catalog = allPermissions
                 .Select(permission =>
                 {
-                    PermissionLocations.TryGetValue(permission.PermissionCode, out var location);
                     return new RolePermissionToggle
                     {
                         Permission = permission,
-                        IsGranted = permissionSet.Contains(permission.PermissionID),
-                        AreaName = location.AreaName,
-                        ScreenName = location.ScreenName
+                        IsGranted = permissionSet.Contains(permission.PermissionID)
                     };
                 })
-                .OrderBy(item => item.PermissionDisplayName, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item.ModuleName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.FormName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(item => item.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
             if (!IsCurrentPermissionLoad(roleId, requestVersion))
@@ -255,8 +182,8 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
             _catalog = catalog;
             Modules.Clear();
-            foreach (var area in Navigation)
-                Modules.Add(area.Name);
+            foreach (var module in DecorPermissionPresentationCatalog.ModuleNames.Where(module => catalog.Any(item => item.ModuleName == module)))
+                Modules.Add(module);
 
             if (Modules.Count > 0)
                 SelectedModule = Modules.First();

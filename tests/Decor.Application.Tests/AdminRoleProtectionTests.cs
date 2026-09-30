@@ -178,7 +178,7 @@ public sealed class AdminRoleProtectionTests
             throw new InvalidOperationException("Expected modules to be populated.");
 
         viewModel.SelectedModule = "Cadastros";
-        viewModel.SelectedScreen = "Produtos";
+        viewModel.SelectedForm = "Produtos";
         viewModel.Permissions.Select(permission => permission.Permission.PermissionID).Should().BeEquivalentTo([1, 2]);
         viewModel.Permissions.Single(permission => permission.Permission.PermissionID == 1).IsGranted = false;
 

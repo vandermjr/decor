@@ -16,23 +16,56 @@
       </Button>
     </Grid>
 
-    <Grid Grid.Row="1" ColumnDefinitions="1.2*,1.2*,1.2*,1.2*,1.6*" ColumnSpacing="12">
-      <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
+    <Grid Grid.Row="1" RowDefinitions="Auto,1.2*,Auto,*" RowSpacing="12">
+      <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
           <TextBlock Text="Usuários" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
-                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
+          <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                    AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="False"
+                    GridLinesVisibility="All" HeadersVisibility="Column">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="ID" Binding="{Binding UserID}" Width="70"/>
+              <DataGridTextColumn Header="Usuário" Binding="{Binding Username}" Width="1.2*"/>
+              <DataGridTextColumn Header="Nome" Binding="{Binding DisplayName}" Width="1.6*"/>
+              <DataGridTemplateColumn Header="Status" Width="90">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
+                    <Grid>
+                      <TextBlock Text="Ativo" IsVisible="{Binding IsActive}" VerticalAlignment="Center"/>
+                      <TextBlock Text="Inativo" IsVisible="{Binding !IsActive}" VerticalAlignment="Center"/>
+                    </Grid>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Grupos" Width="2*">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
+                    <ItemsControl ItemsSource="{Binding Roles}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
+                          <TextBlock Text="{Binding RoleName}" Margin="0,0,8,0" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+            </DataGrid.Columns>
+          </DataGrid>
         </Grid>
       </Border>
 
-      <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
+      <TextBlock Grid.Row="2" Text="Detalhes do usuário selecionado" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+
+      <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+      <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Grupos atribuídos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ListBox Grid.Row="1" ItemsSource="{Binding UserRoles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
@@ -43,7 +76,7 @@
         </Grid>
       </Border>
 
-      <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
+      <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
           <TextBlock Text="Módulos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ListBox Grid.Row="1" ItemsSource="{Binding Modules}" SelectedItem="{Binding SelectedModule, Mode=TwoWay}">
@@ -56,10 +89,10 @@
         </Grid>
       </Border>
 
-      <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
+      <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Telas" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Screens}" SelectedItem="{Binding SelectedScreen, Mode=TwoWay}">
+          <TextBlock Text="Formulários" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <ListBox Grid.Row="1" ItemsSource="{Binding Forms}" SelectedItem="{Binding SelectedForm, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding}"/>
@@ -69,21 +102,22 @@
         </Grid>
       </Border>
 
-      <Border Grid.Column="4" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
+      <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Permissões" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Text="Ações" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ItemsControl Grid.Row="1" ItemsSource="{Binding Permissions}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:UserCascadePermissionItem">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,4">
                   <CheckBox IsChecked="{Binding IsGranted}" IsEnabled="False"/>
-                  <TextBlock Grid.Column="1" Text="{Binding Permission.PermissionCode}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="1" Text="{Binding ActionDisplayName}" VerticalAlignment="Center"/>
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </Grid>
       </Border>
+      </Grid>
     </Grid>
   </Grid>
 </UserControl>
