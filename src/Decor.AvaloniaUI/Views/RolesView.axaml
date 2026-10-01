@@ -5,12 +5,12 @@
              x:Class="Decor.AvaloniaUI.Views.RolesView"
              x:DataType="vm:RolesViewModel">
   <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12">
-    <TextBlock Text="Grupos e permissões" FontSize="{DynamicResource DecorFontSizeTitle}"/>
+    <TextBlock Text="Grupos Funcionais" FontSize="{DynamicResource DecorFontSizeTitle}"/>
 
-    <Grid Grid.Row="1" ColumnDefinitions="1.2*,1.2*,1.2*,1.2*" ColumnSpacing="12">
+    <Grid Grid.Row="1" ColumnDefinitions="1.2*,1.2*,1.6*" ColumnSpacing="12">
       <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
+          <TextBlock Text="Grupos Funcionais" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
           <ListBox Grid.Row="1" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
@@ -37,26 +37,10 @@
       <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
         <Grid RowDefinitions="Auto,*">
           <TextBlock Text="Formulários" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Forms}" SelectedItem="{Binding SelectedForm, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}"/>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </Grid>
-      </Border>
-
-      <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,Auto,*">
-          <TextBlock Text="Ações" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ItemsControl Grid.Row="2" ItemsSource="{Binding Permissions}">
+          <ItemsControl Grid.Row="1" ItemsSource="{Binding Forms}">
             <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:RolePermissionToggle">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,4">
-                  <CheckBox IsChecked="{Binding IsGranted}"/>
-                  <TextBlock Grid.Column="1" Text="{Binding ActionDisplayName}" VerticalAlignment="Center"/>
-                </Grid>
+              <DataTemplate x:DataType="vm:RoleFunctionalContext">
+                <CheckBox Content="{Binding ContextName}" IsChecked="{Binding IsAssociated, Mode=TwoWay}" Margin="0,4"/>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>

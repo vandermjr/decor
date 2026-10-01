@@ -162,13 +162,15 @@ public sealed class AdminRoleProtectionTests
             new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, "Consultar produtos"),
             new AdministrativePermissionDTO(2, DecorPermissions.ProductsCreate, "Cadastrar produtos"),
             new AdministrativePermissionDTO(3, DecorPermissions.UsersView, "Consultar usuários"),
-            new AdministrativePermissionDTO(4, DecorPermissions.AccountsPayableView, "Consultar contas a pagar")
+            new AdministrativePermissionDTO(4, DecorPermissions.AccountsPayableView, "Consultar contas a pagar"),
+            new AdministrativePermissionDTO(5, DecorPermissions.PaymentMethodsView, "Consultar formas de pagamento"),
+            new AdministrativePermissionDTO(6, DecorPermissions.TermDeliveryView, "Consultar termo de entrega")
         };
 
         var roleService = new TrackingRolePermissionsService(
             roles: [role],
             allPermissions: allPermissions,
-            grantedPermissionIds: [1, 3, 4]);
+            grantedPermissionIds: [1, 3, 4, 5, 6]);
 
         var viewModel = new RolesViewModel(roleService);
         await viewModel.InitializeAsync();
@@ -178,15 +180,106 @@ public sealed class AdminRoleProtectionTests
             throw new InvalidOperationException("Expected modules to be populated.");
 
         viewModel.SelectedModule = "Cadastros";
-        viewModel.SelectedForm = "Produtos";
-        viewModel.Permissions.Select(permission => permission.Permission.PermissionID).Should().BeEquivalentTo([1, 2]);
-        viewModel.Permissions.Single(permission => permission.Permission.PermissionID == 1).IsGranted = false;
+        viewModel.Forms.Single(form => form.ContextName == "Produtos").IsAssociated = false;
 
         var saveMethod = typeof(RolesViewModel).GetMethod("SaveAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         saveMethod.Should().NotBeNull();
         await (Task)saveMethod!.Invoke(viewModel, null)!;
 
-        roleService.LastReplacePermissionIds.Should().BeEquivalentTo(new[] { 3, 4 });
+        roleService.LastReplacePermissionIds.Should().BeEquivalentTo(new[] { 3, 4, 5, 6 });
+    }
+
+    [Fact]
+    public async Task RolesViewModel_UsesFunctionalCatalogForModulesAndContexts()
+    {
+        var role = new AdministrativeRoleDTO(1, "Operador", null, 10, false);
+        var allPermissions = new[]
+        {
+            new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, null),
+            new AdministrativePermissionDTO(2, DecorPermissions.StockLocationsView, null),
+            new AdministrativePermissionDTO(3, DecorPermissions.QuotesView, null),
+            new AdministrativePermissionDTO(4, DecorPermissions.OrdersView, null),
+            new AdministrativePermissionDTO(5, DecorPermissions.ServiceExecutionRecordsView, null),
+            new AdministrativePermissionDTO(6, DecorPermissions.PaymentMethodsView, null),
+            new AdministrativePermissionDTO(7, DecorPermissions.TermDeliveryView, null)
+        };
+        var roleService = new TrackingRolePermissionsService(
+            roles: [role],
+            allPermissions: allPermissions,
+            grantedPermissionIds: [2, 6, 7]);
+        var viewModel = new RolesViewModel(roleService);
+        await viewModel.InitializeAsync();
+
+        viewModel.SelectedRole = role;
+
+        viewModel.Modules.Should().Equal(DecorFunctionalPermissionCatalog.ModuleNames);
+        foreach (var module in DecorFunctionalPermissionCatalog.ModuleNames)
+        {
+            viewModel.SelectedModule = module;
+            viewModel.Forms.Select(form => form.ContextName)
+                .Should().Equal(DecorFunctionalPermissionCatalog.Contexts
+                    .Where(context => context.ModuleName == module)
+                    .Select(context => context.ContextName));
+        }
+
+        viewModel.SelectedModule = "Estoque";
+        viewModel.Forms.Single(form => form.ContextName == "Locais de Estoque").IsAssociated.Should().BeTrue();
+        viewModel.Forms.Single(form => form.ContextName == "Transferências").IsAssociated.Should().BeFalse();
+        viewModel.Modules.Should().NotContain("Configurações");
+        viewModel.Modules.Should().NotContain("Ajuda");
+        viewModel.Forms.Select(form => form.ContextName)
+            .Should().NotContain("Métodos de Pagamento").And.NotContain("Entregas").And.NotContain("Termo de Entrega");
+        typeof(RolesViewModel).GetProperty("Permissions").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RolesViewModel_PreservesPartialTechnicalPermissionsWhenSavingUnchangedContext()
+    {
+        var role = new AdministrativeRoleDTO(1, "Operador", null, 10, false);
+        var onlyProductsView = new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, null);
+        var roleService = new TrackingRolePermissionsService(
+            roles: [role],
+            allPermissions: [onlyProductsView],
+            grantedPermissionIds: [onlyProductsView.PermissionID]);
+        var viewModel = new RolesViewModel(roleService);
+        await viewModel.InitializeAsync();
+
+        viewModel.SelectedRole = role;
+        viewModel.SelectedModule = "Cadastros";
+
+        viewModel.Forms.Select(form => form.ContextName)
+            .Should().NotContain("View").And.NotContain("Create").And.NotContain("Edit");
+        viewModel.Forms.Single(form => form.ContextName == "Produtos").IsAssociated.Should().BeTrue();
+
+        await InvokeSaveAsync(viewModel);
+
+        roleService.LastReplacePermissionIds.Should().Equal(onlyProductsView.PermissionID);
+    }
+
+    [Fact]
+    public async Task RolesViewModel_AssociatingContextSavesItsTechnicalPermissionIds()
+    {
+        var role = new AdministrativeRoleDTO(1, "Operador", null, 10, false);
+        var productPermissions = new[]
+        {
+            new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, null),
+            new AdministrativePermissionDTO(2, DecorPermissions.ProductsCreate, null),
+            new AdministrativePermissionDTO(3, DecorPermissions.ProductsEdit, null)
+        };
+        var roleService = new TrackingRolePermissionsService(
+            roles: [role],
+            allPermissions: productPermissions,
+            grantedPermissionIds: []);
+        var viewModel = new RolesViewModel(roleService);
+        await viewModel.InitializeAsync();
+
+        viewModel.SelectedRole = role;
+        viewModel.SelectedModule = "Cadastros";
+        viewModel.Forms.Single(form => form.ContextName == "Produtos").IsAssociated = true;
+
+        await InvokeSaveAsync(viewModel);
+
+        roleService.LastReplacePermissionIds.Should().BeEquivalentTo([1, 2, 3]);
     }
 
     [Fact]
@@ -243,10 +336,8 @@ public sealed class AdminRoleProtectionTests
             roleBResult.SetResult([productsCreate]);
             queuedContext.RunUntil(() => roleBPublished.Task.IsCompleted);
 
-            viewModel.Permissions.Single(permission => permission.Permission.PermissionID == productsCreate.PermissionID)
-                .IsGranted.Should().BeTrue();
-            viewModel.Permissions.Single(permission => permission.Permission.PermissionID == productsView.PermissionID)
-                .IsGranted.Should().BeFalse();
+            viewModel.Forms.Single(form => form.ContextName == "Produtos")
+                .IsAssociated.Should().BeTrue();
 
             roleAResult.SetResult([productsView]);
             queuedContext.RunUntilIdle();
@@ -303,18 +394,18 @@ public sealed class AdminRoleProtectionTests
             viewModel.SelectedRole = roleB;
             viewModel.IsLoading.Should().BeFalse();
             roleService.PermissionRequestRoleIds.Should().Equal(roleA.RoleID, roleB.RoleID);
-            var roleBVisibleItems = viewModel.Permissions.ToArray();
-            roleBVisibleItems.Single(item => item.Permission.PermissionID == productsCreate.PermissionID)
-                .IsGranted.Should().BeTrue();
+            var roleBVisibleItems = viewModel.Forms.ToArray();
+            roleBVisibleItems.Single(item => item.ContextName == "Produtos")
+                .IsAssociated.Should().BeTrue();
 
             replaceGate.SetResult();
             queuedContext.RunUntil(() => saveTask.IsCompleted);
             await saveTask;
 
             roleService.PermissionRequestRoleIds.Should().Equal(roleA.RoleID, roleB.RoleID);
-            viewModel.Permissions.Should().Equal(roleBVisibleItems);
-            viewModel.Permissions.Single(item => item.Permission.PermissionID == productsCreate.PermissionID)
-                .IsGranted.Should().BeTrue();
+            viewModel.Forms.Should().Equal(roleBVisibleItems);
+            viewModel.Forms.Single(item => item.ContextName == "Produtos")
+                .IsAssociated.Should().BeTrue();
 
             var roleBSaveTask = InvokeSaveAsync(viewModel);
             queuedContext.RunUntil(() => roleBSaveTask.IsCompleted);
@@ -372,8 +463,8 @@ public sealed class AdminRoleProtectionTests
             await saveTask;
 
             viewModel.ErrorMessage.Should().BeNull();
-            viewModel.Permissions.Single(item => item.Permission.PermissionID == allPermissions[1].PermissionID)
-                .IsGranted.Should().BeTrue();
+            viewModel.Forms.Single(item => item.ContextName == "Produtos")
+                .IsAssociated.Should().BeTrue();
             roleService.PermissionRequestRoleIds.Should().Equal(roleA.RoleID, roleB.RoleID);
         }
         finally
@@ -400,8 +491,8 @@ public sealed class AdminRoleProtectionTests
         await viewModel.InitializeAsync();
         viewModel.SelectedRole = role;
         viewModel.IsLoading.Should().BeFalse();
-        var viewPermission = viewModel.Permissions.Single(permission => permission.Permission.PermissionID == 1);
-        viewPermission.IsGranted = false;
+        var productsForm = viewModel.Forms.Single(form => form.ContextName == "Produtos");
+        productsForm.IsAssociated = false;
         var permissionReads = roleService.GetPermissionsCallCount;
         var catalogReads = roleService.GetAllPermissionsCallCount;
         roleService.ThrowOnReplace = true;
@@ -411,7 +502,7 @@ public sealed class AdminRoleProtectionTests
         await (Task)saveMethod!.Invoke(viewModel, null)!;
 
         viewModel.ErrorMessage.Should().Be("Não foi possível salvar as permissões do grupo.");
-        viewPermission.IsGranted.Should().BeFalse();
+        productsForm.IsAssociated.Should().BeFalse();
         roleService.GetPermissionsCallCount.Should().Be(permissionReads);
         roleService.GetAllPermissionsCallCount.Should().Be(catalogReads);
     }

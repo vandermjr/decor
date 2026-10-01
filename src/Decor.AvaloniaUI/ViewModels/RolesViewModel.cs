@@ -8,14 +8,32 @@ using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
-public sealed class RolePermissionToggle
+public sealed class RoleFunctionalContext : INotifyPropertyChanged
 {
-    public required AdministrativePermissionDTO Permission { get; init; }
-    public bool IsGranted { get; set; }
-    public DecorPermissionPresentation Presentation => DecorPermissionPresentationCatalog.Describe(Permission.PermissionCode);
-    public string ModuleName => Presentation.ModuleName;
-    public string FormName => Presentation.FormName;
-    public string ActionDisplayName => Presentation.ActionName;
+    private bool _isAssociated;
+
+    public RoleFunctionalContext(DecorFunctionalPermissionContext context, bool isAssociated)
+    {
+        Context = context;
+        _isAssociated = isAssociated;
+    }
+
+    public DecorFunctionalPermissionContext Context { get; }
+    public string ContextName => Context.ContextName;
+    public bool IsAssociated
+    {
+        get => _isAssociated;
+        set
+        {
+            if (_isAssociated == value)
+                return;
+
+            _isAssociated = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsAssociated)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 public sealed class RolesViewModel : INotifyPropertyChanged
@@ -23,12 +41,13 @@ public sealed class RolesViewModel : INotifyPropertyChanged
     private readonly IRoleAdministrationService _roleAdministrationService;
     private AdministrativeRoleDTO? _selectedRole;
     private string? _selectedModule;
-    private string? _selectedForm;
     private bool _isLoading;
     private bool _isSaving;
     private string? _errorMessage;
     private int _permissionLoadVersion;
-    private IReadOnlyList<RolePermissionToggle> _catalog = [];
+    private IReadOnlyList<AdministrativePermissionDTO> _allPermissions = [];
+    private readonly HashSet<int> _selectedPermissionIds = [];
+    private readonly HashSet<string> _grantedPermissionCodes = new(StringComparer.OrdinalIgnoreCase);
 
     public RolesViewModel(IRoleAdministrationService roleAdministrationService)
     {
@@ -38,8 +57,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
     public ObservableCollection<string> Modules { get; } = [];
-    public ObservableCollection<string> Forms { get; } = [];
-    public ObservableCollection<RolePermissionToggle> Permissions { get; } = [];
+    public ObservableCollection<RoleFunctionalContext> Forms { get; } = [];
 
     public ICommand SaveCommand { get; private set; }
 
@@ -50,10 +68,11 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _selectedRole, value)) return;
             _selectedModule = null;
-            _selectedForm = null;
             Modules.Clear();
             Forms.Clear();
-            Permissions.Clear();
+            _allPermissions = [];
+            _selectedPermissionIds.Clear();
+            _grantedPermissionCodes.Clear();
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
             if (value is not null)
@@ -72,33 +91,17 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         set
         {
             if (!SetField(ref _selectedModule, value)) return;
-            _selectedForm = null;
             Forms.Clear();
-            Permissions.Clear();
             if (value is not null)
             {
-                foreach (var form in _catalog.Where(item => item.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase))
-                             .Select(item => item.FormName).Distinct(StringComparer.OrdinalIgnoreCase))
-                    Forms.Add(form);
-                if (Forms.Count > 0) SelectedForm = Forms.First();
-            }
-        }
-    }
-
-    public string? SelectedForm
-    {
-        get => _selectedForm;
-        set
-        {
-            if (!SetField(ref _selectedForm, value)) return;
-            Permissions.Clear();
-            if (value is not null && SelectedModule is not null)
-            {
-                foreach (var permission in _catalog
-                             .Where(item => string.Equals(item.ModuleName, SelectedModule, StringComparison.OrdinalIgnoreCase)
-                                 && string.Equals(item.FormName, value, StringComparison.OrdinalIgnoreCase)))
+                foreach (var context in DecorFunctionalPermissionCatalog.Contexts
+                             .Where(context => string.Equals(context.ModuleName, value, StringComparison.Ordinal)))
                 {
-                    Permissions.Add(permission);
+                    var form = new RoleFunctionalContext(
+                        context,
+                        context.PermissionCodes.Any(_grantedPermissionCodes.Contains));
+                    form.PropertyChanged += OnFunctionalContextPropertyChanged;
+                    Forms.Add(form);
                 }
             }
         }
@@ -143,7 +146,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            ErrorMessage = "Não foi possível carregar os grupos de permissões.";
+            ErrorMessage = "Não foi possível carregar os grupos funcionais.";
         }
         finally
         {
@@ -161,28 +164,21 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         {
             var grantedPermissions = await _roleAdministrationService.GetPermissionsAsync(roleId);
             var allPermissions = await _roleAdministrationService.GetAllPermissionsAsync();
-            var permissionSet = grantedPermissions.Select(permission => permission.PermissionID).ToHashSet();
-
-            var catalog = allPermissions
-                .Select(permission =>
-                {
-                    return new RolePermissionToggle
-                    {
-                        Permission = permission,
-                        IsGranted = permissionSet.Contains(permission.PermissionID)
-                    };
-                })
-                .OrderBy(item => item.ModuleName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(item => item.FormName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(item => item.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
-                .ToArray();
 
             if (!IsCurrentPermissionLoad(roleId, requestVersion))
                 return;
 
-            _catalog = catalog;
+            _allPermissions = allPermissions;
+            _selectedPermissionIds.Clear();
+            _grantedPermissionCodes.Clear();
+            foreach (var permission in grantedPermissions)
+            {
+                _selectedPermissionIds.Add(permission.PermissionID);
+                _grantedPermissionCodes.Add(permission.PermissionCode);
+            }
+
             Modules.Clear();
-            foreach (var module in DecorPermissionPresentationCatalog.ModuleNames.Where(module => catalog.Any(item => item.ModuleName == module)))
+            foreach (var module in DecorFunctionalPermissionCatalog.ModuleNames)
                 Modules.Add(module);
 
             if (Modules.Count > 0)
@@ -207,6 +203,30 @@ public sealed class RolesViewModel : INotifyPropertyChanged
     private bool IsCurrentPermissionLoad(int roleId, int requestVersion)
         => requestVersion == _permissionLoadVersion && SelectedRole?.RoleID == roleId;
 
+    private void OnFunctionalContextPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (sender is not RoleFunctionalContext form
+            || eventArgs.PropertyName != nameof(RoleFunctionalContext.IsAssociated))
+            return;
+
+        foreach (var permissionCode in form.Context.PermissionCodes)
+        {
+            if (form.IsAssociated)
+                _grantedPermissionCodes.Add(permissionCode);
+            else
+                _grantedPermissionCodes.Remove(permissionCode);
+
+            foreach (var permission in _allPermissions.Where(permission =>
+                         string.Equals(permission.PermissionCode, permissionCode, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (form.IsAssociated)
+                    _selectedPermissionIds.Add(permission.PermissionID);
+                else
+                    _selectedPermissionIds.Remove(permission.PermissionID);
+            }
+        }
+    }
+
     private async Task SaveAsync()
     {
         if (SelectedRole is null) return;
@@ -216,11 +236,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         ErrorMessage = null;
         try
         {
-            var permissionIds = _catalog
-                .Where(item => item.IsGranted)
-                .Select(item => item.Permission.PermissionID)
-                .Distinct()
-                .ToArray();
+            var permissionIds = _selectedPermissionIds.ToArray();
 
             await _roleAdministrationService.ReplacePermissionsAsync(roleId, permissionIds);
             if (SelectedRole?.RoleID == roleId)
