@@ -215,6 +215,25 @@
               </MenuFlyout>
             </Button.Flyout>
           </Button>
+          <Button Classes="main-menu-button" Content="Configurações">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Configurações do Sistema" IsEnabled="False"/>
+                <MenuItem Header="Opções do Usuário">
+                  <MenuItem Header="Tema">
+                    <MenuItem Header="Claro"
+                              ToggleType="Radio"
+                              IsChecked="{Binding IsLightTheme}"
+                              Command="{Binding UseLightThemeCommand}"/>
+                    <MenuItem Header="Escuro"
+                              ToggleType="Radio"
+                              IsChecked="{Binding IsDarkTheme}"
+                              Command="{Binding UseDarkThemeCommand}"/>
+                  </MenuItem>
+                </MenuItem>
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
           <Button Classes="main-menu-button" Content="Administração">
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
