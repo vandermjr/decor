@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento registra como as capacidades presentes no código do Decor se relacionam em processos de negócio. Distingue os fluxos disponíveis no backend daqueles que podem ser operados pela interface Avalonia atualmente navegável. É uma fotografia do estado auditado em 2026-09-30, na branch `audit/groups-permissions-redesign`, commit `b00801d`.
+Este documento registra como as capacidades presentes no código do Decor se relacionam em processos de negócio. Distingue os fluxos disponíveis no backend daqueles que podem ser operados pela interface Avalonia atualmente navegável. É uma fotografia do estado auditado em 2026-09-30, na branch `audit/groups-permissions-redesign`, commit `2782cda`.
 
 ## Como interpretar este documento
 
@@ -199,7 +199,7 @@ Ocorrências podem ser registradas em pedido não cancelado, com motivo ativo e 
 
 ### Serviços
 
-**Agendamento → execução — Backend disponível / UI ausente; fluxo parcial.** Agendar exige item de pedido cujo produto seja `Service` e exatamente um executor, funcionário ou parceiro. Conflito é verificado por executor e dia, considerando agendamentos programados/reagendados. Reagendar exige motivo e guarda histórico. Cancelar ou concluir só aceita agendamento programado/reagendado. Registro de execução exige agendamento nesse estado e ausência de execução anterior; as validações de presença e confirmação são condicionais. A execução e conclusão do agendamento são chamadas separadas.
+**Agendamento → execução — Backend disponível / UI ausente; fluxo parcial.** Agendar exige item de pedido cujo produto seja `Service` e exatamente um executor, funcionário ou parceiro. Conflito é verificado por executor e dia, considerando agendamentos programados/reagendados. Reagendar exige motivo e guarda histórico. Cancelar só aceita agendamento programado/reagendado. Registro de execução exige agendamento nesse estado e ausência de execução anterior; as validações de presença e confirmação são condicionais. Registrar a execução cria o registro e, no mesmo fluxo de aplicação, conclui automaticamente o agendamento.
 
 ```mermaid
 flowchart TD
@@ -210,9 +210,9 @@ flowchart TD
     R -->|Reagendar novamente| R
     S -->|Cancelar| C[Cancelled]
     R -->|Cancelar| C
-    S -->|Registrar execução válida| E[ServiceExecutionRecord]
+    S -->|Registrar execução válida| E[Registro de execução criado]
     R -->|Registrar execução válida| E
-    E -->|Conclusão em operação separada| D[Completed]
+    E -->|No mesmo fluxo de aplicação| D[Agendamento concluído automaticamente]
 ```
 
 Quando o cliente está presente, é obrigatório informar se assinou. Quando ausente, exige nota de autorização de ausência e não aceita confirmação assinada. Execução não atualiza status do pedido, estoque ou caixa automaticamente. **Não foi confirmado outro fluxo de serviços além de agendamento e registro de execução descritos acima.**
