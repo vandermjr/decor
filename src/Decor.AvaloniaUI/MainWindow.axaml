@@ -178,46 +178,49 @@
           <Button Classes="main-menu-button" Content="Comercial">
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Termo de Entrega" Command="{Binding ShowTermDeliveryCommand}"/>
+                <MenuItem Header="Orçamentos" IsEnabled="False"/>
+                <MenuItem Header="Pedidos" IsEnabled="False"/>
               </MenuFlyout>
             </Button.Flyout>
           </Button>
           <Button Classes="main-menu-button" Content="Compras">
             <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft"/>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Pedidos de Compra" IsEnabled="False"/>
+                <MenuItem Header="Recebimentos" IsEnabled="False"/>
+              </MenuFlyout>
             </Button.Flyout>
           </Button>
           <Button Classes="main-menu-button" Content="Estoque">
             <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft"/>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Estoque" IsEnabled="False"/>
+                <MenuItem Header="Transferências" IsEnabled="False"/>
+                <MenuItem Header="Ajustes" IsEnabled="False"/>
+              </MenuFlyout>
             </Button.Flyout>
           </Button>
           <Button Classes="main-menu-button" Content="Serviços">
             <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft"/>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Agenda" IsEnabled="False"/>
+              </MenuFlyout>
             </Button.Flyout>
           </Button>
           <Button Classes="main-menu-button" Content="Financeiro">
             <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft"/>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Contas a Pagar" IsEnabled="False"/>
+                <MenuItem Header="Caixa" IsEnabled="False"/>
+              </MenuFlyout>
             </Button.Flyout>
           </Button>
-          <Button Classes="main-menu-button" Content="Configurações">
+          <Button Classes="main-menu-button" Content="Administração">
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Configurações do Sistema"/>
-                <MenuItem Header="Opções do Usuário">
-                  <MenuItem Header="Tema">
-                    <MenuItem Header="Claro" ToggleType="Radio" IsChecked="{Binding IsLightTheme}" Command="{Binding UseLightThemeCommand}"/>
-                    <MenuItem Header="Escuro" ToggleType="Radio" IsChecked="{Binding IsDarkTheme}" Command="{Binding UseDarkThemeCommand}"/>
-                  </MenuItem>
-                </MenuItem>
-                <MenuItem Header="Administração do Sistema">
-                  <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
-                  <MenuItem Header="Grupos de Permissões" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}"/>
-                  <MenuItem Header="Manutenção do Banco de Dados" Command="{Binding ShowDatabaseMaintenanceCommand}" IsVisible="{Binding CanViewDatabaseMaintenance}"/>
-                  <MenuItem Header="Catálogo de Ícones" Command="{Binding ShowIconCatalogCommand}" IsVisible="{Binding CanViewIconCatalog}"/>
-                </MenuItem>
+                <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
+                <MenuItem Header="Grupos Funcionais" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}"/>
+                <MenuItem Header="Manutenção do Banco" Command="{Binding ShowDatabaseMaintenanceCommand}" IsVisible="{Binding CanViewDatabaseMaintenance}"/>
               </MenuFlyout>
             </Button.Flyout>
           </Button>

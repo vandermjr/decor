@@ -37,7 +37,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
-        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
+        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos Funcionais", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         ShowIconCatalogCommand = new RelayCommand(() => OpenSingletonDocument("icon-catalog", "Catálogo de Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
