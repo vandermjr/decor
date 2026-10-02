@@ -26,7 +26,8 @@ public sealed class MariaDbFixture : IAsyncLifetime
                      "20260831_add_users_must_change_password.sql",
                      "20260901_add_administration_security.sql",
                      "20260902_harden_administration_security.sql",
-                     "20260921_add_user_settings.sql"
+                     "20260921_add_user_settings.sql",
+                     "20261001_pluralize_protected_permission_groups.sql"
                  })
         {
             await connection.ExecuteAsync(await File.ReadAllTextAsync(Path.Combine(migrationsDirectory, migration)));

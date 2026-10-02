@@ -15,8 +15,8 @@ public sealed class DatabaseMaintenanceAuthorizationTests
     }
 
     [Theory]
-    [InlineData(SystemRoleDefaults.Administrator)]
-    [InlineData(SystemRoleDefaults.Supervisor)]
+    [InlineData(SystemRoleDefaults.Administrators)]
+    [InlineData(SystemRoleDefaults.Supervisors)]
     public void DatabaseMaintenanceView_IsGrantedByDefaultToSystemRole(string roleName)
     {
         SystemRoleDefaults.Permissions[roleName].Should().Contain(DecorPermissions.DatabaseMaintenanceView);

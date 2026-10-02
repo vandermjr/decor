@@ -15,13 +15,13 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersView]);
 
         var sameLevelUser = CreateAdministrativeUser(
             userId: 10,
             username: "mesmo-nivel",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)]);
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)]);
 
         var lowerLevelUser = CreateAdministrativeUser(
             userId: 11,
@@ -37,7 +37,7 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [sameLevelUser, lowerLevelUser, higherLevelUser],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(3, "Operador", null, 10, false),
                 new AdministrativeRoleDTO(4, "Gerente", null, 30, false)]);
 
@@ -54,7 +54,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersView]);
 
         var targetUser = CreateAdministrativeUser(
@@ -66,7 +66,7 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [targetUser],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(5, "NivelAlvo", null, targetLevel, false)]);
 
         var act = async () => await service.GetByIdAsync(targetUser.UserID);
@@ -80,7 +80,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersView]);
 
         var targetUser = CreateAdministrativeUser(
@@ -92,7 +92,7 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [targetUser],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(3, "Operador", null, 10, false)]);
 
         var result = await service.GetByIdAsync(targetUser.UserID);
@@ -109,7 +109,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersAssignRoles]);
 
         var targetUser = CreateAdministrativeUser(
@@ -121,7 +121,7 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [targetUser],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(3, "Operador", null, 10, false),
                 new AdministrativeRoleDTO(4, "NivelAlvo", null, roleLevel, false)]);
 
@@ -136,7 +136,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersAssignRoles]);
 
         var targetUser = CreateAdministrativeUser(
@@ -148,8 +148,8 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [targetUser],
             roles: [
-                new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrator, null, 100, true),
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(3, "Operador", null, 10, false)]);
 
         var act = async () => await service.ReplaceRolesAsync(targetUser.UserID, [3]);
@@ -165,7 +165,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.RolesManagePermissions]);
 
         var roleId = 8;
@@ -174,7 +174,7 @@ public sealed class HierarchyAndDelegationTests
         var userRepository = new FakeUserAdministrationRepository(
             users: [],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 role],
             permissions: [new AdministrativePermissionDTO(10, DecorPermissions.RolesManagePermissions, null)]);
 
@@ -198,7 +198,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.RolesManagePermissions]);
 
         var roleId = 9;
@@ -207,7 +207,7 @@ public sealed class HierarchyAndDelegationTests
         var userRepository = new FakeUserAdministrationRepository(
             users: [],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 role],
             permissions: [new AdministrativePermissionDTO(10, DecorPermissions.RolesManagePermissions, null)]);
 
@@ -231,7 +231,7 @@ public sealed class HierarchyAndDelegationTests
         var operatorUser = CreateApplicationUser(
             userId: 1,
             username: "supervisor",
-            roles: [new AdministrativeRoleDTO(2, "Supervisor", null, 20, false)],
+            roles: [new AdministrativeRoleDTO(2, "Coordenador", null, 20, false)],
             permissions: [DecorPermissions.UsersManagePermissions]);
 
         var targetUser = CreateAdministrativeUser(
@@ -243,7 +243,7 @@ public sealed class HierarchyAndDelegationTests
             operatorUser,
             users: [targetUser],
             roles: [
-                new AdministrativeRoleDTO(2, "Supervisor", null, 20, false),
+                new AdministrativeRoleDTO(2, "Coordenador", null, 20, false),
                 new AdministrativeRoleDTO(3, "Operador", null, 10, false)]);
 
         var act = async () => await service.ReplacePermissionOverridesAsync(

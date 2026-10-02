@@ -15,7 +15,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
         var currentUser = CreateUser(
             userId: 10,
             username: "joao",
-            roles: [SystemRoleDefaults.Administrator]);
+            roles: [SystemRoleDefaults.Administrators]);
         var context = new AuthenticatedUserContext();
         context.SignIn(currentUser);
 
@@ -25,7 +25,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
                     currentUser,
                     CreateUser(userId: 20, username: "maria", roles: ["Operador"])],
                 roles: [
-                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrator, null, 100, true),
+                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true),
                     new AdministrativeRoleDTO(2, "Operador", null, 10, false)
                 ],
                 permissions: [
@@ -47,7 +47,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
         var currentUser = CreateUser(
             userId: 10,
             username: "joao",
-            roles: [SystemRoleDefaults.Administrator]);
+            roles: [SystemRoleDefaults.Administrators]);
         var targetUser = CreateUser(userId: 20, username: "maria", roles: ["Operador"]);
         var context = new AuthenticatedUserContext();
         context.SignIn(currentUser);
@@ -56,7 +56,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
             new FakeUserAdministrationRepository(
                 users: [currentUser, targetUser],
                 roles: [
-                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrator, null, 100, true),
+                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true),
                     new AdministrativeRoleDTO(2, "Operador", null, 10, false)
                 ],
                 permissions: [
@@ -79,7 +79,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
         var currentUser = CreateUser(
             userId: 10,
             username: "joao",
-            roles: ["Operador", SystemRoleDefaults.Administrator]);
+            roles: ["Operador", SystemRoleDefaults.Administrators]);
         var context = new AuthenticatedUserContext();
         context.SignIn(currentUser);
 
@@ -88,7 +88,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
                 users: [currentUser],
                 roles: [
                     new AdministrativeRoleDTO(1, "Operador", null, 1, false),
-                    new AdministrativeRoleDTO(2, SystemRoleDefaults.Administrator, null, 100, true)
+                    new AdministrativeRoleDTO(2, SystemRoleDefaults.Administrators, null, 100, true)
                 ],
                 permissions: [
                     new AdministrativePermissionDTO(1, DecorPermissions.RolesManagePermissions, null)
@@ -198,7 +198,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
         var currentUser = CreateUser(
             userId: 10,
             username: "joao",
-            roles: [SystemRoleDefaults.Administrator]);
+            roles: [SystemRoleDefaults.Administrators]);
         var context = new AuthenticatedUserContext();
         context.SignIn(currentUser);
 
@@ -206,7 +206,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
             new FakeUserAdministrationRepository(
                 users: [currentUser],
                 roles: [
-                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrator, null, 100, true)
+                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true)
                 ],
                 permissions: [
                     new AdministrativePermissionDTO(1, DecorPermissions.UsersManagePermissions, null)
@@ -227,7 +227,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
         var currentUser = CreateUser(
             userId: 10,
             username: "joao",
-            roles: [SystemRoleDefaults.Administrator]);
+            roles: [SystemRoleDefaults.Administrators]);
         var targetUser = CreateUser(userId: 20, username: "maria", roles: ["Operador"]);
         var context = new AuthenticatedUserContext();
         context.SignIn(currentUser);
@@ -236,7 +236,7 @@ public sealed class AdministrativeSessionLocalInvalidationTests
             new FakeUserAdministrationRepository(
                 users: [currentUser, targetUser],
                 roles: [
-                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrator, null, 100, true),
+                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true),
                     new AdministrativeRoleDTO(2, "Operador", null, 10, false)
                 ],
                 permissions: [

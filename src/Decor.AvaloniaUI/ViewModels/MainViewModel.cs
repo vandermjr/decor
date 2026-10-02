@@ -174,7 +174,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool IsAdministrator()
     {
         var roles = _authenticatedUserContext.User?.Roles ?? [];
-        return roles.Contains(SystemRoleDefaults.Administrator, StringComparer.OrdinalIgnoreCase);
+        return roles.Contains(SystemRoleDefaults.Administrators, StringComparer.OrdinalIgnoreCase);
     }
 
     private static string InitialsOf(string? name)

@@ -11,6 +11,17 @@ namespace Decor.Application.Tests;
 public sealed class AdminRoleProtectionTests
 {
     [Fact]
+    public void SystemRoleDefaults_ExposePluralProtectedGroupNames()
+    {
+        SystemRoleDefaults.Administrators.Should().Be("Administradores");
+        SystemRoleDefaults.Supervisors.Should().Be("Supervisores");
+        SystemRoleDefaults.Permissions.Should().ContainKey(SystemRoleDefaults.Administrators);
+        SystemRoleDefaults.Permissions.Should().ContainKey(SystemRoleDefaults.Supervisors);
+        SystemRoleDefaults.Permissions.Should().NotContainKey("Administrador");
+        SystemRoleDefaults.Permissions.Should().NotContainKey("Supervisor");
+    }
+
+    [Fact]
     public async Task RoleAdministrationService_GetAllPermissionsAsync_WhenAuthorized_ReturnsCatalogInRepositoryOrder()
     {
         var permissions = new[]
@@ -19,7 +30,7 @@ public sealed class AdminRoleProtectionTests
             new AdministrativePermissionDTO(1, DecorPermissions.ProductsView, "Consultar produtos")
         };
         var context = new AuthenticatedUserContext();
-        context.SignIn(CreateUser(SystemRoleDefaults.Administrator));
+        context.SignIn(CreateUser(SystemRoleDefaults.Administrators));
         var service = new RoleAdministrationService(
             new FakeUserAdministrationRepository([], permissions),
             new TrackingRoleAdministrationRepository(),
@@ -36,7 +47,7 @@ public sealed class AdminRoleProtectionTests
     public async Task RoleAdministrationService_GetAllPermissionsAsync_WhenMissingRolesView_Throws()
     {
         var context = new AuthenticatedUserContext();
-        context.SignIn(CreateUser(SystemRoleDefaults.Administrator));
+        context.SignIn(CreateUser(SystemRoleDefaults.Administrators));
         var service = new RoleAdministrationService(
             new FakeUserAdministrationRepository([], []),
             new TrackingRoleAdministrationRepository(),
@@ -53,14 +64,14 @@ public sealed class AdminRoleProtectionTests
     {
         var adminRoleId = 1;
         var permissionId = 11;
-        var admin = CreateUser(SystemRoleDefaults.Administrator);
+        var admin = CreateUser(SystemRoleDefaults.Administrators);
         var context = new AuthenticatedUserContext();
         context.SignIn(admin);
 
         var service = new RoleAdministrationService(
             new FakeUserAdministrationRepository(
                 [
-                    new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrator, null, 200, true)
+                    new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrators, null, 200, true)
                 ],
                 [
                     new AdministrativePermissionDTO(permissionId, DecorPermissions.RolesManagePermissions, null)
@@ -78,13 +89,13 @@ public sealed class AdminRoleProtectionTests
     public async Task RoleAdministrationService_WhenAdministratorRolePermissionsAreEmpty_Throws()
     {
         var adminRoleId = 1;
-        var admin = CreateUser(SystemRoleDefaults.Administrator);
+        var admin = CreateUser(SystemRoleDefaults.Administrators);
         var context = new AuthenticatedUserContext();
         context.SignIn(admin);
 
         var service = new RoleAdministrationService(
             new FakeUserAdministrationRepository(
-                [new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrator, null, 200, true)],
+                [new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrators, null, 200, true)],
                 [
                     new AdministrativePermissionDTO(1, DecorPermissions.UsersView, null),
                     new AdministrativePermissionDTO(2, DecorPermissions.UsersEdit, null),
@@ -103,7 +114,7 @@ public sealed class AdminRoleProtectionTests
     public async Task RoleAdministrationService_RestoreDefaultsAsync_RestoresAdministratorPermissionsDeterministically()
     {
         var adminRoleId = 1;
-        var admin = CreateUser(SystemRoleDefaults.Administrator);
+        var admin = CreateUser(SystemRoleDefaults.Administrators);
         var context = new AuthenticatedUserContext();
         context.SignIn(admin);
 
@@ -137,7 +148,7 @@ public sealed class AdminRoleProtectionTests
         var trackingRepo = new TrackingRoleAdministrationRepository();
         var service = new RoleAdministrationService(
             new FakeUserAdministrationRepository(
-                [new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrator, null, 200, true)],
+                [new AdministrativeRoleDTO(adminRoleId, SystemRoleDefaults.Administrators, null, 200, true)],
                 allPermissions),
             trackingRepo,
             context,
@@ -146,10 +157,42 @@ public sealed class AdminRoleProtectionTests
         await service.RestoreDefaultsAsync(adminRoleId);
 
         var expected = allPermissions
-            .Where(p => SystemRoleDefaults.Permissions[SystemRoleDefaults.Administrator].Contains(p.PermissionCode, StringComparer.OrdinalIgnoreCase))
+            .Where(p => SystemRoleDefaults.Permissions[SystemRoleDefaults.Administrators].Contains(p.PermissionCode, StringComparer.OrdinalIgnoreCase))
             .Select(p => p.PermissionID)
             .ToArray();
 
+        trackingRepo.LastPermissionIds.Should().Equal(expected);
+    }
+
+    [Fact]
+    public async Task RoleAdministrationService_RestoreDefaultsAsync_FindsSupervisorDefaultsByCanonicalName()
+    {
+        var context = new AuthenticatedUserContext();
+        context.SignIn(CreateUser(SystemRoleDefaults.Administrators));
+        var trackingRepo = new TrackingRoleAdministrationRepository();
+        var permissions = new[]
+        {
+            new AdministrativePermissionDTO(1, DecorPermissions.UsersView, null),
+            new AdministrativePermissionDTO(2, DecorPermissions.DatabaseMaintenanceView, null),
+            new AdministrativePermissionDTO(3, DecorPermissions.ProductsView, null)
+        };
+        var service = new RoleAdministrationService(
+            new FakeUserAdministrationRepository(
+                [
+                    new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 200, true),
+                    new AdministrativeRoleDTO(2, SystemRoleDefaults.Supervisors, null, 100, true)
+                ],
+                permissions),
+            trackingRepo,
+            context,
+            new AlwaysAllowedAuthorizationService());
+
+        await service.RestoreDefaultsAsync(2);
+
+        var expected = permissions
+            .Where(permission => SystemRoleDefaults.Permissions[SystemRoleDefaults.Supervisors]
+                .Contains(permission.PermissionCode, StringComparer.OrdinalIgnoreCase))
+            .Select(permission => permission.PermissionID);
         trackingRepo.LastPermissionIds.Should().Equal(expected);
     }
 

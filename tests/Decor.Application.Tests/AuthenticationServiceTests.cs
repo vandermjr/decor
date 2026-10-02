@@ -1,4 +1,5 @@
 using Decor.Application.Services;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 
 namespace Decor.Application.Tests;
@@ -180,7 +181,7 @@ public sealed class AuthenticationServiceTests
         DisplayName = displayName,
         IsActive = isActive,
         MustChangePassword = mustChangePassword,
-        Roles = ["Administrador"],
+        Roles = [SystemRoleDefaults.Administrators],
         Permissions = ["Products.View"]
     };
 }

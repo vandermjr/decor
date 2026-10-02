@@ -16,6 +16,7 @@ public sealed class OrderOccurrenceRepositoryIntegrationTests(MariaDbFixture fix
     public async Task Occurrences_MigrationRepositoriesAndTransaction_WorkAgainstMariaDb()
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await connection.ExecuteAsync("INSERT INTO roles (RoleName, Description, HierarchyLevel, IsSystemProtected) VALUES ('Administrador', 'Legacy migration test role', 200, 1) ON DUPLICATE KEY UPDATE IsSystemProtected = VALUES(IsSystemProtected);");
         await PrepareSchemaAsync(connection);
 
         var seededReasons = (await connection.QueryAsync<string>("SELECT Description FROM occurrence_reasons ORDER BY ReasonID;")).ToList();

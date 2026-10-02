@@ -13,7 +13,7 @@ namespace Decor.Infrastructure.IntegrationTests;
 public sealed class AdminSecurityCriticalIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
 {
     private const string SeedAdminUsername = "admin";
-    private const string SeedAdminRoleName = SystemRoleDefaults.Administrator;
+    private const string SeedAdminRoleName = SystemRoleDefaults.Administrators;
 
     [Fact]
     public async Task SetActivePreservingLastAdministratorAsync_WhenOnlyActiveAdministratorIsDeactivated_ThrowsAndKeepsUserActive()

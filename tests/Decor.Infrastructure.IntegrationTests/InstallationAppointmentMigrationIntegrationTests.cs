@@ -10,6 +10,7 @@ public sealed class InstallationAppointmentMigrationIntegrationTests(MariaDbFixt
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
         await connection.OpenAsync();
+        await InsertLegacyAdministratorRoleAsync(connection);
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS employees (EmployeeID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(100) NOT NULL, PRIMARY KEY (EmployeeID)) ENGINE=InnoDB");
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS partners (PartnerID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(100) NOT NULL, PRIMARY KEY (PartnerID)) ENGINE=InnoDB");
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS products (ProductID INT NOT NULL AUTO_INCREMENT, ProductType TINYINT NOT NULL, PRIMARY KEY (ProductID)) ENGINE=InnoDB");
@@ -30,6 +31,7 @@ public sealed class InstallationAppointmentMigrationIntegrationTests(MariaDbFixt
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
         await connection.OpenAsync();
+        await InsertLegacyAdministratorRoleAsync(connection);
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS employees (EmployeeID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(100) NOT NULL, PRIMARY KEY (EmployeeID)) ENGINE=InnoDB");
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS partners (PartnerID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(100) NOT NULL, PRIMARY KEY (PartnerID)) ENGINE=InnoDB");
         await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS products (ProductID INT NOT NULL AUTO_INCREMENT, ProductType TINYINT NOT NULL, PRIMARY KEY (ProductID)) ENGINE=InnoDB");
@@ -44,4 +46,7 @@ public sealed class InstallationAppointmentMigrationIntegrationTests(MariaDbFixt
         (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM permissions WHERE PermissionCode LIKE 'ServiceExecutionRecords.%'")).Should().Be(2);
         (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM role_permissions rp INNER JOIN roles r ON r.RoleID = rp.RoleID INNER JOIN permissions p ON p.PermissionID = rp.PermissionID WHERE r.RoleName = 'Administrador' AND p.PermissionCode LIKE 'ServiceExecutionRecords.%'")).Should().Be(2);
     }
+
+    private static Task InsertLegacyAdministratorRoleAsync(MySqlConnection connection)
+        => connection.ExecuteAsync("INSERT INTO roles (RoleName, Description, HierarchyLevel, IsSystemProtected) VALUES ('Administrador', 'Legacy migration test role', 200, 1) ON DUPLICATE KEY UPDATE IsSystemProtected = VALUES(IsSystemProtected);");
 }

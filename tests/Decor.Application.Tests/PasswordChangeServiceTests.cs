@@ -1,4 +1,5 @@
 using Decor.Application.Services;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
 
@@ -124,7 +125,7 @@ public sealed class PasswordChangeServiceTests
             DisplayName = "Administrador",
             IsActive = true,
             MustChangePassword = mustChangePassword,
-            Roles = ["Administrador"],
+            Roles = [SystemRoleDefaults.Administrators],
             Permissions = ["Products.View"]
         });
         return (new PasswordChangeService(repository, hasher, new PasswordPolicy(), context), repository, hasher, context);
