@@ -21,6 +21,22 @@ public sealed class IconAppearanceServiceTests
     }
 
     [Fact]
+    public async Task InitializeAsync_notifies_when_reloading_changed_appearance()
+    {
+        var settings = new StubUserSettingsService
+        {
+            Settings = new UserSettings { IconAppearance = new IconAppearance(300, 0.9) }
+        };
+        var service = new IconAppearanceService(settings);
+        IconAppearance? notifiedAppearance = null;
+        service.AppearanceChanged += appearance => notifiedAppearance = appearance;
+
+        await service.InitializeAsync();
+
+        notifiedAppearance.Should().Be(new IconAppearance(300, 0.9));
+    }
+
+    [Fact]
     public async Task SetAppearanceAsync_persists_then_notifies_the_new_appearance()
     {
         var settings = new StubUserSettingsService();

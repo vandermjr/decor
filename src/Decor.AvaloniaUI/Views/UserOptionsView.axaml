@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.UserOptionsView"
+             x:DataType="vm:UserOptionsViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24" Spacing="20" MaxWidth="680" HorizontalAlignment="Left">
+      <TextBlock Text="Opções do Usuário" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Carregando opções..." IsVisible="{Binding IsLoading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+      <TextBlock Text="Salvando opções..." IsVisible="{Binding IsSaving}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+      <TextBlock Text="{Binding ErrorMessage}" IsVisible="{Binding HasError}" TextWrapping="Wrap" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+      <Button Content="Tentar novamente" Command="{Binding RetryLoadCommand}" IsVisible="{Binding CanRetry}" HorizontalAlignment="Left"/>
+      <StackPanel Spacing="20" IsEnabled="{Binding CanEdit}">
+        <TextBlock Text="Aparência" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+        <StackPanel Spacing="8">
+          <TextBlock Text="Tema" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <RadioButton GroupName="UserTheme" Content="Claro" IsChecked="{Binding IsLightTheme, Mode=OneWay}" Command="{Binding UseLightThemeCommand}"/>
+          <RadioButton GroupName="UserTheme" Content="Escuro" IsChecked="{Binding IsDarkTheme, Mode=OneWay}" Command="{Binding UseDarkThemeCommand}"/>
+        </StackPanel>
+        <StackPanel Spacing="12">
+          <TextBlock Text="Aparência dos ícones" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="12">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Peso" VerticalAlignment="Center"/>
+            <Slider Grid.Row="0" Grid.Column="1" Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True" Value="{Binding IconWeight, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding IconWeight}" VerticalAlignment="Center" MinWidth="30"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Espessura" VerticalAlignment="Center"/>
+            <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding StrokeThickness, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding StrokeThickness}" VerticalAlignment="Center" MinWidth="30"/>
+          </Grid>
+          <Button Content="Salvar aparência dos ícones" Command="{Binding SaveIconAppearanceCommand}" HorizontalAlignment="Left"/>
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

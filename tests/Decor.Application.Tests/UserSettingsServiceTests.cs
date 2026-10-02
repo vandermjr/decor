@@ -19,6 +19,7 @@ public sealed class UserSettingsServiceTests
 
         settings.Theme.Should().Be(DecorDefaults.Theme);
         settings.Language.Should().Be(DecorDefaults.DefaultLanguage.Name);
+        settings.IconAppearance.Should().Be(IconAppearance.Default);
         repository.RequestedUserId.Should().Be(7);
     }
 
@@ -164,6 +165,19 @@ public sealed class UserSettingsServiceTests
         settings.IconAppearance.Should().Be(new IconAppearance(600, 1.3));
     }
 
+    [Fact]
+    public async Task SetIconAppearanceAsync_PersistsWeightAndStrokeThickness()
+    {
+        var repository = new FakeUserSettingsRepository();
+        var service = new UserSettingsService(repository, AuthenticatedContext(7));
+
+        await service.SetIconAppearanceAsync(new IconAppearance(600, 1.3));
+
+        repository.SetCalls.Should().Equal(
+            (7, DecorUserSettings.IconWeight, "600", UserSettingValueType.String),
+            (7, DecorUserSettings.IconStrokeThickness, "1.3", UserSettingValueType.String));
+    }
+
     private static RecordingAuthenticatedUserContext AuthenticatedContext(int userId)
     {
         var context = new RecordingAuthenticatedUserContext();
@@ -186,6 +200,7 @@ internal sealed class FakeUserSettingsRepository : IUserSettingsRepository
     public int? RequestedUserId { get; private set; }
     public int GetAllCalls { get; private set; }
     public (int UserId, string Key, string Value, UserSettingValueType ValueType)? LastSet { get; private set; }
+    public List<(int UserId, string Key, string Value, UserSettingValueType ValueType)> SetCalls { get; } = [];
 
     public Task<UserSetting?> GetAsync(int userId, string settingKey, CancellationToken cancellationToken = default) =>
         Task.FromResult<UserSetting?>(Settings.GetValueOrDefault(settingKey));
@@ -200,6 +215,7 @@ internal sealed class FakeUserSettingsRepository : IUserSettingsRepository
     public Task SetAsync(int userId, string settingKey, string settingValue, UserSettingValueType valueType, CancellationToken cancellationToken = default)
     {
         LastSet = (userId, settingKey, settingValue, valueType);
+        SetCalls.Add(LastSet.Value);
         return Task.CompletedTask;
     }
 }

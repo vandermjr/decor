@@ -8,8 +8,14 @@ public sealed class IconAppearanceService(IUserSettingsService userSettingsServi
     public IconAppearance CurrentAppearance { get; private set; } = IconAppearance.Default;
     public event Action<IconAppearance>? AppearanceChanged;
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default) =>
-        CurrentAppearance = (await userSettingsService.GetAsync(cancellationToken)).IconAppearance;
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        var appearance = (await userSettingsService.GetAsync(cancellationToken)).IconAppearance;
+        if (CurrentAppearance == appearance) return;
+
+        CurrentAppearance = appearance;
+        AppearanceChanged?.Invoke(appearance);
+    }
 
     public async Task SetAppearanceAsync(int materialSymbolWeight, double strokeThickness, CancellationToken cancellationToken = default)
     {

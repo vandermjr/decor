@@ -39,6 +39,7 @@ internal static class Program
                 services.AddTransient<EditUserRolesViewModel>();
                 services.AddTransient<DatabaseMaintenanceViewModel>();
                 services.AddTransient<IconCatalogViewModel>();
+                services.AddTransient<UserOptionsViewModel>();
                 services.AddTransient<ProductsView>();
                 services.AddTransient<BrandsView>();
                 services.AddTransient<TermDeliveryView>();
@@ -47,6 +48,7 @@ internal static class Program
                 services.AddTransient<RolesView>();
                 services.AddTransient<DatabaseMaintenanceView>();
                 services.AddTransient<IconCatalogView>();
+                services.AddTransient<UserOptionsView>();
                 services.AddTransient<CreateUserWindow>();
                 services.AddTransient<EditUserWindow>();
                 services.AddTransient<EditUserRolesWindow>();

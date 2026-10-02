@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Styling;
 using Decor.AvaloniaUI.Views;
 using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
@@ -40,9 +39,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos Funcionais", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         ShowIconCatalogCommand = new RelayCommand(() => OpenSingletonDocument("icon-catalog", "Catálogo de Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
+        ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Opções do Usuário", () => CreateView<UserOptionsView>()));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
-        UseLightThemeCommand = new RelayCommand(() => IsDarkTheme = false);
-        UseDarkThemeCommand = new RelayCommand(() => IsDarkTheme = true);
 
         var user = authenticatedUserContext.User;
         var username = user?.Username ?? string.Empty;
@@ -117,9 +115,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ShowRolesCommand { get; }
     public ICommand ShowDatabaseMaintenanceCommand { get; }
     public ICommand ShowIconCatalogCommand { get; }
+    public ICommand ShowUserOptionsCommand { get; }
     public ICommand SignOutCommand { get; }
-    public ICommand UseLightThemeCommand { get; }
-    public ICommand UseDarkThemeCommand { get; }
     public string UserDisplayName { get; }
     public string UserUsername { get; }
     public string UserPrimaryRole { get; }
@@ -131,20 +128,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool CanViewIconCatalog => ((RelayCommand)ShowIconCatalogCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
-
-    public bool IsDarkTheme
-    {
-        get => _themeService.CurrentTheme == DecorThemeStyle.Dark;
-        set
-        {
-            var newTheme = value ? DecorThemeStyle.Dark : DecorThemeStyle.Light;
-            if (_themeService.CurrentTheme == newTheme) return;
-
-            _ = SetThemeAsync(newTheme);
-        }
-    }
-
-    public bool IsLightTheme => _themeService.CurrentTheme != DecorThemeStyle.Dark;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -221,24 +204,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         global::Avalonia.Application.Current.RequestedThemeVariant =
             _themeService.CurrentTheme == DecorThemeStyle.Dark
-                ? ThemeVariant.Dark
-                : ThemeVariant.Light;
-    }
-
-    private async Task SetThemeAsync(DecorThemeStyle theme)
-    {
-        await _themeService.SetThemeAsync(theme);
-
-        if (global::Avalonia.Application.Current is not null)
-        {
-            global::Avalonia.Application.Current.RequestedThemeVariant =
-                theme == DecorThemeStyle.Dark
-                    ? ThemeVariant.Dark
-                    : ThemeVariant.Light;
-        }
-
-        OnPropertyChanged(nameof(IsDarkTheme));
-        OnPropertyChanged(nameof(IsLightTheme));
+                ? Avalonia.Styling.ThemeVariant.Dark
+                : Avalonia.Styling.ThemeVariant.Light;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
