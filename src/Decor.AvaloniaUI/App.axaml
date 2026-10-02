@@ -8,11 +8,11 @@
     <ResourceDictionary>
         <ResourceDictionary.ThemeDictionaries>
             <ResourceDictionary x:Key="Light">
-                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#F3F4F6</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorSurfaceBrush">#FBFBFC</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#E7E9EC</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceBrush">#F1F2F4</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorControlBrush">#F7F8FA</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorBorderBrush">#D6DAE0</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorControlBrush">#E4E6E9</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorBorderBrush">#C7CBD1</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextBrush">#20242B</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextMutedBrush">#626B77</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentBrush">#2074B8</SolidColorBrush>
@@ -31,11 +31,11 @@
                 <FontWeight x:Key="DecorFontWeightHeading">Light</FontWeight>
             </ResourceDictionary>
             <ResourceDictionary x:Key="Dark">
-                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#20252B</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorSurfaceBrush">#272D34</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#303740</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorControlBrush">#252B32</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorBorderBrush">#414A55</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#191B1E</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceBrush">#222529</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#2C3035</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorControlBrush">#272B30</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorBorderBrush">#3B4046</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextBrush">#E3E7EC</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextMutedBrush">#AAB4C0</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentBrush">#3D94D1</SolidColorBrush>
