@@ -26,12 +26,12 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         return affectedRows == 1;
     }
 
-    public async Task<string?> GetPasswordHashByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public async Task<string?> GetPasswordHashByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         var (sql, parameters) = _createCommandBuilder()
             .Select<UserAccount>(s => s.WithColumns(u => u.PasswordHash))
             .Where(w => w
-                .Equals<UserAccount>(u => u.Username, username)
+                .Equals<UserAccount>(u => u.UserID, userId)
                 .Equals<UserAccount>(u => u.IsActive, true))
             .Take(1)
             .Build();
@@ -40,7 +40,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         return await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
     }
 
-    public async Task<ApplicationUser?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public async Task<ApplicationUser?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         // Permissões concedidas por role, respeitando um override negativo/positivo do próprio usuário.
         var permissionsByRole = _createCommandBuilder()
@@ -51,7 +51,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 .Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID)
                 .Left<ApplicationUser, Permission, UserPermissionOverride>((u, p, o) => o.UserID == u.UserID && o.PermissionID == p.PermissionID))
             .Where(w => w
-                .Equals<ApplicationUser>(u => u.Username, username)
+                .Equals<ApplicationUser>(u => u.UserID, userId)
                 .Equals<ApplicationUser>(u => u.IsActive, true)
                 .Group(g => g
                     .IsNull<UserPermissionOverride>(o => o.IsGranted)
@@ -65,7 +65,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                 .Inner<Permission, UserPermissionOverride>((p, o) => p.PermissionID == o.PermissionID && o.IsGranted == true)
                 .Inner<UserPermissionOverride, ApplicationUser>((o, u) => u.UserID == o.UserID))
             .Where(w => w
-                .Equals<ApplicationUser>(u => u.Username, username)
+                .Equals<ApplicationUser>(u => u.UserID, userId)
                 .Equals<ApplicationUser>(u => u.IsActive, true));
 
         var effectivePermissions = permissionsByRole.Union(permissionsByOverride);
@@ -75,7 +75,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Select<ApplicationUser>(s => s
                 .WithColumns(u => u.UserID, u => u.Username, u => u.DisplayName, u => u.IsActive, u => u.MustChangePassword)
                 .Where(w => w
-                    .Equals<ApplicationUser>(u => u.Username, username)
+                    .Equals<ApplicationUser>(u => u.UserID, userId)
                     .Equals<ApplicationUser>(u => u.IsActive, true))
                 .Take(1))
             .Select<Role>(s => s
@@ -84,7 +84,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                     .Inner<Role, UserRole>((r, ur) => r.RoleID == ur.RoleID)
                     .Inner<UserRole, ApplicationUser>((ur, u) => u.UserID == ur.UserID))
                 .Where(w => w
-                    .Equals<ApplicationUser>(u => u.Username, username)
+                    .Equals<ApplicationUser>(u => u.UserID, userId)
                     .Equals<ApplicationUser>(u => u.IsActive, true)))
             .Select<Permission>(s => s
                 .Distinct()

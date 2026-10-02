@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        xmlns:presentation="using:Decor.AvaloniaUI.Presentation"
         x:Class="Decor.AvaloniaUI.Views.EditUserRolesWindow"
         x:DataType="vm:EditUserRolesViewModel"
         Title="Decor — Grupo de Permissões"
@@ -8,6 +9,11 @@
         Height="560"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <ResourceDictionary>
+      <presentation:RoleNamePresentationConverter x:Key="RoleNamePresentationConverter" />
+    </ResourceDictionary>
+  </Window.Resources>
   <Grid Margin="28" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="12">
     <StackPanel Spacing="4">
       <TextBlock Text="Grupo de Permissões" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
@@ -19,7 +25,7 @@
           <DataTemplate x:DataType="vm:EditUserRoleOption">
             <CheckBox TabIndex="0" IsChecked="{Binding IsSelected}" IsEnabled="{Binding $parent[Window].DataContext.CanEditFields}">
               <StackPanel Spacing="2">
-                <TextBlock Text="{Binding Role.RoleName}"/>
+                <TextBlock Text="{Binding Role.RoleName, Converter={StaticResource RoleNamePresentationConverter}}"/>
                 <TextBlock Text="{Binding Role.Description}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap" IsVisible="{Binding Role.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
               </StackPanel>
             </CheckBox>

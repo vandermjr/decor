@@ -13,7 +13,7 @@ namespace Decor.Infrastructure.IntegrationTests;
 public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
 {
     [Fact]
-    public async Task UserRepository_GetByUsernameAsync_WhenRoleGrantIsDeniedByOverride_DoesNotIncludePermission()
+    public async Task UserRepository_GetByUserIdAsync_WhenRoleGrantIsDeniedByOverride_DoesNotIncludePermission()
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
         await using var isolation = await PrepareIsolationAsync(connection);
@@ -34,14 +34,14 @@ public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) 
 
         var repository = new UserRepository(new DatabaseConnection(fixture.ConnectionString), () => FluentCommandBuilder.Create(new MariaDBDialect()));
 
-        var user = await repository.GetByUsernameAsync(username);
+        var user = await repository.GetByUserIdAsync(userId);
 
         user.Should().NotBeNull();
         user!.Permissions.Should().NotContain(permissionCode);
     }
 
     [Fact]
-    public async Task UserRepository_GetByUsernameAsync_WhenNoRoleGrantsPermissionButOverrideAllows_DoesIncludePermission()
+    public async Task UserRepository_GetByUserIdAsync_WhenNoRoleGrantsPermissionButOverrideAllows_DoesIncludePermission()
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
         await using var isolation = await PrepareIsolationAsync(connection);
@@ -57,14 +57,14 @@ public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) 
 
         var repository = new UserRepository(new DatabaseConnection(fixture.ConnectionString), () => FluentCommandBuilder.Create(new MariaDBDialect()));
 
-        var user = await repository.GetByUsernameAsync(username);
+        var user = await repository.GetByUserIdAsync(userId);
 
         user.Should().NotBeNull();
         user!.Permissions.Should().Contain(permissionCode);
     }
 
     [Fact]
-    public async Task UserRepository_GetByUsernameAsync_WhenMultipleRolesGrantSamePermissionAndOverrideDenies_PermissionDoesNotAppear()
+    public async Task UserRepository_GetByUserIdAsync_WhenMultipleRolesGrantSamePermissionAndOverrideDenies_PermissionDoesNotAppear()
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
         await using var isolation = await PrepareIsolationAsync(connection);
@@ -86,7 +86,7 @@ public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) 
 
         var repository = new UserRepository(new DatabaseConnection(fixture.ConnectionString), () => FluentCommandBuilder.Create(new MariaDBDialect()));
 
-        var user = await repository.GetByUsernameAsync(username);
+        var user = await repository.GetByUserIdAsync(userId);
 
         user.Should().NotBeNull();
         user!.Permissions.Should().NotContain(permissionCode);
@@ -134,7 +134,7 @@ public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) 
             "INSERT INTO user_permission_overrides (UserID, PermissionID, IsGranted) VALUES (@UserId, @PermissionId, 1);",
             new { UserId = userId, PermissionId = firstPermissionId });
 
-        (await userRepository.GetByUsernameAsync(username))!.Permissions.Should().Contain(firstPermissionCode);
+        (await userRepository.GetByUserIdAsync(userId))!.Permissions.Should().Contain(firstPermissionCode);
 
         await repository.ReplacePermissionOverridesAsync(
             userId,
@@ -151,7 +151,7 @@ public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) 
         persisted.Should().Contain(x => x.PermissionID == firstPermissionId && x.IsGranted == 0);
         persisted.Should().Contain(x => x.PermissionID == secondPermissionId && x.IsGranted == 1);
 
-        var finalUser = await userRepository.GetByUsernameAsync(username);
+        var finalUser = await userRepository.GetByUserIdAsync(userId);
         finalUser.Should().NotBeNull();
         finalUser!.Permissions.Should().BeEquivalentTo([secondPermissionCode]);
     }

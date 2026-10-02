@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Decor.Core.Interfaces.Services;
@@ -8,7 +9,7 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class LoginViewModel : INotifyPropertyChanged
 {
     private readonly IAuthenticationService _authenticationService;
-    private string _username = string.Empty;
+    private string _userIdInput = string.Empty;
     private string _password = string.Empty;
     private string? _errorMessage;
     private bool _canCopyError;
@@ -26,10 +27,10 @@ public sealed class LoginViewModel : INotifyPropertyChanged
 
     public ICommand LoginCommand { get; }
 
-    public string Username
+    public string UserIdInput
     {
-        get => _username;
-        set => SetField(ref _username, value);
+        get => _userIdInput;
+        set => SetField(ref _userIdInput, value);
     }
 
     public string Password
@@ -64,10 +65,16 @@ public sealed class LoginViewModel : INotifyPropertyChanged
     private async Task LoginAsync()
     {
         SetError(null, canCopy: false);
+        if (!int.TryParse(UserIdInput.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
+        {
+            SetError("Informe um ID de usuário válido.", canCopy: false);
+            return;
+        }
+
         IsBusy = true;
         try
         {
-            var result = await _authenticationService.AuthenticateAsync(Username, Password);
+            var result = await _authenticationService.AuthenticateAsync(userId, Password);
             if (!result.Succeeded)
             {
                 SetError(result.ErrorMessage ?? "Não foi possível autenticar.", result.IsError);

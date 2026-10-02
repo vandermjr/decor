@@ -1,4 +1,9 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" xmlns:presentation="using:Decor.AvaloniaUI.Presentation" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <presentation:RoleNamePresentationConverter x:Key="RoleNamePresentationConverter" />
+    </ResourceDictionary>
+  </UserControl.Resources>
   <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
       <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário"/>
@@ -48,7 +53,7 @@
                       </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
-                          <TextBlock Text="{Binding RoleName}" Margin="0,0,8,0" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Text="{Binding RoleName, Converter={StaticResource RoleNamePresentationConverter}}" Margin="0,0,8,0" TextTrimming="CharacterEllipsis"/>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -69,7 +74,7 @@
           <ListBox Grid.Row="1" ItemsSource="{Binding UserRoles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
-                <TextBlock Text="{Binding RoleName}"/>
+                <TextBlock Text="{Binding RoleName, Converter={StaticResource RoleNamePresentationConverter}}"/>
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>

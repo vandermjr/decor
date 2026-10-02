@@ -16,8 +16,8 @@
     </StackPanel>
 
     <StackPanel Grid.Row="1" Margin="0,16,0,0" Spacing="6">
-      <TextBlock Text="Usuário" />
-      <TextBox x:Name="UsernameTextBox" TabIndex="0" Focusable="True" Text="{Binding Username}" PlaceholderText="Informe seu usuário" IsEnabled="{Binding !IsBusy}" />
+      <TextBlock Text="ID do usuário" />
+      <TextBox x:Name="UserIdTextBox" TabIndex="0" Focusable="True" Text="{Binding UserIdInput}" PlaceholderText="Informe o ID do usuário" IsEnabled="{Binding !IsBusy}" />
     </StackPanel>
 
     <StackPanel Grid.Row="2" Spacing="6">

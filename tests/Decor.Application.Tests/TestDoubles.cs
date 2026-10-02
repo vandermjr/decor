@@ -8,28 +8,30 @@ internal sealed class FakeUserRepository : IUserRepository
 {
     public string? PasswordHash { get; set; }
     public ApplicationUser? User { get; set; }
+    public Dictionary<int, string> PasswordHashes { get; } = [];
+    public Dictionary<int, ApplicationUser> Users { get; } = [];
     public int PasswordHashRequests { get; private set; }
     public int UserRequests { get; private set; }
-    public string? RequestedPasswordHashUsername { get; private set; }
-    public string? RequestedUserUsername { get; private set; }
+    public int? RequestedPasswordHashUserId { get; private set; }
+    public int? RequestedUserId { get; private set; }
     public int UpdatePasswordCalls { get; private set; }
     public int? UpdatedUserId { get; private set; }
     public string? UpdatedPasswordHash { get; private set; }
     public bool? UpdatedMustChangePassword { get; private set; }
     public bool UpdatePasswordResult { get; set; } = true;
 
-    public Task<string?> GetPasswordHashByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public Task<string?> GetPasswordHashByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         PasswordHashRequests++;
-        RequestedPasswordHashUsername = username;
-        return Task.FromResult(PasswordHash);
+        RequestedPasswordHashUserId = userId;
+        return Task.FromResult(PasswordHashes.TryGetValue(userId, out var hash) ? hash : PasswordHash);
     }
 
-    public Task<ApplicationUser?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public Task<ApplicationUser?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         UserRequests++;
-        RequestedUserUsername = username;
-        return Task.FromResult(User);
+        RequestedUserId = userId;
+        return Task.FromResult(Users.TryGetValue(userId, out var user) ? user : User?.UserID == userId ? User : null);
     }
 
     public Task<bool> UpdatePasswordAsync(int userId, string passwordHash, bool mustChangePassword, CancellationToken cancellationToken = default)

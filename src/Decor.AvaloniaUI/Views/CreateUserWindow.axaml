@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        xmlns:presentation="using:Decor.AvaloniaUI.Presentation"
         x:Class="Decor.AvaloniaUI.Views.CreateUserWindow"
         x:DataType="vm:CreateUserViewModel"
         Title="Decor — Novo usuário"
@@ -8,6 +9,11 @@
         Height="620"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <ResourceDictionary>
+      <presentation:RoleNamePresentationConverter x:Key="RoleNamePresentationConverter" />
+    </ResourceDictionary>
+  </Window.Resources>
   <Grid Margin="28" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" RowSpacing="12">
     <StackPanel Spacing="4">
       <TextBlock Text="Novo usuário" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
@@ -31,7 +37,7 @@
           <DataTemplate x:DataType="vm:CreateUserRoleOption">
             <CheckBox TabIndex="2" IsChecked="{Binding IsSelected}">
               <StackPanel Spacing="2">
-                <TextBlock Text="{Binding Role.RoleName}"/>
+                <TextBlock Text="{Binding Role.RoleName, Converter={StaticResource RoleNamePresentationConverter}}"/>
                 <TextBlock Text="{Binding Role.Description}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
                 <TextBlock Text="{Binding Role.HierarchyLevel, StringFormat='Nível: {0}'}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
               </StackPanel>

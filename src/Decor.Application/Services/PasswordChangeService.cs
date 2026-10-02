@@ -46,7 +46,7 @@ public sealed class PasswordChangeService(
         if (!passwordPolicy.IsValid(newPassword))
             return new PasswordChangeResult(false, "A nova senha não atende à política de senha.");
 
-        var currentPasswordHash = await userRepository.GetPasswordHashByUsernameAsync(user.Username, cancellationToken);
+        var currentPasswordHash = await userRepository.GetPasswordHashByUserIdAsync(user.UserID, cancellationToken);
         if (currentPasswordHash is null)
             return new PasswordChangeResult(false, "Não foi possível alterar a senha.", IsError: true);
 

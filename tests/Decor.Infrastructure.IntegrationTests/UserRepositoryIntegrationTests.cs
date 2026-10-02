@@ -10,12 +10,12 @@ namespace Decor.Infrastructure.IntegrationTests;
 public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
 {
     [Fact]
-    public async Task GetByUsernameAsync_WithActiveUser_LoadsUserRolesAndDistinctPermissionsFromTheThreeResultSets()
+    public async Task GetByUserIdAsync_WithActiveUser_LoadsUserRolesAndDistinctPermissionsFromTheThreeResultSets()
     {
         await using var data = await UserTestData.CreateAsync(fixture.ConnectionString, isActive: true, withRolesAndPermissions: true);
         var repository = CreateRepository();
 
-        var user = await repository.GetByUsernameAsync(data.Username);
+        var user = await repository.GetByUserIdAsync(data.UserId);
 
         user.Should().NotBeNull();
         user!.UserID.Should().Be(data.UserId);
@@ -30,33 +30,33 @@ public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : ICl
     }
 
     [Fact]
-    public async Task GetByUsernameAsync_WithNonexistentUser_ReturnsNull()
+    public async Task GetByUserIdAsync_WithNonexistentUser_ReturnsNull()
     {
         var repository = CreateRepository();
 
-        var user = await repository.GetByUsernameAsync($"missing-{Guid.NewGuid():N}");
+        var user = await repository.GetByUserIdAsync(-1);
 
         user.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetByUsernameAsync_WithInactiveUser_ReturnsNull()
+    public async Task GetByUserIdAsync_WithInactiveUser_ReturnsNull()
     {
         await using var data = await UserTestData.CreateAsync(fixture.ConnectionString, isActive: false, withRolesAndPermissions: true);
         var repository = CreateRepository();
 
-        var user = await repository.GetByUsernameAsync(data.Username);
+        var user = await repository.GetByUserIdAsync(data.UserId);
 
         user.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetByUsernameAsync_WithUserRequiringPasswordChange_LoadsMustChangePassword()
+    public async Task GetByUserIdAsync_WithUserRequiringPasswordChange_LoadsMustChangePassword()
     {
         await using var data = await UserTestData.CreateAsync(fixture.ConnectionString, isActive: true, withRolesAndPermissions: false, mustChangePassword: true);
         var repository = CreateRepository();
 
-        var user = await repository.GetByUsernameAsync(data.Username);
+        var user = await repository.GetByUserIdAsync(data.UserId);
 
         user.Should().NotBeNull();
         user!.MustChangePassword.Should().BeTrue();
@@ -77,15 +77,15 @@ public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : ICl
     [InlineData(true, true)]
     [InlineData(true, false)]
     [InlineData(false, false)]
-    public async Task GetPasswordHashByUsernameAsync_ReturnsHashOnlyForExistingActiveUser(bool exists, bool isActive)
+    public async Task GetPasswordHashByUserIdAsync_ReturnsHashOnlyForExistingActiveUser(bool exists, bool isActive)
     {
         await using var data = exists
             ? await UserTestData.CreateAsync(fixture.ConnectionString, isActive, withRolesAndPermissions: false)
             : null;
-        var username = data?.Username ?? $"missing-{Guid.NewGuid():N}";
+        var userId = data?.UserId ?? -1;
         var repository = CreateRepository();
 
-        var passwordHash = await repository.GetPasswordHashByUsernameAsync(username);
+        var passwordHash = await repository.GetPasswordHashByUserIdAsync(userId);
 
         passwordHash.Should().Be(exists && isActive ? data!.PasswordHash : null);
     }
@@ -100,8 +100,8 @@ public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : ICl
         var updated = await repository.UpdatePasswordAsync(data.UserId, newHash, mustChangePassword: false);
 
         updated.Should().BeTrue();
-        (await repository.GetPasswordHashByUsernameAsync(data.Username)).Should().Be(newHash);
-        (await repository.GetByUsernameAsync(data.Username))!.MustChangePassword.Should().BeFalse();
+        (await repository.GetPasswordHashByUserIdAsync(data.UserId)).Should().Be(newHash);
+        (await repository.GetByUserIdAsync(data.UserId))!.MustChangePassword.Should().BeFalse();
     }
 
     [Fact]

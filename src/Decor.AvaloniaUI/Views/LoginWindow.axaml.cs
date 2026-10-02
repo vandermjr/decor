@@ -18,16 +18,16 @@ public partial class LoginWindow : Window
     public LoginWindow()
     {
         InitializeComponent();
-        Opened += (_, _) => Dispatcher.UIThread.Post(FocusUsername, DispatcherPriority.Input);
+        Opened += (_, _) => Dispatcher.UIThread.Post(FocusUserId, DispatcherPriority.Input);
     }
 
-    private void FocusUsername()
+    private void FocusUserId()
     {
-        if (!UsernameTextBox.IsEffectivelyVisible || !UsernameTextBox.IsEffectivelyEnabled)
+        if (!UserIdTextBox.IsEffectivelyVisible || !UserIdTextBox.IsEffectivelyEnabled)
             return;
 
-        UsernameTextBox.Focus();
-        UsernameTextBox.CaretIndex = UsernameTextBox.Text?.Length ?? 0;
+        UserIdTextBox.Focus();
+        UserIdTextBox.CaretIndex = UserIdTextBox.Text?.Length ?? 0;
     }
 
     public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService, IIconAppearanceService iconAppearanceService)
