@@ -13,7 +13,7 @@ public sealed class PasswordChangeServiceTests
     [Fact]
     public async Task ChangePasswordAsync_WithCorrectCurrentPassword_UpdatesHashAndAuthenticatedContext()
     {
-        var (service, repository, hasher, context) = CreateService();
+        var (service, repository, hasher, context) = CreateService(employeeName: "Joao Carlos da Silva");
 
         var result = await service.ChangePasswordAsync(CurrentPassword, NewPassword, NewPassword);
 
@@ -22,6 +22,7 @@ public sealed class PasswordChangeServiceTests
         repository.UpdatedPasswordHash.Should().NotBe(repository.PasswordHash);
         hasher.Verify(NewPassword, repository.UpdatedPasswordHash!).Should().BeTrue();
         context.User!.MustChangePassword.Should().BeFalse();
+        context.User.EmployeeName.Should().Be("Joao Carlos da Silva");
         typeof(PasswordChangeResult).GetProperties().Should().NotContain(property => property.Name == "PasswordHash");
     }
 
@@ -113,7 +114,7 @@ public sealed class PasswordChangeServiceTests
         context.User!.MustChangePassword.Should().BeTrue();
     }
 
-    private static (PasswordChangeService Service, FakeUserRepository Repository, Pbkdf2PasswordHasher Hasher, RecordingAuthenticatedUserContext Context) CreateService(bool mustChangePassword = false)
+    private static (PasswordChangeService Service, FakeUserRepository Repository, Pbkdf2PasswordHasher Hasher, RecordingAuthenticatedUserContext Context) CreateService(bool mustChangePassword = false, string? employeeName = null)
     {
         var hasher = new Pbkdf2PasswordHasher();
         var repository = new FakeUserRepository { PasswordHash = hasher.Hash(CurrentPassword) };
@@ -123,6 +124,7 @@ public sealed class PasswordChangeServiceTests
             UserID = 1,
             Username = "admin",
             DisplayName = "Administrador",
+            EmployeeName = employeeName,
             IsActive = true,
             MustChangePassword = mustChangePassword,
             Roles = [SystemRoleDefaults.Administrators],

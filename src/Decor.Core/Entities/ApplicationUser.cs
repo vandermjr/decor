@@ -16,6 +16,9 @@ public sealed class ApplicationUser
     [Column("DisplayName")] // Opcional
     public string DisplayName { get; init; } = string.Empty;
 
+    [NotMapped]
+    public string? EmployeeName { get; init; }
+
     [Column("IsActive")] // Opcional
     public bool IsActive { get; init; }
 

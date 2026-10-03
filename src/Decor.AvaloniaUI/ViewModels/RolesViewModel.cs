@@ -146,7 +146,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            ErrorMessage = "Não foi possível carregar os grupos funcionais.";
+            ErrorMessage = "Não foi possível carregar os grupos de permissões.";
         }
         finally
         {

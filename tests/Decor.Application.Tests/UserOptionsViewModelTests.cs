@@ -15,20 +15,13 @@ public sealed class UserOptionsViewModelTests
         {
             Current = new UserSettings { Theme = DecorThemeStyle.Light, IconAppearance = new IconAppearance(300, 0.9) }
         };
-        var theme = new ThemeService(settings);
         var icons = new IconAppearanceService(settings);
-        await theme.InitializeAsync();
         await icons.InitializeAsync();
-        var viewModel = new UserOptionsViewModel(settings, theme, icons);
+        var viewModel = new UserOptionsViewModel(settings, icons);
 
         await viewModel.LoadAsync();
-        viewModel.IsLightTheme.Should().BeTrue();
         viewModel.IconWeight.Should().Be(300);
         viewModel.StrokeThickness.Should().Be(0.9);
-
-        await viewModel.SetThemeAsync(DecorThemeStyle.Dark);
-        viewModel.IsDarkTheme.Should().BeTrue();
-        settings.Current.Theme.Should().Be(DecorThemeStyle.Dark);
 
         viewModel.IconWeight = 600;
         viewModel.StrokeThickness = 1.3;
@@ -42,9 +35,8 @@ public sealed class UserOptionsViewModelTests
     public async Task FailedSave_ReloadsPartiallyPersistedAppearanceAndNotifiesIcons()
     {
         var settings = new SettingsStub { FailIconSaveAfterWeight = true };
-        var theme = new ThemeService(settings);
         var icons = new IconAppearanceService(settings);
-        var viewModel = new UserOptionsViewModel(settings, theme, icons);
+        var viewModel = new UserOptionsViewModel(settings, icons);
         await viewModel.LoadAsync();
         IconAppearance? notifiedAppearance = null;
         icons.AppearanceChanged += appearance => notifiedAppearance = appearance;
@@ -64,31 +56,16 @@ public sealed class UserOptionsViewModelTests
     }
 
     [Fact]
-    public async Task FailedThemeSave_KeepsPreviousSelection()
-    {
-        var settings = new SettingsStub { FailThemeSave = true };
-        var theme = new ThemeService(settings);
-        var viewModel = new UserOptionsViewModel(settings, theme, new IconAppearanceService(settings));
-        await viewModel.LoadAsync();
-
-        await viewModel.SetThemeAsync(DecorThemeStyle.Light);
-
-        viewModel.IsDarkTheme.Should().BeTrue();
-        theme.CurrentTheme.Should().Be(DecorThemeStyle.Dark);
-        viewModel.HasError.Should().BeTrue();
-        viewModel.CanEdit.Should().BeTrue();
-    }
-
-    [Fact]
     public async Task FailedLoad_DisablesEditingUntilRetrySucceeds()
     {
         var settings = new SettingsStub { FailNextLoad = true };
-        var viewModel = new UserOptionsViewModel(settings, new ThemeService(settings), new IconAppearanceService(settings));
+        var viewModel = new UserOptionsViewModel(settings, new IconAppearanceService(settings));
 
         await viewModel.LoadAsync();
         viewModel.CanEdit.Should().BeFalse();
         viewModel.CanRetry.Should().BeTrue();
         viewModel.HasError.Should().BeTrue();
+        viewModel.ErrorMessage.Should().Be("Não foi possível carregar as preferências.");
 
         await viewModel.LoadAsync();
         viewModel.CanEdit.Should().BeTrue();
@@ -99,7 +76,6 @@ public sealed class UserOptionsViewModelTests
     private sealed class SettingsStub : IUserSettingsService
     {
         public UserSettings Current { get; set; } = new() { Theme = DecorThemeStyle.Dark };
-        public bool FailThemeSave { get; init; }
         public bool FailIconSaveAfterWeight { get; init; }
         public bool FailNextLoad { get; set; }
 
@@ -115,7 +91,6 @@ public sealed class UserOptionsViewModelTests
 
         public Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default)
         {
-            if (FailThemeSave) throw new InvalidOperationException("Theme write failed");
             Current = new UserSettings { Theme = theme, IconAppearance = Current.IconAppearance };
             return Task.CompletedTask;
         }

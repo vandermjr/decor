@@ -18,6 +18,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IAuthenticatedUserContext _authenticatedUserContext;
     private WorkspaceDocumentViewModel? _activeDocument;
     private IStatusBarSource? _statusSource;
+    private string _themeToolTip = "Selecionar tema";
 
     public MainViewModel(
         INavigationService navigationService,
@@ -36,23 +37,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
-        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos Funcionais", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
+        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         ShowIconCatalogCommand = new RelayCommand(() => OpenSingletonDocument("icon-catalog", "Catálogo de Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
-        ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Opções do Usuário", () => CreateView<UserOptionsView>()));
+        ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Preferências", () => CreateView<UserOptionsView>()));
+        UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
+        UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
 
         var user = authenticatedUserContext.User;
         var username = user?.Username ?? string.Empty;
-        UserDisplayName = string.IsNullOrWhiteSpace(user?.DisplayName)
-            ? username
-            : user.DisplayName;
         UserUsername = username;
-        UserInitials = InitialsOf(UserDisplayName);
-        UserPrimaryRole = user?.Roles.FirstOrDefault() ?? string.Empty;
-        UserDisplayNameWithRole = string.IsNullOrWhiteSpace(UserPrimaryRole)
-            ? UserDisplayName
-            : $"{UserDisplayName} ({UserPrimaryRole})";
+        UserPresentationName = IsAdministrator()
+            ? "Administrador"
+            : !string.IsNullOrWhiteSpace(user?.EmployeeName) ? user.EmployeeName : username;
+        UserInitials = InitialsOf(UserPresentationName);
 
         OpenDocuments.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasOpenDocuments));
         ApplyCurrentTheme();
@@ -116,11 +115,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ShowDatabaseMaintenanceCommand { get; }
     public ICommand ShowIconCatalogCommand { get; }
     public ICommand ShowUserOptionsCommand { get; }
+    public ICommand UseLightThemeCommand { get; }
+    public ICommand UseDarkThemeCommand { get; }
     public ICommand SignOutCommand { get; }
-    public string UserDisplayName { get; }
+    public string UserPresentationName { get; }
     public string UserUsername { get; }
-    public string UserPrimaryRole { get; }
-    public string UserDisplayNameWithRole { get; }
+    public string ThemeDisplayName => _themeService.CurrentTheme == DecorThemeStyle.Dark ? "Tema: Escuro" : "Tema: Claro";
+    public string ThemeToolTip => _themeToolTip;
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
@@ -170,6 +171,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private void ActivateDocument(WorkspaceDocumentViewModel document) => ActiveDocument = document;
 
     private void RequestPasswordChange() => PasswordChangeRequested?.Invoke(this, EventArgs.Empty);
+
+    private async Task SetThemeAsync(DecorThemeStyle theme)
+    {
+        _themeToolTip = "Selecionar tema";
+        try
+        {
+            await _themeService.SetThemeAsync(theme);
+            ApplyCurrentTheme();
+            OnPropertyChanged(nameof(ThemeDisplayName));
+        }
+        catch (Exception)
+        {
+            _themeToolTip = "Não foi possível salvar o tema.";
+        }
+        OnPropertyChanged(nameof(ThemeToolTip));
+    }
 
     private bool IsAdministrator()
     {

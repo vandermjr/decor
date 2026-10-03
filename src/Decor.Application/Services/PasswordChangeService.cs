@@ -70,6 +70,7 @@ public sealed class PasswordChangeService(
         UserID = user.UserID,
         Username = user.Username,
         DisplayName = user.DisplayName,
+        EmployeeName = user.EmployeeName,
         IsActive = user.IsActive,
         MustChangePassword = false,
         Roles = user.Roles,

@@ -30,7 +30,7 @@ public sealed class DecorFunctionalPermissionCatalogTests
             ("Financeiro", "Contas a Pagar"),
             ("Financeiro", "Caixa"),
             ("Administração", "Usuários"),
-            ("Administração", "Grupos Funcionais"),
+            ("Administração", "Grupos de Permissões"),
             ("Administração", "Manutenção do Banco")
         };
 

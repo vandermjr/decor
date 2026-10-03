@@ -78,6 +78,10 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
                     .Equals<ApplicationUser>(u => u.UserID, userId)
                     .Equals<ApplicationUser>(u => u.IsActive, true))
                 .Take(1))
+            .Select<Employee>(s => s
+                .WithColumns(e => e.Name)
+                .Where(w => w.Equals<Employee>(e => e.UserID, userId))
+                .Take(1))
             .Select<Role>(s => s
                 .WithColumns(r => r.RoleName)
                 .Join(j => j
@@ -96,12 +100,14 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
         using var results = await connection.QueryMultipleAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
         var user = await results.ReadSingleOrDefaultAsync<ApplicationUser>();
         if (user is null) return null;
+        var employeeName = await results.ReadSingleOrDefaultAsync<string>();
 
         return new ApplicationUser
         {
             UserID = user.UserID,
             Username = user.Username,
             DisplayName = user.DisplayName,
+            EmployeeName = employeeName,
             IsActive = user.IsActive,
             MustChangePassword = user.MustChangePassword,
             Roles = (await results.ReadAsync<string>()).ToArray(),

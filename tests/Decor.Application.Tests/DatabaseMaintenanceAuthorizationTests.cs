@@ -42,6 +42,77 @@ public sealed class DatabaseMaintenanceAuthorizationTests
         viewModel.ShowDatabaseMaintenanceCommand.CanExecute(null).Should().Be(hasPermission);
     }
 
+    [Fact]
+    public void MainViewModel_UsesEmployeeNameAsPrimaryPresentationForLinkedUser()
+    {
+        var userContext = new StubAuthenticatedUserContext(new ApplicationUser
+        {
+            Username = "jsilva",
+            DisplayName = "Conta de Joao",
+            EmployeeName = "Joao Carlos da Silva"
+        });
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            new StubThemeService(),
+            new StubAuthorizationService(hasPermission: false),
+            userContext);
+
+        viewModel.UserPresentationName.Should().Be("Joao Carlos da Silva");
+        viewModel.UserInitials.Should().Be("JS");
+    }
+
+    [Fact]
+    public void MainViewModel_AdministratorWithoutEmployeeUsesSpecialAccountPresentation()
+    {
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            new StubThemeService(),
+            new StubAuthorizationService(hasPermission: false),
+            new StubAuthenticatedUserContext(new ApplicationUser
+            {
+                Username = "admin",
+                DisplayName = "Nome alternativo",
+                Roles = [SystemRoleDefaults.Administrators]
+            }));
+
+        viewModel.UserPresentationName.Should().Be("Administrador");
+        viewModel.UserInitials.Should().Be("AD");
+    }
+
+    [Fact]
+    public void MainViewModel_UserWithoutEmployeeFallsBackToUsernameRatherThanDisplayName()
+    {
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            new StubThemeService(),
+            new StubAuthorizationService(hasPermission: false),
+            new StubAuthenticatedUserContext(new ApplicationUser
+            {
+                Username = "jsilva",
+                DisplayName = "Nome de apresentação"
+            }));
+
+        viewModel.UserPresentationName.Should().Be("jsilva");
+        viewModel.UserInitials.Should().Be("JS");
+    }
+
+    [Fact]
+    public void MainViewModel_TopThemeCommandsPersistAndReflectSelectedTheme()
+    {
+        var themeService = new StubThemeService();
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            themeService,
+            new StubAuthorizationService(hasPermission: false),
+            new StubAuthenticatedUserContext());
+
+        viewModel.UseDarkThemeCommand.Execute(null);
+
+        themeService.CurrentTheme.Should().Be(DecorThemeStyle.Dark);
+        viewModel.ThemeDisplayName.Should().Be("Tema: Escuro");
+        viewModel.ThemeToolTip.Should().Be("Selecionar tema");
+    }
+
     private sealed class StubAuthorizationService(bool hasPermission) : IAuthorizationService
     {
         public bool HasPermission(string permissionCode) => hasPermission && permissionCode == DecorPermissions.DatabaseMaintenanceView;
@@ -59,17 +130,21 @@ public sealed class DatabaseMaintenanceAuthorizationTests
 
     private sealed class StubThemeService : IThemeService
     {
-        public DecorThemeStyle CurrentTheme => DecorThemeStyle.Light;
+        public DecorThemeStyle CurrentTheme { get; private set; } = DecorThemeStyle.Light;
         public event Action<DecorThemeStyle>? ThemeChanged
         {
             add { }
             remove { }
         }
         public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task SetThemeAsync(DecorThemeStyle newTheme) => Task.CompletedTask;
+        public Task SetThemeAsync(DecorThemeStyle newTheme)
+        {
+            CurrentTheme = newTheme;
+            return Task.CompletedTask;
+        }
     }
 
-    private sealed class StubAuthenticatedUserContext : IAuthenticatedUserContext
+    private sealed class StubAuthenticatedUserContext(ApplicationUser? user = null) : IAuthenticatedUserContext
     {
         public event EventHandler? SignedOut
         {
@@ -77,7 +152,7 @@ public sealed class DatabaseMaintenanceAuthorizationTests
             remove { }
         }
         public bool IsAuthenticated => true;
-        public ApplicationUser User { get; } = new() { Username = "test" };
+        public ApplicationUser User { get; } = user ?? new() { Username = "test" };
         public void SignIn(ApplicationUser user) { }
         public void SignOut() { }
     }

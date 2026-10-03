@@ -7,8 +7,16 @@ using MySqlConnector;
 
 namespace Decor.Infrastructure.IntegrationTests;
 
-public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
+public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>, IAsyncLifetime
 {
+    public async Task InitializeAsync()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS employees (EmployeeID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(150) NOT NULL, UserID INT NULL, PRIMARY KEY (EmployeeID), KEY IX_employees_UserID (UserID)) ENGINE=InnoDB;");
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
     [Fact]
     public async Task GetByUserIdAsync_WithActiveUser_LoadsUserRolesAndDistinctPermissionsFromTheThreeResultSets()
     {
@@ -21,12 +29,26 @@ public sealed class UserRepositoryIntegrationTests(MariaDbFixture fixture) : ICl
         user!.UserID.Should().Be(data.UserId);
         user.Username.Should().Be(data.Username);
         user.DisplayName.Should().Be(data.DisplayName);
+        user.EmployeeName.Should().BeNull();
         user.IsActive.Should().BeTrue();
         user.MustChangePassword.Should().BeFalse();
         user.Roles.Should().BeEquivalentTo(data.RoleNames);
         user.Permissions.Should().BeEquivalentTo(data.PermissionCodes);
         user.Permissions.Should().HaveCount(3, "the permission shared by both roles must be returned once by SELECT DISTINCT");
         typeof(Decor.Core.Entities.ApplicationUser).GetProperty("PasswordHash").Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByUserIdAsync_LoadsNameFromEmployeeLinkedToUserId()
+    {
+        const string employeeName = "Joao Carlos da Silva";
+        await using var data = await UserTestData.CreateAsync(fixture.ConnectionString, isActive: true, withRolesAndPermissions: false);
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await connection.ExecuteAsync("INSERT INTO employees (Name, UserID) VALUES (@EmployeeName, @UserID);", new { EmployeeName = employeeName, UserID = data.UserId });
+        var user = await CreateRepository().GetByUserIdAsync(data.UserId);
+
+        user.Should().NotBeNull();
+        user!.EmployeeName.Should().Be(employeeName);
     }
 
     [Fact]

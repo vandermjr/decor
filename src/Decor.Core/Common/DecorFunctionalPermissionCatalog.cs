@@ -186,7 +186,7 @@ public static class DecorFunctionalPermissionCatalog
                 DecorPermissions.UsersResetPassword,
                 DecorPermissions.UsersRestorePermissions
             }),
-            new DecorFunctionalPermissionContext("Administração", "Grupos Funcionais", new[]
+            new DecorFunctionalPermissionContext("Administração", "Grupos de Permissões", new[]
             {
                 DecorPermissions.RolesView,
                 DecorPermissions.RolesEdit,

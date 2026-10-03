@@ -10,8 +10,16 @@ using MySqlConnector;
 
 namespace Decor.Infrastructure.IntegrationTests;
 
-public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
+public sealed class PermissionOverridesIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>, IAsyncLifetime
 {
+    public async Task InitializeAsync()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS employees (EmployeeID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(150) NOT NULL, UserID INT NULL, PRIMARY KEY (EmployeeID), KEY IX_employees_UserID (UserID)) ENGINE=InnoDB;");
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
     [Fact]
     public async Task UserRepository_GetByUserIdAsync_WhenRoleGrantIsDeniedByOverride_DoesNotIncludePermission()
     {
