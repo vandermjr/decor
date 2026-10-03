@@ -71,6 +71,7 @@ public sealed class IconAppearanceServiceTests
         public IReadOnlyDictionary<string, string> Settings { get; init; } = new Dictionary<string, string>();
         public IReadOnlyDictionary<string, string>? SavedSettings { get; private set; }
 
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<IReadOnlyDictionary<string, string>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult(Settings);
         public Task SetAsync(IReadOnlyDictionary<string, string> settings, CancellationToken cancellationToken = default)
         {

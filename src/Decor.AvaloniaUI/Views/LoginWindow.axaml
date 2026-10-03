@@ -15,7 +15,7 @@
       <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextMutedBrush}" />
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
-               Text="{Binding UserIdInput}" PlaceholderText="ID do usuário" IsEnabled="{Binding !IsBusy}" />
+               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="ID do usuário" IsEnabled="{Binding !IsBusy}" />
 
       <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
                PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
@@ -48,11 +48,9 @@
       </Button>
     </Grid>
 
-    <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1"
-            Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="6"
-            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
       <TextBlock Text="Logo do cliente" Foreground="{DynamicResource DecorTextMutedBrush}"
                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </Border>
+    </Grid>
   </Grid>
 </Window>

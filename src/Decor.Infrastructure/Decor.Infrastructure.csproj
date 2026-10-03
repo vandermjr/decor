@@ -18,6 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\Migrations\20261002_add_system_settings.sql"
+                      Link="Migrations\20261002_add_system_settings.sql" />
     <ProjectReference Include="..\Decor.Core\Decor.Core.csproj" />
     <ProjectReference Include="..\Decor.FluentSqlBuilder\Decor.FluentSqlBuilder.csproj" />
   </ItemGroup>

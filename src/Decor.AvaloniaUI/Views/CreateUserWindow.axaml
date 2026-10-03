@@ -22,7 +22,7 @@
       <TextBox TabIndex="1" Text="{Binding DisplayName}" MaxLength="100" IsEnabled="{Binding CanEditFields}"/>
     </StackPanel>
     <StackPanel Grid.Row="3" Spacing="6">
-      <TextBlock Text="Funções" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Grupos de Permissões" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
       <TextBlock Text="A autoridade do serviço validará a hierarquia." Foreground="{DynamicResource DecorTextMutedBrush}"/>
     </StackPanel>
     <ScrollViewer Grid.Row="4">

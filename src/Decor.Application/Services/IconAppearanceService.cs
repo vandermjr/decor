@@ -14,6 +14,7 @@ public sealed class IconAppearanceService(ISystemSettingsRepository systemSettin
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        await systemSettingsRepository.InitializeAsync(cancellationToken);
         var settings = await systemSettingsRepository.GetAllAsync(cancellationToken);
         var appearance = ParseAppearance(settings.GetValueOrDefault(IconWeightKey), settings.GetValueOrDefault(IconStrokeThicknessKey));
         if (CurrentAppearance == appearance) return;

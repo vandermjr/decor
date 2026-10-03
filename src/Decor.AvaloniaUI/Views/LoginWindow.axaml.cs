@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Services;
 using Decor.Core.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Decor.AvaloniaUI.Views;
 
@@ -14,6 +15,8 @@ public partial class LoginWindow : Window
     private readonly INavigationService? _navigationService;
     private readonly IThemeService? _themeService;
     private readonly IIconAppearanceService? _iconAppearanceService;
+    private readonly IAuthenticatedUserContext? _authenticatedUserContext;
+    private readonly ILogger<LoginWindow>? _logger;
 
     public LoginWindow()
     {
@@ -30,34 +33,49 @@ public partial class LoginWindow : Window
         UserIdTextBox.CaretIndex = UserIdTextBox.Text?.Length ?? 0;
     }
 
-    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService, IIconAppearanceService iconAppearanceService)
+    public LoginWindow(LoginViewModel viewModel, INavigationService navigationService, IThemeService themeService,
+        IIconAppearanceService iconAppearanceService, IAuthenticatedUserContext authenticatedUserContext, ILogger<LoginWindow> logger)
         : this()
     {
         DataContext = viewModel;
         _navigationService = navigationService;
         _themeService = themeService;
         _iconAppearanceService = iconAppearanceService;
-        viewModel.LoginSucceeded += OnLoginSucceeded;
+        _authenticatedUserContext = authenticatedUserContext;
+        _logger = logger;
+        viewModel.LoginSucceeded += OnLoginSucceededAsync;
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
     }
 
-    private async void OnLoginSucceeded(object? sender, EventArgs e)
+    private async Task OnLoginSucceededAsync()
     {
-        await _themeService!.InitializeAsync();
-        await _iconAppearanceService!.InitializeAsync();
-        var mainWindow = _navigationService!.Resolve<MainWindow>();
-        if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        try
+        {
+            await _themeService!.InitializeAsync();
+            await _iconAppearanceService!.InitializeAsync();
+            var mainWindow = _navigationService!.Resolve<MainWindow>();
+            if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+                throw new InvalidOperationException("A aplicação não está em execução no ciclo de vida desktop esperado.");
+
             desktop.MainWindow = mainWindow;
 
-        mainWindow.Show();
-        Close();
+            mainWindow.Show();
+            Close();
+        }
+        catch (Exception exception)
+        {
+            _logger?.LogError(exception, "Falha ao inicializar o Decor após autenticação válida.");
+            _authenticatedUserContext?.SignOut();
+            if (DataContext is LoginViewModel loginViewModel)
+                loginViewModel.ReportInitializationFailure(exception);
+        }
     }
 
     private async void OnPasswordChangeRequired(object? sender, EventArgs e)
     {
         var changePasswordWindow = _navigationService!.Resolve<ChangePasswordWindow>();
         changePasswordWindow.Configure(required: true);
-        changePasswordWindow.SetSuccessAction(() => OnLoginSucceeded(null, EventArgs.Empty));
+        changePasswordWindow.SetSuccessAction(OnLoginSucceededAsync);
         await _navigationService.ShowDialogAsync(this, changePasswordWindow);
     }
 

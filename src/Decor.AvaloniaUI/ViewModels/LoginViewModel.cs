@@ -22,7 +22,7 @@ public sealed class LoginViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public event EventHandler? LoginSucceeded;
+    public event Func<Task>? LoginSucceeded;
     public event EventHandler? PasswordChangeRequired;
 
     public ICommand LoginCommand { get; }
@@ -62,7 +62,7 @@ public sealed class LoginViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task LoginAsync()
+    public async Task LoginAsync()
     {
         SetError(null, canCopy: false);
         if (!int.TryParse(UserIdInput.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
@@ -74,7 +74,17 @@ public sealed class LoginViewModel : INotifyPropertyChanged
         IsBusy = true;
         try
         {
-            var result = await _authenticationService.AuthenticateAsync(userId, Password);
+            AuthenticationResult result;
+            try
+            {
+                result = await _authenticationService.AuthenticateAsync(userId, Password);
+            }
+            catch
+            {
+                SetError("Não foi possível acessar o serviço de autenticação.", canCopy: true);
+                return;
+            }
+
             if (!result.Succeeded)
             {
                 SetError(result.ErrorMessage ?? "Não foi possível autenticar.", result.IsError);
@@ -85,16 +95,27 @@ public sealed class LoginViewModel : INotifyPropertyChanged
             if (result.User!.MustChangePassword)
                 PasswordChangeRequired?.Invoke(this, EventArgs.Empty);
             else
-                LoginSucceeded?.Invoke(this, EventArgs.Empty);
-        }
-        catch
-        {
-            SetError("Não foi possível acessar o serviço de autenticação.", canCopy: true);
+            {
+                try
+                {
+                    if (LoginSucceeded is { } loginSucceeded)
+                        await loginSucceeded();
+                }
+                catch (Exception exception)
+                {
+                    ReportInitializationFailure(exception);
+                }
+            }
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    public void ReportInitializationFailure(Exception exception)
+    {
+        SetError($"O login foi validado, mas não foi possível iniciar o Decor. Detalhe: {exception.Message}", canCopy: true);
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

@@ -29,9 +29,9 @@ public partial class ChangePasswordWindow : Window
         ((ChangePasswordViewModel)DataContext!).Configure(isCurrentPasswordRequired: !required);
     }
 
-    public void SetSuccessAction(Action successAction) => _successAction = successAction;
+    public void SetSuccessAction(Func<Task> successAction) => _successAction = successAction;
 
-    private Action? _successAction;
+    private Func<Task>? _successAction;
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
@@ -41,10 +41,11 @@ public partial class ChangePasswordWindow : Window
         base.OnClosing(e);
     }
 
-    private void OnPasswordChanged(object? sender, EventArgs e)
+    private async void OnPasswordChanged(object? sender, EventArgs e)
     {
         _completed = true;
-        _successAction?.Invoke();
+        if (_successAction is not null)
+            await _successAction();
         Close();
     }
 
