@@ -321,6 +321,7 @@ public static class DecorIconCatalog
             [DecorIconId.Application.Home] = "home",
             [DecorIconId.Application.Settings] = "settings",
             [DecorIconId.Application.Help] = "help",
+            [DecorIconId.Application.ThemeToggle] = "contrast",
             [DecorIconId.Modules.Cadastros] = "dataset",
             [DecorIconId.Modules.Compras] = "shopping_cart",
             [DecorIconId.Modules.Estoque] = "inventory_2",
@@ -347,6 +348,7 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Report] = "description",
             [DecorIconId.Actions.Close] = "close",
             [DecorIconId.Actions.Copy] = "content_copy",
+            [DecorIconId.Actions.SignIn] = "login",
             [DecorIconId.User.Profile] = "person",
             [DecorIconId.User.Preferences] = "tune",
             [DecorIconId.User.ChangePassword] = "key",
@@ -365,6 +367,8 @@ public static class DecorIconCatalog
         });
 
     private static readonly IReadOnlyList<DecorIconId> RegisteredIds = Array.AsReadOnly(SymbolsById.Keys.ToArray());
+    private static readonly Lazy<Geometry> LoginGeometry = CreateGeometry("M560-240h160v-480H560v-40h160q33 0 56.5 23.5T800-680v400q0 33-23.5 56.5T720-200H560v-40ZM400-320l-28-28 132-132H160v-40h344L372-652l28-28 180 180-180 180Z");
+    private static readonly Lazy<Geometry> ThemeToggleGeometry = CreateGeometry("M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q133 0 226.5 93.5T800-480q0 133-93.5 226.5T480-160Zm0-40q116 0 198-82t82-198q0-116-82-198t-198-82v560Z");
 
     public static IReadOnlyList<DecorIconId> Ids => RegisteredIds;
     public static IReadOnlyList<int> SupportedWeights => AvailableWeights;
@@ -383,6 +387,8 @@ public static class DecorIconCatalog
             throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
         if (!SymbolGeometriesByWeight.TryGetValue(weight, out var geometries))
             throw new ArgumentOutOfRangeException(nameof(weight), weight, "The Material Symbol weight is not supported.");
+        if (symbol == "login") return LoginGeometry.Value;
+        if (symbol == "contrast") return ThemeToggleGeometry.Value;
         return geometries[symbol].Value;
     }
 

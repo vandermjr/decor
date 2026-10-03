@@ -11,7 +11,7 @@
   <Grid Margin="28" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" RowSpacing="12">
     <StackPanel Spacing="4">
       <TextBlock Text="Novo usuário" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-      <TextBlock Text="Crie o usuário e selecione as roles iniciais." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+      <TextBlock Text="Crie o usuário e selecione os grupos de permissões iniciais." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
     </StackPanel>
     <StackPanel Grid.Row="1" Spacing="6">
       <TextBlock Text="Nome de usuário"/>

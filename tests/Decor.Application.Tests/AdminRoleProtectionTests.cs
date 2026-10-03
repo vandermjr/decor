@@ -268,7 +268,8 @@ public sealed class AdminRoleProtectionTests
         viewModel.SelectedModule = "Estoque";
         viewModel.Forms.Single(form => form.ContextName == "Locais de Estoque").IsAssociated.Should().BeTrue();
         viewModel.Forms.Single(form => form.ContextName == "Transferências").IsAssociated.Should().BeFalse();
-        viewModel.Modules.Should().NotContain("Configurações");
+        viewModel.Modules.Should().Contain("Configurações");
+        viewModel.Modules.Should().NotContain("Administração");
         viewModel.Modules.Should().NotContain("Ajuda");
         viewModel.Forms.Select(form => form.ContextName)
             .Should().NotContain("Métodos de Pagamento").And.NotContain("Entregas").And.NotContain("Termo de Entrega");

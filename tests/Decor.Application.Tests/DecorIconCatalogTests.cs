@@ -23,6 +23,7 @@ public class DecorIconCatalogTests
             DecorIconId.Application.Home,
             DecorIconId.Application.Settings,
             DecorIconId.Application.Help,
+            DecorIconId.Application.ThemeToggle,
             DecorIconId.Modules.Cadastros,
             DecorIconId.Modules.Compras,
             DecorIconId.Modules.Estoque,
@@ -49,6 +50,7 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Report,
             DecorIconId.Actions.Close,
             DecorIconId.Actions.Copy,
+            DecorIconId.Actions.SignIn,
             DecorIconId.User.Profile,
             DecorIconId.User.Preferences,
             DecorIconId.User.ChangePassword,
@@ -66,7 +68,7 @@ public class DecorIconCatalogTests
             DecorIconId.Navigation.Dropdown
         ];
 
-        Assert.Equal(44, expectedIds.Length);
+        Assert.Equal(46, expectedIds.Length);
         Assert.Equal(expectedIds.OrderBy(id => id.Value), DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
     }
@@ -84,7 +86,7 @@ public class DecorIconCatalogTests
             .OrderBy(id => id.Value)
             .ToArray();
 
-        Assert.Equal(44, declaredIds.Length);
+        Assert.Equal(46, declaredIds.Length);
         Assert.Equal(declaredIds, DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.Null(typeof(DecorIconId.Actions).GetProperty("Generic"));
         Assert.DoesNotContain(DecorIconCatalog.Ids, id => id.Value == "Actions." + "Generic");
@@ -104,13 +106,13 @@ public class DecorIconCatalogTests
     }
 
     [Fact]
-    public void Forty_physical_symbols_are_shared_by_the_expected_semantic_ids()
+    public void FortyTwo_physical_symbols_are_shared_by_the_expected_semantic_ids()
     {
         _ = AvaloniaInitialized.Value;
 
         var geometries = DecorIconCatalog.Ids.Select(id => DecorIconCatalog.Get(id)).ToArray();
 
-        Assert.Equal(40, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Equal(42, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Settings), DecorIconCatalog.Get(DecorIconId.Modules.Configuracoes));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Modules.Estoque), DecorIconCatalog.Get(DecorIconId.Forms.Products));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Actions.Create), DecorIconCatalog.Get(DecorIconId.Actions.Add));

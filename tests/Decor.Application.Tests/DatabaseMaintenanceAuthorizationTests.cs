@@ -97,7 +97,7 @@ public sealed class DatabaseMaintenanceAuthorizationTests
     }
 
     [Fact]
-    public void MainViewModel_TopThemeCommandsPersistAndReflectSelectedTheme()
+    public void MainViewModel_TopThemeTogglePersistsAndDescribesNextTheme()
     {
         var themeService = new StubThemeService();
         var viewModel = new MainViewModel(
@@ -106,11 +106,10 @@ public sealed class DatabaseMaintenanceAuthorizationTests
             new StubAuthorizationService(hasPermission: false),
             new StubAuthenticatedUserContext());
 
-        viewModel.UseDarkThemeCommand.Execute(null);
+        viewModel.ToggleThemeCommand.Execute(null);
 
         themeService.CurrentTheme.Should().Be(DecorThemeStyle.Dark);
-        viewModel.ThemeDisplayName.Should().Be("Tema: Escuro");
-        viewModel.ThemeToolTip.Should().Be("Selecionar tema");
+        viewModel.ThemeToolTip.Should().Be("Mudar para tema claro");
     }
 
     private sealed class StubAuthorizationService(bool hasPermission) : IAuthorizationService

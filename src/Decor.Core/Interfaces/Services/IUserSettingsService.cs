@@ -7,5 +7,4 @@ public interface IUserSettingsService
     Task<UserSettings> GetAsync(CancellationToken cancellationToken = default);
     Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default);
     Task SetLanguageAsync(string language, CancellationToken cancellationToken = default);
-    Task SetIconAppearanceAsync(IconAppearance appearance, CancellationToken cancellationToken = default);
 }

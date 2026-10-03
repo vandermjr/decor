@@ -217,7 +217,9 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
             Users.Clear();
             foreach (var user in values)
                 Users.Add(user);
-            StatusMessage = values.Count == 0 ? "Nenhum usuário encontrado." : $"{values.Count} usuário(s) carregado(s).";
+            StatusMessage = values.Count == 0
+                ? "Nenhum usuário encontrado."
+                : $"{values.Count} {(values.Count == 1 ? "usuário carregado" : "usuários carregados")}.";
             if (SelectedUser is not null && Users.All(user => user.UserID != SelectedUser.UserID))
             {
                 SelectedUser = null;
@@ -251,13 +253,14 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
 
             if (UserRoles.Count == 0)
             {
-                StatusMessage = $"{user.DisplayName} não possui grupos atribuídos.";
+                StatusMessage = $"{user.PresentationName} não possui grupos atribuídos.";
                 return;
             }
 
             SelectedRole = UserRoles.First();
             var uniquePermissionCount = await GetUniquePermissionCountForRoles(user.Roles);
-            StatusMessage = $"{user.DisplayName} · {UserRoles.Count} grupo(s) · {uniquePermissionCount} permissão(ões) disponíveis.";
+            var groupLabel = UserRoles.Count == 1 ? "grupo" : "grupos";
+            StatusMessage = $"{user.PresentationName} · {UserRoles.Count} {groupLabel} · {uniquePermissionCount} permissão(ões) disponíveis.";
         }
         catch (Exception)
         {

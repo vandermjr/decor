@@ -6,5 +6,4 @@ public sealed class UserSettings
 {
     public DecorThemeStyle Theme { get; init; }
     public string Language { get; init; } = string.Empty;
-    public IconAppearance IconAppearance { get; init; } = IconAppearance.Default;
 }

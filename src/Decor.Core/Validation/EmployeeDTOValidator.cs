@@ -33,6 +33,12 @@ public class EmployeeDTOValidator : IDTOValidator<EmployeeDTO>
             errors.Add("O salário base, quando informado, deve ser maior que zero.");
         }
 
+        if (dto.Document?.Length > 20)
+            errors.Add("O documento não pode exceder 20 caracteres.");
+
+        if (dto.Phone?.Length > 20)
+            errors.Add("O telefone não pode exceder 20 caracteres.");
+
         return errors;
     }
 }

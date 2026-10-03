@@ -26,7 +26,20 @@
             <DataGrid.Columns>
               <DataGridTextColumn Header="ID" Binding="{Binding UserID}" Width="70"/>
               <DataGridTextColumn Header="Usuário" Binding="{Binding Username}" Width="1.2*"/>
-              <DataGridTextColumn Header="Nome" Binding="{Binding DisplayName}" Width="1.6*"/>
+              <DataGridTemplateColumn Header="Nome de apresentação" Width="1.8*">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding PresentationName}" VerticalAlignment="Center"/>
+                      <Border Padding="5,2" CornerRadius="3" Background="{DynamicResource DecorControlBrush}"
+                              IsVisible="{Binding IsSystemAdministrator}">
+                        <TextBlock Text="Conta do sistema" FontSize="{DynamicResource DecorFontSizeCaption}"
+                                   Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                      </Border>
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTemplateColumn Header="Status" Width="90">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate x:DataType="dtos:AdministrativeUserDTO">

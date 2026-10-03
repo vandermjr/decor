@@ -81,6 +81,7 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
             .Select<Employee>(s => s
                 .WithColumns(e => e.Name)
                 .Where(w => w.Equals<Employee>(e => e.UserID, userId))
+                .OrderBy(o => o.Ascending<Employee>(e => e.EmployeeID))
                 .Take(1))
             .Select<Role>(s => s
                 .WithColumns(r => r.RoleName)

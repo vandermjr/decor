@@ -19,7 +19,6 @@ public sealed class UserSettingsServiceTests
 
         settings.Theme.Should().Be(DecorDefaults.Theme);
         settings.Language.Should().Be(DecorDefaults.DefaultLanguage.Name);
-        settings.IconAppearance.Should().Be(IconAppearance.Default);
         repository.RequestedUserId.Should().Be(7);
     }
 
@@ -145,37 +144,6 @@ public sealed class UserSettingsServiceTests
         await service.SetLanguageAsync("en-US");
 
         repository.LastSet.Should().Be((7, DecorUserSettings.Language, "en-US", UserSettingValueType.String));
-    }
-
-    [Fact]
-    public async Task GetAsync_LoadsPersistedIconAppearance()
-    {
-        var repository = new FakeUserSettingsRepository
-        {
-            Settings = new Dictionary<string, UserSetting>
-            {
-                [DecorUserSettings.IconWeight] = Setting(DecorUserSettings.IconWeight, "600"),
-                [DecorUserSettings.IconStrokeThickness] = Setting(DecorUserSettings.IconStrokeThickness, "1.3")
-            }
-        };
-        var service = new UserSettingsService(repository, AuthenticatedContext(7));
-
-        var settings = await service.GetAsync();
-
-        settings.IconAppearance.Should().Be(new IconAppearance(600, 1.3));
-    }
-
-    [Fact]
-    public async Task SetIconAppearanceAsync_PersistsWeightAndStrokeThickness()
-    {
-        var repository = new FakeUserSettingsRepository();
-        var service = new UserSettingsService(repository, AuthenticatedContext(7));
-
-        await service.SetIconAppearanceAsync(new IconAppearance(600, 1.3));
-
-        repository.SetCalls.Should().Equal(
-            (7, DecorUserSettings.IconWeight, "600", UserSettingValueType.String),
-            (7, DecorUserSettings.IconStrokeThickness, "1.3", UserSettingValueType.String));
     }
 
     private static RecordingAuthenticatedUserContext AuthenticatedContext(int userId)

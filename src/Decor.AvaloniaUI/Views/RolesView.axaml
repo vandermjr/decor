@@ -20,7 +20,7 @@
           <ListBox Grid.Row="1" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
-                <TextBlock Text="{Binding RoleName}"/>
+                  <TextBlock Text="{Binding RoleName}"/>
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>

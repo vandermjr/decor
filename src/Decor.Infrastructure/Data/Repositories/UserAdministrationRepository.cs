@@ -36,7 +36,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<AdministrativeUserDTO?> GetByIdAsync(int userId, CancellationToken cancellationToken = default)
     {
-        // Um único lote (Batch) mantém os três result sets consistentes numa única ida ao banco.
+        // Um único lote (Batch) mantém os quatro result sets consistentes numa única ida ao banco.
         var (sql, parameters) = _createCommandBuilder()
             .Batch()
             .Select<ApplicationUser>(s => s
@@ -55,6 +55,10 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .Join(j => j.Inner<UserPermissionOverride, Permission>((o, p) => o.PermissionID == p.PermissionID))
                 .Where(w => w.Equals<UserPermissionOverride>(o => o.UserID, userId))
                 .OrderBy(o => o.Ascending<Permission>(p => p.PermissionID)))
+            .Select<Employee>(s => s
+                .WithColumns<Employee>(employee => employee.Name)
+                .Where(w => w.Equals<Employee>(employee => employee.UserID, userId))
+                .OrderBy(o => o.Ascending<Employee>(employee => employee.EmployeeID)))
             .Build();
 
         using var connection = _databaseConnection.CreateConnection();
@@ -63,7 +67,8 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         if (user is null) return null;
         var roles = (await results.ReadAsync<AdministrativeRoleDTO>()).ToArray();
         var overrides = (await results.ReadAsync<PermissionOverrideDTO>()).ToArray();
-        return new AdministrativeUserDTO(user.UserID, user.Username, user.DisplayName, user.IsActive, roles, overrides);
+        var employee = await results.ReadFirstOrDefaultAsync<Employee>();
+        return new AdministrativeUserDTO(user.UserID, user.Username, user.DisplayName, user.IsActive, roles, overrides, employee?.Name);
     }
 
     public async Task<int> CreateWithRolesAsync(string username, string displayName, string passwordHash, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default)

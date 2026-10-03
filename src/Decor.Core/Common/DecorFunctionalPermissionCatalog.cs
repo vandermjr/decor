@@ -174,7 +174,7 @@ public static class DecorFunctionalPermissionCatalog
                 DecorPermissions.CashTransactionsView,
                 DecorPermissions.CashTransactionsCreate
             }),
-            new DecorFunctionalPermissionContext("Administração", "Usuários", new[]
+            new DecorFunctionalPermissionContext("Configurações", "Usuários", new[]
             {
                 DecorPermissions.UsersView,
                 DecorPermissions.UsersCreate,
@@ -186,14 +186,14 @@ public static class DecorFunctionalPermissionCatalog
                 DecorPermissions.UsersResetPassword,
                 DecorPermissions.UsersRestorePermissions
             }),
-            new DecorFunctionalPermissionContext("Administração", "Grupos de Permissões", new[]
+            new DecorFunctionalPermissionContext("Configurações", "Grupos de Permissões", new[]
             {
                 DecorPermissions.RolesView,
                 DecorPermissions.RolesEdit,
                 DecorPermissions.RolesManagePermissions,
                 DecorPermissions.RolesRestoreDefaults
             }),
-            new DecorFunctionalPermissionContext("Administração", "Manutenção do Banco", new[]
+            new DecorFunctionalPermissionContext("Configurações", "Administração do Sistema", new[]
             {
                 DecorPermissions.DatabaseMaintenanceView
             })
@@ -208,7 +208,7 @@ public static class DecorFunctionalPermissionCatalog
             "Comercial",
             "Serviços",
             "Financeiro",
-            "Administração"
+            "Configurações"
         });
 
     public static IReadOnlyList<string> PermissionCodes { get; } =

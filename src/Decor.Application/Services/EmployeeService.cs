@@ -22,6 +22,7 @@ public class EmployeeService(
 
     public async Task<IEnumerable<EmployeeDTO>> SearchEmployeesAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
+        Require(DecorPermissions.EmployeesView);
         // Delega a busca para o repositório e mapeia o resultado para DTO
         var employees = await _employeeRepository.SearchGetByAsync(searchTerm, page, pageSize, cancellationToken);
         return employees.ToDTO();
@@ -29,6 +30,7 @@ public class EmployeeService(
 
     public async Task<IEnumerable<EmployeeDTO>> GetAllEmployeesAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
+        Require(DecorPermissions.EmployeesView);
         // Para obter todos, chamamos a busca com um argumento nulo
         var employees = await _employeeRepository.SearchGetByAsync(null, page, pageSize, cancellationToken);
         return employees.ToDTO();
@@ -36,6 +38,7 @@ public class EmployeeService(
 
     public async Task<EmployeeDTO> GetEmployeeByIdAsync(int employeeID, CancellationToken cancellationToken = default)
     {
+        Require(DecorPermissions.EmployeesView);
         var employee = (await _employeeRepository.SearchGetByAsync(employeeID.ToString(), 1, 1, cancellationToken)).FirstOrDefault();
         return employee == null
             ? throw new KeyNotFoundException($"Funcionário com ID {employeeID} não encontrado.")

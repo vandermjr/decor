@@ -3,14 +3,14 @@
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
         x:Class="Decor.AvaloniaUI.Views.EditUserRolesWindow"
         x:DataType="vm:EditUserRolesViewModel"
-        Title="Decor — Grupo de Permissões"
+        Title="Decor — Grupos de Permissões"
         Width="520"
         Height="560"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
   <Grid Margin="28" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="12">
     <StackPanel Spacing="4">
-      <TextBlock Text="Grupo de Permissões" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Grupos de Permissões" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
       <TextBlock Text="Selecione os grupos de permissões que serão atribuídos a este usuário." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
     </StackPanel>
     <ScrollViewer Grid.Row="1">

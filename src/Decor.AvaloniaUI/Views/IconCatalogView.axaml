@@ -19,8 +19,8 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="18" Spacing="22">
       <StackPanel Spacing="4">
-        <TextBlock Text="Catálogo de Ícones" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-        <TextBlock Text="Catálogo interno de inspeção visual dos ícones vetoriais do Decor. Nenhum item é gerado manualmente; a lista é obtida diretamente do catálogo atual." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+        <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+        <TextBlock Text="Aparência global dos ícones do sistema." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
       </StackPanel>
 
       <Border Background="{DynamicResource DecorSurfaceRaisedBrush}"
@@ -29,7 +29,7 @@
               CornerRadius="10"
               Padding="14">
         <StackPanel Spacing="12">
-          <TextBlock Text="Bancada de espessura" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <TextBlock Text="Aparência dos ícones" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
           <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="10">
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Peso do ícone" VerticalAlignment="Center"/>
             <Slider Grid.Row="0" Grid.Column="1"
@@ -43,7 +43,7 @@
                     Value="{Binding StrokeThickness, Mode=TwoWay}"/>
             <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding StrokeThicknessDisplay}" VerticalAlignment="Center"/>
           </Grid>
-          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Aplicar"/>
+          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar"/>
         </StackPanel>
       </Border>
 

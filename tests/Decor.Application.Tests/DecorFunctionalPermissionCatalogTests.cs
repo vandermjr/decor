@@ -29,9 +29,9 @@ public sealed class DecorFunctionalPermissionCatalogTests
             ("Serviços", "Agenda"),
             ("Financeiro", "Contas a Pagar"),
             ("Financeiro", "Caixa"),
-            ("Administração", "Usuários"),
-            ("Administração", "Grupos de Permissões"),
-            ("Administração", "Manutenção do Banco")
+            ("Configurações", "Usuários"),
+            ("Configurações", "Grupos de Permissões"),
+            ("Configurações", "Administração do Sistema")
         };
 
         DecorFunctionalPermissionCatalog.Contexts
@@ -105,7 +105,7 @@ public sealed class DecorFunctionalPermissionCatalogTests
             "Comercial",
             "Serviços",
             "Financeiro",
-            "Administração");
+            "Configurações");
 
         DecorFunctionalPermissionCatalog.Contexts
             .Select(context => context.ModuleName)

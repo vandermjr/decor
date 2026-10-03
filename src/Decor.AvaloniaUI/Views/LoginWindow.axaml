@@ -5,45 +5,54 @@
         x:Class="Decor.AvaloniaUI.Views.LoginWindow"
         x:DataType="vm:LoginViewModel"
         Title="Decor — Entrar"
-        Width="420"
-        Height="470"
+        Width="930"
+        Height="560"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
-  <Grid Margin="36" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="12">
-    <StackPanel Spacing="4">
-      <TextBlock Text="Decor" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}" />
+  <Grid Margin="38" ColumnDefinitions="*,2*" ColumnSpacing="44">
+    <Grid Grid.Column="0" MaxWidth="320" HorizontalAlignment="Center" VerticalAlignment="Center"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
       <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextMutedBrush}" />
-    </StackPanel>
 
-    <StackPanel Grid.Row="1" Margin="0,16,0,0" Spacing="6">
-      <TextBlock Text="ID do usuário" />
-      <TextBox x:Name="UserIdTextBox" TabIndex="0" Focusable="True" Text="{Binding UserIdInput}" PlaceholderText="Informe o ID do usuário" IsEnabled="{Binding !IsBusy}" />
-    </StackPanel>
+      <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
+               Text="{Binding UserIdInput}" PlaceholderText="ID do usuário" IsEnabled="{Binding !IsBusy}" />
 
-    <StackPanel Grid.Row="2" Spacing="6">
-      <TextBlock Text="Senha" />
-      <TextBox TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
-               PlaceholderText="Informe sua senha" IsEnabled="{Binding !IsBusy}" />
-    </StackPanel>
+      <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
+               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
 
-    <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
-            BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
-            IsVisible="{Binding HasError}">
-      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" />
-        <Button Grid.Column="1" TabIndex="3" Width="28" Height="28" Padding="0"
-                ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
-                Click="CopyErrorButton_OnClick">
-          <PathIcon Width="16" Height="16"
-                    icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Copy}" />
-        </Button>
-      </Grid>
+      <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
+              BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
+              IsVisible="{Binding HasError}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" />
+          <Button Grid.Column="1" TabIndex="3" Width="28" Height="28" Padding="0"
+                  ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
+                  Click="CopyErrorButton_OnClick">
+            <PathIcon Width="16" Height="16"
+                      icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Copy}" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <ProgressBar Grid.Row="4" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
+
+      <Button Grid.Row="5" TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
+              HorizontalAlignment="Center" Width="160" MinHeight="38" Padding="12,8"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.SignIn}"
+                Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                Width="17" Height="17" Stretch="Uniform"/>
+          <TextBlock Text="Entrar" VerticalAlignment="Center"/>
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1"
+            Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="6"
+            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+      <TextBlock Text="Logo do cliente" Foreground="{DynamicResource DecorTextMutedBrush}"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Border>
-
-    <ProgressBar Grid.Row="4" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
-
-    <Button Grid.Row="5" TabIndex="2" Content="Entrar" Command="{Binding LoginCommand}" IsDefault="True"
-            HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="170" MinHeight="36" Padding="12,8"
-            HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
   </Grid>
 </Window>

@@ -10,6 +10,28 @@ namespace Decor.Application.Tests;
 public sealed class AdministrativeSessionLocalInvalidationTests
 {
     [Fact]
+    public async Task UserAdministrationService_CannotRenameReservedAdministratorAccount()
+    {
+        var administrator = CreateUser(1, "admin", SystemRoleDefaults.Administrators);
+        var context = new AuthenticatedUserContext();
+        context.SignIn(administrator);
+        var service = new UserAdministrationService(
+            new FakeUserAdministrationRepository(
+                users: [administrator],
+                roles: [new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 100, true)],
+                permissions: []),
+            new FakePasswordHasher { VerificationResult = true },
+            new FakePasswordPolicy(),
+            context,
+            new AlwaysAllowedAuthorizationService());
+
+        var action = () => service.UpdateAsync(administrator.UserID, "root", "Administrador");
+
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*conta reservada do sistema*");
+    }
+
+    [Fact]
     public async Task UserAdministrationService_WhenCurrentUserIsTargeted_SignsOutLocalContext()
     {
         var currentUser = CreateUser(

@@ -6,7 +6,7 @@ public sealed record DecorPermissionPresentation(string ModuleName, string FormN
 public static class DecorPermissionPresentationCatalog
 {
     public static readonly IReadOnlyList<string> ModuleNames =
-    ["Cadastros", "Compras", "Estoque", "Comercial", "Serviços", "Financeiro", "Administração"];
+    ["Cadastros", "Compras", "Estoque", "Comercial", "Serviços", "Financeiro", "Configurações"];
 
     private static readonly IReadOnlyDictionary<string, (string Module, string Form)> Resources =
         new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
@@ -26,7 +26,7 @@ public static class DecorPermissionPresentationCatalog
             ["InstallationAppointments"] = ("Serviços", "Agendamentos de Instalação"), ["ServiceExecutionRecords"] = ("Serviços", "Execuções de Serviços"),
             ["PaymentMethods"] = ("Financeiro", "Formas de Pagamento"), ["OrderInstallments"] = ("Financeiro", "Parcelas de Pedido"),
             ["CashAccounts"] = ("Financeiro", "Contas de Caixa"), ["CashTransactions"] = ("Financeiro", "Movimentações de Caixa"), ["AccountsPayable"] = ("Financeiro", "Contas a Pagar"),
-            ["Users"] = ("Administração", "Usuários"), ["Roles"] = ("Administração", "Grupos de Permissões"), ["DatabaseMaintenance"] = ("Administração", "Manutenção do Banco de Dados")
+            ["Users"] = ("Configurações", "Usuários"), ["Roles"] = ("Configurações", "Grupos de Permissões"), ["DatabaseMaintenance"] = ("Configurações", "Administração do Sistema")
         };
 
     private static readonly IReadOnlyDictionary<string, string> Actions =

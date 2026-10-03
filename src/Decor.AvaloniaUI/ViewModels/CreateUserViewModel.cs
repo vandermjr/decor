@@ -70,7 +70,7 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            ErrorMessage = "Não foi possível carregar as roles.";
+            ErrorMessage = "Não foi possível carregar os grupos de permissões.";
         }
         finally
         {

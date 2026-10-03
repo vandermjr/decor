@@ -18,7 +18,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IAuthenticatedUserContext _authenticatedUserContext;
     private WorkspaceDocumentViewModel? _activeDocument;
     private IStatusBarSource? _statusSource;
-    private string _themeToolTip = "Selecionar tema";
+    private string _themeToolTip = string.Empty;
 
     public MainViewModel(
         INavigationService navigationService,
@@ -31,25 +31,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _authenticatedUserContext = authenticatedUserContext;
 
         ShowProductsCommand = new RelayCommand(() => OpenSingletonDocument("products", "Produtos", () => CreateView<ProductsView>()));
-        NewProductCommand = new RelayCommand(async () => await OpenNewProductAsync());
         ShowBrandsCommand = new RelayCommand(() => OpenSingletonDocument("brands", "Marcas", () => CreateView<BrandsView>()));
+        ShowEmployeesCommand = new RelayCommand(() => OpenSingletonDocument("employees", "Funcionários", () => CreateView<EmployeesView>()), () => authorizationService.HasPermission(DecorPermissions.EmployeesView));
         ShowTermDeliveryCommand = new RelayCommand(() => OpenSingletonDocument("term-delivery", "Termo de Entrega", () => CreateView<TermDeliveryView>()));
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
-        ShowIconCatalogCommand = new RelayCommand(() => OpenSingletonDocument("icon-catalog", "Catálogo de Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
+        ShowSystemSettingsCommand = new RelayCommand(() => OpenSingletonDocument("system-settings", "Configurações do Sistema", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Preferências", () => CreateView<UserOptionsView>()));
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
+        ToggleThemeCommand = new RelayCommand(async () => await SetThemeAsync(_themeService.CurrentTheme == DecorThemeStyle.Dark ? DecorThemeStyle.Light : DecorThemeStyle.Dark));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
 
         var user = authenticatedUserContext.User;
         var username = user?.Username ?? string.Empty;
         UserUsername = username;
-        UserPresentationName = IsAdministrator()
-            ? "Administrador"
+        UserPresentationName = SystemAccountDefaults.IsAdministrator(username)
+            ? SystemAccountDefaults.AdministratorName
             : !string.IsNullOrWhiteSpace(user?.EmployeeName) ? user.EmployeeName : username;
         UserInitials = InitialsOf(UserPresentationName);
 
@@ -105,28 +106,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public ICommand ShowProductsCommand { get; }
-    public ICommand NewProductCommand { get; }
     public ICommand ShowBrandsCommand { get; }
+    public ICommand ShowEmployeesCommand { get; }
     public ICommand ShowTermDeliveryCommand { get; }
     public ICommand ShowClassificationsCommand { get; }
     public ICommand ChangePasswordCommand { get; }
     public ICommand ShowUsersCommand { get; }
     public ICommand ShowRolesCommand { get; }
     public ICommand ShowDatabaseMaintenanceCommand { get; }
-    public ICommand ShowIconCatalogCommand { get; }
+    public ICommand ShowSystemSettingsCommand { get; }
     public ICommand ShowUserOptionsCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
+    public ICommand ToggleThemeCommand { get; }
     public ICommand SignOutCommand { get; }
     public string UserPresentationName { get; }
     public string UserUsername { get; }
-    public string ThemeDisplayName => _themeService.CurrentTheme == DecorThemeStyle.Dark ? "Tema: Escuro" : "Tema: Claro";
-    public string ThemeToolTip => _themeToolTip;
+    public string ThemeToolTip => string.IsNullOrEmpty(_themeToolTip)
+        ? _themeService.CurrentTheme == DecorThemeStyle.Dark ? "Mudar para tema claro" : "Mudar para tema escuro"
+        : _themeToolTip;
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
+    public bool CanViewEmployees => ((RelayCommand)ShowEmployeesCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
     public bool CanViewDatabaseMaintenance => ((RelayCommand)ShowDatabaseMaintenanceCommand).CanExecute(null);
-    public bool CanViewIconCatalog => ((RelayCommand)ShowIconCatalogCommand).CanExecute(null);
+    public bool CanViewSystemSettings => ((RelayCommand)ShowSystemSettingsCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
 
@@ -142,20 +146,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         OpenDocument(key, title, createContent());
-    }
-
-    private async Task OpenNewProductAsync()
-    {
-        var productDocument = OpenDocuments.FirstOrDefault(document => document.Key == "products");
-        if (productDocument is null)
-        {
-            var productView = CreateView<ProductsView>();
-            productDocument = new WorkspaceDocumentViewModel("products", "Produtos", productView, CloseDocument, ActivateDocument);
-            OpenDocuments.Add(productDocument);
-        }
-
-        ActiveDocument = productDocument;
-        await ((ProductsViewModel)productDocument.Content.DataContext!).BeginNewAsync();
     }
 
     private TView CreateView<TView>() where TView : Control =>
@@ -174,12 +164,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task SetThemeAsync(DecorThemeStyle theme)
     {
-        _themeToolTip = "Selecionar tema";
+        _themeToolTip = string.Empty;
         try
         {
             await _themeService.SetThemeAsync(theme);
             ApplyCurrentTheme();
-            OnPropertyChanged(nameof(ThemeDisplayName));
         }
         catch (Exception)
         {

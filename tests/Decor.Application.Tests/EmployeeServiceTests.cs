@@ -45,6 +45,16 @@ public sealed class EmployeeServiceTests
         repository.Employees[0].WorkScheduleNote.Should().BeNull();
     }
 
+    [Fact]
+    public async Task SearchEmployees_RequiresViewPermission()
+    {
+        var service = CreateService(new TrackingEmployeeRepository());
+
+        var act = () => service.SearchEmployeesAsync(string.Empty);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -57,6 +67,19 @@ public sealed class EmployeeServiceTests
 
         await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("*salário base*");
+    }
+
+    [Theory]
+    [InlineData("123456789012345678901", null)]
+    [InlineData(null, "123456789012345678901")]
+    public async Task SaveEmployee_DocumentAndPhoneRespectExistingColumnLengths(string? document, string? phone)
+    {
+        var service = CreateService(new TrackingEmployeeRepository(), DecorPermissions.EmployeesCreate);
+        var dto = new EmployeeDTO(0, "Ana", null, null, null, document, phone, true, null);
+
+        var act = () => service.SaveEmployeeAsync(dto);
+
+        await act.Should().ThrowAsync<ValidationException>();
     }
 
     [Fact]
