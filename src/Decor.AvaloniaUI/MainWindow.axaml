@@ -353,17 +353,17 @@
                     ToolTip.Tip="Registros por página"/>
           <TextBlock Text="{Binding StatusSource.PaginationStatus}" Margin="34,0,18,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
           <Button x:Name="StatusBarFirstPageButton" Classes="pagination-button" IsEnabled="{Binding StatusSource.HasFirstPage}" Command="{Binding StatusSource.FirstPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Primeira página">
-            <Path Data="M 16,5 L 9,12 L 16,19 Z M 6,5 L 6,19" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+            <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.FirstPage}"/>
           </Button>
           <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasPreviousPage}" Command="{Binding StatusSource.PreviousPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Página anterior">
-            <Path Data="M 17,5 L 9,12 L 17,19 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+            <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}"/>
           </Button>
           <TextBlock Text="{Binding StatusSource.PaginationPageStatus}" Margin="10,0,10,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
           <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasNextPage}" Command="{Binding StatusSource.NextPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Próxima página">
-            <Path Data="M 7,5 L 15,12 L 7,19 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+            <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}"/>
           </Button>
           <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasLastPage}" Command="{Binding StatusSource.LastPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Última página">
-            <Path Data="M 8,5 L 15,12 L 8,19 Z M 18,5 L 18,19" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="14" Stretch="Uniform"/>
+            <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.LastPage}"/>
           </Button>
         </StackPanel>
         <TextBlock Grid.Column="2" Text="{Binding StatusSource.StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>

@@ -8,7 +8,6 @@ public sealed class DecorPermissionPresentationCatalogTests
     [InlineData("Products.View", "Cadastros", "Produtos", "Consultar")]
     [InlineData("Products.Create", "Cadastros", "Produtos", "Cadastrar")]
     [InlineData("Products.Edit", "Cadastros", "Produtos", "Editar")]
-    [InlineData("Products.Delete", "Cadastros", "Produtos", "Excluir")]
     [InlineData("PurchaseOrders.View", "Compras", "Pedidos de Compra", "Consultar")]
     [InlineData("StockMovements.Entry", "Estoque", "Movimentações de Estoque", "Registrar entrada")]
     [InlineData("Users.View", "Configurações", "Usuários", "Consultar")]

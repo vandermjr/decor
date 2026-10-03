@@ -121,7 +121,18 @@
         <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Height" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.pagination-button:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorAccentHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentHoverBrush}" />
+    </Style>
+    <Style Selector="Button.pagination-button:pressed">
+        <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentBrush}" />
     </Style>
     <Style Selector="Button.pagination-button:disabled">
         <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
@@ -129,6 +140,10 @@
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
         <Setter Property="Opacity" Value="0.55" />
         <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="Button.pagination-button:disabled:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
     </Style>
     <Style Selector="Button /template/ ContentPresenter">
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />

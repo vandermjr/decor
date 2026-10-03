@@ -24,7 +24,7 @@
                     AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="False"
                     GridLinesVisibility="All" HeadersVisibility="Column">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="ID" Binding="{Binding UserID}" Width="70"/>
+              <DataGridTextColumn Header="Código" Binding="{Binding UserID}" Width="70"/>
               <DataGridTextColumn Header="Usuário" Binding="{Binding Username}" Width="1.2*"/>
               <DataGridTemplateColumn Header="Nome de apresentação" Width="1.8*">
                 <DataGridTemplateColumn.CellTemplate>

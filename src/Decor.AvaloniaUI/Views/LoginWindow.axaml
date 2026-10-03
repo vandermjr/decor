@@ -9,10 +9,12 @@
         Height="560"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
-  <Grid Margin="38" ColumnDefinitions="*,2*" ColumnSpacing="44">
-    <Grid Grid.Column="0" MaxWidth="320" HorizontalAlignment="Center" VerticalAlignment="Center"
-          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
-      <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextMutedBrush}" />
+  <Grid Margin="40" ColumnDefinitions="*,2*" ColumnSpacing="48">
+    <Grid Grid.Column="0" MaxWidth="340" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="16">
+      <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextBrush}"
+                 FontSize="{DynamicResource DecorFontSizeSection}"
+                 FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,4" />
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
                Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="ID do usuário" IsEnabled="{Binding !IsBusy}" />
@@ -37,7 +39,7 @@
       <ProgressBar Grid.Row="4" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
 
       <Button Grid.Row="5" TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
-              HorizontalAlignment="Center" Width="160" MinHeight="38" Padding="12,8"
+              HorizontalAlignment="Stretch" MinHeight="42" Padding="12,9"
               HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
           <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.SignIn}"
