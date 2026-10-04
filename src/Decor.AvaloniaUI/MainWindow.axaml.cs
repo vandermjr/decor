@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
 using Decor.AvaloniaUI.Services;
@@ -10,9 +12,14 @@ namespace Decor.AvaloniaUI;
 
 public partial class MainWindow : Window
 {
+    private readonly DispatcherTimer _paginationHintTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private Button? _paginationHintTarget;
+    private TextBlock PaginationHintText => (TextBlock)((Border)PaginationHintPopup.Child!).Child!;
+
     public MainWindow()
     {
         InitializeComponent();
+        _paginationHintTimer.Tick += PaginationHintTimer_Tick;
     }
 
     public MainWindow(MainViewModel mainViewModel, IAuthenticatedUserContext authenticatedUserContext, INavigationService navigationService)
@@ -66,5 +73,37 @@ public partial class MainWindow : Window
     {
         if (sender is Button userButton && Resources["UserFlyout"] is Flyout userFlyout)
             userFlyout.ShowAt(userButton);
+    }
+
+    private void PaginationButton_PointerEntered(object? sender, PointerEventArgs eventArgs)
+    {
+        _paginationHintTimer.Stop();
+        PaginationHintPopup.IsOpen = false;
+        _paginationHintTarget = sender as Button;
+        if (_paginationHintTarget is not { IsEffectivelyEnabled: true })
+            return;
+
+        PaginationHintText.Text = ToolTip.GetTip(_paginationHintTarget)?.ToString();
+        _paginationHintTimer.Start();
+    }
+
+    private void PaginationButton_PointerExited(object? sender, PointerEventArgs eventArgs)
+    {
+        if (sender != _paginationHintTarget)
+            return;
+
+        _paginationHintTimer.Stop();
+        PaginationHintPopup.IsOpen = false;
+        _paginationHintTarget = null;
+    }
+
+    private void PaginationHintTimer_Tick(object? sender, EventArgs eventArgs)
+    {
+        _paginationHintTimer.Stop();
+        if (_paginationHintTarget is not { IsPointerOver: true, IsEffectivelyEnabled: true } target)
+            return;
+
+        PaginationHintPopup.PlacementTarget = target;
+        PaginationHintPopup.IsOpen = true;
     }
 }

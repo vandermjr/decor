@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
         xmlns:icons="using:Decor.AvaloniaUI.Icons"
+        xmlns:primitives="using:Avalonia.Controls.Primitives"
         x:Class="Decor.AvaloniaUI.MainWindow"
         Title="Decor"
         Width="1200"
@@ -353,23 +354,28 @@
                     SelectedItem="{Binding StatusSource.SelectedPageSize, Mode=TwoWay}"
                     MinWidth="76"
                     ToolTip.Tip="Registros por página"/>
-          <TextBlock Text="{Binding StatusSource.PaginationStatus}" Margin="34,0,18,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
-          <Button x:Name="StatusBarFirstPageButton" Classes="pagination-button" IsEnabled="{Binding StatusSource.HasFirstPage}" Command="{Binding StatusSource.FirstPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Primeira página">
+          <TextBlock Text="{Binding StatusSource.PaginationStatus}" Width="280" Margin="34,0,18,0" Foreground="{DynamicResource DecorTextBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+          <Button x:Name="StatusBarFirstPageButton" Classes="pagination-button" IsEnabled="{Binding StatusSource.HasFirstPage}" Command="{Binding StatusSource.FirstPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Primeira página" PointerEntered="PaginationButton_PointerEntered" PointerExited="PaginationButton_PointerExited">
             <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.FirstPage}"/>
           </Button>
-          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasPreviousPage}" Command="{Binding StatusSource.PreviousPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Página anterior">
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasPreviousPage}" Command="{Binding StatusSource.PreviousPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Página anterior" PointerEntered="PaginationButton_PointerEntered" PointerExited="PaginationButton_PointerExited">
             <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}"/>
           </Button>
           <TextBlock Text="{Binding StatusSource.PaginationPageStatus}" Margin="10,0,10,0" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
-          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasNextPage}" Command="{Binding StatusSource.NextPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Próxima página">
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasNextPage}" Command="{Binding StatusSource.NextPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Próxima página" PointerEntered="PaginationButton_PointerEntered" PointerExited="PaginationButton_PointerExited">
             <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}"/>
           </Button>
-          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasLastPage}" Command="{Binding StatusSource.LastPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Última página">
+          <Button Classes="pagination-button" IsEnabled="{Binding StatusSource.HasLastPage}" Command="{Binding StatusSource.LastPageCommand}" Padding="5,3" MinWidth="30" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Última página" PointerEntered="PaginationButton_PointerEntered" PointerExited="PaginationButton_PointerExited">
             <PathIcon Width="16" Height="16" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.LastPage}"/>
           </Button>
         </StackPanel>
         <TextBlock Grid.Column="2" Text="{Binding StatusSource.StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
         <TextBlock Grid.Column="4" Text="{Binding StatusSource.StatusSecondary}" IsVisible="{Binding StatusSource.HasStatusSecondary}" Foreground="{DynamicResource DecorAccentBrush}" VerticalAlignment="Center"/>
+        <primitives:Popup x:Name="PaginationHintPopup" Placement="Top" ShouldUseOverlayLayer="True" IsLightDismissEnabled="False" IsHitTestVisible="False">
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="3" Padding="7,4" IsHitTestVisible="False">
+            <TextBlock Foreground="{DynamicResource DecorTextBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsHitTestVisible="False"/>
+          </Border>
+        </primitives:Popup>
       </Grid>
     </Border>
   </Grid>

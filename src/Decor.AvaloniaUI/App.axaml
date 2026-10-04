@@ -125,6 +125,7 @@
         <Setter Property="CornerRadius" Value="3" />
         <Setter Property="Height" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="ToolTip.ServiceEnabled" Value="False" />
     </Style>
     <Style Selector="Button.pagination-button:disabled">
         <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
