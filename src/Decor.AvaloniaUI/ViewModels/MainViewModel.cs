@@ -74,12 +74,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (_activeDocument is not null)
                 _activeDocument.IsActive = true;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ActiveContent));
             OnPropertyChanged(nameof(IsHomeVisible));
             StatusSource = value?.StatusSource;
         }
     }
 
     public bool IsHomeVisible => ActiveDocument is null;
+    public Control? ActiveContent => ActiveDocument?.Content;
 
     public IStatusBarSource? StatusSource
     {
@@ -179,8 +181,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private bool IsAdministrator()
     {
-        var roles = _authenticatedUserContext.User?.Roles ?? [];
-        return roles.Contains(SystemRoleDefaults.Administrators, StringComparer.OrdinalIgnoreCase);
+        var user = _authenticatedUserContext.User;
+        return SystemAccountDefaults.IsAdministrator(user?.Username)
+            || (user?.Roles ?? []).Contains(SystemRoleDefaults.Administrators, StringComparer.OrdinalIgnoreCase);
     }
 
     private static string InitialsOf(string? name)
@@ -199,8 +202,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (documentIndex < 0)
             return;
 
+        var wasActive = ReferenceEquals(ActiveDocument, document);
+        if (wasActive)
+            ActiveDocument = null;
+
         OpenDocuments.RemoveAt(documentIndex);
-        if (ReferenceEquals(ActiveDocument, document))
+        if (wasActive)
             ActiveDocument = OpenDocuments.ElementAtOrDefault(Math.Min(documentIndex, OpenDocuments.Count - 1));
     }
 

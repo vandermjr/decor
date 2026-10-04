@@ -50,11 +50,11 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Report,
             DecorIconId.Actions.Close,
             DecorIconId.Actions.Copy,
-            DecorIconId.Actions.SignIn,
             DecorIconId.User.Profile,
             DecorIconId.User.Preferences,
             DecorIconId.User.ChangePassword,
             DecorIconId.User.Notifications,
+            DecorIconId.User.SignIn,
             DecorIconId.User.SignOut,
             DecorIconId.Common.Calendar,
             DecorIconId.Common.Clock,
@@ -151,5 +151,21 @@ public class DecorIconCatalogTests
 
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Home), DecorIconCatalog.Get(DecorIconId.Application.Home, 400));
         Assert.Throws<ArgumentOutOfRangeException>(() => DecorIconCatalog.Get(DecorIconId.Application.Home, 450));
+    }
+
+    [Fact]
+    public void Sign_in_uses_the_catalog_weighted_filled_sign_out_geometry_mirrored()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        var light = DecorIconCatalog.Get(DecorIconId.User.SignIn, 100);
+        var regular = DecorIconCatalog.Get(DecorIconId.User.SignIn, 400);
+        var bold = DecorIconCatalog.Get(DecorIconId.User.SignIn, 700);
+
+        Assert.IsType<GeometryGroup>(regular);
+        Assert.NotSame(light, regular);
+        Assert.NotSame(regular, bold);
+        Assert.Equal(DecorIconCatalog.Get(DecorIconId.User.SignOut, 400).Bounds.Width, regular.Bounds.Width, 3);
+        Assert.Equal(DecorIconCatalog.Get(DecorIconId.User.SignOut, 400).Bounds.Height, regular.Bounds.Height, 3);
     }
 }

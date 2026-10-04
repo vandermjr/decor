@@ -14,7 +14,7 @@
         <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar funcionários" KeyDown="SearchTextBox_KeyDown"/>
         <Button Grid.Column="1" Command="{Binding SearchCommand}">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
             <TextBlock Text="Pesquisar"/>
           </StackPanel>
         </Button>
@@ -22,19 +22,19 @@
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
             <TextBlock Text="Novo funcionário"/>
           </StackPanel>
         </Button>
         <Button Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
             <TextBlock Text="Editar"/>
           </StackPanel>
         </Button>
         <Button Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" Background="{DynamicResource DecorDangerBrush}" Foreground="White">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16"/>
             <TextBlock Text="Excluir"/>
           </StackPanel>
         </Button>
@@ -53,7 +53,7 @@
             <TextBlock Text="Informações do Funcionário" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
             <Border HorizontalAlignment="Left" Padding="12,8" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="ID" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <TextBlock Text="Código" Foreground="{DynamicResource DecorTextMutedBrush}"/>
                 <TextBlock Text="{Binding EmployeeId}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               </StackPanel>
             </Border>
@@ -79,7 +79,7 @@
                 <TextBox Text="{Binding BaseSalaryInput}"/>
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
-                <TextBlock Text="ID do usuário vinculado (opcional)" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <TextBlock Text="Código do usuário vinculado (opcional)" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
                 <TextBox Text="{Binding UserIdInput}"/>
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Spacing="4">

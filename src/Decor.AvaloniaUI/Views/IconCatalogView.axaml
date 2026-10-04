@@ -37,11 +37,6 @@
                     Value="{Binding IconWeight, Mode=TwoWay}"/>
             <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Espessura do Stroke" VerticalAlignment="Center"/>
-            <Slider Grid.Row="1" Grid.Column="1"
-                    Minimum="0" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True"
-                    Value="{Binding StrokeThickness, Mode=TwoWay}"/>
-            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding StrokeThicknessDisplay}" VerticalAlignment="Center"/>
           </Grid>
           <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar"/>
         </StackPanel>
@@ -68,9 +63,7 @@
                                 Width="42"
                                 Height="42"
                                 Stretch="Uniform"
-                                Fill="{DynamicResource DecorTextBrush}"
-                                Stroke="{DynamicResource DecorTextBrush}"
-                                StrokeThickness="{Binding StrokeThickness}"
+                              Fill="{DynamicResource DecorTextBrush}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"/>
 

@@ -13,7 +13,6 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 {
     private readonly IIconAppearanceService _iconAppearanceService;
     private int _iconWeight;
-    private double _strokeThickness;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
 
@@ -30,36 +29,19 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         }
     }
 
-    public double StrokeThickness
-    {
-        get => _strokeThickness;
-        set
-        {
-            var roundedValue = Math.Round(value, 1, MidpointRounding.AwayFromZero);
-            if (!SetField(ref _strokeThickness, roundedValue))
-                return;
-
-            OnPropertyChanged(nameof(StrokeThicknessDisplay));
-            foreach (var item in FamilyGroups.SelectMany(group => group.Items))
-                item.StrokeThickness = roundedValue;
-        }
-    }
-
     public string IconWeightDisplay => IconWeight.ToString(CultureInfo.InvariantCulture);
-    public string StrokeThicknessDisplay => StrokeThickness.ToString("0.0", CultureInfo.InvariantCulture);
     public ICommand ApplyCommand { get; }
 
     public IconCatalogViewModel(IIconAppearanceService iconAppearanceService)
     {
         _iconAppearanceService = iconAppearanceService;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
-        _strokeThickness = iconAppearanceService.CurrentAppearance.StrokeThickness;
         ApplyCommand = new RelayCommand(async () => await ApplyAsync());
         foreach (var family in DecorIconCatalog.GetFamilyGroups())
         {
             var group = new IconCatalogFamilyViewModel(family.Name);
             foreach (var iconId in family.Ids)
-                group.Items.Add(new IconCatalogItemViewModel(iconId, IconWeight, StrokeThickness));
+                group.Items.Add(new IconCatalogItemViewModel(iconId, IconWeight));
 
             FamilyGroups.Add(group);
         }
@@ -67,7 +49,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
     private async Task ApplyAsync()
     {
-        await _iconAppearanceService.SetAppearanceAsync(IconWeight, StrokeThickness);
+        await _iconAppearanceService.SetAppearanceAsync(IconWeight, _iconAppearanceService.CurrentAppearance.StrokeThickness);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -95,32 +77,17 @@ public sealed class IconCatalogFamilyViewModel(string name)
 public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
 {
     private Geometry _geometry;
-    private double _strokeThickness;
 
-    public IconCatalogItemViewModel(DecorIconId id, int iconWeight, double strokeThickness)
+    public IconCatalogItemViewModel(DecorIconId id, int iconWeight)
     {
         Id = id;
         _geometry = DecorIconCatalog.Get(id, iconWeight);
-        _strokeThickness = strokeThickness;
     }
 
     public DecorIconId Id { get; }
     public string Name => GetShortName(Id.Value);
     public string FullId => Id.Value;
     public Geometry Geometry => _geometry;
-
-    public double StrokeThickness
-    {
-        get => _strokeThickness;
-        set
-        {
-            if (Math.Abs(_strokeThickness - value) < double.Epsilon)
-                return;
-
-            _strokeThickness = value;
-            OnPropertyChanged();
-        }
-    }
 
     public void UpdateGeometry(int weight)
     {

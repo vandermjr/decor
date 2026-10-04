@@ -7,6 +7,22 @@ namespace Decor.Application.Tests;
 public sealed class LoginViewModelTests
 {
     [Fact]
+    public async Task LoginAsync_WhenUserIdIsInvalid_UsesCodigoInVisibleMessage()
+    {
+        var authentication = new SuccessfulAuthenticationService();
+        var viewModel = new LoginViewModel(authentication)
+        {
+            UserIdInput = "invalid",
+            Password = "valid-password"
+        };
+
+        await viewModel.LoginAsync();
+
+        viewModel.ErrorMessage.Should().Be("Informe um código de usuário válido.");
+        authentication.LastUserId.Should().Be(0);
+    }
+
+    [Fact]
     public async Task LoginAsync_WhenPostAuthenticationInitializationFails_ShowsCopyableError()
     {
         var authentication = new SuccessfulAuthenticationService();

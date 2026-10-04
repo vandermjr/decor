@@ -1,6 +1,7 @@
 <Application
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:icons="using:Decor.AvaloniaUI.Icons"
     x:Class="Decor.AvaloniaUI.App"
     RequestedThemeVariant="Dark">
 
@@ -108,6 +109,9 @@
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
     </Style>
+    <Style Selector="ComboBox /template/ PathIcon#DropDownGlyph">
+        <Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Navigation.Dropdown}" />
+    </Style>
     <Style Selector="Button">
         <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
@@ -118,26 +122,39 @@
         <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="Button.pagination-button">
-        <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="3" />
-        <Setter Property="Height" Value="28" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Height" Value="19" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="ToolTip.ServiceEnabled" Value="False" />
     </Style>
+    <Style Selector="Button.pagination-button:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
     <Style Selector="ComboBox.pagination-page-size">
         <Setter Property="ToolTip.ServiceEnabled" Value="False" />
-        <Setter Property="Height" Value="24" />
-        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeCaption}" />
-    </Style>
-    <Style Selector="Button.pagination-button:disabled">
-        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
-        <Setter Property="Opacity" Value="0.55" />
-        <Setter Property="Cursor" Value="Arrow" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="Height" Value="19" />
+        <Setter Property="MinHeight" Value="19" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
+    </Style>
+    <Style Selector="ComboBox.pagination-page-size:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="ComboBox.pagination-page-size:pointerover /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
     <Style Selector="Button /template/ ContentPresenter">
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />

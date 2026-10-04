@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Decor.AvaloniaUI.Icons;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -32,6 +33,20 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
 
     public string Key { get; }
     public string Title { get; }
+    public DecorIconId IconId => Key switch
+    {
+        "products" => DecorIconId.Forms.Products,
+        "brands" => DecorIconId.Forms.Brands,
+        "employees" => DecorIconId.User.Profile,
+        "term-delivery" => DecorIconId.Forms.TermDelivery,
+        "classifications" => DecorIconId.Forms.Classifications,
+        "users" => DecorIconId.Forms.Users,
+        "roles" => DecorIconId.Forms.PermissionGroups,
+        "database-maintenance" => DecorIconId.Forms.DatabaseMaintenance,
+        "system-icons" => DecorIconId.Application.Settings,
+        "user-options" => DecorIconId.User.Preferences,
+        _ => DecorIconId.Common.Folder
+    };
     public Control Content { get; }
     public ICommand CloseCommand { get; }
     public ICommand ActivateCommand { get; }

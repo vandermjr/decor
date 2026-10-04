@@ -4,13 +4,13 @@
       <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário"/>
       <Button Grid.Column="1" Command="{Binding SearchCommand}">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
           <TextBlock Text="Pesquisar" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>
       <Button Grid.Column="2" Command="{Binding NewUserCommand}">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
           <TextBlock Text="Novo usuário" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>

@@ -23,7 +23,7 @@
                    FontSize="{DynamicResource DecorFontSizeTitle}"
                    Margin="0,0,0,8"/>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="ID" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Código" VerticalAlignment="Center"/>
         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ProductId}" VerticalAlignment="Center"/>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Código de Barras" VerticalAlignment="Center"/>

@@ -44,6 +44,9 @@ public partial class DecorDataGridControl : UserControl
     private PropertyInfo? _highlightedProperty;
     private object? _highlightedValue;
     private Border? _focusedCellContent;
+    private Control? _rowsPresenter;
+    private ScrollBar? _verticalScrollBar;
+    private ScrollBar? _horizontalScrollBar;
 
     // Store pending initialization if called before Loaded
     private Type? _pendingDtoType;
@@ -112,12 +115,22 @@ public partial class DecorDataGridControl : UserControl
         if (_innerGrid is null)
             return;
 
+        DetachScrollBarVisibilityHandlers();
+
+        var visualDescendants = _innerGrid.GetVisualDescendants().ToArray();
+        _rowsPresenter = visualDescendants.OfType<Control>()
+            .FirstOrDefault(control => control.Name == "PART_RowsPresenter");
+        _verticalScrollBar = visualDescendants.OfType<ScrollBar>()
+            .FirstOrDefault(scrollBar => scrollBar.Name == "PART_VerticalScrollbar");
+        _horizontalScrollBar = visualDescendants.OfType<ScrollBar>()
+            .FirstOrDefault(scrollBar => scrollBar.Name == "PART_HorizontalScrollbar");
+
         foreach (var scrollViewer in _innerGrid.GetVisualDescendants().OfType<ScrollViewer>())
         {
             scrollViewer.AllowAutoHide = false;
         }
 
-        foreach (var scrollBar in _innerGrid.GetVisualDescendants().OfType<ScrollBar>())
+        foreach (var scrollBar in visualDescendants.OfType<ScrollBar>())
         {
             scrollBar.AllowAutoHide = false;
 
@@ -126,6 +139,43 @@ public partial class DecorDataGridControl : UserControl
             else
                 scrollBar.Height = 14;
         }
+
+        AttachScrollBarVisibilityHandlers();
+        UpdateRowsPresenterMargin();
+    }
+
+    private void AttachScrollBarVisibilityHandlers()
+    {
+        if (_verticalScrollBar is not null)
+            _verticalScrollBar.PropertyChanged += OnScrollBarPropertyChanged;
+        if (_horizontalScrollBar is not null)
+            _horizontalScrollBar.PropertyChanged += OnScrollBarPropertyChanged;
+    }
+
+    private void DetachScrollBarVisibilityHandlers()
+    {
+        if (_verticalScrollBar is not null)
+            _verticalScrollBar.PropertyChanged -= OnScrollBarPropertyChanged;
+        if (_horizontalScrollBar is not null)
+            _horizontalScrollBar.PropertyChanged -= OnScrollBarPropertyChanged;
+    }
+
+    private void OnScrollBarPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.Property == Visual.IsVisibleProperty)
+            Dispatcher.UIThread.Post(UpdateRowsPresenterMargin);
+    }
+
+    private void UpdateRowsPresenterMargin()
+    {
+        if (_rowsPresenter is null)
+            return;
+
+        _rowsPresenter.Margin = new Thickness(
+            0,
+            0,
+            _verticalScrollBar?.IsVisible == true ? 14 : 0,
+            _horizontalScrollBar?.IsVisible == true ? 14 : 0);
     }
 
     /// <summary>

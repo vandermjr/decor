@@ -17,7 +17,7 @@
                  FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,4" />
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
-               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="ID do usuário" IsEnabled="{Binding !IsBusy}" />
+               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" />
 
       <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
                PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
@@ -42,8 +42,8 @@
               HorizontalAlignment="Stretch" MinHeight="42" Padding="12,9"
               HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.SignIn}"
-                Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignIn}"
+                Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                 Width="17" Height="17" Stretch="Uniform"/>
           <TextBlock Text="Entrar" VerticalAlignment="Center"/>
         </StackPanel>

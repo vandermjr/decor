@@ -1,8 +1,10 @@
+using Avalonia.Controls;
 using Decor.AvaloniaUI.Services;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
+using System.Reflection;
 
 namespace Decor.Application.Tests;
 
@@ -40,6 +42,48 @@ public sealed class DatabaseMaintenanceAuthorizationTests
             new StubAuthenticatedUserContext());
 
         viewModel.ShowDatabaseMaintenanceCommand.CanExecute(null).Should().Be(hasPermission);
+    }
+
+    [Fact]
+    public void ShowSystemSettingsCommand_IsAvailableToBuiltInAdministratorWithoutRole()
+    {
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            new StubThemeService(),
+            new StubAuthorizationService(hasPermission: false),
+            new StubAuthenticatedUserContext(new ApplicationUser { Username = SystemAccountDefaults.AdministratorUsername }));
+
+        viewModel.ShowSystemSettingsCommand.CanExecute(null).Should().BeTrue();
+        viewModel.CanViewSystemSettings.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ClosingLastProductsDocument_ClearsActiveContent()
+    {
+        var viewModel = new MainViewModel(
+            new StubNavigationService(),
+            new StubThemeService(),
+            new StubAuthorizationService(hasPermission: false),
+            new StubAuthenticatedUserContext());
+
+        var contentWasDetachedBeforeTabRemoval = false;
+        viewModel.OpenDocuments.CollectionChanged += (_, _) =>
+        {
+            if (viewModel.OpenDocuments.Count == 0)
+                contentWasDetachedBeforeTabRemoval = viewModel.ActiveContent is null;
+        };
+        typeof(MainViewModel)
+            .GetMethod("OpenDocument", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(viewModel, ["products", "Produtos", new Control()]);
+        var productsDocument = viewModel.ActiveDocument;
+        viewModel.ActiveContent.Should().BeSameAs(productsDocument!.Content);
+
+        productsDocument.CloseCommand.Execute(null);
+
+        viewModel.ActiveDocument.Should().BeNull();
+        viewModel.ActiveContent.Should().BeNull();
+        viewModel.IsHomeVisible.Should().BeTrue();
+        contentWasDetachedBeforeTabRemoval.Should().BeTrue();
     }
 
     [Fact]

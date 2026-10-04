@@ -67,7 +67,7 @@ public sealed class LoginViewModel : INotifyPropertyChanged
         SetError(null, canCopy: false);
         if (!int.TryParse(UserIdInput.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
         {
-            SetError("Informe um ID de usuário válido.", canCopy: false);
+            SetError("Informe um código de usuário válido.", canCopy: false);
             return;
         }
 

@@ -251,7 +251,7 @@ public sealed class EmployeesViewModel : IStatusBarSource
         {
             if (!int.TryParse(UserIdInput, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedUserId) || parsedUserId <= 0)
             {
-                ErrorMessage = "Informe um ID de usuário válido ou deixe o campo vazio.";
+                ErrorMessage = "Informe um código de usuário válido ou deixe o campo vazio.";
                 return;
             }
             userId = parsedUserId;

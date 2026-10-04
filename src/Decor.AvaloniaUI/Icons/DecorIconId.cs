@@ -46,7 +46,6 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Report { get; } = new("Actions.Report");
         public static DecorIconId Close { get; } = new("Actions.Close");
         public static DecorIconId Copy { get; } = new("Actions.Copy");
-        public static DecorIconId SignIn { get; } = new("Actions.SignIn");
     }
 
     public static class User
@@ -55,6 +54,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Preferences { get; } = new("User.Preferences");
         public static DecorIconId ChangePassword { get; } = new("User.ChangePassword");
         public static DecorIconId Notifications { get; } = new("User.Notifications");
+        public static DecorIconId SignIn { get; } = new("User.SignIn");
         public static DecorIconId SignOut { get; } = new("User.SignOut");
     }
 

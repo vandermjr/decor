@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Avalonia;
 using Avalonia.Media;
 
 namespace Decor.AvaloniaUI.Icons;
@@ -328,6 +329,13 @@ public static class DecorIconCatalog
             }),
         });
 
+    private static readonly IReadOnlyDictionary<int, Lazy<Geometry>> SignInGeometriesByWeight = AvailableWeights
+        .ToDictionary(weight => weight, weight => new Lazy<Geometry>(() => new GeometryGroup
+        {
+            Transform = new MatrixTransform(new Matrix(-1, 0, 0, 1, 960, 0)),
+            Children = { SymbolGeometriesByWeight[weight]["logout"].Value }
+        }));
+
     private static readonly IReadOnlyDictionary<DecorIconId, string> SymbolsById =
         new ReadOnlyDictionary<DecorIconId, string>(new Dictionary<DecorIconId, string>
         {
@@ -361,11 +369,11 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Report] = "description",
             [DecorIconId.Actions.Close] = "close",
             [DecorIconId.Actions.Copy] = "content_copy",
-            [DecorIconId.Actions.SignIn] = "login",
             [DecorIconId.User.Profile] = "person",
             [DecorIconId.User.Preferences] = "tune",
             [DecorIconId.User.ChangePassword] = "key",
             [DecorIconId.User.Notifications] = "notifications",
+            [DecorIconId.User.SignIn] = "logout",
             [DecorIconId.User.SignOut] = "logout",
             [DecorIconId.Common.Calendar] = "calendar_month",
             [DecorIconId.Common.Clock] = "schedule",
@@ -380,7 +388,6 @@ public static class DecorIconCatalog
         });
 
     private static readonly IReadOnlyList<DecorIconId> RegisteredIds = Array.AsReadOnly(SymbolsById.Keys.ToArray());
-    private static readonly Lazy<Geometry> LoginGeometry = CreateGeometry("M560-240h160v-480H560v-40h160q33 0 56.5 23.5T800-680v400q0 33-23.5 56.5T720-200H560v-40ZM400-320l-28-28 132-132H160v-40h344L372-652l28-28 180 180-180 180Z");
     private static readonly Lazy<Geometry> ThemeToggleGeometry = CreateGeometry("M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q133 0 226.5 93.5T800-480q0 133-93.5 226.5T480-160Zm0-40q116 0 198-82t82-198q0-116-82-198t-198-82v560Z");
 
     public static IReadOnlyList<DecorIconId> Ids => RegisteredIds;
@@ -398,42 +405,53 @@ public static class DecorIconCatalog
     {
         if (NavigationGeometries.TryGetValue((id, weight), out var navigationGeometry))
             return navigationGeometry.Value;
+        if (id == DecorIconId.User.SignIn)
+            return SignInGeometriesByWeight.TryGetValue(weight, out var signInGeometry)
+                ? signInGeometry.Value
+                : throw new ArgumentOutOfRangeException(nameof(weight), weight, "The Material Symbol weight is not supported.");
         if (!SymbolsById.TryGetValue(id, out var symbol))
             throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
         if (!SymbolGeometriesByWeight.TryGetValue(weight, out var geometries))
             throw new ArgumentOutOfRangeException(nameof(weight), weight, "The Material Symbol weight is not supported.");
-        if (symbol == "login") return LoginGeometry.Value;
         if (symbol == "contrast") return ThemeToggleGeometry.Value;
         return geometries[symbol].Value;
     }
 
     private static Geometry CreateNavigationGeometry(DecorIconId id, int weight)
     {
-        var thickness = 1.2 + (weight - 100) / 600d * 1.8;
-        var left = id == DecorIconId.Navigation.FirstPage || id == DecorIconId.Navigation.PreviousPage;
-        var hasBar = id == DecorIconId.Navigation.FirstPage || id == DecorIconId.Navigation.LastPage;
-        var barX = id == DecorIconId.Navigation.LastPage ? 20 : 4;
-        var segments = left
-            ? new[] { CreateSegment(16, 4, 8, 12, thickness), CreateSegment(8, 12, 16, 20, thickness) }
-            : new[] { CreateSegment(8, 4, 16, 12, thickness), CreateSegment(16, 12, 8, 20, thickness) };
+        var dropdown = SymbolGeometriesByWeight[weight]["arrow_drop_down"].Value;
+        var isLeft = id == DecorIconId.Navigation.FirstPage || id == DecorIconId.Navigation.PreviousPage;
+        var rotation = isLeft
+            ? new Matrix(0, 1, -1, 0, 960, 0)
+            : new Matrix(0, -1, 1, 0, 0, 960);
 
-        if (hasBar)
+        if (id == DecorIconId.Navigation.PreviousPage || id == DecorIconId.Navigation.NextPage)
         {
-            var halfThickness = thickness / 2;
-            segments = [.. segments, string.Create(CultureInfo.InvariantCulture,
-                $"M {barX - halfThickness:0.###},4 L {barX + halfThickness:0.###},4 L {barX + halfThickness:0.###},20 L {barX - halfThickness:0.###},20 Z")];
+            return new GeometryGroup
+            {
+                Transform = new MatrixTransform(rotation),
+                Children = { dropdown }
+            };
         }
 
-        return Geometry.Parse(string.Join(" ", segments));
-    }
+        var group = new GeometryGroup();
+        var trianglePositions = isLeft ? new[] { -120d, 140d } : new[] { 160d, 420d };
+        foreach (var offset in trianglePositions)
+        {
+            var triangleTransform = isLeft
+                ? new Matrix(0, 1, -0.5, 0, 480 + offset, 0)
+                : new Matrix(0, -1, 0.5, 0, offset, 960);
+            group.Children.Add(new GeometryGroup
+            {
+                Transform = new MatrixTransform(triangleTransform),
+                Children = { dropdown }
+            });
+        }
 
-    private static string CreateSegment(double startX, double startY, double endX, double endY, double thickness)
-    {
-        var length = Math.Sqrt(Math.Pow(endX - startX, 2) + Math.Pow(endY - startY, 2));
-        var offsetX = -(endY - startY) / length * thickness / 2;
-        var offsetY = (endX - startX) / length * thickness / 2;
-        return string.Create(CultureInfo.InvariantCulture,
-            $"M {startX + offsetX:0.###},{startY + offsetY:0.###} L {endX + offsetX:0.###},{endY + offsetY:0.###} L {endX - offsetX:0.###},{endY - offsetY:0.###} L {startX - offsetX:0.###},{startY - offsetY:0.###} Z");
+        group.Children.Add(new RectangleGeometry(isLeft
+            ? new Rect(560, 300, 48, 360)
+            : new Rect(352, 300, 48, 360)));
+        return group;
     }
 
     private static Lazy<Geometry> CreateGeometry(string path) => new(() => Geometry.Parse(path), LazyThreadSafetyMode.ExecutionAndPublication);
