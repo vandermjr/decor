@@ -39,7 +39,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
-        ShowSystemSettingsCommand = new RelayCommand(() => OpenSingletonDocument("system-settings", "Configurações do Sistema", () => CreateView<IconCatalogView>()), () => IsAdministrator());
+        ShowSystemSettingsCommand = new RelayCommand(() => OpenSingletonDocument("system-icons", "Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Preferências", () => CreateView<UserOptionsView>()));
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));

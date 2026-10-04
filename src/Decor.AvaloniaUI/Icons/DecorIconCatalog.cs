@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Avalonia.Media;
 
 namespace Decor.AvaloniaUI.Icons;
@@ -8,6 +9,18 @@ public static class DecorIconCatalog
     private static readonly IReadOnlyList<string> FamilyOrder = ["Application", "Modules", "Forms", "Actions", "User", "Common", "Navigation"];
 
     private static readonly IReadOnlyList<int> AvailableWeights = [100, 200, 300, 400, 500, 600, 700];
+    private static readonly Dictionary<(DecorIconId Id, int Weight), Lazy<Geometry>> NavigationGeometries =
+        (from id in new[]
+        {
+            DecorIconId.Navigation.FirstPage,
+            DecorIconId.Navigation.PreviousPage,
+            DecorIconId.Navigation.NextPage,
+            DecorIconId.Navigation.LastPage
+        }
+        from weight in AvailableWeights
+        select new KeyValuePair<(DecorIconId Id, int Weight), Lazy<Geometry>>(
+            (id, weight), new Lazy<Geometry>(() => CreateNavigationGeometry(id, weight), LazyThreadSafetyMode.ExecutionAndPublication)))
+        .ToDictionary(item => item.Key, item => item.Value);
 
     private static readonly IReadOnlyDictionary<int, IReadOnlyDictionary<string, Lazy<Geometry>>> SymbolGeometriesByWeight =
         new ReadOnlyDictionary<int, IReadOnlyDictionary<string, Lazy<Geometry>>>(new Dictionary<int, IReadOnlyDictionary<string, Lazy<Geometry>>>
@@ -383,6 +396,8 @@ public static class DecorIconCatalog
 
     public static Geometry Get(DecorIconId id, int weight)
     {
+        if (NavigationGeometries.TryGetValue((id, weight), out var navigationGeometry))
+            return navigationGeometry.Value;
         if (!SymbolsById.TryGetValue(id, out var symbol))
             throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
         if (!SymbolGeometriesByWeight.TryGetValue(weight, out var geometries))
@@ -390,6 +405,35 @@ public static class DecorIconCatalog
         if (symbol == "login") return LoginGeometry.Value;
         if (symbol == "contrast") return ThemeToggleGeometry.Value;
         return geometries[symbol].Value;
+    }
+
+    private static Geometry CreateNavigationGeometry(DecorIconId id, int weight)
+    {
+        var thickness = 1.2 + (weight - 100) / 600d * 1.8;
+        var left = id == DecorIconId.Navigation.FirstPage || id == DecorIconId.Navigation.PreviousPage;
+        var hasBar = id == DecorIconId.Navigation.FirstPage || id == DecorIconId.Navigation.LastPage;
+        var barX = id == DecorIconId.Navigation.LastPage ? 20 : 4;
+        var segments = left
+            ? new[] { CreateSegment(16, 4, 8, 12, thickness), CreateSegment(8, 12, 16, 20, thickness) }
+            : new[] { CreateSegment(8, 4, 16, 12, thickness), CreateSegment(16, 12, 8, 20, thickness) };
+
+        if (hasBar)
+        {
+            var halfThickness = thickness / 2;
+            segments = [.. segments, string.Create(CultureInfo.InvariantCulture,
+                $"M {barX - halfThickness:0.###},4 L {barX + halfThickness:0.###},4 L {barX + halfThickness:0.###},20 L {barX - halfThickness:0.###},20 Z")];
+        }
+
+        return Geometry.Parse(string.Join(" ", segments));
+    }
+
+    private static string CreateSegment(double startX, double startY, double endX, double endY, double thickness)
+    {
+        var length = Math.Sqrt(Math.Pow(endX - startX, 2) + Math.Pow(endY - startY, 2));
+        var offsetX = -(endY - startY) / length * thickness / 2;
+        var offsetY = (endX - startX) / length * thickness / 2;
+        return string.Create(CultureInfo.InvariantCulture,
+            $"M {startX + offsetX:0.###},{startY + offsetY:0.###} L {endX + offsetX:0.###},{endY + offsetY:0.###} L {endX - offsetX:0.###},{endY - offsetY:0.###} L {startX - offsetX:0.###},{startY - offsetY:0.###} Z");
     }
 
     private static Lazy<Geometry> CreateGeometry(string path) => new(() => Geometry.Parse(path), LazyThreadSafetyMode.ExecutionAndPublication);

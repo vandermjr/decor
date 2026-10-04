@@ -219,7 +219,9 @@
           <Button Classes="main-menu-button" Content="Configurações">
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Configurações do Sistema" Command="{Binding ShowSystemSettingsCommand}" IsVisible="{Binding CanViewSystemSettings}"/>
+                <MenuItem Header="Configurações do Sistema" IsVisible="{Binding CanViewSystemSettings}">
+                  <MenuItem Header="Ícones" Command="{Binding ShowSystemSettingsCommand}"/>
+                </MenuItem>
                 <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}"/>
                 <MenuItem Header="Grupos de Permissões" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}"/>
                 <MenuItem Header="Administração do Sistema" Command="{Binding ShowDatabaseMaintenanceCommand}" IsVisible="{Binding CanViewDatabaseMaintenance}"/>
