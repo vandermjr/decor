@@ -127,6 +127,11 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="ToolTip.ServiceEnabled" Value="False" />
     </Style>
+    <Style Selector="ComboBox.pagination-page-size">
+        <Setter Property="ToolTip.ServiceEnabled" Value="False" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeCaption}" />
+    </Style>
     <Style Selector="Button.pagination-button:disabled">
         <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />

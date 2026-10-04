@@ -154,7 +154,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool HasPreviousPage => CurrentPage > 1;
     public bool HasFirstPage => HasPreviousPage;
     public bool HasLastPage => HasNextPage;
-    public string? PaginationStatus => HasPagination ? $"{FirstItem} a {LastItem} de {TotalCount}" : null;
+    public string? PaginationStatus => HasPagination ? $"Registros encontrados: {TotalCount}" : null;
     public string? PaginationPageStatus => HasPagination ? $"Página {_currentPage} de {TotalPages}" : null;
     public bool HasPagination => _hasSearched && !IsEditing && Products.Count > 0;
     public IReadOnlyList<int> PageSizeOptions => AvailablePageSizes;

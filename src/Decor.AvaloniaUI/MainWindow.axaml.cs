@@ -13,7 +13,7 @@ namespace Decor.AvaloniaUI;
 public partial class MainWindow : Window
 {
     private readonly DispatcherTimer _paginationHintTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
-    private Button? _paginationHintTarget;
+    private Control? _paginationHintTarget;
     private TextBlock PaginationHintText => (TextBlock)((Border)PaginationHintPopup.Child!).Child!;
 
     public MainWindow()
@@ -75,11 +75,11 @@ public partial class MainWindow : Window
             userFlyout.ShowAt(userButton);
     }
 
-    private void PaginationButton_PointerEntered(object? sender, PointerEventArgs eventArgs)
+    private void PaginationHint_PointerEntered(object? sender, PointerEventArgs eventArgs)
     {
         _paginationHintTimer.Stop();
         PaginationHintPopup.IsOpen = false;
-        _paginationHintTarget = sender as Button;
+        _paginationHintTarget = sender as Control;
         if (_paginationHintTarget is not { IsEffectivelyEnabled: true })
             return;
 
@@ -87,11 +87,18 @@ public partial class MainWindow : Window
         _paginationHintTimer.Start();
     }
 
-    private void PaginationButton_PointerExited(object? sender, PointerEventArgs eventArgs)
+    private void PaginationHint_PointerExited(object? sender, PointerEventArgs eventArgs)
     {
         if (sender != _paginationHintTarget)
             return;
 
+        _paginationHintTimer.Stop();
+        PaginationHintPopup.IsOpen = false;
+        _paginationHintTarget = null;
+    }
+
+    private void PaginationHint_PointerPressed(object? sender, PointerPressedEventArgs eventArgs)
+    {
         _paginationHintTimer.Stop();
         PaginationHintPopup.IsOpen = false;
         _paginationHintTarget = null;
