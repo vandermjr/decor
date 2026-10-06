@@ -14,6 +14,7 @@ public partial class MainWindow : Window
 {
     private readonly DispatcherTimer _paginationHintTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private Control? _paginationHintTarget;
+    private bool _isAboutOpen;
     private TextBlock PaginationHintText => (TextBlock)((Border)PaginationHintPopup.Child!).Child!;
 
     public MainWindow()
@@ -42,6 +43,19 @@ public partial class MainWindow : Window
             var changePasswordWindow = navigationService.Resolve<ChangePasswordWindow>();
             changePasswordWindow.Configure(required: false);
             await navigationService.ShowDialogAsync(this, changePasswordWindow);
+        };
+        mainViewModel.AboutRequested += async (_, _) =>
+        {
+            if (_isAboutOpen) return;
+            _isAboutOpen = true;
+            try
+            {
+                await navigationService.ShowDialogAsync(this, new AboutWindow());
+            }
+            finally
+            {
+                _isAboutOpen = false;
+            }
         };
     }
 

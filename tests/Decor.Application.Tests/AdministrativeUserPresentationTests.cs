@@ -14,11 +14,12 @@ public sealed class AdministrativeUserPresentationTests
     }
 
     [Fact]
-    public void EmployeeName_IsPrimaryPresentationForRegularUsers()
+    public void Username_IsPresentationEvenWhenEmployeeExists()
     {
         var user = new AdministrativeUserDTO(2, "ana", "legacy display name", true, [], [], "Ana Silva");
 
-        user.PresentationName.Should().Be("Ana Silva");
+        user.PresentationName.Should().Be("ana");
+        user.EmployeeName.Should().Be("Ana Silva");
         user.IsSystemAdministrator.Should().BeFalse();
     }
 

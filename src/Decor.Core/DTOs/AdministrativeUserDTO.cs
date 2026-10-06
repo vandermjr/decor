@@ -9,5 +9,5 @@ public sealed record AdministrativeUserDTO(int UserID, string Username, string D
     public bool IsSystemAdministrator => SystemAccountDefaults.IsAdministrator(Username);
     public string PresentationName => IsSystemAdministrator
         ? SystemAccountDefaults.AdministratorName
-        : !string.IsNullOrWhiteSpace(EmployeeName) ? EmployeeName : Username;
+        : Username;
 }

@@ -32,7 +32,7 @@ ICONS = [
     ("Forms", "TermDelivery", "local_shipping"), ("Forms", "Users", "manage_accounts"), ("Forms", "PermissionGroups", "groups"), ("Forms", "DatabaseMaintenance", "database"),
     ("Actions", "Search", "search"), ("Actions", "View", "visibility"), ("Actions", "Create", "add"), ("Actions", "Edit", "edit"),
     ("Actions", "Delete", "delete"), ("Actions", "Save", "save"), ("Actions", "Cancel", "cancel"), ("Actions", "Add", "add"),
-    ("Actions", "Remove", "remove"), ("Actions", "Report", "description"), ("Actions", "Close", "close"), ("Actions", "Copy", "content_copy"),
+    ("Actions", "Remove", "remove"), ("Actions", "Report", "description"), ("Actions", "Close", "close"), ("Actions", "Clear", "cleaning_services"), ("Actions", "Copy", "content_copy"),
     ("User", "Profile", "person"), ("User", "Preferences", "tune"), ("User", "ChangePassword", "key"), ("User", "Notifications", "notifications"), ("User", "SignOut", "logout"),
     ("Common", "Calendar", "calendar_month"), ("Common", "Clock", "schedule"), ("Common", "Folder", "folder"), ("Common", "Database", "database"), ("Common", "Backup", "backup"),
     ("Navigation", "FirstPage", "first_page"), ("Navigation", "PreviousPage", "chevron_left"), ("Navigation", "NextPage", "chevron_right"), ("Navigation", "LastPage", "last_page"), ("Navigation", "Dropdown", "arrow_drop_down"),

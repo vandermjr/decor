@@ -29,6 +29,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId TermDelivery { get; } = new("Forms.TermDelivery");
         public static DecorIconId Users { get; } = new("Forms.Users");
         public static DecorIconId PermissionGroups { get; } = new("Forms.PermissionGroups");
+        public static DecorIconId Permissions { get; } = new("Forms.Permissions");
         public static DecorIconId DatabaseMaintenance { get; } = new("Forms.DatabaseMaintenance");
     }
 
@@ -45,6 +46,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Remove { get; } = new("Actions.Remove");
         public static DecorIconId Report { get; } = new("Actions.Report");
         public static DecorIconId Close { get; } = new("Actions.Close");
+        public static DecorIconId Clear { get; } = new("Actions.Clear");
         public static DecorIconId Copy { get; } = new("Actions.Copy");
     }
 
@@ -60,6 +62,10 @@ public readonly record struct DecorIconId(string Value)
 
     public static class Common
     {
+        public static DecorIconId Code { get; } = new("Common.Code");
+        public static DecorIconId Barcode { get; } = new("Common.Barcode");
+        public static DecorIconId Status { get; } = new("Common.Status");
+        public static DecorIconId Unlocked { get; } = new("Common.Unlocked");
         public static DecorIconId Calendar { get; } = new("Common.Calendar");
         public static DecorIconId Clock { get; } = new("Common.Clock");
         public static DecorIconId Folder { get; } = new("Common.Folder");
@@ -74,5 +80,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId NextPage { get; } = new("Navigation.NextPage");
         public static DecorIconId LastPage { get; } = new("Navigation.LastPage");
         public static DecorIconId Dropdown { get; } = new("Navigation.Dropdown");
+        public static DecorIconId SortAscending { get; } = new("Navigation.SortAscending");
+        public static DecorIconId SortDescending { get; } = new("Navigation.SortDescending");
     }
 }

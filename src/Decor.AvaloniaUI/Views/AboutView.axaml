@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.AboutView"
+             x:DataType="vm:AboutViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="20" MaxWidth="720" HorizontalAlignment="Left">
+      <StackPanel Spacing="8">
+        <TextBlock Text="Decor" FontSize="28" FontWeight="SemiBold"/>
+        <TextBlock Text="Gestão comercial, estoque e serviços" TextWrapping="Wrap"
+                   Foreground="{DynamicResource DecorTextMutedBrush}"/>
+      </StackPanel>
+      <Separator/>
+      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="24" RowSpacing="16">
+        <TextBlock Text="Versão"/>
+        <TextBlock Grid.Column="1" Text="{Binding Version}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="1" Text="Interface"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InterfaceVersion, StringFormat='Avalonia {0}'}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="2" Text="Runtime"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Framework}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="3" Text="Sistema operacional"/>
+        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding OperatingSystem}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="4" Text="Arquitetura"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Architecture}"/>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

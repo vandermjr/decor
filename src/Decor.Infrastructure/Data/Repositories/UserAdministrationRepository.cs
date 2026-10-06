@@ -4,16 +4,24 @@ using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
 using Decor.FluentSqlBuilder;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
 public sealed class UserAdministrationRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IUserAdministrationRepository
 {
+    private const string ProtectedRoleNamesMigrationResourceName = "Decor.Infrastructure.Migrations.20261001_pluralize_protected_permission_groups.sql";
+    private const string MaintenancePermissionMigrationResourceName = "Decor.Infrastructure.Migrations.20261004_ensure_database_maintenance_permission.sql";
+    private const string RestorePermissionMigrationResourceName = "Decor.Infrastructure.Migrations.20261004_add_database_restore_permission.sql";
+    private static readonly ConditionalWeakTable<IDatabaseConnection, MigrationState> MigrationStates = new();
     private readonly IDatabaseConnection _databaseConnection = databaseConnection;
     private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
+    private readonly MigrationState _migrationState = MigrationStates.GetValue(databaseConnection, _ => new MigrationState());
 
     public async Task<IReadOnlyList<AdministrativeUserDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default)
     {
+        await EnsureProtectedRoleNamesMigrationAsync(cancellationToken);
         var normalized = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         var query = _createCommandBuilder()
             .Select<ApplicationUser>(s => s.WithColumns<ApplicationUser>(u => u.UserID));
@@ -244,6 +252,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
 
     public async Task<IReadOnlyList<AdministrativeRoleDTO>> GetRolesAsync(CancellationToken cancellationToken = default)
     {
+        await EnsureProtectedRoleNamesMigrationAsync(cancellationToken);
         var (sql, parameters) = _createCommandBuilder()
             .Select<Role>(s => s.WithColumns<Role>(r => r.RoleID, r => r.RoleName, r => r.Description, r => r.HierarchyLevel, r => r.IsSystemProtected))
             .OrderBy(o => o
@@ -255,8 +264,50 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         return result.ToArray();
     }
 
+    private async Task EnsureProtectedRoleNamesMigrationAsync(CancellationToken cancellationToken)
+    {
+        if (_migrationState.IsApplied) return;
+
+        await _migrationState.Lock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_migrationState.IsApplied) return;
+
+            await using var migrationStream = Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream(ProtectedRoleNamesMigrationResourceName)
+                ?? throw new InvalidOperationException($"Embedded database migration '{ProtectedRoleNamesMigrationResourceName}' was not found.");
+            using var reader = new StreamReader(migrationStream);
+            var migrationSql = await reader.ReadToEndAsync(cancellationToken);
+            using var connection = _databaseConnection.CreateConnection();
+            await connection.ExecuteAsync(new CommandDefinition(migrationSql, cancellationToken: cancellationToken));
+            await using var permissionStream = Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream(MaintenancePermissionMigrationResourceName)
+                ?? throw new InvalidOperationException($"Embedded database migration '{MaintenancePermissionMigrationResourceName}' was not found.");
+            using var permissionReader = new StreamReader(permissionStream);
+            var permissionSql = await permissionReader.ReadToEndAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(permissionSql, cancellationToken: cancellationToken));
+            await using var restoreStream = Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream(RestorePermissionMigrationResourceName)
+                ?? throw new InvalidOperationException($"Embedded database migration '{RestorePermissionMigrationResourceName}' was not found.");
+            using var restoreReader = new StreamReader(restoreStream);
+            await connection.ExecuteAsync(new CommandDefinition(await restoreReader.ReadToEndAsync(cancellationToken), cancellationToken: cancellationToken));
+            _migrationState.IsApplied = true;
+        }
+        finally
+        {
+            _migrationState.Lock.Release();
+        }
+    }
+
+    private sealed class MigrationState
+    {
+        public SemaphoreSlim Lock { get; } = new(1, 1);
+        public bool IsApplied { get; set; }
+    }
+
     public async Task<IReadOnlyList<AdministrativePermissionDTO>> GetPermissionsAsync(CancellationToken cancellationToken = default)
     {
+        await EnsureProtectedRoleNamesMigrationAsync(cancellationToken);
         var (sql, parameters) = _createCommandBuilder()
             .Select<Permission>(s => s.WithColumns<Permission>(p => p.PermissionID, p => p.PermissionCode, p => p.Description))
             .OrderBy(o => o.Ascending<Permission>(p => p.PermissionCode))

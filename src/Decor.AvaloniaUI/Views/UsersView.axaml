@@ -1,136 +1,44 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:views="using:Decor.AvaloniaUI.Views" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" xmlns:controls="using:Decor.AvaloniaUI.Controls" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
   <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
-    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-      <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário"/>
-      <Button Grid.Column="1" Command="{Binding SearchCommand}">
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
+      <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário" KeyDown="SearchTextBox_KeyDown"/>
+      <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}">
           <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-          <TextBlock Text="Pesquisar" VerticalAlignment="Center"/>
-        </StackPanel>
       </Button>
-      <Button Grid.Column="2" Command="{Binding NewUserCommand}">
+      <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}">
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+      </Button>
+      <Button Grid.Column="3" Command="{Binding NewUserCommand}">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
           <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
           <TextBlock Text="Novo usuário" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>
+      <Button Grid.Column="4" Command="{Binding EditUserCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+          <TextBlock Text="Editar usuário" VerticalAlignment="Center"/>
+        </StackPanel>
+      </Button>
     </Grid>
 
-    <Grid Grid.Row="1" RowDefinitions="Auto,1.2*,Auto,*" RowSpacing="12">
-      <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Usuários" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
-                    AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="False"
-                    GridLinesVisibility="All" HeadersVisibility="Column">
-            <DataGrid.Columns>
-              <DataGridTextColumn Header="Código" Binding="{Binding UserID}" Width="70"/>
-              <DataGridTextColumn Header="Usuário" Binding="{Binding Username}" Width="1.2*"/>
-              <DataGridTemplateColumn Header="Nome de apresentação" Width="1.8*">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding PresentationName}" VerticalAlignment="Center"/>
-                      <Border Padding="5,2" CornerRadius="3" Background="{DynamicResource DecorControlBrush}"
-                              IsVisible="{Binding IsSystemAdministrator}">
-                        <TextBlock Text="Conta do sistema" FontSize="{DynamicResource DecorFontSizeCaption}"
-                                   Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                      </Border>
-                    </StackPanel>
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="Status" Width="90">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
-                    <Grid>
-                      <TextBlock Text="Ativo" IsVisible="{Binding IsActive}" VerticalAlignment="Center"/>
-                      <TextBlock Text="Inativo" IsVisible="{Binding !IsActive}" VerticalAlignment="Center"/>
-                    </Grid>
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="Grupos" Width="2*">
-                <DataGridTemplateColumn.CellTemplate>
-                  <DataTemplate x:DataType="dtos:AdministrativeUserDTO">
-                    <ItemsControl ItemsSource="{Binding Roles}">
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <WrapPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
-                          <TextBlock Text="{Binding RoleName}" Margin="0,0,8,0" TextTrimming="CharacterEllipsis"/>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-              </DataGridTemplateColumn>
-            </DataGrid.Columns>
-          </DataGrid>
-        </Grid>
-      </Border>
-
-      <TextBlock Grid.Row="2" Text="Detalhes do usuário selecionado" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-
-      <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
-      <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding UserRoles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
-                <TextBlock Text="{Binding RoleName}"/>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </Grid>
-      </Border>
-
-      <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Módulos" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Modules}" SelectedItem="{Binding SelectedModule, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}"/>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </Grid>
-      </Border>
-
-      <Border Grid.Column="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Formulários" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ListBox Grid.Row="1" ItemsSource="{Binding Forms}" SelectedItem="{Binding SelectedForm, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}"/>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </Grid>
-      </Border>
-
-      <Border Grid.Column="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Text="Ações" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,8"/>
-          <ItemsControl Grid.Row="1" ItemsSource="{Binding Permissions}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:UserCascadePermissionItem">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,4">
-                  <CheckBox IsChecked="{Binding IsGranted}" IsEnabled="False"/>
-                  <TextBlock Grid.Column="1" Text="{Binding ActionDisplayName}" VerticalAlignment="Center"/>
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </Grid>
-      </Border>
-      </Grid>
+    <Grid Grid.Row="1" RowDefinitions="2*,Auto,*" RowSpacing="8" IsVisible="{Binding !IsEditing}">
+    <controls:DecorDataGridControl x:Name="UsersGrid" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                                    DefaultSortMemberPath="PresentationName"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+    <TextBlock Grid.Row="1" Text="Grupos associados" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,4,0,0"/>
+    <ListBox Grid.Row="2" ItemsSource="{Binding SelectedUser.Roles}" SelectionMode="Single"
+             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+             BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" MinHeight="80">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="dtos:AdministrativeRoleDTO">
+          <TextBlock Text="{Binding RoleName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
     </Grid>
+    <Panel Grid.RowSpan="2" IsVisible="{Binding IsEditing}">
+      <views:UserFormView DataContext="{Binding ActiveForm}"/>
+    </Panel>
   </Grid>
 </UserControl>

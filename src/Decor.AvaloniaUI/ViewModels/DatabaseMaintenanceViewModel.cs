@@ -5,12 +5,24 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia.Threading;
 using Decor.Core.Interfaces.Services;
+using Decor.Core.Common;
+using Decor.Core.DTOs;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
 public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 {
     private readonly IDatabaseBackupService _databaseBackupService;
+    private readonly IDatabaseRestoreService? _restoreService;
+    private readonly IAuthorizationService? _authorization;
+    private readonly IAuthenticatedUserContext? _userContext;
+    private bool _isRestoring;
+    private bool _showRestoreConfirmation;
+    private bool _restoreCompleted;
+    private string _restoreFile = string.Empty;
+    private string _restoreConfirmation = string.Empty;
+    private string _restoreStatus = string.Empty;
+    private string _safetyBackupFile = string.Empty;
     private DateTimeOffset? _backupDate = DateTimeOffset.Now.Date;
     private TimeSpan? _backupTime = CurrentTime();
     private BackupRecurrence _recurrence = BackupRecurrence.Once;
@@ -37,11 +49,20 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
     private readonly RelayCommand _deleteSelectedScheduleCommand;
     private readonly DispatcherTimer _clockTimer;
 
-    public DatabaseMaintenanceViewModel(IDatabaseBackupService databaseBackupService)
+    public DatabaseMaintenanceViewModel(IDatabaseBackupService databaseBackupService,
+        IDatabaseRestoreService? restoreService = null, IAuthorizationService? authorization = null,
+        IAuthenticatedUserContext? userContext = null)
     {
         _databaseBackupService = databaseBackupService;
+        _restoreService = restoreService;
+        _authorization = authorization;
+        _userContext = userContext;
+        RequestRestoreCommand = new RelayCommand(RequestRestore, () => CanRestore && !string.IsNullOrWhiteSpace(RestoreFile));
+        ConfirmRestoreCommand = new RelayCommand(async () => await RestoreAsync(), () => CanRestore && ShowRestoreConfirmation && RestoreConfirmation == "RESTAURAR BANCO");
+        CancelRestoreCommand = new RelayCommand(() => { ShowRestoreConfirmation = false; RestoreConfirmation = string.Empty; }, () => !IsRestoring);
+        FinishRestoreCommand = new RelayCommand(() => _userContext?.SignOut(), () => RestoreCompleted);
         _saveScheduleCommand = new RelayCommand(SaveSchedule);
-        _startImmediateBackupCommand = new RelayCommand(async () => await StartImmediateBackupAsync(), () => !IsBackupRunning);
+        _startImmediateBackupCommand = new RelayCommand(async () => await StartImmediateBackupAsync(), () => !IsBackupRunning && !IsRestoring && !RestoreCompleted);
         _newScheduleCommand = new RelayCommand(NewSchedule);
         _deleteSelectedScheduleCommand = new RelayCommand(DeleteSelectedSchedule, () => SelectedSchedule is not null);
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -241,6 +262,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
         {
             if (!Set(ref _isBackupRunning, value)) return;
             _startImmediateBackupCommand.RaiseCanExecuteChanged();
+            RefreshRestoreCommands();
             OnPropertyChanged(nameof(ImmediateBackupButtonText));
         }
     }
@@ -293,6 +315,91 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
     public ICommand StartImmediateBackupCommand => _startImmediateBackupCommand;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event Func<Task>? RestoreFinishedRequested;
+
+    public ICommand RequestRestoreCommand { get; }
+    public ICommand ConfirmRestoreCommand { get; }
+    public ICommand CancelRestoreCommand { get; }
+    public ICommand FinishRestoreCommand { get; }
+    public bool CanRestore => _restoreService is not null && _userContext?.IsAuthenticated == true
+        && _authorization?.HasPermission(DecorPermissions.DatabaseMaintenanceRestore) == true
+        && !IsRestoring && !IsBackupRunning && !RestoreCompleted;
+    public bool CanUseBackup => !IsRestoring && !RestoreCompleted;
+    public bool IsRestoring { get => _isRestoring; private set { if (Set(ref _isRestoring, value)) RefreshRestoreCommands(); } }
+    public bool ShowRestoreConfirmation { get => _showRestoreConfirmation; private set { if (Set(ref _showRestoreConfirmation, value)) RefreshRestoreCommands(); } }
+    public bool RestoreCompleted { get => _restoreCompleted; private set { if (Set(ref _restoreCompleted, value)) RefreshRestoreCommands(); } }
+    public string RestoreFile
+    {
+        get => _restoreFile;
+        set
+        {
+            if (!CanRestore || !Set(ref _restoreFile, value)) return;
+            ShowRestoreConfirmation = false;
+            RestoreConfirmation = string.Empty;
+            RefreshRestoreCommands();
+        }
+    }
+    public string RestoreConfirmation { get => _restoreConfirmation; set { if (Set(ref _restoreConfirmation, value)) RefreshRestoreCommands(); } }
+    public string RestoreStatus { get => _restoreStatus; private set => Set(ref _restoreStatus, value); }
+    public string SafetyBackupFile { get => _safetyBackupFile; private set => Set(ref _safetyBackupFile, value); }
+
+    private void RefreshRestoreCommands()
+    {
+        OnPropertyChanged(nameof(CanRestore));
+        OnPropertyChanged(nameof(CanUseBackup));
+        ((RelayCommand)RequestRestoreCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)ConfirmRestoreCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)CancelRestoreCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)FinishRestoreCommand).RaiseCanExecuteChanged();
+        _startImmediateBackupCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void RequestRestore()
+    {
+        if (!CanRestore) return;
+        if (!File.Exists(RestoreFile)) { RestoreStatus = "Selecione um arquivo de backup existente."; return; }
+        RestoreConfirmation = string.Empty;
+        ShowRestoreConfirmation = true;
+        RestoreStatus = string.Empty;
+    }
+
+    public async Task RestoreAsync()
+    {
+        if (!ConfirmRestoreCommand.CanExecute(null)) return;
+        IsRestoring = true;
+        _clockTimer.Stop();
+        RestoreStatus = "Criando cópia de segurança e restaurando o banco...";
+        try
+        {
+            var result = await _restoreService!.RestoreBackupAsync(RestoreFile);
+            SafetyBackupFile = result.SafetyBackupFile;
+            RestoreStatus = "Restauração concluída. Encerre esta sessão e reinicie o Decor antes de continuar.";
+            RestoreCompleted = true;
+            ShowRestoreConfirmation = false;
+        }
+        catch (Exception exception)
+        {
+            if (exception.Data[nameof(DatabaseRestoreResult.SafetyBackupFile)] is string safetyFile)
+            {
+                SafetyBackupFile = safetyFile;
+                RestoreCompleted = true;
+                ShowRestoreConfirmation = false;
+                RestoreStatus = "A restauração falhou e o banco pode estar parcialmente alterado. Encerre as sessões. Use a cópia de segurança para recuperação.";
+            }
+            else
+            {
+                RestoreStatus = exception is InvalidDataException or UnauthorizedAccessException or InvalidOperationException
+                    ? exception.Message : "Não foi possível restaurar o backup. Nenhuma restauração foi concluída.";
+            }
+        }
+        finally
+        {
+            IsRestoring = false;
+            if (!RestoreCompleted) _clockTimer.Start();
+            else if (RestoreFinishedRequested is { } showResult)
+                await showResult();
+        }
+    }
 
     private void SaveSchedule()
     {
@@ -356,7 +463,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private async Task StartImmediateBackupAsync()
     {
-        if (IsBackupRunning)
+        if (IsBackupRunning || IsRestoring || RestoreCompleted)
             return;
 
         Summary = string.Empty;

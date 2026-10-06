@@ -30,12 +30,13 @@ public sealed class DecorFunctionalPermissionCatalogTests
             ("Financeiro", "Contas a Pagar"),
             ("Financeiro", "Caixa"),
             ("Configurações", "Usuários"),
-            ("Configurações", "Grupos de Permissões"),
-            ("Configurações", "Administração do Sistema")
+            ("Configurações", "Grupos"),
+            ("Configurações", "Permissões"),
+            ("Configurações", "Backup e restauração")
         };
 
         DecorFunctionalPermissionCatalog.Contexts
-            .Should().HaveCount(21);
+            .Should().HaveCount(22);
 
         DecorFunctionalPermissionCatalog.Contexts
             .Select(context => (context.ModuleName, context.ContextName))
@@ -66,8 +67,8 @@ public sealed class DecorFunctionalPermissionCatalogTests
             .Concat(DecorFunctionalPermissionCatalog.UnclassifiedPermissionCodes)
             .ToArray();
 
-        technicalCodes.Should().HaveCount(129);
-        DecorFunctionalPermissionCatalog.PermissionCodes.Should().HaveCount(124);
+        technicalCodes.Should().HaveCount(130);
+        DecorFunctionalPermissionCatalog.PermissionCodes.Should().HaveCount(125);
         DecorFunctionalPermissionCatalog.TransversalPermissionCodes.Should().HaveCount(4);
         DecorFunctionalPermissionCatalog.UnclassifiedPermissionCodes.Should().HaveCount(1);
         classifiedCodes.Should().OnlyHaveUniqueItems();

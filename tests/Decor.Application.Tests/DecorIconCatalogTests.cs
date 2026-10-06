@@ -37,6 +37,7 @@ public class DecorIconCatalogTests
             DecorIconId.Forms.TermDelivery,
             DecorIconId.Forms.Users,
             DecorIconId.Forms.PermissionGroups,
+            DecorIconId.Forms.Permissions,
             DecorIconId.Forms.DatabaseMaintenance,
             DecorIconId.Actions.Search,
             DecorIconId.Actions.View,
@@ -49,6 +50,7 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Remove,
             DecorIconId.Actions.Report,
             DecorIconId.Actions.Close,
+            DecorIconId.Actions.Clear,
             DecorIconId.Actions.Copy,
             DecorIconId.User.Profile,
             DecorIconId.User.Preferences,
@@ -61,14 +63,20 @@ public class DecorIconCatalogTests
             DecorIconId.Common.Folder,
             DecorIconId.Common.Database,
             DecorIconId.Common.Backup,
+            DecorIconId.Common.Code,
+            DecorIconId.Common.Barcode,
+            DecorIconId.Common.Status,
+            DecorIconId.Common.Unlocked,
             DecorIconId.Navigation.FirstPage,
             DecorIconId.Navigation.PreviousPage,
             DecorIconId.Navigation.NextPage,
             DecorIconId.Navigation.LastPage,
-            DecorIconId.Navigation.Dropdown
+            DecorIconId.Navigation.Dropdown,
+            DecorIconId.Navigation.SortAscending,
+            DecorIconId.Navigation.SortDescending
         ];
 
-        Assert.Equal(46, expectedIds.Length);
+        Assert.Equal(54, expectedIds.Length);
         Assert.Equal(expectedIds.OrderBy(id => id.Value), DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
     }
@@ -86,7 +94,7 @@ public class DecorIconCatalogTests
             .OrderBy(id => id.Value)
             .ToArray();
 
-        Assert.Equal(46, declaredIds.Length);
+        Assert.Equal(54, declaredIds.Length);
         Assert.Equal(declaredIds, DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.Null(typeof(DecorIconId.Actions).GetProperty("Generic"));
         Assert.DoesNotContain(DecorIconCatalog.Ids, id => id.Value == "Actions." + "Generic");
@@ -106,13 +114,13 @@ public class DecorIconCatalogTests
     }
 
     [Fact]
-    public void FortyTwo_physical_symbols_are_shared_by_the_expected_semantic_ids()
+    public void Physical_symbols_are_shared_by_the_expected_semantic_ids()
     {
         _ = AvaloniaInitialized.Value;
 
         var geometries = DecorIconCatalog.Ids.Select(id => DecorIconCatalog.Get(id)).ToArray();
 
-        Assert.Equal(42, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Equal(48, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Settings), DecorIconCatalog.Get(DecorIconId.Modules.Configuracoes));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Modules.Estoque), DecorIconCatalog.Get(DecorIconId.Forms.Products));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Actions.Create), DecorIconCatalog.Get(DecorIconId.Actions.Add));
@@ -151,6 +159,27 @@ public class DecorIconCatalogTests
 
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Home), DecorIconCatalog.Get(DecorIconId.Application.Home, 400));
         Assert.Throws<ArgumentOutOfRangeException>(() => DecorIconCatalog.Get(DecorIconId.Application.Home, 450));
+    }
+
+    [Theory]
+    [InlineData(100)]
+    [InlineData(200)]
+    [InlineData(300)]
+    [InlineData(400)]
+    [InlineData(500)]
+    [InlineData(600)]
+    [InlineData(700)]
+    public void First_and_last_page_symbols_are_mirrored_and_have_terminal_bars(int weight)
+    {
+        _ = AvaloniaInitialized.Value;
+        var first = DecorIconCatalog.Get(DecorIconId.Navigation.FirstPage, weight);
+        var last = DecorIconCatalog.Get(DecorIconId.Navigation.LastPage, weight);
+        Assert.Equal(first.Bounds.Width, last.Bounds.Width, 2);
+        Assert.Equal(first.Bounds.Height, last.Bounds.Height, 2);
+        Assert.True(first.FillContains(new Avalonia.Point(280, -480)));
+        Assert.True(last.FillContains(new Avalonia.Point(680, -480)));
+        Assert.False(first.FillContains(new Avalonia.Point(680, -480)));
+        Assert.False(last.FillContains(new Avalonia.Point(280, -480)));
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
@@ -15,7 +16,7 @@ public sealed class CreateUserRoleOption
     public bool IsSelected { get; set; }
 }
 
-public sealed class CreateUserViewModel : INotifyPropertyChanged
+public sealed class CreateUserViewModel : IUserFormViewModel
 {
     private readonly IUserAdministrationService _userAdministrationService;
     private readonly IRoleAdministrationService _roleAdministrationService;
@@ -37,12 +38,20 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
         CreateCommand = new RelayCommand(async () => await CreateAsync(), () => !IsBusy && !IsCompleted);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy && !IsCompleted);
         FinishCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty), () => IsCompleted);
+        DismissCommand = new RelayCommand(() =>
+        {
+            if (!IsBusy) CloseRequested?.Invoke(this, EventArgs.Empty);
+        }, () => !IsBusy);
     }
 
     public ObservableCollection<CreateUserRoleOption> Roles { get; } = [];
     public ICommand CreateCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand FinishCommand { get; }
+    public ICommand SaveCommand => CreateCommand;
+    public ICommand DismissCommand { get; }
+    public string FormTitle => "Novo usuário";
+    public string DismissButtonText => IsCompleted ? "Concluir" : "Cancelar";
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? CloseRequested;
 
@@ -54,7 +63,7 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
     public string? TemporaryPassword { get => _temporaryPassword; private set => SetField(ref _temporaryPassword, value); }
     public bool HasTemporaryPassword => !string.IsNullOrWhiteSpace(TemporaryPassword);
     public bool IsBusy { get => _isBusy; private set { if (SetField(ref _isBusy, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); } } }
-    public bool IsCompleted { get => _isCompleted; private set { if (SetField(ref _isCompleted, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); } } }
+    public bool IsCompleted { get => _isCompleted; private set { if (SetField(ref _isCompleted, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); OnPropertyChanged(nameof(DismissButtonText)); } } }
     public bool CanEditFields => !IsBusy && !IsCompleted;
     public string? CreatedUsername { get => _createdUsername; private set => SetField(ref _createdUsername, value); }
 
@@ -78,8 +87,9 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task CreateAsync()
+    public async Task CreateAsync()
     {
+        if (!CanEditFields) return;
         ErrorMessage = null;
         SuccessMessage = null;
         if (string.IsNullOrWhiteSpace(Username) || Username.Trim().Length > 50)
@@ -88,9 +98,9 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(DisplayName) || DisplayName.Trim().Length > 100)
+        if (SystemAccountDefaults.IsAdministrator(Username.Trim()))
         {
-            ErrorMessage = "Informe um display name com até 100 caracteres.";
+            ErrorMessage = "O nome admin é reservado à conta Administrador do sistema.";
             return;
         }
 
@@ -98,7 +108,7 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
         try
         {
             var roleIds = Roles.Where(option => option.IsSelected).Select(option => option.Role.RoleID).ToArray();
-            var result = await _userAdministrationService.CreateAsync(Username, DisplayName, roleIds);
+            var result = await _userAdministrationService.CreateAsync(Username.Trim(), Username.Trim(), roleIds);
             CreatedUsername = Username.Trim();
             TemporaryPassword = result.TemporaryPassword;
             OnPropertyChanged(nameof(HasTemporaryPassword));
@@ -124,6 +134,7 @@ public sealed class CreateUserViewModel : INotifyPropertyChanged
         ((RelayCommand)CreateCommand).RaiseCanExecuteChanged();
         ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
         ((RelayCommand)FinishCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)DismissCommand).RaiseCanExecuteChanged();
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

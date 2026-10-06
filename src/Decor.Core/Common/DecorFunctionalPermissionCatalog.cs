@@ -181,21 +181,25 @@ public static class DecorFunctionalPermissionCatalog
                 DecorPermissions.UsersEdit,
                 DecorPermissions.UsersActivate,
                 DecorPermissions.UsersDeactivate,
-                DecorPermissions.UsersAssignRoles,
-                DecorPermissions.UsersManagePermissions,
-                DecorPermissions.UsersResetPassword,
-                DecorPermissions.UsersRestorePermissions
+                DecorPermissions.UsersResetPassword
             }),
-            new DecorFunctionalPermissionContext("Configurações", "Grupos de Permissões", new[]
+            new DecorFunctionalPermissionContext("Configurações", "Grupos", new[]
             {
                 DecorPermissions.RolesView,
-                DecorPermissions.RolesEdit,
+                DecorPermissions.RolesEdit
+            }),
+            new DecorFunctionalPermissionContext("Configurações", "Permissões", new[]
+            {
+                DecorPermissions.UsersAssignRoles,
+                DecorPermissions.UsersManagePermissions,
+                DecorPermissions.UsersRestorePermissions,
                 DecorPermissions.RolesManagePermissions,
                 DecorPermissions.RolesRestoreDefaults
             }),
-            new DecorFunctionalPermissionContext("Configurações", "Administração do Sistema", new[]
+            new DecorFunctionalPermissionContext("Configurações", "Backup e restauração", new[]
             {
-                DecorPermissions.DatabaseMaintenanceView
+                DecorPermissions.DatabaseMaintenanceView,
+                DecorPermissions.DatabaseMaintenanceRestore
             })
         });
 

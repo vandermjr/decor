@@ -33,14 +33,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private GroupDTO? _selectedGroup;
     private SubgroupDTO? _selectedSubgroup;
     private readonly Dictionary<string, string> _fieldErrors = [];
-    private string? _valueMatchColumn;
-    private int _valueMatchCount;
     private Task? _lookupsLoadTask;
-    private static readonly IReadOnlyList<int> AvailablePageSizes = [10, 25, 50, 100];
-    private int _pageSize = 10;
-    private int _currentPage = 1;
-    private IReadOnlyList<ProductDTO> _allProducts = [];
-    private bool _hasSearched;
+    private int _recordCount;
 
     public ProductsViewModel(
         IProductService productService,
@@ -57,11 +51,10 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         _groupService = groupService;
         _subgroupService = subgroupService;
 
-        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => !IsBusy && !string.IsNullOrWhiteSpace(SearchText));
-        PreviousPageCommand = new RelayCommand(() => ChangePage(-1), () => !IsBusy && !IsEditing && CurrentPage > 1);
-        NextPageCommand = new RelayCommand(() => ChangePage(1), () => !IsBusy && !IsEditing && CurrentPage < TotalPages);
-        FirstPageCommand = new RelayCommand(() => ChangePageTo(1), () => !IsBusy && !IsEditing && CurrentPage > 1);
-        LastPageCommand = new RelayCommand(() => ChangePageTo(TotalPages), () => !IsBusy && !IsEditing && CurrentPage < TotalPages);
+        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => !IsBusy && !IsEditing);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        Listing = new GridListState<ProductDTO>(Products, () => !IsEditing);
+        Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
         NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => !IsBusy && !IsEditing);
         EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => SelectedProduct is not null && !IsBusy && !IsEditing);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => IsEditing && !IsBusy);
@@ -76,14 +69,16 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public ObservableCollection<SubgroupDTO> Subgroups { get; } = [];
 
     public ICommand SearchCommand { get; }
+    public ICommand ClearSearchCommand { get; }
     public ICommand NewCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
-    public ICommand PreviousPageCommand { get; }
-    public ICommand NextPageCommand { get; }
-    public ICommand FirstPageCommand { get; }
-    public ICommand LastPageCommand { get; }
+    public GridListState<ProductDTO> Listing { get; }
+    public ICommand PreviousPageCommand => Listing.PreviousPageCommand;
+    public ICommand NextPageCommand => Listing.NextPageCommand;
+    public ICommand FirstPageCommand => Listing.FirstPageCommand;
+    public ICommand LastPageCommand => Listing.LastPageCommand;
 
     public string SearchText
     {
@@ -117,15 +112,16 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 RaiseCommandStates();
                 OnPropertyChanged(nameof(IsListVisible));
                 OnPropertyChanged(nameof(StatusPrimary));
-                OnPropertyChanged(nameof(StatusSecondary));
-                OnPropertyChanged(nameof(PaginationPageStatus));
                 OnPropertyChanged(nameof(HasStatusPrimary));
-                OnPropertyChanged(nameof(HasStatusSecondary));
+                Listing.Refresh();
+                OnPropertyChanged(nameof(IsAdding));
+                OnPropertyChanged(nameof(ProductCodeDisplay));
             }
         }
     }
 
     public bool IsListVisible => !IsEditing;
+    public bool IsAdding => IsEditing && _isNew;
 
     // Propriedades para visibilidade/estado de botões
     public bool CanNew => !IsBusy && !IsEditing;
@@ -140,69 +136,36 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     }
 
     public string? StatusPrimary => null;
-    public string? StatusSecondary => IsEditing || string.IsNullOrEmpty(_valueMatchColumn)
-        ? null
-        : $"{_valueMatchColumn}: {_valueMatchCount} correspondência(s)";
+    public string? StatusSecondary => Listing.StatusSecondary;
     public bool HasStatusPrimary => false;
-    public bool HasStatusSecondary => !IsEditing && !string.IsNullOrEmpty(_valueMatchColumn);
-    public int CurrentPage => _currentPage;
-    public int TotalCount => _allProducts.Count;
-    public int TotalPages => TotalCount == 0 ? 0 : (int)Math.Ceiling((double)TotalCount / _pageSize);
-    public int FirstItem => TotalCount == 0 ? 0 : ((_currentPage - 1) * _pageSize) + 1;
-    public int LastItem => Math.Min(_currentPage * _pageSize, TotalCount);
-    public bool HasNextPage => CurrentPage < TotalPages;
-    public bool HasPreviousPage => CurrentPage > 1;
-    public bool HasFirstPage => HasPreviousPage;
-    public bool HasLastPage => HasNextPage;
-    public string? PaginationStatus => HasPagination ? $"Registros encontrados: {TotalCount}" : null;
-    public string? PaginationPageStatus => HasPagination ? $"Página {_currentPage} de {TotalPages}" : null;
-    public bool HasPagination => _hasSearched && !IsEditing && Products.Count > 0;
-    public IReadOnlyList<int> PageSizeOptions => AvailablePageSizes;
+    public bool HasStatusSecondary => Listing.HasStatusSecondary;
+    public int CurrentPage => Listing.CurrentPage;
+    public int TotalCount => Listing.TotalCount;
+    public int TotalPages => Listing.TotalPages;
+    public bool HasNextPage => Listing.HasNextPage;
+    public bool HasPreviousPage => Listing.HasPreviousPage;
+    public bool HasFirstPage => Listing.HasFirstPage;
+    public bool HasLastPage => Listing.HasLastPage;
+    public string? PaginationStatus => Listing.PaginationStatus;
+    public string? PaginationPageStatus => Listing.PaginationPageStatus;
+    public bool HasPagination => Listing.HasPagination;
+    public IReadOnlyList<int> PageSizeOptions => Listing.PageSizeOptions;
     public int SelectedPageSize
     {
-        get => _pageSize;
-        set
-        {
-            if (!AvailablePageSizes.Contains(value) || value == _pageSize)
-                return;
-            _pageSize = value;
-            _currentPage = Math.Clamp(_currentPage, 1, TotalPages);
-            RefreshPage();
-        }
+        get => Listing.SelectedPageSize;
+        set => Listing.SelectedPageSize = value;
     }
 
-    public void SetValueMatch(string columnName, int matchCount)
-    {
-        _valueMatchColumn = string.IsNullOrWhiteSpace(columnName) ? null : columnName;
-        _valueMatchCount = matchCount;
-        OnPropertyChanged(nameof(StatusSecondary));
-        OnPropertyChanged(nameof(HasStatusSecondary));
-    }
+    public void SetValueMatch(string columnName, int matchCount) => Listing.SetValueMatch(columnName, matchCount);
 
-    private async Task SearchProductsAsync()
-    {
-        _currentPage = 1;
-        _hasSearched = true;
-        OnPropertyChanged(nameof(CurrentPage));
-        OnPropertyChanged(nameof(HasPagination));
-        await LoadProductsAsync();
-    }
+    private Task SearchProductsAsync() => LoadProductsAsync();
 
-    private void ChangePage(int delta)
+    private void ClearSearch()
     {
-        var requestedPage = _currentPage + delta;
-        if (requestedPage < 1 || requestedPage > TotalPages)
-            return;
-
-        ChangePageTo(requestedPage);
-    }
-
-    private void ChangePageTo(int page)
-    {
-        if (page < 1 || page > TotalPages || page == _currentPage)
-            return;
-        _currentPage = page;
-        RefreshPage();
+        SearchText = string.Empty;
+        SelectedProduct = null;
+        Listing.Clear();
+        StatusMessage = "Pesquisa limpa.";
     }
 
     public ProductDTO? SelectedProduct
@@ -223,11 +186,13 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         private set
         {
             if (SetField(ref _productId, value))
-                OnPropertyChanged(nameof(ProductIdDisplay));
+                OnPropertyChanged(nameof(ProductCodeDisplay));
         }
     }
 
-    public string ProductIdDisplay => ProductId == 0 ? "Gerado ao salvar" : ProductId.ToString();
+    public string ProductCodeDisplay => IsAdding
+        ? RecordCodeDisplay.ForNewRecord(_recordCount)
+        : RecordCodeDisplay.ForExistingRecord(ProductId);
 
     public string? Barcode
     {
@@ -377,6 +342,17 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             return;
         }
 
+        try
+        {
+            _recordCount = await RecordCodeDisplay.CountAllAsync(async (page, pageSize) =>
+                await _productService.GetAllProductsAsync(page, pageSize));
+        }
+        catch
+        {
+            _recordCount = TotalCount;
+        }
+        OnPropertyChanged(nameof(ProductCodeDisplay));
+
         _isNew = true;
         IsEditing = true;
         SelectedProduct = null;
@@ -393,7 +369,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         SelectedBrand = null;
         ResetClassificationSelection();
         ClearFieldErrors();
-        StatusMessage = "Novo produto.";
+        StatusMessage = "Cadastrando um produto.";
     }
 
     public async Task BeginEditAsync()
@@ -429,12 +405,11 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         _selectedClass = Classes.FirstOrDefault(x => x.ClassID == SelectedProduct.ClassID);
         OnPropertyChanged(nameof(SelectedClass));
 
+        StatusMessage = $"Editando o produto {ProductId}.";
         if (_selectedClass is not null)
         {
             await LoadFamiliesAsync(SelectedProduct.FamilyID, SelectedProduct.GroupID, SelectedProduct.SubgroupID);
         }
-
-        StatusMessage = $"Editando produto {ProductId}.";
     }
 
     public void CancelEdit()
@@ -490,11 +465,10 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IsBusy = true;
         try
         {
-            _allProducts = (await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue)).ToArray();
-            _currentPage = 1;
-            RefreshPage();
-            StatusMessage = "Pesquisa concluída.";
-            SetValueMatch(string.Empty, 0);
+            Listing.Load(await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue));
+            OnPropertyChanged(nameof(ProductCodeDisplay));
+            if (!IsEditing)
+                StatusMessage = "Pesquisa concluída.";
         }
         catch (UnauthorizedAccessException)
         {
@@ -508,25 +482,6 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             IsBusy = false;
         }
-    }
-
-    private void RefreshPage()
-    {
-        var pageItems = _allProducts.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
-        Replace(Products, pageItems);
-        OnPropertyChanged(nameof(CurrentPage));
-        OnPropertyChanged(nameof(TotalCount));
-        OnPropertyChanged(nameof(TotalPages));
-        OnPropertyChanged(nameof(FirstItem));
-        OnPropertyChanged(nameof(LastItem));
-        OnPropertyChanged(nameof(PaginationStatus));
-        OnPropertyChanged(nameof(PaginationPageStatus));
-        OnPropertyChanged(nameof(HasPagination));
-        OnPropertyChanged(nameof(HasNextPage));
-        OnPropertyChanged(nameof(HasPreviousPage));
-        OnPropertyChanged(nameof(HasFirstPage));
-        OnPropertyChanged(nameof(HasLastPage));
-        RaisePaginationCommandStates();
     }
 
     private async Task LoadFamiliesAsync(int? familyId = null, int? groupId = null, int? subgroupId = null)
@@ -714,26 +669,18 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private void RaiseCommandStates()
     {
         if (SearchCommand is RelayCommand relaySearch) relaySearch.RaiseCanExecuteChanged();
+        if (ClearSearchCommand is RelayCommand relayClear) relayClear.RaiseCanExecuteChanged();
         if (EditCommand is RelayCommand relayEdit) relayEdit.RaiseCanExecuteChanged();
         if (SaveCommand is RelayCommand relaySave) relaySave.RaiseCanExecuteChanged();
         if (CancelCommand is RelayCommand relayCancel) relayCancel.RaiseCanExecuteChanged();
         if (NewCommand is RelayCommand relayNew) relayNew.RaiseCanExecuteChanged();
-        RaisePaginationCommandStates();
+        Listing?.Refresh();
         
         // Notify button visibility properties
         OnPropertyChanged(nameof(CanNew));
         OnPropertyChanged(nameof(CanEdit));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(CanCancel));
-        OnPropertyChanged(nameof(HasPagination));
-    }
-
-    private void RaisePaginationCommandStates()
-    {
-        if (PreviousPageCommand is RelayCommand previous) previous.RaiseCanExecuteChanged();
-        if (NextPageCommand is RelayCommand next) next.RaiseCanExecuteChanged();
-        if (FirstPageCommand is RelayCommand first) first.RaiseCanExecuteChanged();
-        if (LastPageCommand is RelayCommand last) last.RaiseCanExecuteChanged();
     }
 
     public string GetFieldError(string fieldName) => _fieldErrors.TryGetValue(fieldName, out var error) ? error : string.Empty;

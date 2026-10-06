@@ -6,7 +6,8 @@ using Decor.FluentSqlBuilder;
 
 namespace Decor.Infrastructure.Data.Repositories;
 
-public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder) : IUserRepository
+public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<FluentCommandBuilder> createCommandBuilder,
+    IUserAdministrationRepository? administrationRepository = null) : IUserRepository
 {
     private readonly IDatabaseConnection _databaseConnection = databaseConnection;
     private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
@@ -42,6 +43,8 @@ public sealed class UserRepository(IDatabaseConnection databaseConnection, Func<
 
     public async Task<ApplicationUser?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
+        if (administrationRepository is not null)
+            await administrationRepository.GetRolesAsync(cancellationToken);
         // Permissões concedidas por role, respeitando um override negativo/positivo do próprio usuário.
         var permissionsByRole = _createCommandBuilder()
             .Select<Permission>(s => s.WithColumns(p => p.PermissionCode))

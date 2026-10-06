@@ -8,62 +8,65 @@ using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
-public sealed class UserCascadePermissionItem
-{
-    public required AdministrativePermissionDTO Permission { get; init; }
-    public bool IsGranted { get; set; }
-    public DecorPermissionPresentation Presentation => DecorPermissionPresentationCatalog.Describe(Permission.PermissionCode);
-    public string ModuleName => Presentation.ModuleName;
-    public string FormName => Presentation.FormName;
-    public string ActionDisplayName => Presentation.ActionName;
-}
-
-public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
+public sealed class UsersViewModel : IWorkspaceDocumentState, IStatusBarSource
 {
     private readonly IUserAdministrationService _userAdministrationService;
-    private readonly IRoleAdministrationService _roleAdministrationService;
+    private readonly IRoleAdministrationService? _roleAdministrationService;
+    private readonly IAuthorizationService? _authorization;
+    private readonly IAuthenticatedUserContext? _context;
     private string _search = string.Empty;
     private string _statusMessage = string.Empty;
     private bool _isBusy;
     private AdministrativeUserDTO? _selectedUser;
-    private AdministrativeRoleDTO? _selectedRole;
-    private string? _selectedModule;
-    private string? _selectedForm;
-    private IReadOnlyList<UserCascadePermissionItem> _rolePermissionCatalog = [];
+    private UserFormViewModel? _activeForm;
 
-    public UsersViewModel(IUserAdministrationService userAdministrationService, IRoleAdministrationService roleAdministrationService)
+    public UsersViewModel(IUserAdministrationService userAdministrationService,
+        IRoleAdministrationService? roleAdministrationService = null,
+        IAuthorizationService? authorization = null,
+        IAuthenticatedUserContext? context = null)
     {
         _userAdministrationService = userAdministrationService;
         _roleAdministrationService = roleAdministrationService;
-        SearchCommand = new RelayCommand(async () => await LoadUsersAsync(), () => !IsBusy);
-        ClearSelectionCommand = new RelayCommand(ClearSelection, () => SelectedUser is not null);
-        NewUserCommand = new RelayCommand(() => NewUserRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy);
-        EditUserCommand = new RelayCommand(() => EditUserRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy && SelectedUser is not null);
-        EditUserRolesCommand = new RelayCommand(() => EditUserRolesRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy && SelectedUser is not null);
-        ToggleActiveCommand = new RelayCommand(async () => await ToggleActiveAsync(), () => !IsBusy && SelectedUser is not null);
-        ConfirmToggleActiveCommand = new RelayCommand(async () => await ConfirmToggleActiveAsync(), () => !IsBusy && ShowToggleUserConfirmation);
-        CancelToggleActiveCommand = new RelayCommand(CancelToggleActive, () => !IsBusy && ShowToggleUserConfirmation);
-    }
-
-    public UsersViewModel(IUserAdministrationService userAdministrationService)
-        : this(userAdministrationService, new NoOpRoleAdministrationService())
-    {
+        _authorization = authorization;
+        _context = context;
+        SearchCommand = new RelayCommand(async () => await LoadUsersAsync(), () => !IsEditing && !IsBusy);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsEditing && !IsBusy);
+        ClearSelectionCommand = new RelayCommand(ClearSelection, () => !IsEditing && SelectedUser is not null);
+        NewUserCommand = new RelayCommand(() => FormLoadTask = OpenCreateFormAsync(), () => !IsEditing && !IsBusy && Allowed(DecorPermissions.UsersCreate));
+        EditUserCommand = new RelayCommand(() => FormLoadTask = OpenEditFormAsync(), () => CanMutateSelected && Allowed(DecorPermissions.UsersEdit));
+        EditUserRolesCommand = new RelayCommand(() => EditUserRolesRequested?.Invoke(this, EventArgs.Empty), () => CanMutateSelected && Allowed(DecorPermissions.UsersAssignRoles));
+        Listing = new GridListState<AdministrativeUserDTO>(Users, () => !IsEditing);
+        Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
     }
 
     public ObservableCollection<AdministrativeUserDTO> Users { get; } = [];
-    public ObservableCollection<AdministrativeRoleDTO> UserRoles { get; } = [];
-    public ObservableCollection<string> Modules { get; } = [];
-    public ObservableCollection<string> Forms { get; } = [];
-    public ObservableCollection<UserCascadePermissionItem> Permissions { get; } = [];
+    public GridListState<AdministrativeUserDTO> Listing { get; }
+    public UserFormViewModel? ActiveForm
+    {
+        get => _activeForm;
+        private set
+        {
+            if (!SetField(ref _activeForm, value)) return;
+            OnPropertyChanged(nameof(IsEditing));
+            OnPropertyChanged(nameof(IsAdding));
+            OnPropertyChanged(nameof(StatusMessage));
+            Listing.Refresh();
+            RefreshCommands();
+        }
+    }
+    public bool IsEditing => ActiveForm is not null;
+    public bool IsAdding => ActiveForm is { UserId: 0 };
+    public Task FormLoadTask { get; private set; } = Task.CompletedTask;
+    public Task FormCloseTask { get; private set; } = Task.CompletedTask;
+    private bool CanMutateSelected => !IsEditing && !IsBusy && SelectedUser is { IsSystemAdministrator: false };
+    private bool Allowed(string permission) => (_context?.IsAuthenticated ?? true) && (_authorization?.HasPermission(permission) ?? true);
 
     public ICommand SearchCommand { get; private set; }
+    public ICommand ClearSearchCommand { get; private set; }
     public ICommand ClearSelectionCommand { get; private set; }
     public ICommand NewUserCommand { get; private set; }
     public ICommand EditUserCommand { get; private set; }
     public ICommand EditUserRolesCommand { get; private set; }
-    public ICommand ToggleActiveCommand { get; private set; }
-    public ICommand ConfirmToggleActiveCommand { get; private set; }
-    public ICommand CancelToggleActiveCommand { get; private set; }
 
     public string SearchText
     {
@@ -73,7 +76,8 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
 
     public string StatusMessage
     {
-        get => _statusMessage;
+        get => ActiveForm is null ? _statusMessage
+            : IsAdding ? "Cadastrando um usuário." : $"Editando o usuário {ActiveForm.UserId}.";
         private set => SetField(ref _statusMessage, value);
     }
 
@@ -83,16 +87,7 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         private set
         {
             if (SetField(ref _isBusy, value))
-            {
-                ((RelayCommand)SearchCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)ClearSelectionCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)NewUserCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)EditUserCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)EditUserRolesCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)ToggleActiveCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)ConfirmToggleActiveCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)CancelToggleActiveCommand).RaiseCanExecuteChanged();
-            }
+                RefreshCommands();
         }
     }
 
@@ -102,89 +97,59 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         set
         {
             if (!SetField(ref _selectedUser, value)) return;
-            ClearUserContext();
-            if (value is not null)
-            {
-                _ = LoadUserContextAsync(value.UserID);
-            }
-            OnPropertyChanged(nameof(ToggleActiveButtonText));
-            ((RelayCommand)ClearSelectionCommand).RaiseCanExecuteChanged();
-            ((RelayCommand)EditUserCommand).RaiseCanExecuteChanged();
-            ((RelayCommand)EditUserRolesCommand).RaiseCanExecuteChanged();
-            ((RelayCommand)ToggleActiveCommand).RaiseCanExecuteChanged();
+            RefreshCommands();
         }
     }
-
-    public AdministrativeRoleDTO? SelectedRole
-    {
-        get => _selectedRole;
-        set
-        {
-            if (!SetField(ref _selectedRole, value)) return;
-            _selectedModule = null;
-            _selectedForm = null;
-            Modules.Clear();
-            Forms.Clear();
-            Permissions.Clear();
-            OnPropertyChanged(nameof(HasSelectionSummary));
-            if (value is not null)
-            {
-                _ = LoadRoleContextAsync(value.RoleID);
-            }
-        }
-    }
-
-    public string? SelectedModule
-    {
-        get => _selectedModule;
-        set
-        {
-            if (!SetField(ref _selectedModule, value)) return;
-            _selectedForm = null;
-            Forms.Clear();
-            Permissions.Clear();
-            if (value is not null)
-            {
-                var filtered = GetPermissionsForSelectedRole().Where(p => p.ModuleName.Equals(value, StringComparison.OrdinalIgnoreCase)).ToArray();
-                foreach (var form in filtered.Select(p => p.FormName).Distinct(StringComparer.OrdinalIgnoreCase))
-                    Forms.Add(form);
-                if (Forms.Count > 0)
-                    SelectedForm = Forms.First();
-            }
-            OnPropertyChanged(nameof(HasSelectionSummary));
-        }
-    }
-
-    public string? SelectedForm
-    {
-        get => _selectedForm;
-        set
-        {
-            if (!SetField(ref _selectedForm, value)) return;
-            Permissions.Clear();
-            if (value is not null && SelectedModule is not null)
-            {
-                var filtered = GetPermissionsForSelectedRole()
-                    .Where(p => p.ModuleName.Equals(SelectedModule, StringComparison.OrdinalIgnoreCase) && p.FormName.Equals(value, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(p => p.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                foreach (var permission in filtered)
-                    Permissions.Add(permission);
-            }
-            OnPropertyChanged(nameof(HasSelectionSummary));
-        }
-    }
-
-    public bool HasSelectionSummary => SelectedUser is not null || SelectedRole is not null || SelectedModule is not null || SelectedForm is not null;
-    public bool ShowToggleUserConfirmation { get; private set; }
-    public string ToggleActiveConfirmationMessage { get; private set; } = string.Empty;
-    public string ToggleActiveButtonText => SelectedUser is not null && SelectedUser.IsActive ? "Desativar usuário" : "Ativar usuário";
 
     public event EventHandler? NewUserRequested;
     public event EventHandler? EditUserRequested;
     public event EventHandler? EditUserRolesRequested;
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private async Task OpenCreateFormAsync()
+    {
+        if (!NewUserCommand.CanExecute(null)) return;
+        NewUserRequested?.Invoke(this, EventArgs.Empty);
+        if (_roleAdministrationService is null) return;
+        var form = new UserFormViewModel(_userAdministrationService, _roleAdministrationService, _authorization, _context, recordCount: Listing.TotalCount);
+        form.CloseRequested += CloseForm;
+        ActiveForm = form;
+        await form.InitializeAsync();
+    }
+
+    private async Task OpenEditFormAsync()
+    {
+        if (!EditUserCommand.CanExecute(null) || SelectedUser is null) return;
+        EditUserRequested?.Invoke(this, EventArgs.Empty);
+        var form = new UserFormViewModel(_userAdministrationService, _roleAdministrationService, _authorization, _context, SelectedUser);
+        form.CloseRequested += CloseForm;
+        ActiveForm = form;
+        await form.InitializeAsync();
+    }
+
+    private void CloseForm(object? sender, EventArgs args)
+    {
+        if (!ReferenceEquals(sender, ActiveForm) || ActiveForm is { IsBusy: true }) return;
+        FormCloseTask = CloseFormAsync();
+    }
+
+    private async Task CloseFormAsync()
+    {
+        var form = ActiveForm;
+        if (form is not null) form.CloseRequested -= CloseForm;
+        ActiveForm = null;
+        if (!(_context?.IsAuthenticated ?? true)) return;
+        if (form is { CreatedUsername: not null } created)
+            await HandleUserCreatedAsync(created.CreatedUsername);
+        else if (form is { WasSaved: true } updated)
+            await HandleUserUpdatedAsync(updated.UserId);
+    }
+
+    private void RefreshCommands()
+    {
+        foreach (var command in new[] { SearchCommand, ClearSearchCommand, ClearSelectionCommand, NewUserCommand, EditUserCommand, EditUserRolesCommand })
+            ((RelayCommand?)command)?.RaiseCanExecuteChanged();
+    }
 
     public async Task InitializeAsync() => await LoadUsersAsync();
 
@@ -214,15 +179,13 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         try
         {
             var values = await _userAdministrationService.SearchAsync(SearchText);
-            Users.Clear();
-            foreach (var user in values)
-                Users.Add(user);
+            Listing.Load(values);
             StatusMessage = values.Count == 0
                 ? "Nenhum usuário encontrado."
                 : $"{values.Count} {(values.Count == 1 ? "usuário carregado" : "usuários carregados")}.";
-            if (SelectedUser is not null && Users.All(user => user.UserID != SelectedUser.UserID))
+            if (SelectedUser is not null)
             {
-                SelectedUser = null;
+                SelectedUser = Users.FirstOrDefault(user => user.UserID == SelectedUser.UserID);
             }
         }
         catch (Exception)
@@ -235,167 +198,18 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
         }
     }
 
-    private async Task LoadUserContextAsync(int userId)
+    private void ClearSearch()
     {
-        IsBusy = true;
-        try
-        {
-            var user = await _userAdministrationService.GetByIdAsync(userId);
-            if (user is null)
-            {
-                StatusMessage = "Usuário não encontrado.";
-                return;
-            }
-
-            UserRoles.Clear();
-            foreach (var role in user.Roles.OrderBy(role => role.RoleName, StringComparer.OrdinalIgnoreCase))
-                UserRoles.Add(role);
-
-            if (UserRoles.Count == 0)
-            {
-                StatusMessage = $"{user.PresentationName} não possui grupos atribuídos.";
-                return;
-            }
-
-            SelectedRole = UserRoles.First();
-            var uniquePermissionCount = await GetUniquePermissionCountForRoles(user.Roles);
-            var groupLabel = UserRoles.Count == 1 ? "grupo" : "grupos";
-            StatusMessage = $"{user.PresentationName} · {UserRoles.Count} {groupLabel} · {uniquePermissionCount} permissão(ões) disponíveis.";
-        }
-        catch (Exception)
-        {
-            StatusMessage = "Não foi possível carregar o contexto do usuário.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task LoadRoleContextAsync(int roleId)
-    {
-        IsBusy = true;
-        try
-        {
-            var permissions = await _roleAdministrationService.GetPermissionsAsync(roleId);
-            var grantedIds = permissions.Select(item => item.PermissionID).ToHashSet();
-            var allPermissions = await _roleAdministrationService.GetAllPermissionsAsync();
-
-            _rolePermissionCatalog = allPermissions
-                .Select(permission => new UserCascadePermissionItem
-                {
-                    Permission = permission,
-                    IsGranted = grantedIds.Contains(permission.PermissionID)
-                })
-                .Where(permission => permission.ModuleName.Length > 0)
-                .OrderBy(permission => permission.ModuleName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(permission => permission.FormName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(permission => permission.ActionDisplayName, StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-
-            Modules.Clear();
-            foreach (var module in DecorPermissionPresentationCatalog.ModuleNames.Where(module => _rolePermissionCatalog.Any(item => item.ModuleName == module)))
-                Modules.Add(module);
-
-            if (Modules.Count > 0)
-            {
-                SelectedModule = Modules.First();
-            }
-        }
-        catch (Exception)
-        {
-            StatusMessage = "Não foi possível carregar os módulos do grupo.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private IReadOnlyList<UserCascadePermissionItem> GetPermissionsForSelectedRole() => _rolePermissionCatalog;
-
-    private async Task<int> GetUniquePermissionCountForRoles(IEnumerable<AdministrativeRoleDTO> roles)
-    {
-        var ids = new HashSet<int>();
-        foreach (var role in roles)
-        {
-            var permissions = await _roleAdministrationService.GetPermissionsAsync(role.RoleID);
-            foreach (var permission in permissions)
-                ids.Add(permission.PermissionID);
-        }
-
-        return ids.Count;
-    }
-
-    private async Task ToggleActiveAsync()
-    {
-        if (SelectedUser is null)
-            return;
-
-        if (SelectedUser.IsActive)
-        {
-            ToggleActiveConfirmationMessage = $"Deseja realmente desativar o usuário \"{SelectedUser.Username}\"?";
-            ShowToggleUserConfirmation = true;
-            return;
-        }
-
-        await ExecuteToggleActiveAsync(SelectedUser.UserID, true);
-    }
-
-    private async Task ConfirmToggleActiveAsync()
-    {
-        if (SelectedUser is null)
-            return;
-
-        await ExecuteToggleActiveAsync(SelectedUser.UserID, !SelectedUser.IsActive);
-    }
-
-    private void CancelToggleActive()
-    {
-        ShowToggleUserConfirmation = false;
-        ToggleActiveConfirmationMessage = string.Empty;
-    }
-
-    private async Task ExecuteToggleActiveAsync(int userId, bool requestedActiveState)
-    {
-        IsBusy = true;
-        try
-        {
-            await _userAdministrationService.SetActiveAsync(userId, requestedActiveState);
-            StatusMessage = requestedActiveState ? "Usuário ativado com sucesso." : "Usuário desativado com sucesso.";
-            await LoadUsersAsync();
-            SelectedUser = Users.FirstOrDefault(user => user.UserID == userId);
-            ShowToggleUserConfirmation = false;
-            ToggleActiveConfirmationMessage = string.Empty;
-        }
-        catch (Exception)
-        {
-            StatusMessage = "Não foi possível atualizar o estado do usuário.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        SearchText = string.Empty;
+        SelectedUser = null;
+        Listing.Clear();
+        StatusMessage = "Pesquisa limpa.";
     }
 
     private void ClearSelection()
     {
         SelectedUser = null;
-        UserRoles.Clear();
-        Modules.Clear();
-        Forms.Clear();
-        Permissions.Clear();
-        SelectedRole = null;
         StatusMessage = "Nenhum usuário selecionado.";
-    }
-
-    private void ClearUserContext()
-    {
-        UserRoles.Clear();
-        SelectedRole = null;
-        Modules.Clear();
-        Forms.Clear();
-        Permissions.Clear();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -412,29 +226,22 @@ public sealed class UsersViewModel : INotifyPropertyChanged, IStatusBarSource
     }
 
     public string? StatusPrimary => null;
-    public string? StatusSecondary => null;
+    public string? StatusSecondary => Listing.StatusSecondary;
     public bool HasStatusPrimary => false;
-    public bool HasStatusSecondary => false;
-    public string? PaginationStatus => null;
-    public string? PaginationPageStatus => null;
-    public bool HasPagination => false;
-    public ICommand? PreviousPageCommand => null;
-    public ICommand? NextPageCommand => null;
-    public ICommand? FirstPageCommand => null;
-    public ICommand? LastPageCommand => null;
-    public bool HasPreviousPage => false;
-    public bool HasNextPage => false;
-    public bool HasFirstPage => false;
-    public bool HasLastPage => false;
-    public IReadOnlyList<int> PageSizeOptions => [];
-    public int SelectedPageSize { get => 0; set { } }
+    public bool HasStatusSecondary => Listing.HasStatusSecondary;
+    public string? PaginationStatus => Listing.PaginationStatus;
+    public string? PaginationPageStatus => Listing.PaginationPageStatus;
+    public bool HasPagination => Listing.HasPagination;
+    public ICommand? PreviousPageCommand => Listing.PreviousPageCommand;
+    public ICommand? NextPageCommand => Listing.NextPageCommand;
+    public ICommand? FirstPageCommand => Listing.FirstPageCommand;
+    public ICommand? LastPageCommand => Listing.LastPageCommand;
+    public bool HasPreviousPage => Listing.HasPreviousPage;
+    public bool HasNextPage => Listing.HasNextPage;
+    public bool HasFirstPage => Listing.HasFirstPage;
+    public bool HasLastPage => Listing.HasLastPage;
+    public IReadOnlyList<int> PageSizeOptions => Listing.PageSizeOptions;
+    public int SelectedPageSize { get => Listing.SelectedPageSize; set => Listing.SelectedPageSize = value; }
 
-    private sealed class NoOpRoleAdministrationService : IRoleAdministrationService
-    {
-        public Task<IReadOnlyList<AdministrativeRoleDTO>> GetRolesAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AdministrativeRoleDTO>>([]);
-        public Task<IReadOnlyList<AdministrativePermissionDTO>> GetAllPermissionsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AdministrativePermissionDTO>>([]);
-        public Task<IReadOnlyList<AdministrativePermissionDTO>> GetPermissionsAsync(int roleId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AdministrativePermissionDTO>>([]);
-        public Task ReplacePermissionsAsync(int roleId, IReadOnlyCollection<int> permissionIds, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task RestoreDefaultsAsync(int roleId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    }
+    public void SetValueMatch(string columnName, int matchCount) => Listing.SetValueMatch(columnName, matchCount);
 }

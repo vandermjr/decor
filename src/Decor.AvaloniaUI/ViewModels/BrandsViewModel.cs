@@ -16,6 +16,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private int _recordCount;
     private int _brandId;
     private string? _brandName;
     private readonly Dictionary<string, string> _fieldErrors = [];
@@ -26,7 +27,10 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     {
         _brandService = brandService;
         SearchCommand = new RelayCommand(async () => await LoadBrandsAsync());
-        NewCommand = new RelayCommand(BeginNew, () => !IsBusy);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        Listing = new GridListState<BrandDTO>(Brands, () => !IsEditing);
+        Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
+        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => !IsBusy);
         EditCommand = new RelayCommand(BeginEdit, () => SelectedBrand is not null && !IsBusy && !IsEditing);
         DeleteCommand = new RelayCommand(BeginDelete, () => SelectedBrand is not null && !IsBusy && !IsEditing);
         ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
@@ -36,8 +40,10 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     }
 
     public ObservableCollection<BrandDTO> Brands { get; } = [];
+    public GridListState<BrandDTO> Listing { get; }
 
     public ICommand SearchCommand { get; }
+    public ICommand ClearSearchCommand { get; }
     public ICommand NewCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand DeleteCommand { get; }
@@ -59,22 +65,24 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     }
 
     public string? StatusPrimary => null;
-    public string? StatusSecondary => null;
+    public string? StatusSecondary => Listing.StatusSecondary;
     public bool HasStatusPrimary => false;
-    public bool HasStatusSecondary => false;
-    public string? PaginationStatus => null;
-    public string? PaginationPageStatus => null;
-    public bool HasPagination => false;
-    public ICommand? PreviousPageCommand => null;
-    public ICommand? NextPageCommand => null;
-    public ICommand? FirstPageCommand => null;
-    public ICommand? LastPageCommand => null;
-    public bool HasPreviousPage => false;
-    public bool HasNextPage => false;
-    public bool HasFirstPage => false;
-    public bool HasLastPage => false;
-    public IReadOnlyList<int> PageSizeOptions => [];
-    public int SelectedPageSize { get => 0; set { } }
+    public bool HasStatusSecondary => Listing.HasStatusSecondary;
+    public string? PaginationStatus => Listing.PaginationStatus;
+    public string? PaginationPageStatus => Listing.PaginationPageStatus;
+    public bool HasPagination => Listing.HasPagination;
+    public ICommand? PreviousPageCommand => Listing.PreviousPageCommand;
+    public ICommand? NextPageCommand => Listing.NextPageCommand;
+    public ICommand? FirstPageCommand => Listing.FirstPageCommand;
+    public ICommand? LastPageCommand => Listing.LastPageCommand;
+    public bool HasPreviousPage => Listing.HasPreviousPage;
+    public bool HasNextPage => Listing.HasNextPage;
+    public bool HasFirstPage => Listing.HasFirstPage;
+    public bool HasLastPage => Listing.HasLastPage;
+    public IReadOnlyList<int> PageSizeOptions => Listing.PageSizeOptions;
+    public int SelectedPageSize { get => Listing.SelectedPageSize; set => Listing.SelectedPageSize = value; }
+
+    public void SetValueMatch(string columnName, int matchCount) => Listing.SetValueMatch(columnName, matchCount);
 
     public bool IsBusy
     {
@@ -98,9 +106,17 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
             {
                 RaiseCommandStates();
                 NotifyCommandVisibilityChanged();
+                Listing.Refresh();
+                OnPropertyChanged(nameof(IsAdding));
+                OnPropertyChanged(nameof(BrandCodeDisplay));
             }
         }
     }
+
+    public bool IsAdding => IsEditing && _isNew;
+    public string BrandCodeDisplay => IsAdding
+        ? RecordCodeDisplay.ForNewRecord(_recordCount)
+        : RecordCodeDisplay.ForExistingRecord(BrandId);
 
     public bool CanNew => !IsBusy && !IsEditing;
     public bool CanEdit => SelectedBrand is not null && !IsBusy && !IsEditing;
@@ -124,7 +140,11 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     public int BrandId
     {
         get => _brandId;
-        private set => SetField(ref _brandId, value);
+        private set
+        {
+            if (SetField(ref _brandId, value))
+                OnPropertyChanged(nameof(BrandCodeDisplay));
+        }
     }
 
     public string? BrandName
@@ -152,21 +172,31 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     public Task InitializeAsync()
     {
-        Brands.Clear();
+        Listing.Clear();
         SelectedBrand = null;
         StatusMessage = string.Empty;
         return Task.CompletedTask;
     }
 
-    public void BeginNew()
+    public async Task BeginNewAsync()
     {
+        try
+        {
+            _recordCount = await RecordCodeDisplay.CountAllAsync(async (page, pageSize) =>
+                await _brandService.GetAllBrandsAsync(page, pageSize));
+        }
+        catch
+        {
+            _recordCount = Brands.Count;
+        }
+        OnPropertyChanged(nameof(BrandCodeDisplay));
         _isNew = true;
         IsEditing = true;
         SelectedBrand = null;
         BrandId = 0;
         BrandName = string.Empty;
         ClearFieldErrors();
-        StatusMessage = "Nova marca.";
+        StatusMessage = "Cadastrando uma marca.";
     }
 
     public void BeginEdit()
@@ -181,7 +211,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         BrandId = SelectedBrand.BrandID;
         BrandName = SelectedBrand.BrandName;
         ClearFieldErrors();
-        StatusMessage = $"Editando marca {BrandId}.";
+        StatusMessage = $"Editando a marca {BrandId}.";
     }
 
     public void CancelEdit()
@@ -193,6 +223,14 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         ClearFieldErrors();
         SelectedBrand = null;
         StatusMessage = string.Empty;
+    }
+
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+        SelectedBrand = null;
+        Listing.Clear();
+        StatusMessage = "Pesquisa limpa.";
     }
 
     public void BeginDelete()
@@ -250,8 +288,10 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         IsBusy = true;
         try
         {
-            Replace(Brands, await _brandService.SearchBrandsAsync(SearchText));
-            StatusMessage = $"{Brands.Count} marca(s).";
+            Listing.Load(await _brandService.SearchBrandsAsync(SearchText, pageSize: 500));
+            OnPropertyChanged(nameof(BrandCodeDisplay));
+            if (!IsEditing)
+                StatusMessage = $"{Listing.TotalCount} marca(s).";
         }
         catch (UnauthorizedAccessException)
         {
@@ -327,6 +367,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         if (SaveCommand is RelayCommand relaySave) relaySave.RaiseCanExecuteChanged();
         if (CancelCommand is RelayCommand relayCancel) relayCancel.RaiseCanExecuteChanged();
         if (NewCommand is RelayCommand relayNew) relayNew.RaiseCanExecuteChanged();
+        if (ClearSearchCommand is RelayCommand relayClear) relayClear.RaiseCanExecuteChanged();
     }
 
     private void NotifyCommandVisibilityChanged()

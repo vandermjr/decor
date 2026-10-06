@@ -25,6 +25,7 @@ public static class DecorPermissions
     public const string RolesManagePermissions = "Roles.ManagePermissions";
     public const string RolesRestoreDefaults = "Roles.RestoreDefaults";
     public const string DatabaseMaintenanceView = "DatabaseMaintenance.View";
+    public const string DatabaseMaintenanceRestore = "DatabaseMaintenance.Restore";
     public const string CustomersView = "Customers.View";
     public const string CustomersCreate = "Customers.Create";
     public const string CustomersEdit = "Customers.Edit";

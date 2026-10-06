@@ -1,11 +1,33 @@
 using Dapper;
 using Decor.Core.Common;
+using Decor.Core.Interfaces.Data;
+using Decor.FluentSqlBuilder;
+using Decor.FluentSqlBuilder.Dialects.MariaDB;
+using Decor.Infrastructure.Data;
+using Decor.Infrastructure.Data.Repositories;
 using MySqlConnector;
 
 namespace Decor.Infrastructure.IntegrationTests;
 
 public sealed class ProtectedRoleNamesMigrationIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
 {
+    [Fact]
+    public async Task UserAdministrationRepository_GetRolesAsync_NormalizesLegacyNamesBeforeReturningGroups()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await connection.ExecuteAsync("INSERT INTO roles (RoleName, Description) VALUES ('Administrador', 'Grupo legado'), ('Supervisor', 'Grupo legado');");
+        var repository = new UserAdministrationRepository(
+            new DatabaseConnection(fixture.ConnectionString),
+            () => FluentCommandBuilder.Create(new MariaDBDialect()));
+
+        var roles = await repository.GetRolesAsync();
+
+        roles.Select(role => role.RoleName).Should().Contain(SystemRoleDefaults.Administrators);
+        roles.Select(role => role.RoleName).Should().Contain(SystemRoleDefaults.Supervisors);
+        roles.Select(role => role.RoleName).Should().NotContain("Administrador");
+        roles.Select(role => role.RoleName).Should().NotContain("Supervisor");
+    }
+
     [Fact]
     public async Task Migration_WhenCanonicalAndLegacyRolesCoexist_MergesAssignmentsAndPermissionsIdempotently()
     {

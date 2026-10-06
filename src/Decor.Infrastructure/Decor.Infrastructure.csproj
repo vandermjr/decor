@@ -18,8 +18,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\Migrations\20261004_add_database_restore_permission.sql"
+                      Link="Migrations\20261004_add_database_restore_permission.sql" />
+    <EmbeddedResource Include="..\..\Migrations\20261004_ensure_database_maintenance_permission.sql"
+                      Link="Migrations\20261004_ensure_database_maintenance_permission.sql" />
     <EmbeddedResource Include="..\..\Migrations\20261002_add_system_settings.sql"
                       Link="Migrations\20261002_add_system_settings.sql" />
+    <EmbeddedResource Include="..\..\Migrations\20261001_pluralize_protected_permission_groups.sql"
+              Link="Migrations\20261001_pluralize_protected_permission_groups.sql" />
     <ProjectReference Include="..\Decor.Core\Decor.Core.csproj" />
     <ProjectReference Include="..\Decor.FluentSqlBuilder\Decor.FluentSqlBuilder.csproj" />
   </ItemGroup>

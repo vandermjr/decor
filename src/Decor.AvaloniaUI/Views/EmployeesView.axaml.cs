@@ -17,6 +17,11 @@ public partial class EmployeesView : UserControl
             getColumnWidth: propertyName => propertyName == nameof(EmployeeDTO.EmployeeID)
                 ? new DataGridLength(80)
                 : new DataGridLength(1, DataGridLengthUnitType.Star));
+        EmployeesGrid.ValueMatchChanged += (_, eventArgs) =>
+        {
+            if (DataContext is EmployeesViewModel viewModel)
+                viewModel.SetValueMatch(eventArgs.ColumnName, eventArgs.MatchCount);
+        };
         AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
     }
 

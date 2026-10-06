@@ -55,12 +55,23 @@ public partial class DecorDataGridControl : UserControl
     private Type? _configuredDtoType;
     private Func<string, string>? _configuredGetDisplayName;
     private Func<string, DataGridLength>? _configuredGetColumnWidth;
+    private IReadOnlyList<string>? _configuredPropertyNames;
 
     public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
         AvaloniaProperty.Register<DecorDataGridControl, IEnumerable?>(nameof(ItemsSource));
 
     public static readonly StyledProperty<object?> SelectedItemProperty =
         AvaloniaProperty.Register<DecorDataGridControl, object?>(nameof(SelectedItem));
+
+    /// <summary>Column the query orders by; defaults to the code column.</summary>
+    public static readonly StyledProperty<string?> DefaultSortMemberPathProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, string?>(nameof(DefaultSortMemberPath));
+
+    public string? DefaultSortMemberPath
+    {
+        get => GetValue(DefaultSortMemberPathProperty);
+        set => SetValue(DefaultSortMemberPathProperty, value);
+    }
 
     public event EventHandler<ValueMatchChangedEventArgs>? ValueMatchChanged;
 
@@ -103,7 +114,7 @@ public partial class DecorDataGridControl : UserControl
         // If InitializeColumns was called before Loaded, apply it now
         if (_pendingDtoType != null)
         {
-            InitializeColumns(_pendingDtoType, _pendingGetDisplayName, _pendingGetColumnWidth);
+            InitializeColumns(_pendingDtoType, _pendingGetDisplayName, _pendingGetColumnWidth, _configuredPropertyNames);
             _pendingDtoType = null;
             _pendingGetDisplayName = null;
             _pendingGetColumnWidth = null;
@@ -253,7 +264,7 @@ public partial class DecorDataGridControl : UserControl
     /// </summary>
     public bool CanUserSortColumns
     {
-        get => _innerGrid?.CanUserSortColumns ?? false;
+        get => _innerGrid?.CanUserSortColumns ?? true;
         set
         {
             if (_innerGrid != null)
@@ -314,11 +325,13 @@ public partial class DecorDataGridControl : UserControl
     /// <summary>
     /// Initializes grid columns based on a DTO type and applies styling.
     /// </summary>
-    public void InitializeColumns(Type dtoType, Func<string, string>? getDisplayName = null, Func<string, DataGridLength>? getColumnWidth = null)
+    public void InitializeColumns(Type dtoType, Func<string, string>? getDisplayName = null, Func<string, DataGridLength>? getColumnWidth = null,
+        IReadOnlyList<string>? propertyNames = null)
     {
         _configuredDtoType = dtoType;
         _configuredGetDisplayName = getDisplayName;
         _configuredGetColumnWidth = getColumnWidth;
+        _configuredPropertyNames = propertyNames;
 
         // If grid not initialized yet, store for later when Loaded fires
         if (_innerGrid == null)
@@ -332,7 +345,10 @@ public partial class DecorDataGridControl : UserControl
         _innerGrid.Columns.Clear();
         CacheProperties(dtoType);
 
-        var properties = dtoType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var properties = propertyNames is null
+            ? dtoType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            : propertyNames.Select(name => dtoType.GetProperty(name)
+                ?? throw new ArgumentException($"Propriedade '{name}' não existe em {dtoType.Name}.", nameof(propertyNames))).ToArray();
 
         foreach (var property in properties)
         {
@@ -341,7 +357,8 @@ public partial class DecorDataGridControl : UserControl
                 continue;
 
             var displayAttr = property.GetCustomAttribute<DisplayAttribute>();
-            var displayName = displayAttr?.GetName() ?? property.Name;
+            var displayName = getDisplayName?.Invoke(property.Name) ?? displayAttr?.GetName() ?? property.Name;
+            displayName = property.Name == "IsActive" ? "Estado" : DecorGridHeader.NormalizeLabel(displayName);
             var width = getColumnWidth?.Invoke(property.Name) ?? new DataGridLength(1, DataGridLengthUnitType.Star);
 
             // Auto mede o cabeçalho mesmo quando a pesquisa ainda não trouxe registros.
@@ -353,7 +370,11 @@ public partial class DecorDataGridControl : UserControl
                 : CreateTextColumn(property);
 
             column.Header = displayName;
+            column.HeaderTemplate = new DecorGridHeader();
             column.Width = width;
+            column.SortMemberPath = property.Name;
+            if (!string.IsNullOrEmpty(DecorGridHeader.GetIconId(displayName).Value))
+                column.MinWidth = 130;
 
             if (column is DataGridCheckBoxColumn checkColumn)
             {
@@ -362,6 +383,10 @@ public partial class DecorDataGridControl : UserControl
 
             _innerGrid.Columns.Add(column);
         }
+
+        var defaultSort = _innerGrid.Columns.FirstOrDefault(column => DecorGridHeader.GetIconId(column.Header as string ?? string.Empty)
+            == Icons.DecorIconId.Common.Code) ?? _innerGrid.Columns.FirstOrDefault();
+        DecorGridSorting.SetDefaultSortMemberPath(_innerGrid, DefaultSortMemberPath ?? defaultSort?.SortMemberPath);
     }
 
     private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)
@@ -401,7 +426,7 @@ public partial class DecorDataGridControl : UserControl
         _styler.ApplyTheme(CreateThemeColors());
 
         if (_configuredDtoType is not null)
-            InitializeColumns(_configuredDtoType, _configuredGetDisplayName, _configuredGetColumnWidth);
+            InitializeColumns(_configuredDtoType, _configuredGetDisplayName, _configuredGetColumnWidth, _configuredPropertyNames);
 
         UpdateCellHighlights();
     }
@@ -423,7 +448,9 @@ public partial class DecorDataGridControl : UserControl
         _highlightedValue = propertyInfo.GetValue(cell.DataContext);
         _focusedCellContent = cellContent;
         UpdateCellHighlights();
-        var displayName = propertyInfo.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? propertyInfo.Name;
+        var displayName = propertyInfo.Name == "IsActive" ? "Estado" : DecorGridHeader.NormalizeLabel(
+            _configuredGetDisplayName?.Invoke(propertyInfo.Name)
+            ?? propertyInfo.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? propertyInfo.Name);
         var matchCount = ItemsSource?.Cast<object>().Count(item => Equals(propertyInfo.GetValue(item), _highlightedValue)) ?? 0;
         ValueMatchChanged?.Invoke(this, new ValueMatchChangedEventArgs(displayName, matchCount));
     }

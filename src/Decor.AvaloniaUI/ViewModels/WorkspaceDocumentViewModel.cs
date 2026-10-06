@@ -42,6 +42,8 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
         "classifications" => DecorIconId.Forms.Classifications,
         "users" => DecorIconId.Forms.Users,
         "roles" => DecorIconId.Forms.PermissionGroups,
+        "permissions" => DecorIconId.Forms.Permissions,
+        "about" => DecorIconId.Application.Help,
         "database-maintenance" => DecorIconId.Forms.DatabaseMaintenance,
         "system-icons" => DecorIconId.Application.Settings,
         "user-options" => DecorIconId.User.Preferences,
@@ -54,7 +56,8 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
     public IWorkspaceDocumentState? DocumentState => Content.DataContext as IWorkspaceDocumentState;
     public bool IsModified => DocumentState?.IsEditing ?? false;
     public bool IsHighlighted => IsActive || IsPointerOver;
-    public bool ShowModificationIndicator => IsModified && !IsPointerOver;
+    public bool ShowModificationIndicator => IsModified && DocumentState?.IsAdding != true && !IsPointerOver;
+    public bool ShowAdditionIndicator => IsModified && DocumentState?.IsAdding == true && !IsPointerOver;
     public bool ShowCloseButton => !IsModified || IsPointerOver;
 
     public bool IsActive
@@ -79,6 +82,7 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsHighlighted));
             OnPropertyChanged(nameof(ShowModificationIndicator));
+            OnPropertyChanged(nameof(ShowAdditionIndicator));
             OnPropertyChanged(nameof(ShowCloseButton));
         }
     }
@@ -87,10 +91,11 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
 
     private void OnDocumentStatePropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
     {
-        if (eventArgs.PropertyName == nameof(IWorkspaceDocumentState.IsEditing))
+        if (eventArgs.PropertyName is nameof(IWorkspaceDocumentState.IsEditing) or nameof(IWorkspaceDocumentState.IsAdding))
         {
             OnPropertyChanged(nameof(IsModified));
             OnPropertyChanged(nameof(ShowModificationIndicator));
+            OnPropertyChanged(nameof(ShowAdditionIndicator));
             OnPropertyChanged(nameof(ShowCloseButton));
         }
     }

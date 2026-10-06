@@ -52,7 +52,15 @@ public sealed class DecorIcon
 
     private static void Register(AvaloniaObject icon, DecorIconId id)
     {
-        RegisteredIcons.Add(new WeakReference<AvaloniaObject>(icon));
+        if (string.IsNullOrWhiteSpace(id.Value))
+        {
+            ClearGeometry(icon);
+            return;
+        }
+        if (!RegisteredIcons.Any(reference => reference.TryGetTarget(out var registered) && ReferenceEquals(registered, icon)))
+        {
+            RegisteredIcons.Add(new WeakReference<AvaloniaObject>(icon));
+        }
         Apply(icon, id, AppearanceService.CurrentAppearance);
     }
 
@@ -72,6 +80,11 @@ public sealed class DecorIcon
 
     private static void Apply(AvaloniaObject icon, DecorIconId id, Decor.Core.Configuration.IconAppearance appearance)
     {
+        if (string.IsNullOrWhiteSpace(id.Value))
+        {
+            ClearGeometry(icon);
+            return;
+        }
         var geometry = DecorIconCatalog.Get(id, appearance.MaterialSymbolWeight);
         switch (icon)
         {
@@ -81,6 +94,19 @@ public sealed class DecorIcon
                 break;
             case PathIcon pathIcon:
                 pathIcon.Data = geometry;
+                break;
+        }
+    }
+
+    private static void ClearGeometry(AvaloniaObject icon)
+    {
+        switch (icon)
+        {
+            case Avalonia.Controls.Shapes.Path path:
+                path.Data = null;
+                break;
+            case PathIcon pathIcon:
+                pathIcon.Data = null;
                 break;
         }
     }

@@ -10,6 +10,32 @@ namespace Decor.Application.Tests;
 public sealed class HierarchyAndDelegationTests
 {
     [Fact]
+    public async Task UserAdministrationService_SearchAsync_ReservedAdministratorSeesAllUsersWithoutRoleClaims()
+    {
+        var administrator = CreateApplicationUser(
+            userId: 1,
+            username: SystemAccountDefaults.AdministratorUsername,
+            roles: [],
+            permissions: [DecorPermissions.UsersView]);
+        var protectedUser = CreateAdministrativeUser(
+            userId: 1,
+            username: SystemAccountDefaults.AdministratorUsername,
+            roles: [new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 200, true)]);
+        var sameLevelUser = CreateAdministrativeUser(
+            userId: 2,
+            username: "outro-administrador",
+            roles: [new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 200, true)]);
+        var service = CreateUserAdministrationService(
+            administrator,
+            users: [protectedUser, sameLevelUser],
+            roles: [new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 200, true)]);
+
+        var result = await service.SearchAsync(null);
+
+        result.Select(user => user.UserID).Should().Equal(1, 2);
+    }
+
+    [Fact]
     public async Task UserAdministrationService_SearchAsync_FiltersUsersBelowOperatorLevel()
     {
         var operatorUser = CreateApplicationUser(

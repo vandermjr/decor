@@ -9,7 +9,7 @@ using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
-public sealed class EmployeesViewModel : IStatusBarSource
+public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentState
 {
     private readonly IEmployeeService _employeeService;
     private readonly IAuthorizationService _authorizationService;
@@ -31,13 +31,17 @@ public sealed class EmployeesViewModel : IStatusBarSource
     private string _phone = string.Empty;
     private string _userIdInput = string.Empty;
     private bool _isActive = true;
+    private int _recordCount;
 
     public EmployeesViewModel(IEmployeeService employeeService, IAuthorizationService authorizationService)
     {
         _employeeService = employeeService;
         _authorizationService = authorizationService;
         SearchCommand = new RelayCommand(async () => await LoadEmployeesAsync(), () => !IsBusy && !IsEditing);
-        NewCommand = new RelayCommand(BeginNew, () => CanNew);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        Listing = new GridListState<EmployeeDTO>(Employees, () => !IsEditing);
+        Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
+        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => CanNew);
         EditCommand = new RelayCommand(BeginEdit, () => CanEdit);
         DeleteCommand = new RelayCommand(BeginDelete, () => CanDelete);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
@@ -47,7 +51,9 @@ public sealed class EmployeesViewModel : IStatusBarSource
     }
 
     public ObservableCollection<EmployeeDTO> Employees { get; } = [];
+    public GridListState<EmployeeDTO> Listing { get; }
     public ICommand SearchCommand { get; }
+    public ICommand ClearSearchCommand { get; }
     public ICommand NewCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand DeleteCommand { get; }
@@ -61,7 +67,21 @@ public sealed class EmployeesViewModel : IStatusBarSource
     public string ErrorMessage { get => _errorMessage; private set { if (SetField(ref _errorMessage, value)) OnPropertyChanged(nameof(HasError)); } }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
     public bool IsBusy { get => _isBusy; private set { if (SetField(ref _isBusy, value)) RefreshCommands(); } }
-    public bool IsEditing { get => _isEditing; private set { if (SetField(ref _isEditing, value)) RefreshCommands(); } }
+    public bool IsEditing
+    {
+        get => _isEditing;
+        private set
+        {
+            if (SetField(ref _isEditing, value))
+            {
+                RefreshCommands();
+                Listing.Refresh();
+                OnPropertyChanged(nameof(IsAdding));
+                OnPropertyChanged(nameof(EmployeeCodeDisplay));
+            }
+        }
+    }
+    public bool IsAdding => IsEditing && _isNew;
     public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set => SetField(ref _showDeleteConfirmation, value); }
     public string DeleteConfirmationMessage => _employeeToDelete is null ? string.Empty : $"Excluir o funcionário \"{_employeeToDelete.Name}\"?";
     public bool CanNew => _authorizationService.HasPermission(DecorPermissions.EmployeesCreate) && !IsBusy && !IsEditing;
@@ -79,7 +99,18 @@ public sealed class EmployeesViewModel : IStatusBarSource
         }
     }
 
-    public int EmployeeId { get => _employeeId; private set => SetField(ref _employeeId, value); }
+    public int EmployeeId
+    {
+        get => _employeeId;
+        private set
+        {
+            if (SetField(ref _employeeId, value))
+                OnPropertyChanged(nameof(EmployeeCodeDisplay));
+        }
+    }
+    public string EmployeeCodeDisplay => IsAdding
+        ? RecordCodeDisplay.ForNewRecord(_recordCount)
+        : RecordCodeDisplay.ForExistingRecord(EmployeeId);
     public string Name { get => _name; set => SetField(ref _name, value); }
     public string JobTitle { get => _jobTitle; set => SetField(ref _jobTitle, value); }
     public string BaseSalaryInput { get => _baseSalaryInput; set => SetField(ref _baseSalaryInput, value); }
@@ -90,27 +121,39 @@ public sealed class EmployeesViewModel : IStatusBarSource
     public bool IsActive { get => _isActive; set => SetField(ref _isActive, value); }
 
     public string? StatusPrimary => null;
-    public string? StatusSecondary => null;
+    public string? StatusSecondary => Listing.StatusSecondary;
     public bool HasStatusPrimary => false;
-    public bool HasStatusSecondary => false;
-    public string? PaginationStatus => null;
-    public string? PaginationPageStatus => null;
-    public bool HasPagination => false;
-    public ICommand? PreviousPageCommand => null;
-    public ICommand? NextPageCommand => null;
-    public ICommand? FirstPageCommand => null;
-    public ICommand? LastPageCommand => null;
-    public bool HasPreviousPage => false;
-    public bool HasNextPage => false;
-    public bool HasFirstPage => false;
-    public bool HasLastPage => false;
-    public IReadOnlyList<int> PageSizeOptions => [];
-    public int SelectedPageSize { get => 0; set { } }
+    public bool HasStatusSecondary => Listing.HasStatusSecondary;
+    public string? PaginationStatus => Listing.PaginationStatus;
+    public string? PaginationPageStatus => Listing.PaginationPageStatus;
+    public bool HasPagination => Listing.HasPagination;
+    public ICommand? PreviousPageCommand => Listing.PreviousPageCommand;
+    public ICommand? NextPageCommand => Listing.NextPageCommand;
+    public ICommand? FirstPageCommand => Listing.FirstPageCommand;
+    public ICommand? LastPageCommand => Listing.LastPageCommand;
+    public bool HasPreviousPage => Listing.HasPreviousPage;
+    public bool HasNextPage => Listing.HasNextPage;
+    public bool HasFirstPage => Listing.HasFirstPage;
+    public bool HasLastPage => Listing.HasLastPage;
+    public IReadOnlyList<int> PageSizeOptions => Listing.PageSizeOptions;
+    public int SelectedPageSize { get => Listing.SelectedPageSize; set => Listing.SelectedPageSize = value; }
+
+    public void SetValueMatch(string columnName, int matchCount) => Listing.SetValueMatch(columnName, matchCount);
 
     public Task InitializeAsync() => LoadEmployeesAsync();
 
-    public void BeginNew()
+    public async Task BeginNewAsync()
     {
+        try
+        {
+            _recordCount = await RecordCodeDisplay.CountAllAsync(async (page, pageSize) =>
+                await _employeeService.GetAllEmployeesAsync(page, pageSize));
+        }
+        catch
+        {
+            _recordCount = Employees.Count;
+        }
+        OnPropertyChanged(nameof(EmployeeCodeDisplay));
         _isNew = true;
         EmployeeId = 0;
         Name = string.Empty;
@@ -124,7 +167,7 @@ public sealed class EmployeesViewModel : IStatusBarSource
         ErrorMessage = string.Empty;
         SelectedEmployee = null;
         IsEditing = true;
-        StatusMessage = "Novo funcionário.";
+        StatusMessage = "Cadastrando um funcionário.";
     }
 
     public void BeginEdit()
@@ -143,7 +186,7 @@ public sealed class EmployeesViewModel : IStatusBarSource
         IsActive = employee.IsActive;
         ErrorMessage = string.Empty;
         IsEditing = true;
-        StatusMessage = $"Editando funcionário {EmployeeId}.";
+        StatusMessage = $"Editando o funcionário {EmployeeId}.";
     }
 
     public void CancelEdit()
@@ -153,6 +196,14 @@ public sealed class EmployeesViewModel : IStatusBarSource
         SelectedEmployee = null;
         ErrorMessage = string.Empty;
         StatusMessage = string.Empty;
+    }
+
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+        SelectedEmployee = null;
+        Listing.Clear();
+        StatusMessage = "Pesquisa limpa.";
     }
 
     public void BeginDelete()
@@ -201,21 +252,23 @@ public sealed class EmployeesViewModel : IStatusBarSource
         IsBusy = true;
         try
         {
-            Employees.Clear();
             const int pageSize = 500;
             var page = 1;
+            var all = new List<EmployeeDTO>();
             IReadOnlyCollection<EmployeeDTO> employees;
             do
             {
                 employees = (await _employeeService.SearchEmployeesAsync(SearchText, page, pageSize)).ToArray();
-                foreach (var employee in employees)
-                    Employees.Add(employee);
+                all.AddRange(employees);
                 page++;
             } while (employees.Count == pageSize);
+            Listing.Load(all);
+            OnPropertyChanged(nameof(EmployeeCodeDisplay));
 
-            StatusMessage = Employees.Count == 0
-                ? "Nenhum funcionário encontrado."
-                : $"{Employees.Count} {(Employees.Count == 1 ? "funcionário" : "funcionários")}.";
+            if (!IsEditing)
+                StatusMessage = all.Count == 0
+                    ? "Nenhum funcionário encontrado."
+                    : $"{all.Count} {(all.Count == 1 ? "funcionário" : "funcionários")}.";
         }
         catch (UnauthorizedAccessException)
         {
@@ -294,7 +347,7 @@ public sealed class EmployeesViewModel : IStatusBarSource
         OnPropertyChanged(nameof(CanDelete));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(CanCancel));
-        foreach (var command in new[] { SearchCommand, NewCommand, EditCommand, DeleteCommand, SaveCommand, CancelCommand, ConfirmDeleteCommand })
+        foreach (var command in new[] { SearchCommand, ClearSearchCommand, NewCommand, EditCommand, DeleteCommand, SaveCommand, CancelCommand, ConfirmDeleteCommand })
             ((RelayCommand)command).RaiseCanExecuteChanged();
     }
 

@@ -10,6 +10,27 @@ namespace Decor.Application.Tests;
 public sealed class AdministrativeSessionLocalInvalidationTests
 {
     [Fact]
+    public async Task RoleAdministrationService_ReservedAdministratorCanOpenProtectedGroupWithoutRoleClaims()
+    {
+        var administrator = CreateUser(1, SystemAccountDefaults.AdministratorUsername);
+        var context = new AuthenticatedUserContext();
+        context.SignIn(administrator);
+        var protectedRole = new AdministrativeRoleDTO(1, SystemRoleDefaults.Administrators, null, 200, true);
+        var service = new RoleAdministrationService(
+            new FakeUserAdministrationRepository(
+                users: [administrator],
+                roles: [protectedRole],
+                permissions: []),
+            new FakeRoleAdministrationRepository(),
+            context,
+            new AlwaysAllowedAuthorizationService());
+
+        var action = () => service.GetPermissionsAsync(protectedRole.RoleID);
+
+        await action.Should().NotThrowAsync();
+    }
+
+    [Fact]
     public async Task UserAdministrationService_CannotRenameReservedAdministratorAccount()
     {
         var administrator = CreateUser(1, "admin", SystemRoleDefaults.Administrators);

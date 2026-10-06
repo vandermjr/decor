@@ -12,6 +12,11 @@ public partial class BrandsView : UserControl
     {
         InitializeComponent();
         ConfigureGridColumns();
+        BrandsGrid.ValueMatchChanged += (_, eventArgs) =>
+        {
+            if (DataContext is BrandsViewModel viewModel)
+                viewModel.SetValueMatch(eventArgs.ColumnName, eventArgs.MatchCount);
+        };
         AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
     }
 

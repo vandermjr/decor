@@ -37,10 +37,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
         ChangePasswordCommand = new RelayCommand(RequestPasswordChange);
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
-        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos de Permissões", () => CreateView<RolesView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
-        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Manutenção do banco", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
+        ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos", () => CreateView<GroupsView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
+        ShowPermissionsCommand = new RelayCommand(() => OpenSingletonDocument("permissions", "Permissões", () => CreateView<PermissionsView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
+        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Backup e restauração", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         ShowSystemSettingsCommand = new RelayCommand(() => OpenSingletonDocument("system-icons", "Ícones", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Preferências", () => CreateView<UserOptionsView>()));
+        ShowAboutCommand = new RelayCommand(() => AboutRequested?.Invoke(this, EventArgs.Empty));
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
         ToggleThemeCommand = new RelayCommand(async () => await SetThemeAsync(_themeService.CurrentTheme == DecorThemeStyle.Dark ? DecorThemeStyle.Light : DecorThemeStyle.Dark));
@@ -115,9 +117,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ChangePasswordCommand { get; }
     public ICommand ShowUsersCommand { get; }
     public ICommand ShowRolesCommand { get; }
+    public ICommand ShowPermissionsCommand { get; }
     public ICommand ShowDatabaseMaintenanceCommand { get; }
     public ICommand ShowSystemSettingsCommand { get; }
     public ICommand ShowUserOptionsCommand { get; }
+    public ICommand ShowAboutCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
     public ICommand ToggleThemeCommand { get; }
@@ -131,10 +135,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
     public bool CanViewEmployees => ((RelayCommand)ShowEmployeesCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
+    public bool CanViewPermissions => ((RelayCommand)ShowPermissionsCommand).CanExecute(null);
+    public bool CanViewAccess => CanViewUsers || CanViewRoles || CanViewPermissions;
     public bool CanViewDatabaseMaintenance => ((RelayCommand)ShowDatabaseMaintenanceCommand).CanExecute(null);
     public bool CanViewSystemSettings => ((RelayCommand)ShowSystemSettingsCommand).CanExecute(null);
 
     public event EventHandler? PasswordChangeRequested;
+    public event EventHandler? AboutRequested;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

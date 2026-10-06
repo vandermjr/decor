@@ -1,0 +1,291 @@
+using System.ComponentModel;
+using System.Reflection;
+using System.Xml.Linq;
+using Avalonia.Collections;
+using Avalonia.Controls;
+using Decor.AvaloniaUI.Controls;
+using Decor.AvaloniaUI.Icons;
+using Decor.Core.DTOs;
+
+namespace Decor.Application.Tests;
+
+public sealed class DecorGridPresentationTests
+{
+    [Theory]
+    [InlineData("ID", "Código")]
+    [InlineData("ID da Marca", "Código da Marca")]
+    [InlineData("Id do Usuário", "Código do Usuário")]
+    [InlineData("Descrição", "Descrição")]
+    [InlineData("Identity", "Identity")]
+    [InlineData("Código de Barras", "EAN")]
+    [InlineData("Código de barras", "EAN")]
+    public void Visible_ids_are_normalized_without_changing_other_words(string label, string expected)
+    {
+        Assert.Equal(expected, DecorGridHeader.NormalizeLabel(label));
+    }
+
+    [Theory]
+    [InlineData("Código")]
+    [InlineData("ID da Marca")]
+    [InlineData("Código do Funcionário")]
+    public void Code_headers_share_the_catalog_icon(string label)
+    {
+        Assert.Equal(DecorIconId.Common.Code, DecorGridHeader.GetIconId(label));
+    }
+
+    [Fact]
+    public void Status_has_an_icon_and_ordinary_headers_do_not()
+    {
+        Assert.Equal(DecorIconId.Common.Status, DecorGridHeader.GetIconId("Estado"));
+        Assert.Equal(DecorIconId.Common.Barcode, DecorGridHeader.GetIconId("Código de barras"));
+        Assert.Equal(DecorIconId.Common.Barcode, DecorGridHeader.GetIconId("EAN"));
+        Assert.Equal(default, DecorGridHeader.GetIconId("Nome"));
+    }
+
+    [Fact]
+    public void Generated_templates_keep_numeric_sort_paths_and_header_space()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+
+        control.InitializeColumns(typeof(EmployeeDTO));
+
+        var code = Assert.Single(grid.Columns, column => column.SortMemberPath == nameof(EmployeeDTO.EmployeeID));
+        Assert.IsType<DataGridTemplateColumn>(code);
+        Assert.IsType<DecorGridHeader>(code.HeaderTemplate);
+        Assert.Equal("Código do Funcionário", code.Header);
+        Assert.Equal(DataGridLengthUnitType.Auto, code.Width.UnitType);
+        Assert.True(code.MinWidth >= 130);
+        var status = Assert.Single(grid.Columns, column => column.SortMemberPath == nameof(EmployeeDTO.IsActive));
+        Assert.Equal("Estado", status.Header);
+        Assert.True(status.MinWidth >= 130);
+        Assert.All(grid.Columns, column => Assert.False(string.IsNullOrEmpty(column.SortMemberPath)));
+    }
+
+    [Theory]
+    [InlineData(ListSortDirection.Ascending, 2, 10, 100)]
+    [InlineData(ListSortDirection.Descending, 100, 10, 2)]
+    public void Native_collection_sorts_codes_numerically(ListSortDirection direction, int first, int second, int third)
+    {
+        var items = new[] { new BrandDTO(10, "B"), new BrandDTO(100, "C"), new BrandDTO(2, "A") };
+        var collection = new DataGridCollectionView(items);
+        var grid = new DataGrid { ItemsSource = collection, CanUserSortColumns = true };
+        var column = new DataGridTemplateColumn { Header = "Código", SortMemberPath = nameof(BrandDTO.BrandID) };
+        grid.Columns.Add(column);
+        var headerCell = (DataGridColumnHeader)typeof(DataGridColumn)
+            .GetProperty("HeaderCell", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(column)!;
+
+        collection.SortDescriptions.Add(DataGridSortDescription.FromPath(column.SortMemberPath, direction));
+        var updateHeader = typeof(DataGridColumnHeader)
+            .GetMethod("UpdatePseudoClasses", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        updateHeader.Invoke(headerCell, null);
+
+        Assert.Equal(new[] { first, second, third }, collection.Cast<BrandDTO>().Select(item => item.BrandID));
+        Assert.Contains(direction == ListSortDirection.Ascending ? ":sortascending" : ":sortdescending", headerCell.Classes);
+        collection.SortDescriptions[0] = collection.SortDescriptions[0].SwitchSortDirection();
+        updateHeader.Invoke(headerCell, null);
+        Assert.Equal(new[] { third, second, first }, collection.Cast<BrandDTO>().Select(item => item.BrandID));
+        Assert.Contains(direction == ListSortDirection.Ascending ? ":sortdescending" : ":sortascending", headerCell.Classes);
+        collection.SortDescriptions.Clear();
+        updateHeader.Invoke(headerCell, null);
+        Assert.Empty(collection.SortDescriptions);
+        Assert.DoesNotContain(":sortascending", headerCell.Classes);
+        Assert.DoesNotContain(":sortdescending", headerCell.Classes);
+    }
+
+    [Theory]
+    [InlineData("BrandsView.axaml")]
+    [InlineData("ProductsView.axaml")]
+    [InlineData("EmployeesView.axaml")]
+    [InlineData("UsersView.axaml")]
+    [InlineData("PermissionsView.axaml")]
+    public void Search_buttons_use_shared_accessible_style_and_only_the_search_icon(string file)
+    {
+        var document = ReadXaml("Views", file);
+        var search = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding SearchCommand}");
+
+        Assert.Equal("search-button", (string?)search.Attribute("Classes"));
+        Assert.DoesNotContain(search.Descendants(), element => element.Name.LocalName == "TextBlock");
+        var icon = Assert.Single(search.Elements());
+        Assert.Equal("Path", icon.Name.LocalName);
+        Assert.Contains(icon.Attributes(), attribute => attribute.Value.Contains("Actions.Search", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Shared_styles_keep_accessibility_dimensions_and_native_sort_states()
+    {
+        var document = ReadXaml("", "App.axaml");
+        var styles = document.Descendants().Where(element => element.Name.LocalName == "Style").ToArray();
+        var search = Assert.Single(styles, style => (string?)style.Attribute("Selector") == "Button.search-button");
+        AssertSetter(search, "ToolTip.Tip", "Pesquisar");
+        AssertSetter(search, "AutomationProperties.Name", "Pesquisar");
+        AssertSetter(search, "Width", "36");
+        AssertSetter(search, "Height", "32");
+        var clear = Assert.Single(styles, style => (string?)style.Attribute("Selector") == "Button.clear-search-button");
+        AssertSetter(clear, "ToolTip.Tip", "Limpar pesquisa");
+        AssertSetter(clear, "AutomationProperties.Name", "Limpar pesquisa");
+        foreach (var selector in new[] { "", ":sortascending", ":sortdescending" })
+        {
+            var style = Assert.Single(styles, style => (string?)style.Attribute("Selector")
+                == $"DataGridColumnHeader{selector} /template/ Path#SortIcon");
+            AssertSetter(style, "IsVisible", "False");
+        }
+    }
+
+    [Theory]
+    [InlineData("BrandsView.axaml")]
+    [InlineData("ProductsView.axaml")]
+    [InlineData("EmployeesView.axaml")]
+    [InlineData("UsersView.axaml")]
+    [InlineData("PermissionsView.axaml")]
+    public void Searches_can_be_cleared_next_to_the_search_button(string file)
+    {
+        var document = ReadXaml("Views", file);
+        var search = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchCommand}");
+        var clear = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearSearchCommand}");
+        Assert.Equal("clear-search-button", (string?)clear.Attribute("Classes"));
+        Assert.Same(search.Parent, clear.Parent);
+        Assert.Equal(int.Parse((string?)search.Attribute("Grid.Column") ?? "0") + 1, int.Parse((string?)clear.Attribute("Grid.Column") ?? "0"));
+        Assert.Contains(clear.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Clear", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Reloaded_results_show_the_query_sort_and_empty_results_clear_it()
+    {
+        var items = new System.Collections.ObjectModel.ObservableCollection<BrandDTO> { new(2, "B"), new(1, "A") };
+        var grid = new DataGrid { ItemsSource = items };
+        grid.Columns.Add(new DataGridTextColumn { Header = "Nome", SortMemberPath = nameof(BrandDTO.BrandName) });
+        DecorGridSorting.SetDefaultSortMemberPath(grid, nameof(BrandDTO.BrandName));
+
+        grid.CollectionView.SortDescriptions.Add(DataGridSortDescription.FromPath(nameof(BrandDTO.BrandID), ListSortDirection.Descending));
+        DecorGridSorting.ApplyDefault(grid);
+        var sort = Assert.Single(grid.CollectionView.SortDescriptions);
+        Assert.Equal(nameof(BrandDTO.BrandName), sort.PropertyPath);
+        Assert.Equal(ListSortDirection.Ascending, sort.Direction);
+
+        items.Clear();
+        DecorGridSorting.ApplyDefault(grid);
+        Assert.Empty(grid.CollectionView.SortDescriptions);
+    }
+
+    [Theory]
+    [InlineData("ProductsView", "ProductsGrid")]
+    [InlineData("BrandsView", "BrandsGrid")]
+    [InlineData("EmployeesView", "EmployeesGrid")]
+    [InlineData("UsersView", "UsersGrid")]
+    [InlineData("GroupsView", "RolesGrid")]
+    public void Listing_views_share_the_decor_grid_with_value_match_and_query_sort(string view, string grid)
+    {
+        var document = ReadXaml("Views", view + ".axaml");
+        Assert.DoesNotContain(document.Descendants(), element => element.Name.LocalName == "DataGrid");
+        var control = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorDataGridControl");
+        Assert.Equal(grid, (string?)control.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")));
+        Assert.False(string.IsNullOrEmpty((string?)control.Attribute("DefaultSortMemberPath")));
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (!File.Exists(Path.Combine(root!.FullName, "Decor.sln"))) root = root.Parent;
+        var codeBehind = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", view + ".axaml.cs"));
+        Assert.Contains($"{grid}.InitializeColumns(", codeBehind);
+        Assert.Contains($"{grid}.ValueMatchChanged", codeBehind);
+    }
+
+    [Fact]
+    public void Selected_columns_follow_the_requested_order_with_state_label()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(control, grid);
+
+        control.InitializeColumns(typeof(AdministrativeUserDTO), name => name switch
+            {
+                nameof(AdministrativeUserDTO.UserID) => "Código",
+                nameof(AdministrativeUserDTO.PresentationName) => "Usuário",
+                _ => name
+            },
+            propertyNames: [nameof(AdministrativeUserDTO.UserID), nameof(AdministrativeUserDTO.PresentationName), nameof(AdministrativeUserDTO.IsActive)]);
+
+        Assert.Equal(["Código", "Usuário", "Estado"], grid.Columns.Select(column => (string)column.Header!).ToArray());
+        Assert.Equal(nameof(AdministrativeUserDTO.UserID), DecorGridSorting.GetDefaultSortMemberPath(grid));
+    }
+
+    [Fact]
+    public void Headers_center_content_and_sort_indicators_without_a_windowing_platform()
+    {
+        var panel = Assert.IsType<Grid>(new DecorGridHeader().Build("Nome"));
+        Assert.Equal(Avalonia.Layout.VerticalAlignment.Center, panel.VerticalAlignment);
+        Assert.Equal(2, panel.Children.Count);
+        var text = Assert.IsType<TextBlock>(panel.Children[0]);
+        Assert.Equal(Avalonia.Layout.VerticalAlignment.Center, text.VerticalAlignment);
+        var sort = Assert.IsType<PathIcon>(panel.Children[1]);
+        Assert.Equal(1, Grid.GetColumn(sort));
+        Assert.Equal(Avalonia.Layout.HorizontalAlignment.Right, sort.HorizontalAlignment);
+        Assert.Equal(0, sort.Opacity);
+        var styles = ReadXaml("", "App.axaml").Descendants().Where(element => element.Name.LocalName == "Style").ToArray();
+        AssertSetter(Assert.Single(styles, element => (string?)element.Attribute("Selector") == "DataGridColumnHeader"), "VerticalContentAlignment", "Center");
+        AssertSetter(Assert.Single(styles, element => (string?)element.Attribute("Selector") == "DataGridColumnHeader /template/ ContentPresenter"), "VerticalAlignment", "Center");
+    }
+
+    private static void AssertSetter(XElement style, string property, string value) =>
+        Assert.Contains(style.Elements(), setter => (string?)setter.Attribute("Property") == property
+            && (string?)setter.Attribute("Value") == value);
+
+    [Fact]
+    public void State_icon_belongs_to_the_header()
+    {
+        Assert.Equal(DecorIconId.Common.Status, DecorGridHeader.GetIconId("Estado"));
+    }
+
+    [Fact]
+    public void Shared_listing_state_pages_results_and_hides_status_while_editing()
+    {
+        var page = new System.Collections.ObjectModel.ObservableCollection<int>();
+        var editing = false;
+        var listing = new Decor.AvaloniaUI.ViewModels.GridListState<int>(page, () => !editing);
+
+        listing.Load(Enumerable.Range(1, 25));
+        Assert.Equal(10, page.Count);
+        Assert.Equal("Registros encontrados: 25", listing.PaginationStatus);
+        Assert.Equal("Página 1 de 3", listing.PaginationPageStatus);
+        listing.LastPageCommand.Execute(null);
+        Assert.Equal([21, 22, 23, 24, 25], page);
+        listing.SelectedPageSize = 25;
+        Assert.Equal(25, page.Count);
+        listing.SetValueMatch("Nome", 3);
+        Assert.Equal("Nome: 3 correspondência(s)", listing.StatusSecondary);
+
+        editing = true;
+        Assert.False(listing.HasPagination);
+        Assert.Null(listing.StatusSecondary);
+        editing = false;
+        listing.Clear();
+        Assert.Empty(page);
+        Assert.False(listing.HasPagination);
+    }
+
+    [Fact]
+    public void Pagination_icons_have_readable_dimensions_and_contrast()
+    {
+        var buttons = ReadXaml("", "MainWindow.axaml").Descendants().Where(element =>
+            element.Name.LocalName == "Button" && (string?)element.Attribute("Classes") == "pagination-button").ToArray();
+        Assert.Equal(4, buttons.Length);
+        Assert.All(buttons, button =>
+        {
+            var icon = Assert.Single(button.Elements());
+            Assert.Equal("PathIcon", icon.Name.LocalName);
+            Assert.Equal("16", (string?)icon.Attribute("Width"));
+            Assert.Equal("16", (string?)icon.Attribute("Height"));
+            Assert.Equal("{DynamicResource DecorTextBrush}", (string?)icon.Attribute("Foreground"));
+        });
+    }
+
+    private static XDocument ReadXaml(string folder, string file)
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln")))
+            root = root.Parent;
+        Assert.NotNull(root);
+        return XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", folder, file));
+    }
+}

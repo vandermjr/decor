@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.DTOs;
 
@@ -9,6 +10,7 @@ public partial class EditUserWindow : Window
     public EditUserWindow()
     {
         InitializeComponent();
+        Icon = DecorWindowIcon.Create(DecorIconId.Forms.Users);
         Closing += (_, eventArgs) =>
         {
             if (DataContext is EditUserViewModel { IsBusy: true })

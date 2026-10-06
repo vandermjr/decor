@@ -5,4 +5,5 @@ namespace Decor.AvaloniaUI.ViewModels;
 public interface IWorkspaceDocumentState : INotifyPropertyChanged
 {
     bool IsEditing { get; }
+    bool IsAdding { get; }
 }

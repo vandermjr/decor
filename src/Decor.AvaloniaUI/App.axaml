@@ -2,11 +2,14 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:icons="using:Decor.AvaloniaUI.Icons"
+    xmlns:controls="using:Decor.AvaloniaUI.Controls"
     x:Class="Decor.AvaloniaUI.App"
     RequestedThemeVariant="Dark">
 
 <Application.Resources>
     <ResourceDictionary>
+        <controls:DecorGridHeader x:Key="DecorGridHeaderTemplate" />
+        <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
         <ResourceDictionary.ThemeDictionaries>
             <ResourceDictionary x:Key="Light">
                 <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#E7E9EC</SolidColorBrush>
@@ -20,6 +23,8 @@
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#185F9A</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#B32D35</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorEditIndicatorBrush">#D99A00</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAddIndicatorBrush">#218739</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#66000000</SolidColorBrush>
                 <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
                 <x:Double x:Key="DecorFontSizeBase">13</x:Double>
@@ -43,6 +48,8 @@
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#55A7E0</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#E16B73</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorEditIndicatorBrush">#F3C969</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorAddIndicatorBrush">#55B96B</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#99000000</SolidColorBrush>
                 <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
                 <x:Double x:Key="DecorFontSizeBase">13</x:Double>
@@ -121,6 +128,22 @@
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
         <Setter Property="Cursor" Value="Hand" />
     </Style>
+    <Style Selector="Button.search-button">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="MinWidth" Value="36" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="8" />
+        <Setter Property="ToolTip.Tip" Value="Pesquisar" />
+        <Setter Property="AutomationProperties.Name" Value="Pesquisar" />
+    </Style>
+    <Style Selector="Button.clear-search-button">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="MinWidth" Value="36" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="8" />
+        <Setter Property="ToolTip.Tip" Value="Limpar pesquisa" />
+        <Setter Property="AutomationProperties.Name" Value="Limpar pesquisa" />
+    </Style>
     <Style Selector="Button.pagination-button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
@@ -198,6 +221,23 @@
         <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+        <Setter Property="Padding" Value="8,0,0,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="DataGridColumnHeader /template/ ContentPresenter">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- DecorGridHeader draws the sort indicator on the right; the native glyph and its reserved width are disabled. -->
+    <Style Selector="DataGridColumnHeader /template/ Path#SortIcon">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="DataGridColumnHeader:sortascending /template/ Path#SortIcon">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="DataGridColumnHeader:sortdescending /template/ Path#SortIcon">
+        <Setter Property="IsVisible" Value="False" />
     </Style>
 </Application.Styles>
 

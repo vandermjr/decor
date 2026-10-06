@@ -12,7 +12,7 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserResizeColumns="True"
-                  CanUserSortColumns="False"
+                  CanUserSortColumns="True"
                   GridLinesVisibility="All"
                   HeadersVisibility="Column"
                   RowHeight="23"

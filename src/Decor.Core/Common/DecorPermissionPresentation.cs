@@ -26,13 +26,13 @@ public static class DecorPermissionPresentationCatalog
             ["InstallationAppointments"] = ("Serviços", "Agendamentos de Instalação"), ["ServiceExecutionRecords"] = ("Serviços", "Execuções de Serviços"),
             ["PaymentMethods"] = ("Financeiro", "Formas de Pagamento"), ["OrderInstallments"] = ("Financeiro", "Parcelas de Pedido"),
             ["CashAccounts"] = ("Financeiro", "Contas de Caixa"), ["CashTransactions"] = ("Financeiro", "Movimentações de Caixa"), ["AccountsPayable"] = ("Financeiro", "Contas a Pagar"),
-            ["Users"] = ("Configurações", "Usuários"), ["Roles"] = ("Configurações", "Grupos de Permissões"), ["DatabaseMaintenance"] = ("Configurações", "Administração do Sistema")
+            ["Users"] = ("Configurações", "Usuários"), ["Roles"] = ("Configurações", "Grupos"), ["DatabaseMaintenance"] = ("Configurações", "Backup e restauração")
         };
 
     private static readonly IReadOnlyDictionary<string, string> Actions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["View"] = "Consultar", ["Create"] = "Cadastrar", ["Edit"] = "Editar", ["Delete"] = "Excluir",
+            ["View"] = "Consultar", ["Create"] = "Cadastrar", ["Edit"] = "Editar", ["Delete"] = "Excluir", ["Restore"] = "Restaurar banco",
             ["Activate"] = "Ativar", ["Deactivate"] = "Desativar", ["AssignRoles"] = "Atribuir grupos",
             ["ManagePermissions"] = "Gerenciar permissões", ["RestorePermissions"] = "Restaurar permissões",
             ["RestoreDefaults"] = "Restaurar permissões", ["ResetPassword"] = "Redefinir senha", ["Register"] = "Registrar",

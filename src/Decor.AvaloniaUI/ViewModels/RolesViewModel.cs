@@ -39,6 +39,7 @@ public sealed class RoleFunctionalContext : INotifyPropertyChanged
 public sealed class RolesViewModel : INotifyPropertyChanged
 {
     private readonly IRoleAdministrationService _roleAdministrationService;
+    private readonly IAuthorizationService? _authorizationService;
     private AdministrativeRoleDTO? _selectedRole;
     private string? _selectedModule;
     private bool _isLoading;
@@ -49,10 +50,14 @@ public sealed class RolesViewModel : INotifyPropertyChanged
     private readonly HashSet<int> _selectedPermissionIds = [];
     private readonly HashSet<string> _grantedPermissionCodes = new(StringComparer.OrdinalIgnoreCase);
 
-    public RolesViewModel(IRoleAdministrationService roleAdministrationService)
+    public RolesViewModel(IRoleAdministrationService roleAdministrationService, IAuthorizationService? authorizationService = null)
     {
         _roleAdministrationService = roleAdministrationService;
-        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => SelectedRole is not null && !IsLoading && !IsSaving);
+        _authorizationService = authorizationService;
+        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => SelectedRole is not null && CanEditPermissions);
+        RestoreCommand = new RelayCommand(async () => await RestoreAsync(), () => SelectedRole is not null && !IsLoading && !IsSaving
+            && SystemRoleDefaults.Permissions.ContainsKey(SelectedRole.RoleName)
+            && (_authorizationService?.HasPermission(DecorPermissions.RolesRestoreDefaults) ?? true));
     }
 
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
@@ -60,6 +65,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
     public ObservableCollection<RoleFunctionalContext> Forms { get; } = [];
 
     public ICommand SaveCommand { get; private set; }
+    public ICommand RestoreCommand { get; }
 
     public AdministrativeRoleDTO? SelectedRole
     {
@@ -75,6 +81,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
             _grantedPermissionCodes.Clear();
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
+            ((RelayCommand)RestoreCommand).RaiseCanExecuteChanged();
             if (value is not null)
                 _ = LoadPermissionsAsync(value.RoleID, ++_permissionLoadVersion);
             else
@@ -111,14 +118,36 @@ public sealed class RolesViewModel : INotifyPropertyChanged
     public bool IsLoading
     {
         get => _isLoading;
-        private set => SetField(ref _isLoading, value);
+        private set
+        {
+            if (SetField(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(CanSelectRole));
+                OnPropertyChanged(nameof(CanEditPermissions));
+                ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)RestoreCommand).RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public bool IsSaving
     {
         get => _isSaving;
-        private set => SetField(ref _isSaving, value);
+        private set
+        {
+            if (SetField(ref _isSaving, value))
+            {
+                OnPropertyChanged(nameof(CanSelectRole));
+                OnPropertyChanged(nameof(CanEditPermissions));
+                ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)RestoreCommand).RaiseCanExecuteChanged();
+            }
+        }
     }
+
+    public bool CanSelectRole => !IsSaving;
+    public bool CanEditPermissions => !IsLoading && !IsSaving
+        && (_authorizationService?.HasPermission(DecorPermissions.RolesManagePermissions) ?? true);
 
     public string? ErrorMessage
     {
@@ -229,7 +258,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     private async Task SaveAsync()
     {
-        if (SelectedRole is null) return;
+        if (SelectedRole is null || !CanEditPermissions) return;
 
         var roleId = SelectedRole.RoleID;
         IsSaving = true;
@@ -253,6 +282,29 @@ public sealed class RolesViewModel : INotifyPropertyChanged
             if (SaveCommand is RelayCommand relay)
                 relay.RaiseCanExecuteChanged();
         }
+    }
+
+    private async Task RestoreAsync()
+    {
+        if (!RestoreCommand.CanExecute(null)) return;
+        var roleId = SelectedRole!.RoleID;
+        IsSaving = true;
+        ErrorMessage = null;
+        try
+        {
+            await _roleAdministrationService.RestoreDefaultsAsync(roleId);
+            if (SelectedRole?.RoleID == roleId)
+                await LoadPermissionsAsync(roleId, ++_permissionLoadVersion);
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or InvalidOperationException)
+        {
+            ErrorMessage = exception.Message;
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Não foi possível restaurar as permissões do grupo.";
+        }
+        finally { IsSaving = false; }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
