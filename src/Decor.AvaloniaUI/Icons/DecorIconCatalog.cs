@@ -406,6 +406,7 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Close] = "close",
             [DecorIconId.Actions.Clear] = "cleaning_services",
             [DecorIconId.Actions.Copy] = "content_copy",
+            [DecorIconId.Actions.Cart] = "shopping_cart",
             [DecorIconId.User.Profile] = "person",
             [DecorIconId.User.Preferences] = "tune",
             [DecorIconId.User.ChangePassword] = "key",

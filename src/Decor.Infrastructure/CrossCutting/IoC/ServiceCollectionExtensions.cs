@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         );
 
         services.AddTransient<IBrandRepository, BrandsRepository>();
+        services.AddTransient<IPaymentMethodRepository, PaymentMethodsRepository>();
 
         return services;
     }

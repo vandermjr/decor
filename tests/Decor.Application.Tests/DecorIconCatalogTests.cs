@@ -52,6 +52,7 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Close,
             DecorIconId.Actions.Clear,
             DecorIconId.Actions.Copy,
+            DecorIconId.Actions.Cart,
             DecorIconId.User.Profile,
             DecorIconId.User.Preferences,
             DecorIconId.User.ChangePassword,
@@ -76,7 +77,7 @@ public class DecorIconCatalogTests
             DecorIconId.Navigation.SortDescending
         ];
 
-        Assert.Equal(54, expectedIds.Length);
+        Assert.Equal(55, expectedIds.Length);
         Assert.Equal(expectedIds.OrderBy(id => id.Value), DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
     }
@@ -94,7 +95,7 @@ public class DecorIconCatalogTests
             .OrderBy(id => id.Value)
             .ToArray();
 
-        Assert.Equal(54, declaredIds.Length);
+        Assert.Equal(55, declaredIds.Length);
         Assert.Equal(declaredIds, DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.Null(typeof(DecorIconId.Actions).GetProperty("Generic"));
         Assert.DoesNotContain(DecorIconCatalog.Ids, id => id.Value == "Actions." + "Generic");

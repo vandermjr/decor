@@ -223,6 +223,55 @@ public sealed class AdministrativeLayoutTests
         }
     }
 
+    [Fact]
+    public void Quote_header_stays_in_catalog_column_while_items_use_full_right_column()
+    {
+        var document = ReadXaml("Views/QuotesView.axaml");
+        var editing = Assert.Single(document.Descendants(), element =>
+            (string?)element.Attribute("IsVisible") == "{Binding IsEditing}");
+        Assert.Equal("*,Auto,Auto", (string?)editing.Attribute("RowDefinitions"));
+        var columns = editing.Elements().First();
+        Assert.Equal("2*,3*", (string?)columns.Attribute("ColumnDefinitions"));
+        var left = columns.Elements().First();
+        var right = columns.Elements().Last();
+        Assert.Equal("Auto,*", (string?)left.Attribute("RowDefinitions"));
+        Assert.Equal("1", (string?)right.Attribute("Grid.Column"));
+        Assert.Equal("*,Auto", (string?)right.Attribute("RowDefinitions"));
+        Assert.Contains(left.Descendants(), element => (string?)element.Attribute("Text") == "{Binding CustomerSummary}");
+        Assert.Contains(left.Descendants(), element => (string?)element.Attribute("Text") == "{Binding EmployeeSummary}");
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        Assert.Contains(left.Descendants(), element => (string?)element.Attribute(xaml + "Name") == "ProductsCatalogGrid");
+        Assert.Contains(right.Descendants(), element => (string?)element.Attribute(xaml + "Name") == "QuoteItemsGrid");
+        Assert.DoesNotContain(document.Descendants(), element =>
+            (string?)element.Attribute("Text") is "Cliente" or "Vendedor" or "Lançamento do orçamento");
+        AssertFooter(document, "SaveCommand");
+    }
+
+    [Fact]
+    public void Quote_product_search_is_embedded_and_back_icon_has_standard_size()
+    {
+        var document = ReadXaml("Views/QuotesView.axaml");
+        var search = Assert.Single(document.Descendants(), element =>
+            (string?)element.Attribute("Text") == "{Binding ProductSearchText}");
+        Assert.Equal("0", (string?)search.Attribute("BorderThickness"));
+        var button = Assert.Single(document.Descendants(), element =>
+            (string?)element.Attribute("Command") == "{Binding SearchProductsCommand}");
+        Assert.Same(search.Parent, button.Parent);
+        Assert.Equal("Border", button.Parent!.Parent!.Name.LocalName);
+        Assert.Equal("field-action", (string?)button.Attribute("Classes"));
+        var back = Assert.Single(document.Descendants(), element =>
+            (string?)element.Attribute("Command") == "{Binding CancelCommand}");
+        Assert.Equal("36", (string?)back.Attribute("Height"));
+        Assert.Equal("field-action", (string?)back.Attribute("Classes"));
+        var icon = Assert.Single(back.Elements());
+        Assert.Equal("16", (string?)icon.Attribute("Width"));
+        Assert.Equal("16", (string?)icon.Attribute("Height"));
+        var total = Assert.Single(document.Descendants(), element =>
+            (string?)element.Attribute("Background") == "#0066CC");
+        Assert.All(total.Descendants().Where(element => element.Name.LocalName == "TextBlock"),
+            element => Assert.Equal("White", (string?)element.Attribute("Foreground")));
+    }
+
     private static XElement AssertFooter(XDocument document, string command)
     {
         var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == $"{{Binding {command}}}");
@@ -247,6 +296,7 @@ public sealed class AdministrativeLayoutTests
     {
         public T Resolve<T>() where T : class => throw new InvalidOperationException();
         public Task ShowDialogAsync(Window owner, Window dialog) => throw new InvalidOperationException();
+        public Task<TResult> ShowDialogAsync<TResult>(Window owner, Window dialog) => throw new InvalidOperationException();
     }
 
     private sealed class Theme : IThemeService

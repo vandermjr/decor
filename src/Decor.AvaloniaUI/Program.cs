@@ -30,6 +30,11 @@ internal static class Program
                 services.AddApplicationServices();
                 services.AddTransient<ProductsViewModel>();
                 services.AddTransient<BrandsViewModel>();
+                services.AddTransient<CustomersViewModel>();
+                services.AddTransient<SuppliersViewModel>();
+                services.AddTransient<QuotesViewModel>();
+                services.AddTransient<ContextualSearchViewModel>();
+                services.AddTransient<SalesViewModel>();
                 services.AddTransient<EmployeesViewModel>();
                 services.AddTransient<TermDeliveryViewModel>();
                 services.AddTransient<ClassificationsViewModel>();
@@ -45,6 +50,10 @@ internal static class Program
                 services.AddTransient<IconCatalogViewModel>();
                 services.AddTransient<ProductsView>();
                 services.AddTransient<BrandsView>();
+                services.AddTransient<CustomersView>();
+                services.AddTransient<SuppliersView>();
+                services.AddTransient<QuotesView>();
+                services.AddTransient<SalesView>();
                 services.AddTransient<EmployeesView>();
                 services.AddTransient<TermDeliveryView>();
                 services.AddTransient<ClassificationsView>();

@@ -185,6 +185,12 @@
                 <MenuItem Header="Marcas" Command="{Binding ShowBrandsCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Brands}"/></MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="Clientes" Command="{Binding ShowCustomersCommand}" IsVisible="{Binding CanViewCustomers}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Fornecedores" Command="{Binding ShowSuppliersCommand}" IsVisible="{Binding CanViewSuppliers}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/></MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Funcionários" Command="{Binding ShowEmployeesCommand}" IsVisible="{Binding CanViewEmployees}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
@@ -201,10 +207,10 @@
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Orçamentos" IsEnabled="False">
+                <MenuItem Header="Orçamentos" Command="{Binding ShowQuotesCommand}" IsVisible="{Binding CanViewQuotes}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Pedidos" IsEnabled="False">
+                <MenuItem Header="Vendas" Command="{Binding ShowSalesCommand}" IsVisible="{Binding CanViewSales}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Comercial}"/></MenuItem.Icon>
                 </MenuItem>
               </MenuFlyout>

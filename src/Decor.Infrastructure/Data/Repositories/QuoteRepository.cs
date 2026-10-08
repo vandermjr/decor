@@ -37,13 +37,39 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<int> SaveAsync(Quote entity, CancellationToken cancellationToken = default)
     {
         using var connection = _dbConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var affectedRows = await SaveQuoteHeaderAsync(entity, connection, transaction, cancellationToken);
+            if (affectedRows != 1)
+                throw new InvalidOperationException("Não foi possível salvar o orçamento.");
+            foreach (var section in entity.Sections)
+            {
+                section.QuoteID = entity.QuoteID;
+                if (await SaveSectionAsync(section, connection, transaction, cancellationToken) != 1)
+                    throw new InvalidOperationException("Não foi possível salvar a seção do orçamento.");
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            transaction.Commit();
+            return affectedRows;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    private async Task<int> SaveQuoteHeaderAsync(Quote entity, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken)
+    {
         if (entity.QuoteID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
                 .Update(u => u.Entity(entity))
                 .Where(w => w.Equals<Quote>(q => q.QuoteID, entity.QuoteID))
                 .Build();
-            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
         else
         {
@@ -51,7 +77,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
-            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
             entity.QuoteID = generatedId;
             return 1;
         }
@@ -271,6 +297,39 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
             item.QuoteItemID = generatedId;
             return 1;
+        }
+    }
+
+    public async Task<int> DeleteItemAsync(int quoteItemId, int sectionId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var (sql, parameters) = _createCommandBuilder()
+            .Delete<QuoteItem>()
+            .Where(w => w.Equals<QuoteItem>(item => item.QuoteItemID, quoteItemId)
+                .And().Equals<QuoteItem>(item => item.QuoteSectionID, sectionId))
+            .Build();
+
+        using var connection = _dbConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var (specificationSql, specificationParameters) = _createCommandBuilder()
+                .Delete<QuoteItemSpecificationValue>()
+                .Where(w => w.Equals<QuoteItemSpecificationValue>(value => value.QuoteItemID, quoteItemId))
+                .Build();
+            await connection.ExecuteAsync(new CommandDefinition(specificationSql, specificationParameters, transaction, cancellationToken: cancellationToken));
+            var affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            if (affectedRows != 1)
+                throw new InvalidOperationException("O item nao pertence a secao informada ou nao pode ser excluido.");
+            cancellationToken.ThrowIfCancellationRequested();
+            transaction.Commit();
+            return affectedRows;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
         }
     }
 

@@ -5,6 +5,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Decor.AvaloniaUI.Controls;
 using Decor.AvaloniaUI.Icons;
+using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.DTOs;
 
 namespace Decor.Application.Tests;
@@ -64,6 +65,32 @@ public sealed class DecorGridPresentationTests
         Assert.All(grid.Columns, column => Assert.False(string.IsNullOrEmpty(column.SortMemberPath)));
     }
 
+    [Fact]
+    public void Additional_action_column_remains_last_without_duplicates_after_reinitialization()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+        control.InitializeColumns(typeof(BrandDTO));
+        var generatedCount = grid.Columns.Count;
+        var action = new DataGridTemplateColumn { Header = "Actions", CanUserSort = false };
+
+        control.AddColumn(action);
+        Assert.Same(action, grid.Columns.Last());
+        Assert.Equal(generatedCount + 1, grid.Columns.Count);
+
+        for (var iteration = 0; iteration < 2; iteration++)
+        {
+            control.InitializeColumns(typeof(BrandDTO));
+            control.AddColumn(action);
+
+            Assert.Equal(generatedCount + 1, grid.Columns.Count);
+            Assert.Same(action, Assert.Single(grid.Columns, column => ReferenceEquals(column, action)));
+            Assert.Same(action, grid.Columns.Last());
+        }
+    }
+
     [Theory]
     [InlineData(ListSortDirection.Ascending, 2, 10, 100)]
     [InlineData(ListSortDirection.Descending, 100, 10, 2)]
@@ -97,6 +124,10 @@ public sealed class DecorGridPresentationTests
 
     [Theory]
     [InlineData("BrandsView.axaml")]
+    [InlineData("CustomersView.axaml")]
+    [InlineData("SuppliersView.axaml")]
+    [InlineData("QuotesView.axaml")]
+    [InlineData("SalesView.axaml")]
     [InlineData("ProductsView.axaml")]
     [InlineData("EmployeesView.axaml")]
     [InlineData("UsersView.axaml")]
@@ -137,6 +168,10 @@ public sealed class DecorGridPresentationTests
 
     [Theory]
     [InlineData("BrandsView.axaml")]
+    [InlineData("CustomersView.axaml")]
+    [InlineData("SuppliersView.axaml")]
+    [InlineData("QuotesView.axaml")]
+    [InlineData("SalesView.axaml")]
     [InlineData("ProductsView.axaml")]
     [InlineData("EmployeesView.axaml")]
     [InlineData("UsersView.axaml")]
@@ -150,6 +185,191 @@ public sealed class DecorGridPresentationTests
         Assert.Same(search.Parent, clear.Parent);
         Assert.Equal(int.Parse((string?)search.Attribute("Grid.Column") ?? "0") + 1, int.Parse((string?)clear.Attribute("Grid.Column") ?? "0"));
         Assert.Contains(clear.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Clear", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Quote_opening_errors_are_visible_before_the_editor_is_opened()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "{Binding ErrorMessage}"
+            && element.Ancestors().Any(parent => (string?)parent.Attribute("IsVisible") == "{Binding !IsEditing}")
+            && !element.Ancestors().Any(parent => (string?)parent.Attribute("IsVisible") == "{Binding IsEditing}"));
+    }
+
+    [Fact]
+    public void Quote_editor_is_a_single_entry_screen_with_catalog_tabs_and_footer_actions()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        var bindings = document.Descendants().Attributes()
+            .Where(attribute => attribute.Name.LocalName == "IsVisible" || attribute.Name.LocalName == "Command")
+            .Select(attribute => attribute.Value)
+            .ToArray();
+
+        Assert.DoesNotContain("{Binding ContinueCommand}", bindings);
+        Assert.DoesNotContain("{Binding FinishCommand}", bindings);
+        Assert.Contains("{Binding SaveCommand}", bindings);
+        Assert.Contains("{Binding GeneratePdfCommand}", bindings);
+        Assert.Contains("{Binding CancelQuoteCommand}", bindings);
+        Assert.Contains("{Binding ConvertToOrderCommand}", bindings);
+        Assert.Equal(new[] { "Produtos", "Serviços" }, document.Descendants()
+            .Where(element => element.Name.LocalName == "TabItem")
+            .Select(element => (string?)element.Descendants().First(child => child.Name.LocalName == "TextBlock").Attribute("Text")));
+        Assert.DoesNotContain(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "Lançamento do orçamento");
+    }
+
+    [Fact]
+    public void Quote_entry_uses_numeric_controls_lookup_fields_and_simple_catalog_paging()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        var numeric = document.Descendants().Where(element => element.Name.LocalName == "NumericUpDown").ToArray();
+        Assert.Equal(3, numeric.Length);
+        Assert.All(numeric, element => Assert.Equal("Right", (string?)element.Attribute("HorizontalContentAlignment")));
+        Assert.All(numeric, element =>
+        {
+            Assert.Equal("False", (string?)element.Attribute("AllowSpin"));
+            Assert.Equal("False", (string?)element.Attribute("ShowButtonSpinner"));
+            Assert.Contains(element.Attributes(), attribute => attribute.Name.LocalName == "QuoteNumericInput.Enabled" && attribute.Value == "True");
+        });
+        Assert.DoesNotContain(document.Descendants(), element => element.Name.LocalName == "CalendarDatePicker");
+        var calendar = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Calendar"
+            && (string?)element.Attribute("SelectedDate") == "{Binding SelectedQuoteDate, Mode=TwoWay}");
+        Assert.Equal("QuoteDateCalendar_SelectedDatesChanged", (string?)calendar.Attribute("SelectedDatesChanged"));
+        Assert.Contains(calendar.Ancestors(), element => element.Name.LocalName == "Flyout");
+        var dateButton = Assert.Single(calendar.Ancestors(), element => element.Name.LocalName == "Button");
+        Assert.Equal("field-action", (string?)dateButton.Attribute("Classes"));
+        Assert.Contains(dateButton.Descendants().Attributes(), attribute => attribute.Value.Contains("DecorIconId+Common.Calendar", StringComparison.Ordinal));
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBox"
+            && (string?)element.Attribute("Text") == "{Binding Notes}"
+            && (string?)element.Attribute("MaxLength") == "{Binding NotesLimit}");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding CatalogPreviousCommand}");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding CatalogNextCommand}");
+        Assert.All(document.Descendants().Where(element => element.Name.LocalName == "TabItem"), tab =>
+            Assert.Contains(tab.Descendants().Attributes(), attribute => attribute.Value.Contains("DecorIconId", StringComparison.Ordinal)));
+        foreach (var binding in new[] { "{Binding CustomerSummary}", "{Binding EmployeeSummary}" })
+            Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBox"
+                && (string?)element.Attribute("Text") == binding && (string?)element.Attribute("IsReadOnly") == "True");
+        Assert.Equal(typeof(DateTime?), typeof(QuotesViewModel).GetProperty(nameof(QuotesViewModel.SelectedQuoteDate))!.PropertyType);
+    }
+
+    [Fact]
+    public void Quote_header_keeps_identity_on_one_row_and_parties_aligned_with_the_catalog()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        var back = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding CancelCommand}");
+        var identity = back.Parent!;
+        Assert.Equal("36,*,*,90", (string?)identity.Attribute("ColumnDefinitions"));
+        Assert.Null(identity.Attribute("RowDefinitions"));
+        Assert.All(identity.Elements(), element => Assert.Null(element.Attribute("Grid.Row")));
+        Assert.Equal("Bottom", (string?)back.Attribute("VerticalAlignment"));
+        Assert.Equal("36", (string?)back.Attribute("Height"));
+        var header = identity.Parent!;
+        Assert.Equal("8", (string?)header.Attribute("RowSpacing"));
+        Assert.Equal("10", (string?)header.Parent!.Attribute("Padding"));
+        Assert.Equal("8", (string?)header.Parent.Parent!.Attribute("RowSpacing"));
+        var parties = Assert.Single(header.Elements(), element => (string?)element.Attribute("Grid.Row") == "1");
+        Assert.Equal("Auto,Auto,Auto", (string?)parties.Attribute("RowDefinitions"));
+        Assert.Null(parties.Attribute("ColumnDefinitions"));
+        foreach (var binding in new[] { "{Binding CustomerSummary}", "{Binding EmployeeSummary}" })
+        {
+            var field = Assert.Single(parties.Descendants(), element => (string?)element.Attribute("Text") == binding);
+            var panel = field.Ancestors().First(element => element.Name.LocalName == "Border");
+            Assert.Same(parties, panel.Parent);
+            Assert.Null(panel.Attribute("Grid.Column"));
+            Assert.Null(panel.Attribute("Grid.ColumnSpan"));
+            Assert.Null(panel.Attribute("Margin"));
+            Assert.Equal(binding.Contains("Customer", StringComparison.Ordinal) ? null : "1", (string?)panel.Attribute("Grid.Row"));
+            Assert.Equal("36", (string?)field.Parent!.Parent!.Attribute("Height"));
+        }
+        var origin = Assert.Single(parties.Elements(), element => (string?)element.Attribute("Grid.Row") == "2");
+        Assert.Equal("Auto,*", (string?)origin.Attribute("ColumnDefinitions"));
+        Assert.Contains(origin.Elements(), element => element.Name.LocalName == "ComboBox"
+            && (string?)element.Attribute("Grid.Column") == "1");
+    }
+
+    [Fact]
+    public void Quote_summary_is_below_items_with_full_width_notes_after_the_totals()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        var items = Assert.Single(document.Descendants(), element => (string?)element.Attribute(
+            XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "QuoteItemsGrid");
+        var right = items.Parent!.Parent!;
+        Assert.Equal("*,Auto", (string?)right.Attribute("RowDefinitions"));
+        Assert.All(right.Elements(), element => Assert.Equal("Border", element.Name.LocalName));
+        var summary = Assert.Single(right.Elements(), element => (string?)element.Attribute("Grid.Row") == "1");
+        Assert.Equal("230", (string?)summary.Attribute("MaxHeight"));
+        Assert.Equal("10", (string?)summary.Attribute("Padding"));
+        Assert.Equal((string?)items.Parent.Attribute("Background"), (string?)summary.Attribute("Background"));
+        var total = Assert.Single(summary.Descendants(), element => (string?)element.Attribute("Text") == "Total");
+        var totalValue = Assert.Single(total.Parent!.Elements(), element => (string?)element.Attribute("Grid.Column") == "1");
+        foreach (var text in new[] { total, totalValue })
+        {
+            Assert.Equal("24", (string?)text.Attribute("FontSize"));
+            Assert.Equal("White", (string?)text.Attribute("Foreground"));
+        }
+        Assert.Equal("#0066CC", (string?)total.Parent.Parent!.Attribute("Background"));
+        var notes = Assert.Single(summary.Descendants(), element => (string?)element.Attribute("Text") == "{Binding Notes}");
+        Assert.Equal("60", (string?)notes.Attribute("MinHeight"));
+        Assert.Equal("80", (string?)notes.Attribute("MaxHeight"));
+        Assert.Equal("{Binding NotesLimit}", (string?)notes.Attribute("MaxLength"));
+        var separator = notes.Parent!.Parent!;
+        Assert.Equal("0,1,0,0", (string?)separator.Attribute("BorderThickness"));
+        Assert.Equal("1", (string?)separator.Attribute("Grid.Row"));
+        Assert.Same(total.Parent.Parent.Parent!.Parent, separator.Parent);
+        Assert.Null(separator.Attribute("Grid.Column"));
+        Assert.Contains(separator.Descendants(), element => (string?)element.Attribute("Text") == "{Binding NotesCounter}");
+    }
+
+    [Fact]
+    public void Quote_sale_entry_has_one_cart_action_and_compact_arrow_paging()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        var sale = Assert.Single(document.Descendants(), element => element.Name.LocalName == "NumericUpDown"
+            && (string?)element.Attribute("Value") == "{Binding SaleValue}");
+        Assert.Contains(sale.Parent!.Parent!.Parent!.Elements(), element => (string?)element.Attribute("Text") == "Valor de Venda");
+        Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Value") == "{Binding UnitPriceValue}");
+        var add = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SaveLineCommand}");
+        Assert.Equal("1", (string?)add.Attribute("Grid.Row"));
+        Assert.Equal("2", (string?)add.Attribute("Grid.ColumnSpan"));
+        Assert.Equal("Right", (string?)add.Attribute("HorizontalAlignment"));
+        Assert.Contains(add.Descendants(), element => (string?)element.Attribute("Text") == "Adicionar item");
+        Assert.Contains(add.Descendants().Attributes(), attribute => attribute.Value.Contains("DecorIconId+Actions.Cart", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding NewLineCommand}");
+        var quantity = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Value") == "{Binding QuantityValue}");
+        Assert.Equal("130,*", (string?)quantity.Parent!.Parent!.Parent!.Parent!.Attribute("ColumnDefinitions"));
+        var pagingStyle = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "Button.catalog-page");
+        foreach (var setting in new[] { ("Height", "26"), ("Width", "28"), ("Margin", "0"), ("Padding", "0"), ("MinHeight", "0"), ("MinWidth", "0"), ("HorizontalContentAlignment", "Center"), ("VerticalContentAlignment", "Center") })
+            AssertSetter(pagingStyle, setting.Item1, setting.Item2);
+        foreach (var command in new[] { "{Binding CatalogPreviousCommand}", "{Binding CatalogNextCommand}" })
+        {
+            var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == command);
+            Assert.Equal("catalog-page", (string?)button.Attribute("Classes"));
+            var icon = Assert.Single(button.Elements());
+            Assert.Equal("Path", icon.Name.LocalName);
+            Assert.Equal("14", (string?)icon.Attribute("Width"));
+            Assert.Equal("14", (string?)icon.Attribute("Height"));
+        }
+    }
+
+    [Fact]
+    public void Quote_party_and_product_selection_use_contextual_search_buttons()
+    {
+        var quote = ReadXaml("Views", "QuotesView.axaml");
+        var searchWindow = ReadXaml("Views", "ContextualSearchWindow.axaml");
+        var quoteTextBindings = quote.Descendants().Where(element => element.Name.LocalName == "TextBox")
+            .Select(element => (string?)element.Attribute("Text")).ToArray();
+
+        Assert.DoesNotContain("{Binding CustomerSearchText}", quoteTextBindings);
+        Assert.DoesNotContain("{Binding EmployeeSearchText}", quoteTextBindings);
+        Assert.DoesNotContain("{Binding PartnerSearchText}", quoteTextBindings);
+        Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Click") == "SearchCustomer_Click");
+        Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Click") == "SearchEmployee_Click");
+        Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "DecorDataGridControl" && (string?)element.Attribute("ItemsSource") == "{Binding CatalogProducts}");
+        Assert.Contains(searchWindow.Descendants(), element => element.Name.LocalName == "DecorDataGridControl");
+        Assert.Contains(searchWindow.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Content") == "OK");
     }
 
     [Fact]

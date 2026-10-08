@@ -5,8 +5,11 @@ namespace Decor.Core.Entities;
 
 public enum QuoteSourceType
 {
-    DirectCapture = 1,
-    ArchitectPartner = 2
+    Own = 1,
+    Store = 2,
+    Other = 3,
+    DirectCapture = Own,
+    ArchitectPartner = Store
 }
 
 [Table("quotes")]
@@ -17,10 +20,13 @@ public class Quote
     public int QuoteID { get; set; }
 
     [Column("CustomerID")]
-    public int CustomerID { get; set; }
+    public int? CustomerID { get; set; }
 
     [Column("CreatedByEmployeeID")]
-    public int CreatedByEmployeeID { get; set; }
+    public int? CreatedByEmployeeID { get; set; }
+
+    [Column("CreatedByUserID")]
+    public int? CreatedByUserID { get; set; }
 
     [Column("SourcePartnerID")]
     public int? SourcePartnerID { get; set; }
@@ -33,6 +39,9 @@ public class Quote
 
     [Column("Notes")]
     public string? Notes { get; set; }
+
+    [Column("DiscountAmount")]
+    public decimal DiscountAmount { get; set; }
 
     [NotMapped]
     public ICollection<QuoteSection> Sections { get; set; } = new List<QuoteSection>();

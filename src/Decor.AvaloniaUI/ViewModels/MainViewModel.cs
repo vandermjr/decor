@@ -32,6 +32,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ShowProductsCommand = new RelayCommand(() => OpenSingletonDocument("products", "Produtos", () => CreateView<ProductsView>()));
         ShowBrandsCommand = new RelayCommand(() => OpenSingletonDocument("brands", "Marcas", () => CreateView<BrandsView>()));
+        ShowCustomersCommand = new RelayCommand(() => OpenSingletonDocument("customers", "Clientes", () => CreateView<CustomersView>()), () => authorizationService.HasPermission(DecorPermissions.CustomersView));
+        ShowSuppliersCommand = new RelayCommand(() => OpenSingletonDocument("suppliers", "Fornecedores", () => CreateView<SuppliersView>()), () => authorizationService.HasPermission(DecorPermissions.SuppliersView));
+        ShowQuotesCommand = new RelayCommand(() => OpenSingletonDocument("quotes", "Orçamentos", () => CreateView<QuotesView>()), () => authorizationService.HasPermission(DecorPermissions.QuotesView));
+        ShowSalesCommand = new RelayCommand(() => OpenSingletonDocument("sales", "Vendas", () => CreateView<SalesView>()), () => authorizationService.HasPermission(DecorPermissions.OrdersView));
         ShowEmployeesCommand = new RelayCommand(() => OpenSingletonDocument("employees", "Funcionários", () => CreateView<EmployeesView>()), () => authorizationService.HasPermission(DecorPermissions.EmployeesView));
         ShowTermDeliveryCommand = new RelayCommand(() => OpenSingletonDocument("term-delivery", "Termo de Entrega", () => CreateView<TermDeliveryView>()));
         ShowClassificationsCommand = new RelayCommand(() => OpenSingletonDocument("classifications", "Classificações", () => CreateView<ClassificationsView>()));
@@ -111,6 +115,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ICommand ShowProductsCommand { get; }
     public ICommand ShowBrandsCommand { get; }
+    public ICommand ShowCustomersCommand { get; }
+    public ICommand ShowSuppliersCommand { get; }
+    public ICommand ShowQuotesCommand { get; }
+    public ICommand ShowSalesCommand { get; }
     public ICommand ShowEmployeesCommand { get; }
     public ICommand ShowTermDeliveryCommand { get; }
     public ICommand ShowClassificationsCommand { get; }
@@ -134,6 +142,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
     public bool CanViewEmployees => ((RelayCommand)ShowEmployeesCommand).CanExecute(null);
+    public bool CanViewCustomers => ((RelayCommand)ShowCustomersCommand).CanExecute(null);
+    public bool CanViewSuppliers => ((RelayCommand)ShowSuppliersCommand).CanExecute(null);
+    public bool CanViewQuotes => ((RelayCommand)ShowQuotesCommand).CanExecute(null);
+    public bool CanViewSales => ((RelayCommand)ShowSalesCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);
     public bool CanViewPermissions => ((RelayCommand)ShowPermissionsCommand).CanExecute(null);
     public bool CanViewAccess => CanViewUsers || CanViewRoles || CanViewPermissions;

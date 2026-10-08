@@ -4,6 +4,20 @@
              xmlns:icons="using:Decor.AvaloniaUI.Icons"
              x:Class="Decor.AvaloniaUI.Views.DatabaseMaintenanceView"
              x:DataType="vm:DatabaseMaintenanceViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.field-action">
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="Width" Value="36"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </UserControl.Styles>
   <TabControl Margin="12">
     <TabItem Header="Backup">
   <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12" IsEnabled="{Binding CanUseBackup}">
@@ -76,10 +90,10 @@
               <Grid ColumnDefinitions="260,220,*" ColumnSpacing="18">
                 <StackPanel Spacing="4">
                   <TextBlock Text="Data inicial" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" MinHeight="34">
-                    <Grid ColumnDefinitions="*,38">
+                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" Height="36" ClipToBounds="True">
+                    <Grid ColumnDefinitions="*,36">
                       <TextBlock Text="{Binding BackupDateDisplay}" Margin="10,0" VerticalAlignment="Center"/>
-                      <Button x:Name="ChooseBackupDateButton" Grid.Column="1" TabIndex="3" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="ChooseBackupDateButton_Click" ToolTip.Tip="Selecionar data">
+                      <Button x:Name="ChooseBackupDateButton" Classes="field-action" Grid.Column="1" TabIndex="3" Click="ChooseBackupDateButton_Click" ToolTip.Tip="Selecionar data">
                         <Button.Flyout>
                           <Flyout Placement="BottomEdgeAlignedRight">
                             <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
@@ -96,10 +110,10 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="4">
                   <TextBlock Text="Horário inicial" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" MinHeight="34">
-                    <Grid ColumnDefinitions="*,38">
+                  <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" Height="36" ClipToBounds="True">
+                    <Grid ColumnDefinitions="*,36">
                       <TextBlock Text="{Binding BackupTimeDisplay}" Margin="10,0" VerticalAlignment="Center"/>
-                      <Button x:Name="ChooseBackupTimeButton" Grid.Column="1" TabIndex="4" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="ChooseBackupTimeButton_Click" ToolTip.Tip="Selecionar horário">
+                      <Button x:Name="ChooseBackupTimeButton" Classes="field-action" Grid.Column="1" TabIndex="4" Click="ChooseBackupTimeButton_Click" ToolTip.Tip="Selecionar horário">
                         <Button.Flyout>
                           <Flyout Placement="BottomEdgeAlignedRight">
                             <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">

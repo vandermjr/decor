@@ -13,6 +13,8 @@ public interface IQuoteRepository : IRepository<Quote>
     Task<IEnumerable<QuoteItemSpecificationValue>> GetSpecificationValuesByItemIdAsync(int quoteItemId, CancellationToken cancellationToken = default);
     Task<int> SaveSectionAsync(QuoteSection section, CancellationToken cancellationToken = default);
     Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default);
+    Task<int> DeleteItemAsync(int quoteItemId, int sectionId, CancellationToken cancellationToken = default)
+        => Task.FromException<int>(new NotSupportedException());
     Task<int> SaveSpecificationValueAsync(QuoteItemSpecificationValue value, CancellationToken cancellationToken = default);
 }
 

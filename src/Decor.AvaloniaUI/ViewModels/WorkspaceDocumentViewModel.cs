@@ -37,6 +37,10 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
     {
         "products" => DecorIconId.Forms.Products,
         "brands" => DecorIconId.Forms.Brands,
+        "customers" => DecorIconId.User.Profile,
+        "suppliers" => DecorIconId.Modules.Compras,
+        "quotes" => DecorIconId.Actions.Report,
+        "sales" => DecorIconId.Modules.Comercial,
         "employees" => DecorIconId.User.Profile,
         "term-delivery" => DecorIconId.Forms.TermDelivery,
         "classifications" => DecorIconId.Forms.Classifications,

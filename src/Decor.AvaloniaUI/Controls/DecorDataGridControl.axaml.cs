@@ -56,6 +56,7 @@ public partial class DecorDataGridControl : UserControl
     private Func<string, string>? _configuredGetDisplayName;
     private Func<string, DataGridLength>? _configuredGetColumnWidth;
     private IReadOnlyList<string>? _configuredPropertyNames;
+    private readonly List<DataGridColumn> _additionalColumns = [];
 
     public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
         AvaloniaProperty.Register<DecorDataGridControl, IEnumerable?>(nameof(ItemsSource));
@@ -384,9 +385,19 @@ public partial class DecorDataGridControl : UserControl
             _innerGrid.Columns.Add(column);
         }
 
+        foreach (var column in _additionalColumns) _innerGrid.Columns.Add(column);
+
         var defaultSort = _innerGrid.Columns.FirstOrDefault(column => DecorGridHeader.GetIconId(column.Header as string ?? string.Empty)
             == Icons.DecorIconId.Common.Code) ?? _innerGrid.Columns.FirstOrDefault();
         DecorGridSorting.SetDefaultSortMemberPath(_innerGrid, DefaultSortMemberPath ?? defaultSort?.SortMemberPath);
+    }
+
+    public void AddColumn(DataGridColumn column)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        if (_additionalColumns.Contains(column)) return;
+        _additionalColumns.Add(column);
+        _innerGrid?.Columns.Add(column);
     }
 
     private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)

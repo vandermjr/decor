@@ -9,5 +9,8 @@ public record QuoteDTO(
     [property: Display(Name = "Parceiro de origem")] int? SourcePartnerID,
     [property: Display(Name = "Origem")] int SourceType,
     [property: Display(Name = "Data de criação")] DateTime CreatedAt,
-    [property: Display(Name = "Observações")] string? Notes
+    [property: Display(Name = "Observações")] string? Notes,
+    [property: Display(Name = "Seções")] IReadOnlyList<QuoteSectionDTO>? Sections = null,
+    [property: Display(Name = "Usuário criador")] int? CreatedByUserID = null,
+    [property: Display(Name = "Desconto")] decimal DiscountAmount = 0m
 );

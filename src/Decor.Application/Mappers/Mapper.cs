@@ -216,11 +216,11 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
 
     // --- Mapeadores para Quote ---
     public static IEnumerable<QuoteDTO> ToDTO(this IEnumerable<Quote> quotes) => quotes.Select(q => q.ToDTO());
-    public static QuoteDTO ToDTO(this Quote quote) => new(quote.QuoteID, quote.CustomerID, quote.CreatedByEmployeeID, quote.SourcePartnerID, (int)quote.SourceType, quote.CreatedAt, quote.Notes);
-    public static Quote FromDTO(this QuoteDTO quoteDto) => new() { QuoteID = quoteDto.QuoteID, CustomerID = quoteDto.CustomerID, CreatedByEmployeeID = quoteDto.CreatedByEmployeeID, SourcePartnerID = quoteDto.SourcePartnerID, SourceType = (QuoteSourceType)quoteDto.SourceType, CreatedAt = quoteDto.CreatedAt, Notes = quoteDto.Notes };
+    public static QuoteDTO ToDTO(this Quote quote) => new(quote.QuoteID, quote.CustomerID ?? 0, quote.CreatedByEmployeeID ?? 0, quote.SourcePartnerID, (int)quote.SourceType, quote.CreatedAt, quote.Notes, quote.Sections.ToDTO().ToArray(), quote.CreatedByUserID, quote.DiscountAmount);
+    public static Quote FromDTO(this QuoteDTO quoteDto) => new() { QuoteID = quoteDto.QuoteID, CustomerID = quoteDto.CustomerID == 0 ? null : quoteDto.CustomerID, CreatedByEmployeeID = quoteDto.CreatedByEmployeeID == 0 ? null : quoteDto.CreatedByEmployeeID, CreatedByUserID = quoteDto.CreatedByUserID, SourcePartnerID = quoteDto.SourcePartnerID, SourceType = (QuoteSourceType)quoteDto.SourceType, CreatedAt = quoteDto.CreatedAt, Notes = quoteDto.Notes, DiscountAmount = quoteDto.DiscountAmount };
 
     public static IEnumerable<QuoteSectionDTO> ToDTO(this IEnumerable<QuoteSection> sections) => sections.Select(s => s.ToDTO());
-    public static QuoteSectionDTO ToDTO(this QuoteSection section) => new(section.QuoteSectionID, section.QuoteID, (int)section.SectionType, (int)section.Status, section.SentToCustomerAt, section.ApprovedAt, section.CreatedAt);
+    public static QuoteSectionDTO ToDTO(this QuoteSection section) => new(section.QuoteSectionID, section.QuoteID, (int)section.SectionType, (int)section.Status, section.SentToCustomerAt, section.ApprovedAt, section.CreatedAt, section.Items.ToDTO().ToArray());
     public static QuoteSection FromDTO(this QuoteSectionDTO sectionDto) => new() { QuoteSectionID = sectionDto.QuoteSectionID, QuoteID = sectionDto.QuoteID, SectionType = (QuoteSectionType)sectionDto.SectionType, Status = (QuoteSectionStatus)sectionDto.Status, SentToCustomerAt = sectionDto.SentToCustomerAt, ApprovedAt = sectionDto.ApprovedAt, CreatedAt = sectionDto.CreatedAt };
 
     public static IEnumerable<QuoteItemDTO> ToDTO(this IEnumerable<QuoteItem> items) => items.Select(i => i.ToDTO());

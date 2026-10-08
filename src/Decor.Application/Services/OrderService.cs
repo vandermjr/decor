@@ -78,10 +78,17 @@ public class OrderService(
 
         var fullSection = quote.Sections.FirstOrDefault(s => s.QuoteSectionID == quoteSectionId) ?? section;
 
+        if (quote.CustomerID is null or <= 0 || quote.CreatedByEmployeeID is null or <= 0)
+            throw new ValidationException("Informe cliente e vendedor válidos antes de converter o orçamento.");
+
+        if (fullSection.Items.Any(item => item.Quantity <= 0 || item.UnitPrice is null or < 0))
+            throw new ValidationException("Os itens da seção precisam ter quantidade positiva e preço válido antes da conversão.");
+        var convertedPrices = GetDiscountedUnitPrices(quote);
+
         var order = new Order
         {
             QuoteSectionID = quoteSectionId,
-            CustomerID = quote.CustomerID,
+            CustomerID = quote.CustomerID.Value,
             OrderType = section.SectionType == QuoteSectionType.Catalog ? OrderType.Catalog : OrderType.Custom,
             Status = OrderStatus.PendingApproval,
             RequiresDownPayment = null,
@@ -97,7 +104,7 @@ public class OrderService(
 
         if (_transactionalOrderRepository is null || _transactionalQuoteRepository is null)
         {
-            await SaveWithoutExternalTransactionAsync(order, fullSection, section, cancellationToken);
+            await SaveWithoutExternalTransactionAsync(order, fullSection, section, convertedPrices, cancellationToken);
             return order.ToDTO();
         }
 
@@ -116,7 +123,7 @@ public class OrderService(
                     QuoteItemID = quoteItem.QuoteItemID,
                     ProductID = quoteItem.ProductID,
                     Quantity = quoteItem.Quantity,
-                    UnitPrice = quoteItem.UnitPrice ?? 0m,
+                    UnitPrice = convertedPrices[quoteItem.QuoteItemID],
                     HasInstallationService = quoteItem.HasInstallationService,
                     SentToProductionAt = null,
                     SentToProductionByEmployeeID = null,
@@ -154,12 +161,39 @@ public class OrderService(
         return order.ToDTO();
     }
 
-    private async Task SaveWithoutExternalTransactionAsync(Order order, QuoteSection fullSection, QuoteSection section, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<int, decimal> GetDiscountedUnitPrices(Quote quote)
+    {
+        var items = quote.Sections.OrderBy(section => section.QuoteSectionID)
+            .SelectMany(section => section.Items.OrderBy(item => item.QuoteItemID)).ToArray();
+        var subtotal = items.Sum(item => item.Quantity * (item.UnitPrice ?? 0m));
+        if (quote.DiscountAmount < 0 || quote.DiscountAmount > subtotal)
+            throw new ValidationException("O desconto deve ser não negativo e não pode exceder o subtotal do orçamento.");
+        if (quote.DiscountAmount == 0)
+            return items.ToDictionary(item => item.QuoteItemID, item => item.UnitPrice ?? 0m);
+        if (items.Any(item => item.Quantity <= 0 || item.UnitPrice is null or < 0))
+            throw new ValidationException("Todos os itens do orçamento precisam ter quantidade e preço válidos para ratear o desconto.");
+
+        var remainingTotal = subtotal - quote.DiscountAmount;
+        var factor = remainingTotal / subtotal;
+        var prices = new Dictionary<int, decimal>();
+        var lastPricedItem = items.Last(item => item.UnitPrice > 0);
+        foreach (var item in items)
+        {
+            var originalPrice = item.UnitPrice!.Value;
+            var price = item == lastPricedItem ? remainingTotal / item.Quantity : originalPrice * factor;
+            price = Math.Clamp(decimal.Round(price, 2, MidpointRounding.AwayFromZero), 0m, originalPrice);
+            prices.Add(item.QuoteItemID, price);
+            remainingTotal -= price * item.Quantity;
+        }
+        return prices;
+    }
+
+    private async Task SaveWithoutExternalTransactionAsync(Order order, QuoteSection fullSection, QuoteSection section, IReadOnlyDictionary<int, decimal> convertedPrices, CancellationToken cancellationToken)
     {
         await _orderRepository.SaveAsync(order, cancellationToken);
         foreach (var quoteItem in fullSection.Items)
         {
-            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, Quantity = quoteItem.Quantity, UnitPrice = quoteItem.UnitPrice ?? 0m, HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
+            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, Quantity = quoteItem.Quantity, UnitPrice = convertedPrices[quoteItem.QuoteItemID], HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
             await _orderRepository.SaveOrderItemAsync(orderItem, cancellationToken);
             foreach (var specValue in quoteItem.SpecificationValues)
             {

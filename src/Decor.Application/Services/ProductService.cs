@@ -29,7 +29,8 @@ public class ProductService(
     public async Task<ProductDTO> GetProductByIdAsync(int productId, CancellationToken cancellationToken = default)
     {
         // A busca no repositório já faz os JOINs necessários
-        var product = (await _productRepository.SearchGetByAsync(productId.ToString(), 1, 1, cancellationToken)).FirstOrDefault();
+        var product = (await _productRepository.SearchGetByAsync(productId.ToString(), 1, 1, cancellationToken))
+            .FirstOrDefault(candidate => candidate.ProductID == productId);
         // Lançar exceção ou retornar nulo? Depende da regra de negócio.
         // Aqui, vamos retornar o DTO ou lançar uma exceção se não for encontrado.
         return product == null 

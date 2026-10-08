@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
@@ -61,14 +62,30 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Produtos não podem ser excluídos. Altere o status IsActive para desativá-los.");
 
-    public IEnumerable<Product> SearchGetBy(string? arg = null) =>
-        throw new NotSupportedException();
+    public IEnumerable<Product> SearchGetBy(string? arg = null)
+    {
+        var (sql, parameters) = BuildSearchQuery(arg, null, null);
+        using var connection = _dbConnection.CreateConnection();
+        return connection.Query<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
+            sql, MapProduct, parameters, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID").ToList();
+    }
 
     public async Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {
         ValidatePage(page, pageSize);
-        var queryContext = _queryContextFactory();
-        var (sql, parameters) = _createCommandBuilder()
+        var (sql, parameters) = BuildSearchQuery(arg, page, pageSize);
+        using var connection = _dbConnection.CreateConnection();
+        var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
+            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken), MapProduct,
+            splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
+        return result.AsList();
+    }
+
+    private (string Sql, Dictionary<string, object?> Parameters) BuildSearchQuery(string? arg, int? page, int? pageSize)
+    {
+        var search = ProductSearchQuery.Parse(arg);
+        _queryContextFactory().IsSingleIdSearch = false;
+        var builder = _createCommandBuilder()
             .Select<Product>(s => s
                 .ExceptColumns<Product>(p => p.BrandID)
                 .WithColumns<Brand>(b => b.BrandID, b => b.BrandName)
@@ -76,9 +93,9 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 .WithColumns<Family>(fa => fa.FamilyID, fa => fa.FamilyName)
                 .WithColumns<Group>(gr => gr.GroupID, gr => gr.GroupName)
                 .WithColumns<Subgroup>(sg => sg.SubgroupID, sg => sg.SubgroupName)
-                .WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description))
+                .WithColumns<UnitOfMeasure>(u => u.UnitOfMeasureID, u => u.Code, u => u.Description, u => u.AllowsFraction))
             .Join(j => j
-                .Inner<Product, Brand>((p, b) => p.BrandID == b.BrandID)
+                .Left<Product, Brand>((p, b) => p.BrandID == b.BrandID)
                 .Left<Product, Subgroup>((p, sg) => p.SubgroupID == sg.SubgroupID)
                 .Left<Product, UnitOfMeasure>((p, u) => p.StockUnitID == u.UnitOfMeasureID)
                 .Left<Subgroup, Group>((sg, gr) => sg.GroupID == gr.GroupID)
@@ -87,35 +104,52 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Where(w =>
             {
                 w.Equals<Product>(p => p.IsActive, true);
-                var filter = w.FullTextSearch<Product, Product>(arg, p => p.ProductID, p => p.Description);
-                queryContext.IsSingleIdSearch = filter.IsIdSearch;
+                if (search.Type.HasValue)
+                    w.Equals<Product>(p => p.ProductType, search.Type.Value);
+                if (search.StockGreaterThan.HasValue)
+                    w.GreaterThan<Product>(p => p.StockQuantity, search.StockGreaterThan.Value);
+                if (search.StockLessThan.HasValue)
+                    w.LessThan<Product>(p => p.StockQuantity, search.StockLessThan.Value);
+                if (search.StockEquals.HasValue)
+                    w.Equals<Product>(p => p.StockQuantity, search.StockEquals.Value);
+                if (search.IsProductIdSearch)
+                    w.Equals<Product>(p => p.ProductID, search.ProductID.GetValueOrDefault());
+                foreach (var token in search.IsProductIdSearch ? Array.Empty<string>() : search.Tokens)
+                {
+                    w.Group(group =>
+                    {
+                        group.Contains<Product>(p => p.Description, token)
+                            .Or().Contains<Brand>(b => b.BrandName, token)
+                            .Or().Contains<Product>(p => p.Barcode, token)
+                            .Or().Contains<Product>(p => p.ManufacturerRef, token);
+                        if (int.TryParse(token, out var productId))
+                            group.Or().Equals<Product>(p => p.ProductID, productId);
+                    });
+                }
             })
-            .Take((uint)pageSize)
-            .Skip((uint)((page - 1) * pageSize))
-            .Build();
+            .OrderBy(order => order.Ascending<Product>(p => p.ProductID));
+        if (page.HasValue && pageSize.HasValue)
+            builder.Take((uint)pageSize.Value).Skip((uint)((page.Value - 1) * pageSize.Value));
+        return builder.Build();
+    }
 
-        using var connection = _dbConnection.CreateConnection();
-        var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken),
-            map: (product, brand, @class, family, group, subgroup, stockUnit) =>
-            {
-                if (brand != null) { product.Brand = brand; product.BrandID = brand.BrandID; }
-                if (subgroup != null)
-                {
-                    family.Class = @class;
-                    group.Family = family;
-                    subgroup.Group = group;
-                    product.Subgroup = subgroup;
-                    product.SubgroupID = subgroup.SubgroupID;
-                }
-                if (stockUnit != null)
-                {
-                    product.StockUnit = stockUnit;
-                    product.StockUnitID = stockUnit.UnitOfMeasureID;
-                }
-                return product;
-            }, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
-        var products = result.ToList();
-        return queryContext.IsSingleIdSearch ? products.Take(1).ToArray() : products;
+    private static Product MapProduct(Product product, Brand brand, Class @class, Family family, Group group, Subgroup subgroup, UnitOfMeasure stockUnit)
+    {
+        if (brand != null) { product.Brand = brand; product.BrandID = brand.BrandID; }
+        if (subgroup != null)
+        {
+            family.Class = @class;
+            group.Family = family;
+            subgroup.Group = group;
+            product.Subgroup = subgroup;
+            product.SubgroupID = subgroup.SubgroupID;
+        }
+        if (stockUnit != null)
+        {
+            product.StockUnit = stockUnit;
+            product.StockUnitID = stockUnit.UnitOfMeasureID;
+        }
+        return product;
     }
 
     private static void ValidatePage(int page, int pageSize)

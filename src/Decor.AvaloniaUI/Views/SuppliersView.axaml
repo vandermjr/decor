@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Decor.AvaloniaUI.Controls"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             xmlns:icons="using:Decor.AvaloniaUI.Icons"
+             x:Class="Decor.AvaloniaUI.Views.SuppliersView"
+             x:DataType="vm:SuppliersViewModel">
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
+        <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="{Binding SearchPlaceholder}" KeyDown="SearchTextBox_KeyDown"/>
+        <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}">
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+        </Button>
+        <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}">
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+        </Button>
+      </Grid>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding NewButtonText}" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <TextBlock Text="Editar" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" Background="{DynamicResource DecorDangerBrush}" Foreground="White">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <TextBlock Text="Excluir" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <Panel Grid.Row="1">
+      <controls:DecorDataGridControl x:Name="SuppliersGrid" DefaultSortMemberPath="CorporateName" ItemsSource="{Binding Items}"
+                                      SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                      IsVisible="{Binding !IsEditing}"/>
+      <Border Padding="0" IsVisible="{Binding IsEditing}">
+        <Grid RowDefinitions="*,Auto">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="12" Margin="0,0,20,0">
+              <TextBlock Text="{Binding FormTitle}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Código" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                    <TextBlock Text="{Binding CodeDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,4">
+                  <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="Estado" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                    <ToggleSwitch IsChecked="{Binding IsActive}" OnContent="Ativo" OffContent="Inativo" MinWidth="115"/>
+                  </StackPanel>
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto" RowSpacing="12">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="{Binding NameLabel}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBox Text="{Binding Name}" MaxLength="150"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Documento" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBox Text="{Binding Document}" MaxLength="20"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Spacing="4">
+                  <TextBlock Text="Telefone" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBox Text="{Binding Phone}" MaxLength="20"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                  <TextBlock Text="E-mail" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBox Text="{Binding Email}" MaxLength="150"/>
+                </StackPanel>
+              </Grid>
+              <Border Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+          <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+              <Button Command="{Binding SaveCommand}" IsVisible="{Binding CanSave}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <TextBlock Text="Salvar" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+              <Button Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+                  <TextBlock Text="Cancelar" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+      <Panel Background="{DynamicResource DecorOverlayBrush}" IsVisible="{Binding ShowDeleteConfirmation}" ZIndex="1000">
+        <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="400" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8">
+          <StackPanel Spacing="16">
+            <TextBlock Text="Confirmação de exclusão" FontSize="{DynamicResource DecorFontSizeSection}"/>
+            <TextBlock Text="{Binding DeleteConfirmationMessage}" TextWrapping="Wrap"/>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+              <Button Content="Sim, excluir" Background="{DynamicResource DecorDangerBrush}" Foreground="White" Command="{Binding ConfirmDeleteCommand}"/>
+              <Button Grid.Column="1" Content="Não, cancelar" Command="{Binding CancelDeleteCommand}"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Panel>
+    </Panel>
+  </Grid>
+</UserControl>
