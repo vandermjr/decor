@@ -258,6 +258,9 @@
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Serviços" Command="{Binding ShowServicesCommand}" IsVisible="{Binding CanViewServices}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Servicos}"/></MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Agenda" IsEnabled="False">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Calendar}"/></MenuItem.Icon>
                 </MenuItem>
@@ -458,38 +461,9 @@
     </Grid>
     <Border Grid.Row="2" Classes="status-bar" Height="24" Padding="3,0" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
-        <StackPanel Orientation="Horizontal" Spacing="3" IsVisible="{Binding IsPaginationVisible}" VerticalAlignment="Center">
-          <TextBlock Text="Registro por página:" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
-          <ComboBox Classes="pagination-page-size"
-                    ItemsSource="{Binding StatusSource.PageSizeOptions}"
-                    SelectedItem="{Binding StatusSource.SelectedPageSize, Mode=TwoWay}"
-                    MinWidth="56"
-                    ToolTip.Tip="Registros por página"
-                    PointerEntered="PaginationHint_PointerEntered"
-                    PointerExited="PaginationHint_PointerExited"
-                    PointerPressed="PaginationHint_PointerPressed"/>
-          <Button x:Name="StatusBarFirstPageButton" Classes="pagination-button" IsVisible="{Binding StatusSource.HasFirstPage}" Command="{Binding StatusSource.FirstPageCommand}" Padding="2" MinWidth="21" Width="21" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Primeira página" PointerEntered="PaginationHint_PointerEntered" PointerExited="PaginationHint_PointerExited">
-            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.FirstPage}"/>
-          </Button>
-          <Button Classes="pagination-button" IsVisible="{Binding StatusSource.HasPreviousPage}" Command="{Binding StatusSource.PreviousPageCommand}" Padding="2" MinWidth="21" Width="21" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Página anterior" PointerEntered="PaginationHint_PointerEntered" PointerExited="PaginationHint_PointerExited">
-            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}"/>
-          </Button>
-          <TextBlock Text="{Binding StatusSource.PaginationPageStatus}" Margin="2,0" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
-          <Button Classes="pagination-button" IsVisible="{Binding StatusSource.HasNextPage}" Command="{Binding StatusSource.NextPageCommand}" Padding="2" MinWidth="21" Width="21" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Próxima página" PointerEntered="PaginationHint_PointerEntered" PointerExited="PaginationHint_PointerExited">
-            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}"/>
-          </Button>
-          <Button Classes="pagination-button" IsVisible="{Binding StatusSource.HasLastPage}" Command="{Binding StatusSource.LastPageCommand}" Padding="2" MinWidth="21" Width="21" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Última página" PointerEntered="PaginationHint_PointerEntered" PointerExited="PaginationHint_PointerExited">
-            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.LastPage}"/>
-          </Button>
-          <TextBlock Text="{Binding StatusSource.PaginationStatus}" Width="172" Margin="4,0,0,0" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
-        </StackPanel>
-        <TextBlock Grid.Column="1" Text="{Binding StatusSource.StatusMessage}" Margin="12,0,0,0" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding StatusSource.PaginationStatus}" IsVisible="{Binding IsPaginationVisible}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="{Binding StatusSource.StatusMessage}" IsVisible="{Binding !IsPaginationVisible}" Margin="12,0,0,0" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis" FontSize="{DynamicResource DecorFontSizeBase}" VerticalAlignment="Center"/>
         <TextBlock Grid.Column="2" Text="{Binding StatusSource.StatusSecondary}" IsVisible="{Binding StatusSource.HasStatusSecondary}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeBase}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-        <primitives:Popup x:Name="PaginationHintPopup" Placement="Top" ShouldUseOverlayLayer="True" IsLightDismissEnabled="False" IsHitTestVisible="False">
-          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="3" Padding="6,3" IsHitTestVisible="False">
-            <TextBlock Foreground="{DynamicResource DecorTextBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsHitTestVisible="False"/>
-          </Border>
-        </primitives:Popup>
       </Grid>
     </Border>
   </Grid>

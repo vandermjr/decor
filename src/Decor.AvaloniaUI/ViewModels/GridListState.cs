@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Avalonia.Collections;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
@@ -10,7 +11,7 @@ namespace Decor.AvaloniaUI.ViewModels;
 /// and the value-match summary shown in the status bar. Property names mirror <see cref="IStatusBarSource"/>
 /// so view models can forward them and re-raise the same notifications.
 /// </summary>
-public sealed class GridListState<T> : INotifyPropertyChanged
+public sealed class GridListState<T> : IStatusBarSource
 {
     private static readonly IReadOnlyList<int> AvailablePageSizes = [10, 25, 50, 100];
     private readonly ObservableCollection<T> _page;
@@ -33,6 +34,9 @@ public sealed class GridListState<T> : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public string StatusMessage => string.Empty;
+    public string? StatusPrimary => PaginationStatus;
+    public bool HasStatusPrimary => HasPagination;
     public IReadOnlyList<T> AllItems => _all;
     public int TotalCount => _all.Count;
     public int CurrentPage => _currentPage;
@@ -99,7 +103,8 @@ public sealed class GridListState<T> : INotifyPropertyChanged
     {
         foreach (var name in new[] { nameof(TotalCount), nameof(CurrentPage), nameof(TotalPages), nameof(HasPreviousPage),
                      nameof(HasNextPage), nameof(HasFirstPage), nameof(HasLastPage), nameof(HasPagination),
-                     nameof(PaginationStatus), nameof(PaginationPageStatus), nameof(StatusSecondary), nameof(HasStatusSecondary) })
+                     nameof(PaginationStatus), nameof(PaginationPageStatus), nameof(StatusPrimary), nameof(HasStatusPrimary),
+                     nameof(StatusSecondary), nameof(HasStatusSecondary) })
             OnPropertyChanged(name);
         foreach (var command in new[] { FirstPageCommand, PreviousPageCommand, NextPageCommand, LastPageCommand })
             ((RelayCommand)command).RaiseCanExecuteChanged();
@@ -125,4 +130,68 @@ public sealed class GridListState<T> : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public sealed class GridPaginationState : IStatusBarSource, IDisposable
+{
+    private static readonly IReadOnlyList<int> AvailablePageSizes = [10, 25, 50, 100];
+    private bool _disposed;
+
+    public GridPaginationState(DataGridCollectionView view)
+    {
+        View = view;
+        if (View.PageSize == 0)
+            View.PageSize = 10;
+        FirstPageCommand = new RelayCommand(() => View.MoveToPage(0), () => CanNavigate && HasPreviousPage);
+        PreviousPageCommand = new RelayCommand(() => View.MoveToPage(View.PageIndex - 1), () => CanNavigate && HasPreviousPage);
+        NextPageCommand = new RelayCommand(() => View.MoveToPage(View.PageIndex + 1), () => CanNavigate && HasNextPage);
+        LastPageCommand = new RelayCommand(() => View.MoveToPage(TotalPages - 1), () => CanNavigate && HasNextPage);
+        View.PropertyChanged += OnViewChanged;
+    }
+
+    public DataGridCollectionView View { get; }
+    private bool CanNavigate => !_disposed && View.CanChangePage && !View.IsEditingItem && !View.IsAddingNew;
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public int TotalCount => View.TotalItemCount;
+    public int TotalPages => TotalCount == 0 ? 0 : View.PageSize == 0 ? 1 : (int)Math.Ceiling((double)TotalCount / View.PageSize);
+    public int CurrentPage => Math.Max(1, View.PageIndex + 1);
+    public string StatusMessage => string.Empty;
+    public string? StatusPrimary => PaginationStatus;
+    public string? StatusSecondary => null;
+    public bool HasStatusPrimary => HasPagination;
+    public bool HasStatusSecondary => false;
+    public bool HasPagination => TotalCount > 0;
+    public string? PaginationStatus => HasPagination ? $"Registros encontrados: {TotalCount}" : null;
+    public string? PaginationPageStatus => HasPagination ? $"Página {CurrentPage} de {TotalPages}" : null;
+    public bool HasPreviousPage => View.PageIndex > 0;
+    public bool HasNextPage => CurrentPage < TotalPages;
+    public bool HasFirstPage => HasPreviousPage;
+    public bool HasLastPage => HasNextPage;
+    public ICommand FirstPageCommand { get; }
+    public ICommand PreviousPageCommand { get; }
+    public ICommand NextPageCommand { get; }
+    public ICommand LastPageCommand { get; }
+    public IReadOnlyList<int> PageSizeOptions => AvailablePageSizes;
+    public int SelectedPageSize
+    {
+        get => View.PageSize;
+        set
+        {
+            if (CanNavigate && AvailablePageSizes.Contains(value) && value != View.PageSize)
+                View.PageSize = value;
+        }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        View.PropertyChanged -= OnViewChanged;
+    }
+
+    private void OnViewChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
+        foreach (var command in new[] { FirstPageCommand, PreviousPageCommand, NextPageCommand, LastPageCommand })
+            ((RelayCommand)command).RaiseCanExecuteChanged();
+    }
 }

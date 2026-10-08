@@ -7,6 +7,11 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
     {
         var errors = new List<string>();
 
+        if (dto.ProductType != (int)Decor.Core.Entities.ProductType.Good)
+            errors.Add("Serviços não pertencem ao catálogo de produtos.");
+        if (dto.EmployeeCommissionValue is not null)
+            errors.Add("Produtos não possuem comissão de serviço.");
+
         if (dto.ProductID < 0)
             errors.Add("O ID do Produto não pode ser negativo.");
 

@@ -14,6 +14,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     private readonly Func<FluentCommandBuilder> _createCommandBuilder = createCommandBuilder;
     public int Save(Product product)
     {
+        ValidateProduct(product);
         using var conn = _dbConnection.CreateConnection();
         int result = default;
 
@@ -40,6 +41,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
 
     public async Task<int> SaveAsync(Product product, CancellationToken cancellationToken = default)
     {
+        ValidateProduct(product);
         var query = _createCommandBuilder();
         var (sql, parameters) = product.ProductID > 0
             ? query
@@ -104,7 +106,8 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
             .Where(w =>
             {
                 w.Equals<Product>(p => p.IsActive, true);
-                if (search.Type.HasValue)
+                w.Equals<Product>(p => p.ProductType, search.CatalogProductType);
+                if (search.Type.HasValue && search.Type != search.CatalogProductType)
                     w.Equals<Product>(p => p.ProductType, search.Type.Value);
                 if (search.StockGreaterThan.HasValue)
                     w.GreaterThan<Product>(p => p.StockQuantity, search.StockGreaterThan.Value);
@@ -196,16 +199,14 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
 
     public bool ServiceProductExists(int productId)
     {
-        var (sql, parameters) = _createCommandBuilder()
-            .Select<Product>(s => s.Count())
-            .Where(w => w
-                .Equals<Product>(p => p.ProductID, productId)
-                .Equals<Product>(p => p.ProductType, ProductType.Service))
-            .Build();
-
         using var conn = _dbConnection.CreateConnection();
-        int count = conn.QuerySingle<int>(sql, parameters);
-        return count > 0;
+        return conn.QuerySingle<int>("SELECT COUNT(*) FROM services WHERE ServiceID = @productId", new { productId }) > 0;
+    }
+
+    private static void ValidateProduct(Product product)
+    {
+        if (product.ProductType != ProductType.Good || product.EmployeeCommissionValue is not null)
+            throw new System.ComponentModel.DataAnnotations.ValidationException("O catálogo de produtos aceita apenas bens sem comissão de serviço.");
     }
 
     public bool GoodProductExists(int productId)

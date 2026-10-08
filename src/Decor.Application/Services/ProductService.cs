@@ -52,19 +52,13 @@ public class ProductService(
     public async Task SaveProductAsync(ProductDTO productDto, CancellationToken cancellationToken = default)
     {
         Require(productDto.ProductID == 0 ? DecorPermissions.ProductsCreate : DecorPermissions.ProductsEdit);
+        if (productDto.ProductType != (int)ProductType.Good)
+            throw new ValidationException("Serviços devem ser cadastrados no catálogo de serviços, não em produtos.");
         var dtoErrors = _dtoValidator.Validate(productDto);
         if (dtoErrors.Any())
             throw new ValidationException(string.Join("\n", dtoErrors));
 
         var productEntity = productDto.FromDTO();
-
-        // Ao ser Service, SubgroupID nunca pode ficar com valor órfão: é zerado automaticamente.
-        if (productEntity.ProductType == ProductType.Service)
-            productEntity.SubgroupID = null;
-
-        // Ao ser Service, StockUnitID também deve ser zerado automaticamente.
-        if (productEntity.ProductType == ProductType.Service)
-            productEntity.StockUnitID = null;
 
         var businessRuleErrors = ValidateBusinessRules(productEntity);
         if (businessRuleErrors.Any())
@@ -94,18 +88,6 @@ public class ProductService(
             if (product.EmployeeCommissionValue is not null)
                 errors.Add("O valor de Comissão do Funcionário só pode ser preenchido quando o Tipo de Produto é Serviço (Service).");
         }
-        else if (product.ProductType == ProductType.Service)
-        {
-            if (product.SubgroupID is not null)
-                errors.Add("O Subgrupo deve ser nulo quando o Tipo de Produto é Serviço (Service).");
-
-            if (product.StockUnitID is not null)
-                errors.Add("A Unidade de Estoque deve ser nula quando o Tipo de Produto é Serviço (Service).");
-        }
-
-        if (product.DefaultInstallationServiceID.HasValue && product.ProductID > 0 && product.DefaultInstallationServiceID.Value == product.ProductID)
-            errors.Add("O Produto não pode referenciar a si mesmo como Serviço de Instalação padrão.");
-
         return errors;
     }
 

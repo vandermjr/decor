@@ -21,9 +21,9 @@ public sealed class QuoteConversionTests
     {
         var quote = CreateQuote(30m);
         var first = quote.Sections.First();
-        first.Items.Add(new QuoteItem { QuoteItemID = 11, Quantity = 2m, UnitPrice = 100m });
+        first.Items.Add(new QuoteItem { QuoteItemID = 11, ProductID = 5, Quantity = 2m, UnitPrice = 100m });
         var second = quote.Sections.Last();
-        second.Items.Add(new QuoteItem { QuoteItemID = 12, Quantity = 1m, UnitPrice = 100m });
+        second.Items.Add(new QuoteItem { QuoteItemID = 12, ProductID = 5, Quantity = 1m, UnitPrice = 100m });
         var fixture = new ConversionFixture(quote, transactional);
 
         var firstOrder = await fixture.Service.ConvertFromQuoteAsync(first.QuoteSectionID);
@@ -45,7 +45,7 @@ public sealed class QuoteConversionTests
         var quote = CreateQuote(1m);
         var section = quote.Sections.First();
         foreach (var itemId in new[] { 11, 12, 13 })
-            section.Items.Add(new QuoteItem { QuoteItemID = itemId, Quantity = 1m, UnitPrice = 10m });
+            section.Items.Add(new QuoteItem { QuoteItemID = itemId, ProductID = 5, Quantity = 1m, UnitPrice = 10m });
         var fixture = new ConversionFixture(quote, false);
 
         var order = await fixture.Service.ConvertFromQuoteAsync(section.QuoteSectionID);
@@ -77,7 +77,7 @@ public sealed class QuoteConversionTests
     public async Task Conversion_RejectsInvalidDiscountBeforePersistence(decimal discount)
     {
         var quote = CreateQuote(discount);
-        quote.Sections.First().Items.Add(new QuoteItem { QuoteItemID = 11, Quantity = 1m, UnitPrice = 100m });
+        quote.Sections.First().Items.Add(new QuoteItem { QuoteItemID = 11, ProductID = 5, Quantity = 1m, UnitPrice = 100m });
         var fixture = new ConversionFixture(quote, false);
         await Assert.ThrowsAsync<ValidationException>(() => fixture.Service.ConvertFromQuoteAsync(1));
         fixture.Orders.Verify(repository => repository.SaveAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -87,9 +87,47 @@ public sealed class QuoteConversionTests
     public async Task Conversion_FullDiscountCreatesZeroPricedItems()
     {
         var quote = CreateQuote(100m);
-        quote.Sections.First().Items.Add(new QuoteItem { QuoteItemID = 11, Quantity = 1m, UnitPrice = 100m });
+        quote.Sections.First().Items.Add(new QuoteItem { QuoteItemID = 11, ProductID = 5, Quantity = 1m, UnitPrice = 100m });
         var order = await new ConversionFixture(quote, false).Service.ConvertFromQuoteAsync(1);
         Assert.Equal(0m, Assert.Single(order.Items!).UnitPrice);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Conversion_PreservesIndependentServiceIdentityAndHistory(bool transactional)
+    {
+        var quote = CreateQuote(0m);
+        var section = quote.Sections.First();
+        section.Items.Add(new QuoteItem { QuoteItemID = 11, ServiceID = 5, Quantity = 2m, UnitPrice = 125m, HasInstallationService = true });
+        section.Items.Add(new QuoteItem { QuoteItemID = 12, ProductID = 5, Quantity = 1m, UnitPrice = 75m });
+        var services = new Mock<IServiceRepository>();
+        services.Setup(repository => repository.ServiceExists(5)).Returns(true);
+        var fixture = new ConversionFixture(quote, transactional, services.Object);
+
+        var order = await fixture.Service.ConvertFromQuoteAsync(section.QuoteSectionID);
+
+        var serviceItem = order.Items!.Single(item => item.QuoteItemID == 11);
+        Assert.Null(serviceItem.ProductID);
+        Assert.Equal(5, serviceItem.ServiceID);
+        Assert.Equal(125m, serviceItem.UnitPrice);
+        Assert.True(serviceItem.HasInstallationService);
+        Assert.Equal(5, order.Items!.Single(item => item.QuoteItemID == 12).ProductID);
+        Assert.Equal(5, section.Items.First().ServiceID);
+        services.Verify(repository => repository.ServiceExists(5), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Conversion_RejectsMissingServiceBeforePersistence(bool transactional)
+    {
+        var quote = CreateQuote(0m);
+        quote.Sections.First().Items.Add(new QuoteItem { QuoteItemID = 11, ServiceID = 5, Quantity = 1m, UnitPrice = 10m });
+        var fixture = new ConversionFixture(quote, transactional, Mock.Of<IServiceRepository>());
+        await Assert.ThrowsAsync<ValidationException>(() => fixture.Service.ConvertFromQuoteAsync(1));
+        fixture.Orders.Verify(repository => repository.SaveAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+        fixture.Transaction.Verify(transaction => transaction.Commit(), Times.Never);
     }
 
     private static Quote CreateQuote(decimal discount) => new()
@@ -108,7 +146,7 @@ public sealed class QuoteConversionTests
         public Mock<IDbTransaction> Transaction { get; } = new();
         public OrderService Service { get; }
 
-        public ConversionFixture(Quote quote, bool transactional)
+        public ConversionFixture(Quote quote, bool transactional, IServiceRepository? services = null)
         {
             var quotes = new Mock<IQuoteRepository>();
             quotes.Setup(repository => repository.GetSectionByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -134,7 +172,7 @@ public sealed class QuoteConversionTests
             Service = new OrderService(Orders.Object, quotes.Object, Mock.Of<IProductRepository>(),
                 Mock.Of<IStockReservationService>(), Mock.Of<IOrderInstallmentService>(), Mock.Of<IDTOValidator<OrderDTO>>(),
                 validator.Object, authorization.Object, transactional ? database.Object : null,
-                transactional ? transactionalOrders.Object : null, transactional ? transactionalQuotes.Object : null);
+                transactional ? transactionalOrders.Object : null, transactional ? transactionalQuotes.Object : null, services);
         }
     }
 }

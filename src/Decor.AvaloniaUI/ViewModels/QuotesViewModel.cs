@@ -29,12 +29,15 @@ public sealed record QuoteSectionOption(QuoteSectionDTO DTO, string Label)
 {
     public override string ToString() => Label;
 }
-public sealed record QuoteProductOption(ProductDTO DTO, string Label, string Unit = "")
+public sealed record QuoteProductOption(ProductDTO? DTO, string Label, string Unit = "", ServiceDTO? Service = null)
 {
-    public int ProductID => DTO.ProductID;
-    public string Description => DTO.Description ?? "Sem descrição";
-    public string Category => DTO.ProductType == (int)ProductType.Service ? "Serviço" : "Produto";
-    public decimal Price => DTO.SalePrice ?? 0m;
+    public QuoteProductOption(ServiceDTO service, string label) : this(null, label, "", service) { }
+    public int? ProductID => DTO?.ProductID;
+    public int? ServiceID => Service?.ServiceID;
+    public int Code => ServiceID ?? ProductID ?? 0;
+    public string Description => Service?.Description ?? DTO?.Description ?? "Sem descrição";
+    public string Category => Service is not null ? "Serviço" : "Produto";
+    public decimal Price => Service?.SalePrice ?? DTO?.SalePrice ?? 0m;
     public override string ToString() => Label;
 }
 public sealed record QuoteLineOption(QuoteItemDTO DTO, string ProductName, decimal Total, int Item = 0, string Category = "")
@@ -52,10 +55,12 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     private readonly IEmployeeService _employeeService;
     private readonly IPartnerService _partnerService;
     private readonly IProductService _productService;
+    private readonly IServiceCatalogService? _serviceCatalogService;
     private readonly IAuthenticatedUserContext _authenticatedUserContext;
     private readonly IOrderService? _orderService;
     private Dictionary<int, UnitOfMeasureDTO> _units = [];
     private readonly Dictionary<int, QuoteProductOption> _knownProducts = [];
+    private readonly Dictionary<int, QuoteProductOption> _knownServices = [];
     private string _discountInput = "0";
     private readonly ObservableCollection<QuoteListItem> _items = [];
     private QuoteListItem? _selectedItem;
@@ -96,7 +101,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         ICustomerService customerService, IEmployeeService employeeService, IPartnerService partnerService,
         IProductService productService,
         IAuthenticatedUserContext authenticatedUserContext, IOrderService? orderService = null,
-        IUnitOfMeasureService? unitOfMeasureService = null)
+        IUnitOfMeasureService? unitOfMeasureService = null, IServiceCatalogService? serviceCatalogService = null)
     {
         _quoteService = quoteService;
         _authorizationService = authorizationService;
@@ -104,6 +109,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         _employeeService = employeeService;
         _partnerService = partnerService;
         _productService = productService;
+        _serviceCatalogService = serviceCatalogService;
         _authenticatedUserContext = authenticatedUserContext;
         _orderService = orderService;
         Listing = new GridListState<QuoteListItem>(_items, () => !IsEditing);
@@ -119,6 +125,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         ClearProductsCommand = new RelayCommand(ClearCatalog, () => !IsBusy);
         CatalogPreviousCommand = new RelayCommand(async () => await SearchCatalogPageAsync(_catalogPage - 1), () => IsEditing && !IsCatalogBusy && HasCatalogPrevious);
         CatalogNextCommand = new RelayCommand(async () => await SearchCatalogPageAsync(_catalogPage + 1), () => IsEditing && !IsCatalogBusy && HasCatalogNext);
+        CatalogPagination = new CatalogPaginationState(this);
         NewLineCommand = new RelayCommand(ResetLine, () => !IsBusy);
         GeneratePdfCommand = new RelayCommand(async () => { if (await SaveAsync()) PdfRequested?.Invoke(this, EventArgs.Empty); }, () => CanSave && ItemCount > 0);
         CancelQuoteCommand = new RelayCommand(async () => await CancelQuoteAsync(), () => IsEditing && !IsBusy && IsQuoteOpen && _authorizationService.HasPermission(DecorPermissions.QuotesApprove));
@@ -151,6 +158,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     public ICommand ClearProductsCommand { get; }
     public ICommand CatalogPreviousCommand { get; }
     public ICommand CatalogNextCommand { get; }
+    public CatalogPaginationState CatalogPagination { get; }
     public string CatalogPageDisplay => $"Página {_catalogPage}";
     public bool HasCatalogPrevious => _catalogPage > 1;
     public bool HasCatalogNext => _hasCatalogNext;
@@ -289,7 +297,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             OnPropertyChanged(nameof(SaleValue));
         }
     }
-    private UnitOfMeasureDTO? SelectedQuantityUnit => SelectedProduct?.DTO.StockUnitID is int unitId
+    private UnitOfMeasureDTO? SelectedQuantityUnit => SelectedProduct?.DTO?.StockUnitID is int unitId
         ? _units.GetValueOrDefault(unitId) : null;
     public int QuantityDecimalPlaces => QuoteQuantityRules.DecimalPlaces(SelectedQuantityUnit?.AllowsFraction);
     public string QuantityFormat => $"N{QuantityDecimalPlaces}";
@@ -389,11 +397,12 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         set
         {
             if (!SetField(ref _selectedProduct, value)) return;
-            if (_selectedLine is not null && value is not null && _selectedLine.DTO.ProductID != value.DTO.ProductID)
+            if (_selectedLine is not null && value is not null
+                && (_selectedLine.DTO.ProductID != value.ProductID || _selectedLine.DTO.ServiceID != value.ServiceID))
                 SelectedLine = null;
             OnPropertyChanged(nameof(ProductSelectionDetail));
             NotifyQuantityUnit();
-            if (_selectedLine is null && value?.DTO.SalePrice is decimal salePrice)
+            if (_selectedLine is null && (value?.Service?.SalePrice ?? value?.DTO?.SalePrice) is decimal salePrice)
             {
                 QuantityInput = "1";
                 UnitPriceInput = salePrice.ToString(CultureInfo.CurrentCulture);
@@ -415,8 +424,9 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             QuantityInput = value.DTO.Quantity.ToString(CultureInfo.CurrentCulture);
             UnitPriceInput = value.DTO.UnitPrice?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
             HasInstallationService = value.DTO.HasInstallationService;
-            SelectedProduct = _knownProducts.GetValueOrDefault(value.DTO.ProductID)
-                ?? Products.FirstOrDefault(product => product.DTO.ProductID == value.DTO.ProductID);
+            SelectedProduct = GetKnownOption(value.DTO)
+                ?? Products.FirstOrDefault(product => product.ProductID == value.DTO.ProductID
+                    && product.ServiceID == value.DTO.ServiceID);
         }
     }
     public string CurrentUsername => _authenticatedUserContext.User?.DisplayName
@@ -430,7 +440,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             ? userId == _authenticatedUserContext.User?.UserID ? CurrentUsername : $"Conta #{userId}"
             : "Não registrado (orçamento legado)";
     public int NotesLimit => QuoteNotesRules.MaximumBytes;
-    public string NotesCounter => $"{Notes.EnumerateRunes().Count()} caracteres";
+    public string NotesCounter => $"{Notes.EnumerateRunes().Count()}/{NotesLimit} caracteres";
     public string Notes
     {
         get => _notes;
@@ -532,9 +542,13 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             case (LookupSearchContext.Partner, PartnerDTO partner):
                 SelectedPartner = new QuotePartnerOption(partner.PartnerID, partner.Name ?? "(sem nome)");
                 break;
-            case (LookupSearchContext.Product, ProductDTO product):
+            case (LookupSearchContext.Product, ProductDTO product) when product.ProductType == (int)ProductType.Good:
                 SelectedProduct = ToProductOption(product);
                 _knownProducts[product.ProductID] = SelectedProduct;
+                break;
+            case (LookupSearchContext.Service, ServiceDTO service):
+                SelectedProduct = ToServiceOption(service);
+                _knownServices[service.ServiceID] = SelectedProduct;
                 break;
         }
     }
@@ -634,27 +648,43 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         var generation = _catalogGeneration;
         var text = ProductSearchText.Trim();
         var tab = CatalogTabIndex;
+        var pageSize = CatalogPagination.SelectedPageSize;
         if (!IsEditing || string.IsNullOrWhiteSpace(text))
         {
             ResetCatalogResults();
             return;
         }
         if (page < 1) return;
-        var query = $"{text} tipo:{(tab == 1 ? "servico" : "produto")}";
+        var query = tab == 0 ? $"{text} tipo:produto" : text;
+        async Task<QuoteProductOption[]> SearchPageAsync(int requestedPage)
+        {
+            if (tab == 0)
+                return (await _productService.SearchProductsAsync(query, requestedPage, pageSize, token))
+                    .Select(ToProductOption).ToArray();
+            var catalog = _serviceCatalogService ?? throw new InvalidOperationException("O catálogo de serviços não está disponível.");
+            return (await catalog.SearchServicesAsync(query, requestedPage, pageSize, token))
+                .Select(ToServiceOption).ToArray();
+        }
         bool IsCurrent() => !token.IsCancellationRequested && generation == _catalogGeneration
-            && IsEditing && ProductSearchText.Trim() == text && CatalogTabIndex == tab;
+            && IsEditing && ProductSearchText.Trim() == text && CatalogTabIndex == tab
+            && CatalogPagination.SelectedPageSize == pageSize;
         IsCatalogBusy = true;
         ErrorMessage = string.Empty;
         try
         {
-            var results = (await _productService.SearchProductsAsync(query, page, 25, token)).ToArray();
+            var results = await SearchPageAsync(page);
             if (!IsCurrent()) return;
-            var next = results.Length == 25
-                ? (await _productService.SearchProductsAsync(query, page + 1, 25, token)).Any()
+            var next = results.Length == pageSize
+                ? (await SearchPageAsync(page + 1)).Any()
                 : false;
             if (!IsCurrent()) return;
-            Replace(Products, results.Where(product => product.IsActive).Select(ToProductOption));
-            foreach (var product in Products) _knownProducts[product.ProductID] = product;
+            Replace(Products, results.Where(option => option.Service?.IsActive
+                ?? (option.DTO is { IsActive: true, ProductType: (int)ProductType.Good })));
+            foreach (var option in Products)
+            {
+                if (option.ServiceID is int serviceId) _knownServices[serviceId] = option;
+                else if (option.ProductID is int productId) _knownProducts[productId] = option;
+            }
             Replace(CatalogProducts, tab == 0 ? Products : []);
             Replace(CatalogServices, tab == 1 ? Products : []);
             _catalogPage = page;
@@ -662,17 +692,23 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             NotifyCatalogPage();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception) { if (IsCurrent()) ErrorMessage = "Não foi possível pesquisar produtos."; }
+        catch (Exception) { if (IsCurrent()) ErrorMessage = tab == 1 ? "Não foi possível pesquisar serviços." : "Não foi possível pesquisar produtos."; }
         finally { if (generation == _catalogGeneration) IsCatalogBusy = false; }
     }
 
     private QuoteProductOption ToProductOption(ProductDTO product)
     {
-        var kind = product.ProductType == (int)ProductType.Service ? "Serviço" : "Produto";
         var reference = product.Barcode ?? product.ProductID.ToString(CultureInfo.InvariantCulture);
         var unit = product.StockUnitID is int unitId ? _units.GetValueOrDefault(unitId)?.Code ?? string.Empty : string.Empty;
-        return new QuoteProductOption(product, $"{product.Description ?? "Sem descrição"} · {kind} · {reference}", unit);
+        return new QuoteProductOption(product, $"{product.Description ?? "Sem descrição"} · Produto · {reference}", unit);
     }
+
+    private static QuoteProductOption ToServiceOption(ServiceDTO service) =>
+        new(service, $"{service.Description ?? "Sem descrição"} · Serviço · {service.ServiceID}");
+
+    private QuoteProductOption? GetKnownOption(QuoteItemDTO item) => item.ServiceID is int serviceId
+        ? _knownServices.GetValueOrDefault(serviceId)
+        : item.ProductID is int productId ? _knownProducts.GetValueOrDefault(productId) : null;
 
     private async Task CreateSectionAsync()
     {
@@ -717,7 +753,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     private async Task SaveLineAsync()
     {
         if (SelectedSection is null || SelectedProduct is null) return;
-        if (SelectedProduct.DTO.StockUnitID is not null && SelectedQuantityUnit is null)
+        if (SelectedProduct.DTO?.StockUnitID is not null && SelectedQuantityUnit is null)
         {
             ErrorMessage = "A unidade de medida do produto não foi encontrada.";
             return;
@@ -739,7 +775,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         {
             await _quoteService.SaveQuoteItemAsync(CurrentQuoteId,
                 new QuoteItemDTO(SelectedLine?.DTO.QuoteItemID ?? 0, SelectedSection.DTO.QuoteSectionID,
-                    SelectedProduct.DTO.ProductID, quantity, unitPrice, HasInstallationService));
+                    SelectedProduct.ProductID, quantity, unitPrice, HasInstallationService, ServiceID: SelectedProduct.ServiceID));
             var sectionId = SelectedSection.DTO.QuoteSectionID;
             await ReloadQuoteAsync(sectionId);
             SelectedLine = null;
@@ -766,12 +802,19 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     private async Task LoadKnownProductsAsync(QuoteDTO quote)
     {
         foreach (var productId in (quote.Sections ?? []).SelectMany(section => section.Items ?? [])
-                     .Select(item => item.ProductID).Distinct().Where(productId => !_knownProducts.ContainsKey(productId)))
+                     .Select(item => item.ProductID).OfType<int>().Distinct().Where(productId => !_knownProducts.ContainsKey(productId)))
         {
             var product = await _productService.GetProductByIdAsync(productId);
             if (product is not null)
                 _knownProducts[product.ProductID] = ToProductOption(product);
         }
+            foreach (var serviceId in (quote.Sections ?? []).SelectMany(section => section.Items ?? [])
+                     .Select(item => item.ServiceID).OfType<int>().Distinct().Where(serviceId => !_knownServices.ContainsKey(serviceId)))
+            {
+                var catalog = _serviceCatalogService ?? throw new InvalidOperationException("O catálogo de serviços não está disponível.");
+                var service = await catalog.GetServiceByIdAsync(serviceId);
+                if (service is not null) _knownServices[service.ServiceID] = ToServiceOption(service);
+            }
     }
 
     private void LoadSections(QuoteDTO quote, int? sectionId = null)
@@ -786,11 +829,11 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
             Sections.Add(new QuoteSectionOption(section, sectionLabel));
             foreach (var item in section.Items ?? [])
             {
-                var productName = _knownProducts.GetValueOrDefault(item.ProductID)?.DTO.Description
-                    ?? $"Item #{item.ProductID}";
+                var productName = GetKnownOption(item)?.Description
+                    ?? $"{(item.ServiceID is not null ? "Serviço" : "Produto")} #{item.ServiceID ?? item.ProductID}";
                 var unitPrice = item.UnitPrice ?? 0m;
                 ReviewLines.Add(new QuoteReviewLine(sectionLabel, productName, item.Quantity, unitPrice, item.Quantity * unitPrice));
-                var category = _knownProducts.GetValueOrDefault(item.ProductID)?.Category ?? "";
+                var category = item.ServiceID is not null ? "Serviço" : "Produto";
                 AllLines.Add(new QuoteLineOption(item, productName, item.Quantity * unitPrice, AllLines.Count + 1, category));
             }
         }
@@ -817,9 +860,10 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         HasInstallationService = false;
         foreach (var item in SelectedSection?.DTO.Items ?? [])
         {
-            var productName = _knownProducts.GetValueOrDefault(item.ProductID)?.DTO.Description
-                ?? $"Produto #{item.ProductID}";
-            SectionItems.Add(new QuoteLineOption(item, productName, item.Quantity * (item.UnitPrice ?? 0m)));
+            var category = item.ServiceID is not null ? "Serviço" : "Produto";
+            var productName = GetKnownOption(item)?.Description ?? $"{category} #{item.ServiceID ?? item.ProductID}";
+            SectionItems.Add(new QuoteLineOption(item, productName, item.Quantity * (item.UnitPrice ?? 0m),
+                SectionItems.Count + 1, category));
         }
         OnPropertyChanged(nameof(SectionTotal));
     }
@@ -1075,6 +1119,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     private void RefreshCommands()
     {
+        CatalogPagination.Refresh();
         foreach (var command in new[] { SearchCommand, ClearSearchCommand, NewCommand, EditCommand, DeleteCommand,
                  SaveCommand, CancelCommand, ConfirmDeleteCommand, CreateSectionCommand, SaveLineCommand,
                  RequestQuotationCommand, SendSectionCommand, ApproveSectionCommand, RejectSectionCommand,
@@ -1088,6 +1133,65 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         OnPropertyChanged(nameof(CanRequestQuotation)); OnPropertyChanged(nameof(CanSendSection));
         OnPropertyChanged(nameof(CanApproveSection)); OnPropertyChanged(nameof(CanRejectSection));
         OnPropertyChanged(nameof(ItemCount));
+    }
+
+    public sealed class CatalogPaginationState : IStatusBarSource
+    {
+        private readonly QuotesViewModel _owner;
+        private int _pageSize = 25;
+
+        internal CatalogPaginationState(QuotesViewModel owner)
+        {
+            _owner = owner;
+            FirstPageCommand = new RelayCommand(async () => await owner.SearchCatalogPageAsync(1), () => HasFirstPage);
+            PreviousPageCommand = new RelayCommand(async () => await owner.SearchCatalogPageAsync(owner._catalogPage - 1), () => HasPreviousPage);
+            NextPageCommand = new RelayCommand(async () => await owner.SearchCatalogPageAsync(owner._catalogPage + 1), () => HasNextPage);
+            LastPageCommand = new RelayCommand(() => { }, () => false);
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private bool CanNavigate => _owner.IsEditing && !_owner.IsBusy && !_owner.IsCatalogBusy;
+        public string StatusMessage => string.Empty;
+        public string? StatusPrimary => PaginationStatus;
+        public string? StatusSecondary => null;
+        public bool HasStatusPrimary => HasPagination;
+        public bool HasStatusSecondary => false;
+        public bool HasPagination => _owner.IsEditing;
+        public string? PaginationStatus => HasPagination ? _owner.CatalogPageDisplay : null;
+        public string? PaginationPageStatus => PaginationStatus;
+        public bool HasPreviousPage => CanNavigate && _owner.HasCatalogPrevious;
+        public bool HasNextPage => CanNavigate && _owner.HasCatalogNext;
+        public bool HasFirstPage => HasPreviousPage;
+        public bool HasLastPage => false;
+        public ICommand FirstPageCommand { get; }
+        public ICommand PreviousPageCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand LastPageCommand { get; }
+        public IReadOnlyList<int> PageSizeOptions { get; } = new[] { 10, 25, 50, 100 };
+        public int SelectedPageSize
+        {
+            get => _pageSize;
+            set
+            {
+                if (_owner.IsBusy || !PageSizeOptions.Contains(value) || value == _pageSize) return;
+                _pageSize = value;
+                _owner._catalogPage = 1;
+                _owner._hasCatalogNext = false;
+                _owner.NotifyCatalogPage();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPageSize)));
+                _ = _owner.SearchProductsAsync();
+            }
+        }
+
+        internal void Refresh()
+        {
+            foreach (var name in new[] { nameof(HasPagination), nameof(PaginationStatus), nameof(PaginationPageStatus),
+                         nameof(StatusPrimary), nameof(HasStatusPrimary), nameof(HasPreviousPage), nameof(HasNextPage),
+                         nameof(HasFirstPage), nameof(HasLastPage) })
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            foreach (var command in new[] { FirstPageCommand, PreviousPageCommand, NextPageCommand, LastPageCommand })
+                ((RelayCommand)command).RaiseCanExecuteChanged();
+        }
     }
 
     private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> source)

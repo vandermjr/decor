@@ -1,3 +1,4 @@
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 
 namespace Decor.Core.Validation;
@@ -7,6 +8,9 @@ public class OrderDTOValidator : IDTOValidator<OrderDTO>
     public IEnumerable<string> Validate(OrderDTO dto)
     {
         var errors = new List<string>();
+
+        if (dto.Items?.Any(item => !CommercialItemReference.IsValid(item.ProductID, item.ServiceID)) == true)
+            errors.Add(CommercialItemReference.ValidationMessage);
 
         if (dto.CustomerID <= 0)
             errors.Add("O cliente do pedido é obrigatório.");

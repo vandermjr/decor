@@ -1,14 +1,61 @@
 <UserControl
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:icons="using:Decor.AvaloniaUI.Icons"
     x:Class="Decor.AvaloniaUI.Controls.DecorDataGridControl"
+    x:CompileBindings="False"
     x:Name="Root">
+    <UserControl.Resources>
+        <ControlTheme x:Key="GridScrollBarTheme" TargetType="ScrollBar">
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5">
+                        <Track Name="PART_Track"
+                               Orientation="{TemplateBinding Orientation}"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               ViewportSize="{TemplateBinding ViewportSize}">
+                            <Track.DecreaseButton>
+                                <RepeatButton Name="PART_PageUpButton" Focusable="False">
+                                    <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseButton>
+                            <Track.Thumb>
+                                <Thumb Name="PART_Thumb" MinWidth="8" MinHeight="8">
+                                    <Thumb.Template><ControlTemplate><Border Background="{DynamicResource DecorScrollThumbBrush}" CornerRadius="5" Margin="1"/></ControlTemplate></Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseButton>
+                                <RepeatButton Name="PART_PageDownButton" Focusable="False">
+                                    <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseButton>
+                        </Track>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:vertical /template/ Track#PART_Track"><Setter Property="IsDirectionReversed" Value="True"/></Style>
+        </ControlTheme>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="PathIcon.previous-page">
+            <Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Navigation.PreviousPage}"/>
+        </Style>
+        <Style Selector="PathIcon.next-page">
+            <Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Navigation.NextPage}"/>
+        </Style>
+        <Style Selector="DataGrid /template/ ScrollBar">
+            <Setter Property="Theme" Value="{StaticResource GridScrollBarTheme}"/>
+        </Style>
+    </UserControl.Styles>
     
-    <Grid ColumnDefinitions="*" RowDefinitions="*"> 
+    <Grid ColumnDefinitions="*" RowDefinitions="*,Auto">
         <!-- Main DataGrid -->
         <DataGrid x:Name="InnerDataGrid"
                   ItemsSource="{Binding ItemsSource, ElementName=Root}"
-                  SelectedItem="{Binding SelectedItem, ElementName=Root, Mode=TwoWay}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserResizeColumns="True"
@@ -23,7 +70,7 @@
 
         <!-- Empty Grid Overlay -->
         <Panel x:Name="EmptyOverlay"
-             Background="{DynamicResource ThemeControlLowBrush}"
+             Background="{DynamicResource DecorSurfaceRaisedBrush}"
                IsVisible="False"
                VerticalAlignment="Stretch"
                HorizontalAlignment="Stretch">
@@ -37,6 +84,30 @@
                        HorizontalAlignment="Center"
                        TextAlignment="Center"/>
         </Panel>
+        <Border x:Name="PaginationFooter" Grid.Row="1" Background="{DynamicResource DecorSurfaceBrush}"
+                BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" IsVisible="False">
+            <Grid x:Name="PaginationLayout" ColumnDefinitions="*,*" RowDefinitions="Auto" Margin="4,3">
+                <StackPanel x:Name="PaginationControls" Orientation="Horizontal" Spacing="4" Height="26"
+                            IsVisible="{Binding EffectivePaginationSource.HasPagination, ElementName=Root, FallbackValue=False}"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Registros por página:" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                    <ComboBox Classes="grid-page-size" Width="56" MinWidth="56" Height="24" MinHeight="24" Padding="4,0"
+                              ItemsSource="{Binding EffectivePaginationSource.PageSizeOptions, ElementName=Root}"
+                              SelectedItem="{Binding EffectivePaginationSource.SelectedPageSize, ElementName=Root, Mode=TwoWay}"
+                              ToolTip.Tip="Registros por página" AutomationProperties.Name="Registros por página"/>
+                    <Button Classes="grid-page-button" Command="{Binding EffectivePaginationSource.PreviousPageCommand, ElementName=Root}"
+                            ToolTip.Tip="Página anterior" AutomationProperties.Name="Página anterior">
+                        <PathIcon Classes="previous-page" Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"/>
+                    </Button>
+                    <TextBlock Text="{Binding EffectivePaginationSource.PaginationPageStatus, ElementName=Root}" MinWidth="92"
+                               Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center" TextAlignment="Center"/>
+                    <Button Classes="grid-page-button" Command="{Binding EffectivePaginationSource.NextPageCommand, ElementName=Root}"
+                            ToolTip.Tip="Próxima página" AutomationProperties.Name="Próxima página">
+                        <PathIcon Classes="next-page" Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
     
 </UserControl>

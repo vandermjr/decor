@@ -1,4 +1,5 @@
 using Dapper;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
@@ -279,6 +280,8 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
 
     public async Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default)
     {
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new System.ComponentModel.DataAnnotations.ValidationException(CommercialItemReference.ValidationMessage);
         using var connection = _dbConnection.CreateConnection();
         if (item.QuoteItemID != 0)
         {

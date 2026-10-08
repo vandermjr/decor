@@ -2,6 +2,10 @@ namespace Decor.Core.Common;
 
 public static class DecorPermissions
 {
+    public const string ServicesView = "Services.View";
+    public const string ServicesCreate = "Services.Create";
+    public const string ServicesEdit = "Services.Edit";
+    public const string ServicesDelete = "Services.Delete";
     public const string ProductsView = "Products.View";
     public const string ProductsCreate = "Products.Create";
     public const string ProductsEdit = "Products.Edit";

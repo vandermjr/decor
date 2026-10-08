@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Decor.Core.Common;
 using Decor.FluentSqlBuilder.Dialects;
 using Decor.FluentSqlBuilder.Helpers;
 
@@ -167,7 +168,7 @@ namespace Decor.FluentSqlBuilder.Clauses
 
         /// <summary>
         /// Aplica um filtro de busca dinâmico (por ID ou por texto) baseado no termo fornecido.
-        /// Se o termo for um inteiro, busca por ID; caso contrário, busca por texto.
+        /// Se o termo for um inteiro, busca por ID; caso contrario, exige todos os tokens de texto.
         /// Não adiciona condição WHERE se o termo for nulo ou vazio/espaços em branco.
         /// </summary>
         /// <typeparam name="TIdEntity">O tipo da entidade para a propriedade ID.</typeparam>
@@ -179,59 +180,43 @@ namespace Decor.FluentSqlBuilder.Clauses
         public WhereConditionChainBuilder WithDynamicSearchFilter<TIdEntity, TStringEntity>(
             string? arg,
             Expression<Func<TIdEntity, object?>> idPropertySelector,
-            Expression<Func<TStringEntity, object?>> stringPropertySelector)
+            Expression<Func<TStringEntity, object?>> stringPropertySelector,
+            params Expression<Func<TStringEntity, object?>>[] additionalTextSelectors)
             where TIdEntity : class
             where TStringEntity : class
         {
-            string columnForOrderBy = "";
-            bool isIdSearch = false;
-            WhereConditionChainBuilder resultChainBuilder;
-
-            if (!string.IsNullOrWhiteSpace(arg))
+            var search = IntelligentSearchQuery.Parse(arg);
+            var isIdSearch = search.TryGetIntegerId(out var id);
+            if (isIdSearch)
             {
-                if (int.TryParse(arg, out int id))
-                {
-                    // Lógica para Equals (busca por ID)
-                    string alias = _aliasRegistry.GetOrAddAlias(typeof(TIdEntity));
-                    var propInfo = ExpressionHelper.GetPropertyInfo(idPropertySelector);
-                    string propertyName = propInfo.Name;
-                    string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
-
-                    string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
-                    AddPredicate($"{alias}.{columnName} {_dialect.Keywords.EQUALS} {_dialect.GetParameterPrefix()}{paramName}");
-                    _parameters[paramName] = id;
-                    columnForOrderBy = $"{alias}.{columnName}";
-                    isIdSearch = true;
-                }
-                else
-                {
-                    // Lógica para Contains (busca por texto)
-                    string alias = _aliasRegistry.GetOrAddAlias(typeof(TStringEntity));
-                    var propInfo = ExpressionHelper.GetPropertyInfo(stringPropertySelector);
-                    string propertyName = propInfo.Name;
-                    string columnName = ExpressionHelper.GetColumnName(propInfo, _aliasRegistry);
-
-                    string paramName = ParameterHelper.GenerateUniqueParameterName(propertyName, _parameters);
-                    string likePattern = _dialect.Functions.Concat(
-                        $"'{_dialect.Keywords.ANY_STRING_WILDCARD}'",
-                        $"{_dialect.GetParameterPrefix()}{paramName}",
-                        $"'{_dialect.Keywords.ANY_STRING_WILDCARD}'"
-                    );
-                    AddPredicate($"{alias}.{columnName} {_dialect.Keywords.LIKE} {likePattern}");
-                    _parameters[paramName] = arg;
-                    columnForOrderBy = $"{alias}.{columnName}";
-                    isIdSearch = false;
-                }
+                Equals(idPropertySelector, id);
             }
-            // Se arg for nulo/vazio, nenhuma condição WHERE é adicionada.
-            // columnForOrderBy permanece vazio, isIdSearch permanece false.
-
-            resultChainBuilder = new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TIdEntity), idPropertySelector, _dialect)
+            else if (search.Tokens.Count == 1 && additionalTextSelectors.Length == 0)
+            {
+                Contains(stringPropertySelector, search.Tokens[0]);
+            }
+            else if (search.Tokens.Count > 0)
+            {
+                Group(allTokens =>
+                {
+                    foreach (var token in search.Tokens)
+                    {
+                        if (additionalTextSelectors.Length == 0)
+                            allTokens.Contains(stringPropertySelector, token);
+                        else
+                            allTokens.Group(columns =>
+                            {
+                                columns.Contains(stringPropertySelector, token);
+                                foreach (var selector in additionalTextSelectors)
+                                    columns.Or().Contains(selector, token);
+                            });
+                    }
+                });
+            }
+            return new WhereConditionChainBuilder(this, _onSetOrderDefinition, typeof(TIdEntity), idPropertySelector, _dialect)
             {
                 IsIdSearch = isIdSearch
             };
-
-            return resultChainBuilder;
         }
 
         public WhereConditionChainBuilder FullText<TEntity>(

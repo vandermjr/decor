@@ -17,7 +17,9 @@ public class QuoteService(
     IProductSpecificationAttributeRepository productSpecificationAttributeRepository,
     IProductRepository productRepository,
     ITailorQuotationRepository? tailorQuotationRepository = null,
-    IUnitOfMeasureRepository? unitOfMeasureRepository = null) : IQuoteService
+    IUnitOfMeasureRepository? unitOfMeasureRepository = null,
+    IServiceRepository? serviceRepository = null,
+    IServiceCatalogService? serviceCatalogService = null) : IQuoteService
 {
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
     private readonly IDTOValidator<QuoteDTO> _dtoValidator = dtoValidator;
@@ -168,12 +170,27 @@ public class QuoteService(
         if (quoteItemDto.QuoteItemID != 0 && !section.Items.Any(item => item.QuoteItemID == quoteItemDto.QuoteItemID))
             throw new ValidationException("O item informado não pertence à seção selecionada.");
 
-        var product = await GetProductByIdAsync(quoteItemDto.ProductID, cancellationToken);
-        if (!product.IsActive)
+        if (!CommercialItemReference.IsValid(quoteItemDto.ProductID, quoteItemDto.ServiceID))
+            throw new ValidationException(CommercialItemReference.ValidationMessage);
+
+        Product? product = null;
+        if (quoteItemDto.ServiceID is int serviceId)
+        {
+            if (serviceRepository is null || !serviceRepository.ServiceExists(serviceId))
+                throw new ValidationException("O servico informado nao existe.");
+            var service = await (serviceCatalogService ?? throw new InvalidOperationException("O catalogo de servicos e necessario."))
+                .GetServiceByIdAsync(serviceId, cancellationToken);
+            if (!service.IsActive)
+                throw new ValidationException("Nao e possivel incluir um servico inativo no orcamento.");
+        }
+        else
+            product = await GetProductByIdAsync(quoteItemDto.ProductID!.Value, cancellationToken);
+
+        if (product is { IsActive: false })
             throw new ValidationException("Não é possível incluir um produto inativo no orçamento.");
 
         UnitOfMeasure? unit = null;
-        if (product.StockUnitID is int unitId)
+        if (product?.StockUnitID is int unitId)
         {
             unit = _unitOfMeasureRepository is not null
                 ? await _unitOfMeasureRepository.GetByIdAsync(unitId, cancellationToken)
@@ -264,7 +281,9 @@ public class QuoteService(
         var item = quote.Sections.SelectMany(s => s.Items).FirstOrDefault(i => i.QuoteItemID == quoteItemId)
             ?? throw new KeyNotFoundException($"Item com ID {quoteItemId} não encontrado.");
 
-        var product = await GetProductByIdAsync(item.ProductID, cancellationToken);
+        if (item.ServiceID.HasValue || item.ProductID is not > 0)
+            throw new ValidationException("Especificacoes de produto nao se aplicam a itens de servico.");
+        var product = await GetProductByIdAsync(item.ProductID.Value, cancellationToken);
         var attribute = await _productSpecificationAttributeRepository.SearchGetByAsync(valueDto.AttributeID.ToString(), 1, 1, cancellationToken) is var attrs && attrs.Any() ? attrs.First() : null;
         if (attribute == null) throw new KeyNotFoundException("Atributo de especificação não encontrado.");
 

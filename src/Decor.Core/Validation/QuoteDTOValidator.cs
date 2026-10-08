@@ -25,6 +25,8 @@ public class QuoteDTOValidator : IDTOValidator<QuoteDTO>
             errors.Add($"As observações do orçamento não podem exceder {QuoteNotesRules.MaximumBytes} bytes em UTF-8.");
 
         var items = dto.Sections?.SelectMany(section => section.Items ?? []).ToArray();
+        if (items?.Any(item => !CommercialItemReference.IsValid(item.ProductID, item.ServiceID)) == true)
+            errors.Add(CommercialItemReference.ValidationMessage);
         if (items is { Length: > 0 } && dto.DiscountAmount > items.Sum(item => item.Quantity * (item.UnitPrice ?? 0m)))
             errors.Add("O desconto do orçamento não pode exceder o subtotal dos itens.");
 

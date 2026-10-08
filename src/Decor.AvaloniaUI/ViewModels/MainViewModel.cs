@@ -31,6 +31,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _authenticatedUserContext = authenticatedUserContext;
 
         ShowProductsCommand = new RelayCommand(() => OpenSingletonDocument("products", "Produtos", () => CreateView<ProductsView>()));
+        ShowServicesCommand = new RelayCommand(() =>
+        {
+            if (authorizationService.HasPermission(DecorPermissions.ServicesView))
+                OpenSingletonDocument("services", "Servi\u00e7os", () => CreateView<ServicesView>());
+        }, () => authorizationService.HasPermission(DecorPermissions.ServicesView));
         ShowBrandsCommand = new RelayCommand(() => OpenSingletonDocument("brands", "Marcas", () => CreateView<BrandsView>()));
         ShowCustomersCommand = new RelayCommand(() => OpenSingletonDocument("customers", "Clientes", () => CreateView<CustomersView>()), () => authorizationService.HasPermission(DecorPermissions.CustomersView));
         ShowSuppliersCommand = new RelayCommand(() => OpenSingletonDocument("suppliers", "Fornecedores", () => CreateView<SuppliersView>()), () => authorizationService.HasPermission(DecorPermissions.SuppliersView));
@@ -114,6 +119,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public ICommand ShowProductsCommand { get; }
+    public ICommand ShowServicesCommand { get; }
     public ICommand ShowBrandsCommand { get; }
     public ICommand ShowCustomersCommand { get; }
     public ICommand ShowSuppliersCommand { get; }
@@ -141,6 +147,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         : _themeToolTip;
     public string UserInitials { get; }
     public bool CanViewUsers => ((RelayCommand)ShowUsersCommand).CanExecute(null);
+    public bool CanViewServices => ShowServicesCommand.CanExecute(null);
     public bool CanViewEmployees => ((RelayCommand)ShowEmployeesCommand).CanExecute(null);
     public bool CanViewCustomers => ((RelayCommand)ShowCustomersCommand).CanExecute(null);
     public bool CanViewSuppliers => ((RelayCommand)ShowSuppliersCommand).CanExecute(null);

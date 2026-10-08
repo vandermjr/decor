@@ -149,6 +149,13 @@ public static class DecorFunctionalPermissionCatalog
                 DecorPermissions.OccurrenceReasonsEdit,
                 DecorPermissions.OccurrenceReasonsDelete
             }),
+            new DecorFunctionalPermissionContext("Serviços", "Serviços", new[]
+            {
+                DecorPermissions.ServicesView,
+                DecorPermissions.ServicesCreate,
+                DecorPermissions.ServicesEdit,
+                DecorPermissions.ServicesDelete
+            }),
             new DecorFunctionalPermissionContext("Serviços", "Agenda", new[]
             {
                 DecorPermissions.InstallationAppointmentsView,

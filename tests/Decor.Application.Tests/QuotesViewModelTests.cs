@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.Application.CrossCutting.IoC;
+using Decor.Application.Services;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Decor.Application.Tests;
 
@@ -163,7 +166,7 @@ public sealed class QuotesViewModelTests
 
         await SearchAsync(fixture.ViewModel, "Service");
         Assert.Empty(fixture.ViewModel.CatalogProducts);
-        Assert.Equal(8, Assert.Single(fixture.ViewModel.CatalogServices).ProductID);
+        Assert.Equal(8, Assert.Single(fixture.ViewModel.CatalogServices).ServiceID);
         fixture.ViewModel.SelectedLine = Assert.Single(fixture.ViewModel.AllLines);
 
         Assert.Equal(7, fixture.ViewModel.SelectedProduct?.ProductID);
@@ -246,21 +249,120 @@ public sealed class QuotesViewModelTests
         Assert.Equal(25, fixture.ViewModel.CatalogProducts.Count);
     }
 
+    [Theory]
+    [InlineData(10)]
+    [InlineData(25)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task CatalogPaginationAdapter_NavigatesServerPagesAndReloadsSizeAtPageOne(int pageSize)
+    {
+        var fixture = new Fixture();
+        var products = Enumerable.Range(1, 201).Select(id => Product(id, ProductType.Good)).ToArray();
+        fixture.Products.Setup(service => service.SearchProductsAsync("paged tipo:produto", It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string query, int page, int size, CancellationToken token) => products.Skip((page - 1) * size).Take(size));
+        await fixture.ViewModel.BeginNewAsync();
+        IStatusBarSource pagination = fixture.ViewModel.CatalogPagination;
+        Assert.Equal(25, pagination.SelectedPageSize);
+        Assert.Equal(new[] { 10, 25, 50, 100 }, pagination.PageSizeOptions);
+        Assert.NotSame(fixture.ViewModel.Listing, pagination);
+        await SearchAsync(fixture.ViewModel, "paged");
+        Assert.True(pagination.HasPagination);
+        Assert.Equal("Página 1", pagination.PaginationStatus);
+        Assert.Equal("Página 1", pagination.PaginationPageStatus);
+        Assert.False(pagination.FirstPageCommand!.CanExecute(null));
+        Assert.False(pagination.PreviousPageCommand!.CanExecute(null));
+        Assert.False(pagination.HasLastPage);
+        Assert.False(pagination.LastPageCommand!.CanExecute(null));
+        pagination.NextPageCommand!.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        pagination.SelectedPageSize = pageSize;
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogProducts.Count == pageSize && !fixture.ViewModel.IsCatalogBusy);
+        if (pageSize == 25)
+        {
+            Assert.Equal("Página 2", pagination.PaginationPageStatus);
+            pagination.FirstPageCommand.Execute(null);
+            await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 1" && !fixture.ViewModel.IsCatalogBusy);
+        }
+        Assert.Equal("Página 1", pagination.PaginationPageStatus);
+        Assert.Equal(1, fixture.ViewModel.CatalogProducts[0].ProductID);
+        fixture.Products.Verify(service => service.SearchProductsAsync("paged tipo:produto", 2, pageSize, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        pagination.NextPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        Assert.True(pagination.FirstPageCommand.CanExecute(null));
+        pagination.PreviousPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 1" && !fixture.ViewModel.IsCatalogBusy);
+        pagination.NextPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        pagination.NextPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 3" && !fixture.ViewModel.IsCatalogBusy);
+        pagination.FirstPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 1" && !fixture.ViewModel.IsCatalogBusy);
+        Assert.Equal(1, fixture.ViewModel.CatalogProducts[0].ProductID);
+        pagination.SelectedPageSize = 11;
+        Assert.Equal(pageSize, pagination.SelectedPageSize);
+        Assert.Equal(10, fixture.ViewModel.SelectedPageSize);
+        await fixture.ViewModel.ReturnToListAsync();
+        Assert.False(pagination.HasPagination);
+        Assert.False(pagination.NextPageCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task CatalogPaginationAdapter_SizeChangeCancelsPendingPageAndNotifiesFooter()
+    {
+        var fixture = new Fixture();
+        var pending = new TaskCompletionSource<IEnumerable<ProductDTO>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken requestToken = default;
+        var products = Enumerable.Range(1, 51).Select(id => Product(id, ProductType.Good)).ToArray();
+        fixture.Products.Setup(service => service.SearchProductsAsync("paged tipo:produto", It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string query, int page, int size, CancellationToken token) => products.Skip((page - 1) * size).Take(size));
+        await fixture.ViewModel.BeginNewAsync();
+        await SearchAsync(fixture.ViewModel, "paged");
+        fixture.Products.Setup(service => service.SearchProductsAsync("paged tipo:produto", 2, 25, It.IsAny<CancellationToken>()))
+            .Returns((string query, int page, int size, CancellationToken token) => { requestToken = token; return pending.Task; });
+        IStatusBarSource pagination = fixture.ViewModel.CatalogPagination;
+        var notifications = new List<string?>();
+        pagination.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+        pagination.NextPageCommand!.Execute(null);
+        Assert.True(fixture.ViewModel.IsCatalogBusy);
+        Assert.False(pagination.NextPageCommand.CanExecute(null));
+        Assert.False(pagination.PreviousPageCommand!.CanExecute(null));
+        Assert.False(pagination.FirstPageCommand!.CanExecute(null));
+        pagination.SelectedPageSize = 50;
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogProducts.Count == 50 && !fixture.ViewModel.IsCatalogBusy);
+        Assert.True(requestToken.IsCancellationRequested);
+        pending.SetException(new InvalidOperationException("Stale page failure"));
+        Assert.Equal("Página 1", pagination.PaginationPageStatus);
+        Assert.Equal(1, fixture.ViewModel.CatalogProducts[0].ProductID);
+        Assert.True(pagination.NextPageCommand.CanExecute(null));
+        Assert.Contains(nameof(IStatusBarSource.SelectedPageSize), notifications);
+        Assert.Contains(nameof(IStatusBarSource.PaginationPageStatus), notifications);
+        Assert.Contains(nameof(IStatusBarSource.HasNextPage), notifications);
+        fixture.Products.Verify(service => service.SearchProductsAsync("paged tipo:produto", 1, 50, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Products.Verify(service => service.SearchProductsAsync("paged tipo:produto", 2, 50, It.IsAny<CancellationToken>()), Times.Once);
+        pagination.NextPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        Assert.Equal(51, Assert.Single(fixture.ViewModel.CatalogProducts).ProductID);
+        Assert.False(pagination.HasNextPage);
+        Assert.False(pagination.NextPageCommand.CanExecute(null));
+        Assert.False(fixture.ViewModel.HasError);
+    }
+
     [Fact]
     public async Task CatalogTabIndex_SearchesOnlySelectedKindAndClearsOtherResults()
     {
         var fixture = new Fixture();
         await fixture.ViewModel.BeginNewAsync();
         await SearchAsync(fixture.ViewModel, "Product");
-        fixture.Products.Setup(service => service.SearchProductsAsync("Product tipo:servico", 1, 25, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { Product(8, ProductType.Service) });
+        fixture.Services.Setup(service => service.SearchServicesAsync("Product", 1, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Service(8) });
 
         fixture.ViewModel.CatalogTabIndex = 1;
 
         await WaitUntilAsync(() => fixture.ViewModel.CatalogServices.Count == 1 && !fixture.ViewModel.IsCatalogBusy);
         Assert.Empty(fixture.ViewModel.CatalogProducts);
         Assert.Equal("Serviço", Assert.Single(fixture.ViewModel.CatalogServices).Category);
-        fixture.Products.Verify(service => service.SearchProductsAsync("Product tipo:servico", 1, 25, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Services.Verify(service => service.SearchServicesAsync("Product", 1, 25, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Products.Verify(service => service.SearchProductsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -372,16 +474,16 @@ public sealed class QuotesViewModelTests
             && quote.CreatedByUserID == null && quote.Notes!.Length == 65535), It.IsAny<CancellationToken>()), Times.Once);
         fixture.Quotes.Verify(service => service.SearchQuotesAsync(string.Empty, 1, 500, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(65535, fixture.ViewModel.NotesLimit);
-        Assert.Equal("65535 caracteres", fixture.ViewModel.NotesCounter);
+        Assert.Equal("65535/65535 caracteres", fixture.ViewModel.NotesCounter);
         Assert.False(fixture.ViewModel.IsPartnerOrigin);
         Assert.True(fixture.ViewModel.IsEditing);
     }
 
     [Theory]
-    [InlineData("\u00e9", 65533, "65534 caracteres", true)]
-    [InlineData("\u20ac", 65533, "65533 caracteres", false)]
-    [InlineData("\U0001f600", 65531, "65532 caracteres", true)]
-    [InlineData("\U0001f600", 65532, "65532 caracteres", false)]
+    [InlineData("\u00e9", 65533, "65534/65535 caracteres", true)]
+    [InlineData("\u20ac", 65533, "65533/65535 caracteres", false)]
+    [InlineData("\U0001f600", 65531, "65532/65535 caracteres", true)]
+    [InlineData("\U0001f600", 65532, "65532/65535 caracteres", false)]
     public void NotesRules_TruncatesSafelyAndCountsCharacters(string suffix, int prefixLength, string counter, bool includesSuffix)
     {
         var fixture = new Fixture();
@@ -396,7 +498,7 @@ public sealed class QuotesViewModelTests
         Assert.Contains(nameof(QuotesViewModel.Notes), notifications);
         Assert.Contains(nameof(QuotesViewModel.NotesCounter), notifications);
         fixture.ViewModel.Notes = string.Empty;
-        Assert.Equal("0 caracteres", fixture.ViewModel.NotesCounter);
+        Assert.Equal("0/65535 caracteres", fixture.ViewModel.NotesCounter);
     }
 
     [Fact]
@@ -665,7 +767,7 @@ public sealed class QuotesViewModelTests
         fixture.Units.VerifyNoOtherCalls();
         fixture.Products.VerifyNoOtherCalls();
 
-        fixture.ViewModel.SelectedProduct = new QuoteProductOption(Product(8, ProductType.Service), "Service");
+        fixture.ViewModel.SelectedProduct = new QuoteProductOption(Service(8), "Service");
         Assert.Equal("N3", fixture.ViewModel.QuantityFormat);
         Assert.Equal(0.001m, fixture.ViewModel.QuantityMinimum);
         Assert.Empty(fixture.ViewModel.QuantityUnitLabel);
@@ -813,6 +915,232 @@ public sealed class QuotesViewModelTests
         (Task)typeof(QuotesViewModel).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(viewModel, null)!;
 
+    private static ServiceDTO Service(int id) => new(id, "Service", true, null, 100m, 15m, null);
+
+    [Fact]
+    public async Task RuntimeDependencyInjection_RegistersAndSuppliesIndependentCatalogToOptionalConstructors()
+    {
+        var fixture = new Fixture();
+        var services = new ServiceCollection();
+        services.AddApplicationServices();
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IServiceCatalogService)
+            && descriptor.ImplementationType == typeof(ServiceCatalogService));
+        services.AddSingleton(fixture.Services.Object);
+        services.AddSingleton(fixture.Products.Object);
+        services.AddSingleton(fixture.Quotes.Object);
+        services.AddSingleton(fixture.Orders.Object);
+        services.AddSingleton(fixture.Units.Object);
+        services.AddSingleton(fixture.Authorization.Object);
+        services.AddSingleton(Mock.Of<ICustomerService>());
+        var employees = new Mock<IEmployeeService>();
+        employees.Setup(service => service.SearchEmployeesAsync(It.IsAny<string>(), 1, 100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<EmployeeDTO>());
+        services.AddSingleton(employees.Object);
+        services.AddSingleton(Mock.Of<IPartnerService>());
+        services.AddSingleton(Mock.Of<IAuthenticatedUserContext>());
+        services.AddTransient<QuotesViewModel>();
+        services.AddTransient<ContextualSearchViewModel>();
+        fixture.Services.Setup(service => service.SearchServicesAsync("", 1, 200, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Service(8) });
+        using var provider = services.BuildServiceProvider();
+        var quote = provider.GetRequiredService<QuotesViewModel>();
+
+        await quote.BeginNewAsync();
+        quote.CatalogTabIndex = 1;
+        await SearchAsync(quote, "Service");
+        var lookup = provider.GetRequiredService<ContextualSearchViewModel>();
+        await lookup.InitializeAsync(LookupSearchContext.Service);
+
+        Assert.Equal(8, Assert.Single(quote.CatalogServices).ServiceID);
+        Assert.IsType<ServiceDTO>(Assert.Single(lookup.Results).Value);
+        Assert.False(quote.HasError);
+        fixture.Products.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(25)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task ServiceCatalogPagination_PreservesAdapterPageSizeAndLookahead(int pageSize)
+    {
+        var fixture = new Fixture();
+        var services = Enumerable.Range(1, pageSize + 1).Select(Service).ToArray();
+        fixture.Services.Setup(service => service.SearchServicesAsync("paged", It.IsAny<int>(), pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string text, int page, int size, CancellationToken token) => services.Skip((page - 1) * size).Take(size));
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.ViewModel.CatalogPagination.SelectedPageSize = pageSize;
+        fixture.ViewModel.CatalogTabIndex = 1;
+
+        await SearchAsync(fixture.ViewModel, "paged");
+
+        Assert.Equal(pageSize, fixture.ViewModel.CatalogServices.Count);
+        Assert.Empty(fixture.ViewModel.CatalogProducts);
+        Assert.True(fixture.ViewModel.CatalogPagination.HasNextPage);
+        fixture.Services.Verify(service => service.SearchServicesAsync("paged", 2, pageSize, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.ViewModel.CatalogPagination.NextPageCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        var last = Assert.Single(fixture.ViewModel.CatalogServices);
+        Assert.Equal(pageSize + 1, last.Code);
+        Assert.Equal(pageSize + 1, last.ServiceID);
+        Assert.Null(last.ProductID);
+        Assert.Null(last.DTO);
+        Assert.Equal(100m, last.Price);
+        Assert.False(fixture.ViewModel.CatalogPagination.HasNextPage);
+        Assert.True(fixture.ViewModel.CatalogPagination.HasPreviousPage);
+        fixture.Products.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SwitchingToServices_CancelsProductRequestAndIgnoresItsLateResult(bool failOlder)
+    {
+        var fixture = new Fixture();
+        var pending = new TaskCompletionSource<IEnumerable<ProductDTO>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken requestToken = default;
+        fixture.Products.Setup(service => service.SearchProductsAsync("mixed tipo:produto", 1, 25, It.IsAny<CancellationToken>()))
+            .Returns((string query, int page, int size, CancellationToken token) => { requestToken = token; return pending.Task; });
+        fixture.Services.Setup(service => service.SearchServicesAsync("mixed", 1, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Service(7) });
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.ViewModel.ProductSearchText = "mixed";
+        var oldSearch = InvokeAsync(fixture.ViewModel, "SearchProductsAsync");
+
+        fixture.ViewModel.CatalogTabIndex = 1;
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogServices.Count == 1 && !fixture.ViewModel.IsCatalogBusy);
+        if (failOlder) pending.SetException(new InvalidOperationException("Old product failure"));
+        else pending.SetResult([Product(7, ProductType.Good)]);
+        await oldSearch;
+
+        Assert.True(requestToken.IsCancellationRequested);
+        Assert.Empty(fixture.ViewModel.CatalogProducts);
+        Assert.Equal(7, Assert.Single(fixture.ViewModel.CatalogServices).ServiceID);
+        Assert.False(fixture.ViewModel.HasError);
+        Assert.False(fixture.ViewModel.IsCatalogBusy);
+    }
+
+    [Fact]
+    public async Task ServiceCatalog_FiltersInactiveRowsWithoutLosingNextPage()
+    {
+        var fixture = new Fixture();
+        fixture.Services.Setup(service => service.SearchServicesAsync("inactive", 1, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Enumerable.Range(1, 25).Select(id => Service(id) with { IsActive = false }));
+        fixture.Services.Setup(service => service.SearchServicesAsync("inactive", 2, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Service(26) });
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.ViewModel.CatalogTabIndex = 1;
+
+        await SearchAsync(fixture.ViewModel, "inactive");
+
+        Assert.Empty(fixture.ViewModel.CatalogServices);
+        Assert.True(fixture.ViewModel.HasCatalogNext);
+        fixture.ViewModel.CatalogNextCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogPageDisplay == "Página 2" && !fixture.ViewModel.IsCatalogBusy);
+        Assert.Equal(26, Assert.Single(fixture.ViewModel.CatalogServices).ServiceID);
+        fixture.Products.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData("1.125", true)]
+    [InlineData("1.1251", false)]
+    public async Task ServiceLookupSelection_SavesOnlyServiceReferenceWithExistingQuantityPrecision(string quantityText, bool valid)
+    {
+        var fixture = new Fixture();
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.ViewModel.ApplyLookupSelection(LookupSearchContext.Service, Service(7));
+        var selected = fixture.ViewModel.SelectedProduct!;
+        Assert.Null(selected.DTO);
+        Assert.Null(selected.ProductID);
+        Assert.Equal(7, selected.ServiceID);
+        Assert.Equal(100m, fixture.ViewModel.UnitPriceValue);
+        fixture.ViewModel.QuantityValue = decimal.Parse(quantityText, CultureInfo.InvariantCulture);
+
+        await InvokeAsync(fixture.ViewModel, "SaveLineAsync");
+
+        fixture.Quotes.Verify(service => service.SaveQuoteItemAsync(42,
+            It.Is<QuoteItemDTO>(item => item.ProductID == null && item.ServiceID == 7), It.IsAny<CancellationToken>()),
+            valid ? Times.Once() : Times.Never());
+        Assert.Equal(!valid, fixture.ViewModel.HasError);
+        fixture.Products.VerifyNoOtherCalls();
+        fixture.Services.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ServiceSearchWithoutOptionalCatalog_ReportsErrorWithoutProductFallback()
+    {
+        var fixture = new Fixture();
+        var employees = new Mock<IEmployeeService>();
+        employees.Setup(service => service.SearchEmployeesAsync(It.IsAny<string>(), 1, 100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<EmployeeDTO>());
+        var viewModel = new QuotesViewModel(fixture.Quotes.Object, fixture.Authorization.Object, Mock.Of<ICustomerService>(),
+            employees.Object, Mock.Of<IPartnerService>(), fixture.Products.Object, Mock.Of<IAuthenticatedUserContext>());
+        await viewModel.BeginNewAsync();
+        viewModel.CatalogTabIndex = 1;
+
+        await SearchAsync(viewModel, "Service");
+
+        Assert.True(viewModel.HasError);
+        Assert.False(viewModel.IsCatalogBusy);
+        Assert.Empty(viewModel.CatalogServices);
+        fixture.Products.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ExistingServiceAndProductWithSameCode_LoadSeparatelyAndSaveServiceReference()
+    {
+        var fixture = new Fixture(new QuoteItemDTO(11, 81, 7, 2m, 90m, false),
+            new QuoteItemDTO(12, 81, null, 1.125m, 80m, false, ServiceID: 7));
+        await fixture.ViewModel.BeginNewAsync();
+
+        fixture.Products.Verify(service => service.GetProductByIdAsync(7, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Services.Verify(service => service.GetServiceByIdAsync(7, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(new[] { "Product", "Service" }, fixture.ViewModel.AllLines.Select(line => line.ProductName));
+        Assert.Equal(new[] { "Produto", "Serviço" }, fixture.ViewModel.AllLines.Select(line => line.Category));
+        Assert.Equal(new[] { "Produto", "Serviço" }, fixture.ViewModel.SectionItems.Select(line => line.Category));
+        fixture.ViewModel.SelectedLine = fixture.ViewModel.AllLines[1];
+        Assert.Null(fixture.ViewModel.SelectedProduct!.ProductID);
+        Assert.Equal(7, fixture.ViewModel.SelectedProduct.ServiceID);
+        Assert.Null(fixture.ViewModel.SelectedProduct.DTO);
+        Assert.Equal("N3", fixture.ViewModel.QuantityFormat);
+        Assert.Empty(fixture.ViewModel.QuantityUnitLabel);
+        Assert.Equal(1.125m, fixture.ViewModel.QuantityValue);
+        Assert.Equal(80m, fixture.ViewModel.UnitPriceValue);
+
+        await InvokeAsync(fixture.ViewModel, "SaveLineAsync");
+
+        fixture.Quotes.Verify(service => service.SaveQuoteItemAsync(42,
+            It.Is<QuoteItemDTO>(item => item.QuoteItemID == 12 && item.ProductID == null && item.ServiceID == 7
+                && item.Quantity == 1.125m && item.UnitPrice == 80m), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal("Serviço", Assert.Single(fixture.ViewModel.AllLines).Category);
+        Assert.False(fixture.ViewModel.HasError);
+    }
+
+    [Fact]
+    public async Task ChangingLineFromProductToSameCodeService_StartsNewLineAndUsesCatalogPrice()
+    {
+        var fixture = new Fixture(new QuoteItemDTO(11, 81, 7, 2m, 90m, true));
+        fixture.Services.Setup(service => service.SearchServicesAsync("Service", 1, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Service(7) });
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.ViewModel.CatalogTabIndex = 1;
+        await SearchAsync(fixture.ViewModel, "Service");
+        fixture.ViewModel.SelectedLine = Assert.Single(fixture.ViewModel.AllLines);
+        fixture.ViewModel.SelectedProduct = Assert.Single(fixture.ViewModel.CatalogServices);
+
+        Assert.Null(fixture.ViewModel.SelectedLine);
+        Assert.Equal(1m, fixture.ViewModel.QuantityValue);
+        Assert.Equal(100m, fixture.ViewModel.UnitPriceValue);
+        await InvokeAsync(fixture.ViewModel, "SaveLineAsync");
+
+        fixture.Quotes.Verify(service => service.SaveQuoteItemAsync(42,
+            It.Is<QuoteItemDTO>(item => item.QuoteItemID == 0 && item.ProductID == null && item.ServiceID == 7),
+            It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Products.Verify(service => service.SearchProductsAsync(It.IsAny<string>(), It.IsAny<int>(),
+            It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.False(fixture.ViewModel.HasError);
+    }
+
     private static ProductDTO Product(int id, ProductType type) => new(
         ProductID: id, Barcode: null, IsActive: true, Description: type == ProductType.Service ? "Service" : "Product",
         StockQuantity: 0m, BrandID: null, BrandName: null, SubgroupID: null, SubgroupName: null,
@@ -825,6 +1153,7 @@ public sealed class QuotesViewModelTests
     {
         public Mock<IQuoteService> Quotes { get; } = new(MockBehavior.Strict);
         public Mock<IProductService> Products { get; } = new(MockBehavior.Strict);
+        public Mock<IServiceCatalogService> Services { get; } = new(MockBehavior.Strict);
         public Mock<IOrderService> Orders { get; } = new(MockBehavior.Strict);
         public Mock<IUnitOfMeasureService> Units { get; } = new(MockBehavior.Strict);
         public Mock<IAuthorizationService> Authorization { get; } = new();
@@ -891,8 +1220,10 @@ public sealed class QuotesViewModelTests
                 .ReturnsAsync((int id, CancellationToken token) => Product(id, ProductType.Good) with { SubgroupName = "Subgroup" });
             Products.Setup(service => service.SearchProductsAsync("Product tipo:produto", 1, 25, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new[] { Product(7, ProductType.Good) });
-            Products.Setup(service => service.SearchProductsAsync("Service tipo:servico", 1, 25, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[] { Product(8, ProductType.Service) });
+            Services.Setup(service => service.SearchServicesAsync("Service", 1, 25, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { Service(8) });
+            Services.Setup(service => service.GetServiceByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((int id, CancellationToken token) => Service(id));
             var employees = new Mock<IEmployeeService>(MockBehavior.Strict);
             employees.Setup(service => service.SearchEmployeesAsync(It.IsAny<string>(), 1, 100, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<EmployeeDTO>());
@@ -900,7 +1231,7 @@ public sealed class QuotesViewModelTests
             Quotes.Setup(service => service.GetQuantityUnitsAsync(1, 100, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<UnitOfMeasureDTO>());
             ViewModel = new QuotesViewModel(Quotes.Object, Authorization.Object, Mock.Of<ICustomerService>(),
-                employees.Object, Mock.Of<IPartnerService>(), Products.Object, Mock.Of<IAuthenticatedUserContext>(), Orders.Object, Units.Object);
+                employees.Object, Mock.Of<IPartnerService>(), Products.Object, Mock.Of<IAuthenticatedUserContext>(), Orders.Object, Units.Object, Services.Object);
         }
     }
 }

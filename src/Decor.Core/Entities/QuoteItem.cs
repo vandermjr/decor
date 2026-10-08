@@ -14,7 +14,10 @@ public class QuoteItem
     public int QuoteSectionID { get; set; }
 
     [Column("ProductID")]
-    public int ProductID { get; set; }
+    public int? ProductID { get; set; }
+
+    [Column("ServiceID")]
+    public int? ServiceID { get; set; }
 
     [Column("Quantity")]
     public decimal Quantity { get; set; }

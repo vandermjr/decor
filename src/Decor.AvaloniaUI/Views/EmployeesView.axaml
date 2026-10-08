@@ -10,15 +10,17 @@
   </UserControl.Resources>
   <Grid RowDefinitions="Auto,*" Margin="16">
     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
-        <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar funcionários" KeyDown="SearchTextBox_KeyDown"/>
-        <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}">
+      <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" IsVisible="{Binding !IsEditing}">
+      <Grid ColumnDefinitions="*,36,36">
+        <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar funcionários" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
+        <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Pesquisar">
             <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
         </Button>
-        <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}">
+        <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Limpar pesquisa">
             <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
         </Button>
       </Grid>
+      </Border>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -42,7 +44,7 @@
     </Grid>
 
     <Panel Grid.Row="1">
-      <controls:DecorDataGridControl x:Name="EmployeesGrid" DefaultSortMemberPath="Name" ItemsSource="{Binding Employees}"
+      <controls:DecorDataGridControl x:Name="EmployeesGrid" PaginationSource="{Binding}" DefaultSortMemberPath="Name" ItemsSource="{Binding Employees}"
                                       SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
                                       IsVisible="{Binding !IsEditing}"/>
       <Border Padding="0" IsVisible="{Binding IsEditing}">

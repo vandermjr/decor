@@ -38,7 +38,7 @@ public partial class QuotesView : UserControl
         foreach (var catalogGrid in new[] { ProductsCatalogGrid, ServicesCatalogGrid })
             catalogGrid.InitializeColumns(typeof(QuoteProductOption), propertyName => propertyName switch
             {
-                nameof(QuoteProductOption.ProductID) => "Item",
+                nameof(QuoteProductOption.Code) => "Código",
                 nameof(QuoteProductOption.Description) => "Descrição",
                 nameof(QuoteProductOption.Category) => "Categoria",
                 nameof(QuoteProductOption.Price) => "Preço de venda",
@@ -47,10 +47,10 @@ public partial class QuotesView : UserControl
             }, propertyName => propertyName switch
             {
                 nameof(QuoteProductOption.Description) => new DataGridLength(1, DataGridLengthUnitType.Star),
-                nameof(QuoteProductOption.ProductID) => new DataGridLength(55),
+                nameof(QuoteProductOption.Code) => new DataGridLength(55),
                 nameof(QuoteProductOption.Unit) => new DataGridLength(65),
                 _ => new DataGridLength(120)
-            }, [nameof(QuoteProductOption.ProductID), nameof(QuoteProductOption.Description),
+            }, [nameof(QuoteProductOption.Code), nameof(QuoteProductOption.Description),
                 nameof(QuoteProductOption.Unit), nameof(QuoteProductOption.Price)]);
         QuoteItemsGrid.InitializeColumns(typeof(QuoteLineOption), propertyName => propertyName switch
         {
@@ -137,7 +137,8 @@ public partial class QuotesView : UserControl
         await OpenLookupAsync(LookupSearchContext.Partner);
 
     private async void SearchProduct_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
-        await OpenLookupAsync(LookupSearchContext.Product);
+        await OpenLookupAsync(DataContext is QuotesViewModel { CatalogTabIndex: 1 }
+            ? LookupSearchContext.Service : LookupSearchContext.Product);
 
     private async void GeneratePdf(object? sender, EventArgs args)
     {

@@ -181,7 +181,7 @@ public sealed class OrderAggregateValidationTests
         var service = CreateService(new TrackingQuoteRepository(), orderRepo, productRepo, DecorPermissions.OrdersSendToProduction);
 
         var order = new Order { OrderID = 10, Status = OrderStatus.Approved, OrderType = OrderType.Custom, CustomerID = 1, QuoteSectionID = 2 };
-        var orderItem = new OrderItem { OrderItemID = 50, OrderID = 10, ProductID = 5, Quantity = 1, UnitPrice = 100 };
+        var orderItem = new OrderItem { OrderItemID = 50, OrderID = 10, ServiceID = 5, Quantity = 1, UnitPrice = 100 };
         order.Items.Add(orderItem);
 
         orderRepo.SetOrderForTest(order);

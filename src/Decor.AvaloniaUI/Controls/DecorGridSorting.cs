@@ -51,8 +51,11 @@ public sealed class DecorGridSorting
 
     private static void Attach(DataGrid grid)
     {
-        if (States.TryGetValue(grid, out _))
+        if (States.TryGetValue(grid, out var existing))
+        {
+            existing.Observe();
             return;
+        }
 
         var state = new State(grid);
         States.Add(grid, state);

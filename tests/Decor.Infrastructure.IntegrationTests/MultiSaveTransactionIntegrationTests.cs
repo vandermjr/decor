@@ -34,7 +34,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
         var firstQuoteItemId = await InsertIdAsync(connection, $"INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES ({sectionId}, {productId}, 1, 10, 0);");
         var secondQuoteItemId = await InsertIdAsync(connection, $"INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES ({sectionId}, 999999, 1, 20, 0);");
 
-        var quote = new Quote { QuoteID = quoteId, CustomerID = customerId, Sections = [] };
+        var quote = new Quote { QuoteID = quoteId, CustomerID = customerId, CreatedByEmployeeID = employeeId, Sections = [] };
         var section = new QuoteSection { QuoteSectionID = sectionId, QuoteID = quoteId, SectionType = QuoteSectionType.Custom, Status = QuoteSectionStatus.Approved, Items = [] };
         section.Items.Add(new QuoteItem { QuoteItemID = firstQuoteItemId, QuoteSectionID = sectionId, ProductID = productId, Quantity = 1, UnitPrice = 10, SpecificationValues = [new QuoteItemSpecificationValue { QuoteItemID = firstQuoteItemId, AttributeID = attributeId, Value = "Blue" }] });
         section.Items.Add(new QuoteItem { QuoteItemID = secondQuoteItemId, QuoteSectionID = sectionId, ProductID = 999999, Quantity = 1, UnitPrice = 20, SpecificationValues = [] });
@@ -56,12 +56,104 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
             (ITransactionalQuoteRepository)quoteRepository);
 
         var act = () => service.ConvertFromQuoteAsync(sectionId);
-        await act.Should().ThrowAsync<MySqlException>();
+        await act.Should().ThrowAsync<MySqlException>().WithMessage("*FK_test_order_items_product*");
 
         (await connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM orders WHERE QuoteSectionID = {sectionId}")).Should().Be(0);
         (await connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM order_items WHERE QuoteItemID IN ({firstQuoteItemId}, {secondQuoteItemId})")).Should().Be(0);
         (await connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM order_item_specification_values WHERE AttributeID = {attributeId}")).Should().Be(0);
         (await connection.ExecuteScalarAsync<int>($"SELECT Status FROM quote_sections WHERE QuoteSectionID = {sectionId}")).Should().Be((int)QuoteSectionStatus.Approved);
+    }
+
+    [Fact]
+    public async Task IndependentService_SaveReadAndConvert_PreservesCatalogIdentityAndInstallationEligibility()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await EnsureOrderTablesAsync(connection);
+        var database = new DatabaseConnection(fixture.ConnectionString);
+        var serviceRepository = new ServiceRepository(database, () => FluentCommandBuilder.Create(new MariaDBDialect()));
+        var catalogService = new Service
+        {
+            Description = "Independent installation",
+            CostPrice = 12.34m,
+            SalePrice = 56.78m,
+            EmployeeCommissionValue = 9.87m,
+            Observations = "Not a product"
+        };
+        (await serviceRepository.SaveAsync(catalogService)).Should().Be(1);
+        var savedService = (await serviceRepository.SearchGetByAsync(catalogService.Description)).Should().ContainSingle().Subject;
+        savedService.ServiceID.Should().BeGreaterThan(0);
+        savedService.IsActive.Should().BeTrue();
+        savedService.CostPrice.Should().Be(12.34m);
+        savedService.SalePrice.Should().Be(56.78m);
+        savedService.EmployeeCommissionValue.Should().Be(9.87m);
+        savedService.Observations.Should().Be("Not a product");
+        serviceRepository.ServiceExists(savedService.ServiceID).Should().BeTrue();
+        (await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM products WHERE ProductID = @ServiceID", savedService)).Should().Be(0);
+        savedService.SalePrice = 60m;
+        (await serviceRepository.SaveAsync(savedService)).Should().Be(1);
+        (await serviceRepository.SearchGetByAsync(catalogService.Description)).Should().ContainSingle().Subject.SalePrice.Should().Be(60m);
+
+        var customerId = await InsertIdAsync(connection, "INSERT INTO customers (Name, IsActive) VALUES ('Service Customer', 1);");
+        var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Service Seller', 1);");
+        await connection.ExecuteAsync("INSERT INTO products (ProductID, Description, IsActive, ProductType, DefaultInstallationServiceID) VALUES (@ServiceID, 'Same code goods', 1, 1, @ServiceID)", savedService);
+        var quoteRepository = CreateQuoteRepository();
+        var section = new QuoteSection { SectionType = QuoteSectionType.Catalog, Status = QuoteSectionStatus.Approved, CreatedAt = DateTime.UtcNow };
+        var quote = new Quote
+        {
+            CustomerID = customerId,
+            CreatedByEmployeeID = employeeId,
+            SourceType = QuoteSourceType.Own,
+            CreatedAt = DateTime.UtcNow,
+            Sections = [section]
+        };
+        (await quoteRepository.SaveAsync(quote)).Should().Be(1);
+        var serviceItem = new QuoteItem { QuoteSectionID = section.QuoteSectionID, ServiceID = savedService.ServiceID, Quantity = 2, UnitPrice = 60m };
+        var productItem = new QuoteItem { QuoteSectionID = section.QuoteSectionID, ProductID = savedService.ServiceID, Quantity = 1, UnitPrice = 100m, HasInstallationService = true };
+        (await quoteRepository.SaveItemAsync(serviceItem)).Should().Be(1);
+        (await quoteRepository.SaveItemAsync(productItem)).Should().Be(1);
+        serviceItem.UnitPrice = 55m;
+        (await quoteRepository.SaveItemAsync(serviceItem)).Should().Be(1);
+        var fetchedQuote = await quoteRepository.GetCompleteQuoteAsync(quote.QuoteID);
+        fetchedQuote.Should().NotBeNull();
+        var fetchedItems = fetchedQuote!.Sections.Should().ContainSingle().Subject.Items;
+        fetchedItems.Should().HaveCount(2);
+        var fetchedService = fetchedItems.Should().ContainSingle(item => item.QuoteItemID == serviceItem.QuoteItemID).Subject;
+        fetchedService.ProductID.Should().BeNull();
+        fetchedService.ServiceID.Should().Be(savedService.ServiceID);
+        fetchedService.Quantity.Should().Be(2);
+        fetchedService.UnitPrice.Should().Be(55m);
+        var fetchedProduct = fetchedItems.Should().ContainSingle(item => item.QuoteItemID == productItem.QuoteItemID).Subject;
+        fetchedProduct.ProductID.Should().Be(savedService.ServiceID);
+        fetchedProduct.ServiceID.Should().BeNull();
+
+        var orderRepository = CreateOrderRepository();
+        var orderService = new OrderService(
+            orderRepository, quoteRepository, new EmptyProductRepository(),
+            new EmptyReservationService(), new EmptyInstallmentService(), new OrderDTOValidator(),
+            new OrderRepositoryValidator(orderRepository, serviceRepository), new AllowAuthorizationService(),
+            database, orderRepository, quoteRepository, serviceRepository);
+        var converted = await orderService.ConvertFromQuoteAsync(section.QuoteSectionID);
+        var fetchedOrder = await orderRepository.GetCompleteOrderAsync(converted.OrderID);
+        fetchedOrder.Should().NotBeNull();
+        fetchedOrder!.Items.Should().HaveCount(2);
+        var orderServiceItem = fetchedOrder.Items.Should().ContainSingle(item => item.QuoteItemID == serviceItem.QuoteItemID).Subject;
+        orderServiceItem.ProductID.Should().BeNull();
+        orderServiceItem.ServiceID.Should().Be(savedService.ServiceID);
+        orderServiceItem.Quantity.Should().Be(2);
+        orderServiceItem.UnitPrice.Should().Be(55m);
+        orderServiceItem.HasInstallationService.Should().BeFalse();
+        var orderProductItem = fetchedOrder.Items.Should().ContainSingle(item => item.QuoteItemID == productItem.QuoteItemID).Subject;
+        orderProductItem.ProductID.Should().Be(savedService.ServiceID);
+        orderProductItem.ServiceID.Should().BeNull();
+        orderProductItem.UnitPrice.Should().Be(100m);
+        (await quoteRepository.GetSectionByIdAsync(section.QuoteSectionID))!.Status.Should().Be(QuoteSectionStatus.ConvertedToOrder);
+        var installationRepository = new InstallationAppointmentRepository(database, () => FluentCommandBuilder.Create(new MariaDBDialect()));
+        (await installationRepository.ServiceOrderItemExistsAsync(orderServiceItem.OrderItemID)).Should().BeTrue();
+        (await installationRepository.ServiceOrderItemExistsAsync(orderProductItem.OrderItemID)).Should().BeTrue();
+        orderProductItem.HasInstallationService = false;
+        (await orderRepository.SaveOrderItemAsync(orderProductItem)).Should().Be(1);
+        (await installationRepository.ServiceOrderItemExistsAsync(orderProductItem.OrderItemID)).Should().BeFalse();
+        (await installationRepository.ServiceOrderItemExistsAsync(orderServiceItem.OrderItemID)).Should().BeTrue();
     }
 
     [Fact]
@@ -115,13 +207,15 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
         await connection.ExecuteAsync(@"
             CREATE TABLE IF NOT EXISTS customers (CustomerID INT AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(150) NOT NULL, IsActive TINYINT(1) NOT NULL) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS employees (EmployeeID INT AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(150) NOT NULL, IsActive TINYINT(1) NOT NULL) ENGINE=InnoDB;
-            CREATE TABLE IF NOT EXISTS products (ProductID INT AUTO_INCREMENT PRIMARY KEY, Description VARCHAR(255), IsActive TINYINT(1) NOT NULL, ProductType TINYINT UNSIGNED NOT NULL) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS services (ServiceID INT AUTO_INCREMENT PRIMARY KEY, Description VARCHAR(255) NOT NULL, IsActive TINYINT(1) NOT NULL DEFAULT 1, CostPrice DECIMAL(10,2) NULL, SalePrice DECIMAL(10,2) NULL, EmployeeCommissionValue DECIMAL(10,2) NULL, Observations TEXT NULL) ENGINE=InnoDB AUTO_INCREMENT=100000;
+            CREATE TABLE IF NOT EXISTS products (ProductID INT AUTO_INCREMENT PRIMARY KEY, Description VARCHAR(255), IsActive TINYINT(1) NOT NULL, ProductType TINYINT UNSIGNED NOT NULL, DefaultInstallationServiceID INT NULL, FOREIGN KEY (DefaultInstallationServiceID) REFERENCES services(ServiceID)) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS product_specification_attributes (AttributeID INT AUTO_INCREMENT PRIMARY KEY, ProductCategoryID INT NOT NULL, Name VARCHAR(150) NOT NULL, DataType TINYINT UNSIGNED NOT NULL, IsRequired TINYINT(1) NOT NULL, DisplayOrder INT NOT NULL) ENGINE=InnoDB;
-            CREATE TABLE IF NOT EXISTS quotes (QuoteID INT AUTO_INCREMENT PRIMARY KEY, CustomerID INT NOT NULL, CreatedByEmployeeID INT NOT NULL, SourceType TINYINT UNSIGNED NOT NULL, CreatedAt DATETIME NOT NULL) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS quotes (QuoteID INT AUTO_INCREMENT PRIMARY KEY, CustomerID INT NOT NULL, CreatedByEmployeeID INT NOT NULL, CreatedByUserID INT NULL, SourcePartnerID INT NULL, SourceType TINYINT UNSIGNED NOT NULL, CreatedAt DATETIME NOT NULL, Notes TEXT NULL, DiscountAmount DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS quote_sections (QuoteSectionID INT AUTO_INCREMENT PRIMARY KEY, QuoteID INT NOT NULL, SectionType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, SentToCustomerAt DATETIME NULL, ApprovedAt DATETIME NULL, CreatedAt DATETIME NOT NULL) ENGINE=InnoDB;
-            CREATE TABLE IF NOT EXISTS quote_items (QuoteItemID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, ProductID INT NOT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2), HasInstallationService TINYINT(1) NOT NULL) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS quote_items (QuoteItemID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, ProductID INT NULL, ServiceID INT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2), HasInstallationService TINYINT(1) NOT NULL, FOREIGN KEY (ServiceID) REFERENCES services(ServiceID), CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL))) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS quote_item_specification_values (ValueID INT AUTO_INCREMENT PRIMARY KEY, QuoteItemID INT NOT NULL, AttributeID INT NOT NULL, Value VARCHAR(255) NOT NULL, FOREIGN KEY (QuoteItemID) REFERENCES quote_items(QuoteItemID)) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS orders (OrderID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, CustomerID INT NOT NULL, OrderType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, RequiresDownPayment TINYINT(1) NULL, ManufacturingDeadline DATE NULL, InstallationDeadline DATE NULL, CreatedAt DATETIME NOT NULL, UNIQUE KEY (QuoteSectionID)) ENGINE=InnoDB;
-            CREATE TABLE IF NOT EXISTS order_items (OrderItemID INT AUTO_INCREMENT PRIMARY KEY, OrderID INT NOT NULL, QuoteItemID INT NOT NULL, ProductID INT NOT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2) NOT NULL, HasInstallationService TINYINT(1) NOT NULL, SentToProductionAt DATETIME NULL, SentToProductionByEmployeeID INT NULL, CONSTRAINT FK_test_order_items_order FOREIGN KEY (OrderID) REFERENCES orders(OrderID), CONSTRAINT FK_test_order_items_quote FOREIGN KEY (QuoteItemID) REFERENCES quote_items(QuoteItemID), CONSTRAINT FK_test_order_items_product FOREIGN KEY (ProductID) REFERENCES products(ProductID)) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS order_items (OrderItemID INT AUTO_INCREMENT PRIMARY KEY, OrderID INT NOT NULL, QuoteItemID INT NOT NULL, ProductID INT NULL, ServiceID INT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2) NOT NULL, HasInstallationService TINYINT(1) NOT NULL, SentToProductionAt DATETIME NULL, SentToProductionByEmployeeID INT NULL, CONSTRAINT FK_test_order_items_order FOREIGN KEY (OrderID) REFERENCES orders(OrderID), CONSTRAINT FK_test_order_items_quote FOREIGN KEY (QuoteItemID) REFERENCES quote_items(QuoteItemID), CONSTRAINT FK_test_order_items_product FOREIGN KEY (ProductID) REFERENCES products(ProductID), FOREIGN KEY (ServiceID) REFERENCES services(ServiceID), CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL))) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS order_item_specification_values (ValueID INT AUTO_INCREMENT PRIMARY KEY, OrderItemID INT NOT NULL, AttributeID INT NOT NULL, Value VARCHAR(255) NOT NULL, CONSTRAINT FK_test_spec_order FOREIGN KEY (OrderItemID) REFERENCES order_items(OrderItemID)) ENGINE=InnoDB;");
     }
 

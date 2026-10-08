@@ -18,6 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\Migrations\20261008_separate_services_from_products.sql"
+                      Link="Migrations\20261008_separate_services_from_products.sql" />
     <EmbeddedResource Include="..\..\Migrations\20261004_add_database_restore_permission.sql"
                       Link="Migrations\20261004_add_database_restore_permission.sql" />
     <EmbeddedResource Include="..\..\Migrations\20261004_ensure_database_maintenance_permission.sql"

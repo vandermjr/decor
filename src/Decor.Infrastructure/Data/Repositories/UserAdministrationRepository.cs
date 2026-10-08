@@ -22,14 +22,10 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
     public async Task<IReadOnlyList<AdministrativeUserDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default)
     {
         await EnsureProtectedRoleNamesMigrationAsync(cancellationToken);
-        var normalized = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
         var query = _createCommandBuilder()
-            .Select<ApplicationUser>(s => s.WithColumns<ApplicationUser>(u => u.UserID));
-
-        if (normalized is not null)
-        {
-            query = query.Where(w => w.Contains<ApplicationUser>(u => u.Username, normalized).Or().Contains<ApplicationUser>(u => u.DisplayName, normalized));
-        }
+            .Select<ApplicationUser>(s => s.WithColumns<ApplicationUser>(u => u.UserID))
+            .Where(w => w.WithDynamicSearchFilter<ApplicationUser, ApplicationUser>(
+                search, u => u.UserID, u => u.Username, u => u.DisplayName));
 
         var (sql, parameters) = query
             .OrderBy(o => o.Ascending<ApplicationUser>(u => u.Username))

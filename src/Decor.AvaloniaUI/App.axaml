@@ -12,13 +12,29 @@
         <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
         <ResourceDictionary.ThemeDictionaries>
             <ResourceDictionary x:Key="Light">
-                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#E7E9EC</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorSurfaceBrush">#F1F2F4</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorScrollTrackBrush">#E2E5E9</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorScrollThumbBrush">#A5ADB8</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#E8EBEF</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorSurfaceBrush">#F5F6F8</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorControlBrush">#E4E6E9</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorBorderBrush">#C7CBD1</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorTextBrush">#20242B</SolidColorBrush>
-                <SolidColorBrush x:Key="DecorTextMutedBrush">#626B77</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorControlBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorBorderBrush">#CBD1D9</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextBrush">#30363E</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorTextMutedBrush">#68717D</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush">#F0F2F5</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush">#30363E</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush">#E8ECF1</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush">#DFE5ED</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridGridLinesBrush">#E4E7EB</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowHoveredBackgroundColor">#F3F6FA</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#DFEDF9</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#D5E7F6</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush">#DFEDF9</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush">#D5E7F6</SolidColorBrush>
+                <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
+                <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
+                <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>
+                <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">1</x:Double>
                 <SolidColorBrush x:Key="DecorAccentBrush">#2074B8</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#185F9A</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
@@ -33,10 +49,12 @@
                 <x:Double x:Key="DecorFontSizeSection">17</x:Double>
                 <x:Double x:Key="DecorFontSizeTitle">22</x:Double>
                 <x:Double x:Key="DecorFontSizeDisplay">28</x:Double>
-                <FontWeight x:Key="DecorFontWeightBase">Light</FontWeight>
-                <FontWeight x:Key="DecorFontWeightHeading">Light</FontWeight>
+                <FontWeight x:Key="DecorFontWeightBase">Normal</FontWeight>
+                <FontWeight x:Key="DecorFontWeightHeading">SemiBold</FontWeight>
             </ResourceDictionary>
             <ResourceDictionary x:Key="Dark">
+                <SolidColorBrush x:Key="DecorScrollTrackBrush">#272B30</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorScrollThumbBrush">#68727E</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#191B1E</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceBrush">#222529</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#2C3035</SolidColorBrush>
@@ -144,39 +162,52 @@
         <Setter Property="ToolTip.Tip" Value="Limpar pesquisa" />
         <Setter Property="AutomationProperties.Name" Value="Limpar pesquisa" />
     </Style>
-    <Style Selector="Button.pagination-button">
+    <Style Selector="Button.grid-page-button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CornerRadius" Value="4" />
-        <Setter Property="Height" Value="19" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Width" Value="26" />
+        <Setter Property="MinWidth" Value="26" />
+        <Setter Property="Padding" Value="2" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="ToolTip.ServiceEnabled" Value="False" />
+        <Setter Property="ToolTip.ShowDelay" Value="400" />
     </Style>
-    <Style Selector="Button.pagination-button:pointerover">
-        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+    <Style Selector="Button.grid-page-button:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
-    <Style Selector="ComboBox.pagination-page-size">
-        <Setter Property="ToolTip.ServiceEnabled" Value="False" />
+    <Style Selector="Button.grid-page-button:disabled">
+        <Setter Property="Opacity" Value="0.35" />
+    </Style>
+    <Style Selector="Button.grid-page-button:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="ComboBox.grid-page-size">
+        <Setter Property="ToolTip.ShowDelay" Value="400" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextMutedBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="4,0" />
-        <Setter Property="Height" Value="19" />
-        <Setter Property="MinHeight" Value="19" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinHeight" Value="24" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
     </Style>
-    <Style Selector="ComboBox.pagination-page-size:pointerover">
-        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+    <Style Selector="ComboBox.grid-page-size:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
-    <Style Selector="ComboBox.pagination-page-size:pointerover /template/ Border#Background">
-        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+    <Style Selector="ComboBox.grid-page-size:pointerover /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
     <Style Selector="Button /template/ ContentPresenter">

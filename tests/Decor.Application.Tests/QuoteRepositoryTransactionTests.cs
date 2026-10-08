@@ -12,6 +12,37 @@ namespace Decor.Application.Tests;
 
 public sealed class QuoteRepositoryTransactionTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CommercialRepositories_PersistServiceIdentityWithoutProduct(bool quoteItem)
+    {
+        var database = new RecordingDatabase();
+        if (quoteItem)
+            await new QuoteRepository(database, FluentCommandBuilder.Create)
+                .SaveItemAsync(new QuoteItem { QuoteSectionID = 1, ServiceID = 5, Quantity = 2m, UnitPrice = 10m });
+        else
+            await new OrderRepository(database, FluentCommandBuilder.Create)
+                .SaveOrderItemAsync(new OrderItem { OrderID = 1, QuoteItemID = 1, ServiceID = 5, Quantity = 2m, UnitPrice = 10m });
+        var command = Assert.Single(database.Commands);
+        Assert.Contains(command.Parameters, parameter => parameter.Key.Contains("ProductID") && parameter.Value == DBNull.Value);
+        Assert.Contains(command.Parameters, parameter => parameter.Key.Contains("ServiceID") && Equals(parameter.Value, 5));
+    }
+
+    [Fact]
+    public async Task InstallationLookup_UsesExplicitServiceOrSelectedProductDefaultService()
+    {
+        var database = new RecordingDatabase();
+        await new InstallationAppointmentRepository(database, FluentCommandBuilder.Create).ServiceOrderItemExistsAsync(123);
+        var command = Assert.Single(database.Commands);
+        Assert.Contains("LEFT JOIN services s ON s.ServiceID = oi.ServiceID", command.Sql);
+        Assert.Contains("LEFT JOIN services installation ON installation.ServiceID = p.DefaultInstallationServiceID", command.Sql);
+        Assert.Contains("oi.ProductID IS NULL AND oi.ServiceID > 0", command.Sql);
+        Assert.Contains("oi.ServiceID IS NULL AND oi.ProductID > 0 AND oi.HasInstallationService = 1", command.Sql);
+        Assert.DoesNotContain("ProductType", command.Sql);
+        Assert.Equal(123, Assert.Single(command.Parameters).Value);
+    }
+
     [Fact]
     public async Task SaveAsync_InsertsQuoteAndDraftSectionInOneTransaction()
     {
@@ -221,6 +252,7 @@ public sealed class QuoteRepositoryTransactionTests
                 return table.CreateDataReader();
             });
             command.Setup(instance => instance.ExecuteNonQuery()).Returns(() => { Record(); return AffectedRows; });
+            command.Setup(instance => instance.ExecuteScalar()).Returns(() => { Record(); return 1; });
             return command.Object;
         }
     }

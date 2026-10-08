@@ -85,7 +85,7 @@ public class Product
     [Column("EmployeeCommissionValue")] // Só utilizado quando ProductType = Service
     public decimal? EmployeeCommissionValue { get; set; }
 
-    [Column("DefaultInstallationServiceID")] // FK para Product cujo ProductType seja Service
+    [Column("DefaultInstallationServiceID")]
     public int? DefaultInstallationServiceID { get; set; }
 
     // Propriedades de Navegação

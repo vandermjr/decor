@@ -22,7 +22,8 @@ public class OrderService(
     IAuthorizationService authorizationService,
     IDatabaseConnection? databaseConnection = null,
     ITransactionalOrderRepository? transactionalOrderRepository = null,
-    ITransactionalQuoteRepository? transactionalQuoteRepository = null) : IOrderService
+    ITransactionalQuoteRepository? transactionalQuoteRepository = null,
+    IServiceRepository? serviceRepository = null) : IOrderService
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
@@ -83,6 +84,13 @@ public class OrderService(
 
         if (fullSection.Items.Any(item => item.Quantity <= 0 || item.UnitPrice is null or < 0))
             throw new ValidationException("Os itens da seção precisam ter quantidade positiva e preço válido antes da conversão.");
+        foreach (var item in fullSection.Items)
+        {
+            if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+                throw new ValidationException(CommercialItemReference.ValidationMessage);
+            if (item.ServiceID is int serviceId && (serviceRepository is null || !serviceRepository.ServiceExists(serviceId)))
+                throw new ValidationException("O servico informado nao existe.");
+        }
         var convertedPrices = GetDiscountedUnitPrices(quote);
 
         var order = new Order
@@ -122,6 +130,7 @@ public class OrderService(
                     OrderID = order.OrderID,
                     QuoteItemID = quoteItem.QuoteItemID,
                     ProductID = quoteItem.ProductID,
+                    ServiceID = quoteItem.ServiceID,
                     Quantity = quoteItem.Quantity,
                     UnitPrice = convertedPrices[quoteItem.QuoteItemID],
                     HasInstallationService = quoteItem.HasInstallationService,
@@ -193,7 +202,7 @@ public class OrderService(
         await _orderRepository.SaveAsync(order, cancellationToken);
         foreach (var quoteItem in fullSection.Items)
         {
-            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, Quantity = quoteItem.Quantity, UnitPrice = convertedPrices[quoteItem.QuoteItemID], HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
+            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, ServiceID = quoteItem.ServiceID, Quantity = quoteItem.Quantity, UnitPrice = convertedPrices[quoteItem.QuoteItemID], HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
             await _orderRepository.SaveOrderItemAsync(orderItem, cancellationToken);
             foreach (var specValue in quoteItem.SpecificationValues)
             {
@@ -258,12 +267,14 @@ public class OrderService(
         if (order.OrderType != OrderType.Custom)
             throw new ValidationException("Envio para produção só é permitido para pedidos do tipo sob encomenda (Custom).");
 
-        var products = await _productRepository.SearchGetByAsync(item.ProductID.ToString(), 1, 1, cancellationToken);
-        var product = products.FirstOrDefault(p => p.ProductID == item.ProductID)
-            ?? (await _productRepository.SearchGetByAsync(null, 1, 1000, cancellationToken)).FirstOrDefault(p => p.ProductID == item.ProductID);
-
-        if (product != null && product.ProductType == ProductType.Service)
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new ValidationException(CommercialItemReference.ValidationMessage);
+        if (item.ServiceID.HasValue)
             throw new ValidationException("Itens do tipo Serviço (Service) não podem ser enviados para produção.");
+
+        var products = await _productRepository.SearchGetByAsync(item.ProductID!.Value.ToString(), 1, 1, cancellationToken);
+        if (!products.Any(product => product.ProductID == item.ProductID))
+            throw new KeyNotFoundException("O produto do item nao foi encontrado.");
 
         item.SentToProductionAt = DateTime.UtcNow;
         item.SentToProductionByEmployeeID = sentToProductionByEmployeeID;

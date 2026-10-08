@@ -6,11 +6,13 @@
              x:Class="Decor.AvaloniaUI.Views.QuotesView"
              x:DataType="vm:QuotesViewModel">
   <UserControl.Styles>
-    <Style Selector="Button.field-action">
+    <Style Selector="Button.field-action, Button.search-button, Button.clear-search-button">
       <Setter Property="Margin" Value="0"/>
       <Setter Property="Padding" Value="0"/>
       <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="MinWidth" Value="0"/>
       <Setter Property="Width" Value="36"/>
+      <Setter Property="Height" Value="NaN"/>
       <Setter Property="VerticalAlignment" Value="Stretch"/>
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
       <Setter Property="CornerRadius" Value="0"/>
@@ -18,30 +20,22 @@
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Button.catalog-page">
-      <Setter Property="Height" Value="26"/>
-      <Setter Property="Width" Value="28"/>
-      <Setter Property="Margin" Value="0"/>
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="MinHeight" Value="0"/>
-      <Setter Property="MinWidth" Value="0"/>
-      <Setter Property="HorizontalContentAlignment" Value="Center"/>
-      <Setter Property="VerticalContentAlignment" Value="Center"/>
-    </Style>
   </UserControl.Styles>
   <Grid RowDefinitions="Auto,*" Margin="16">
     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-        <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar orçamentos por código ou cliente" KeyDown="SearchTextBox_KeyDown"/>
+      <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar orçamentos por código ou cliente" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
         <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/></Button>
         <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/></Button>
       </Grid>
+      </Border>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"><Button Content="Novo orçamento" Command="{Binding NewCommand}"/><Button Content="Editar" Command="{Binding EditCommand}"/><Button Content="Excluir" Command="{Binding DeleteCommand}"/></StackPanel>
     </Grid>
     <Panel Grid.Row="1">
       <Grid RowDefinitions="Auto,*" RowSpacing="8" IsVisible="{Binding !IsEditing}">
         <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" IsVisible="{Binding HasError}"/>
-        <controls:DecorDataGridControl Grid.Row="1" x:Name="QuotesGrid" DefaultSortMemberPath="QuoteID" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/>
+        <controls:DecorDataGridControl Grid.Row="1" x:Name="QuotesGrid" PaginationSource="{Binding}" DefaultSortMemberPath="QuoteID" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/>
       </Grid>
       <Grid RowDefinitions="*,Auto,Auto" RowSpacing="8" IsVisible="{Binding IsEditing}">
         <Grid ColumnDefinitions="2*,3*" ColumnSpacing="16">
@@ -85,7 +79,7 @@
         </Grid>
         </Border>
           <Border Grid.Row="1" Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="6" Padding="10">
-          <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
+          <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
             <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
             <Grid ColumnDefinitions="*,Auto,Auto">
               <TextBox Text="{Binding ProductSearchText}" PlaceholderText="Pesquisar produtos e serviços" BorderThickness="0"/>
@@ -94,11 +88,10 @@
             </Grid>
             </Border>
             <TabControl Grid.Row="1" SelectedIndex="{Binding CatalogTabIndex}">
-              <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Products}" Fill="{DynamicResource DecorTextBrush}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Produtos"/></StackPanel></TabItem.Header><controls:DecorDataGridControl x:Name="ProductsCatalogGrid" ItemsSource="{Binding CatalogProducts}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" DefaultSortMemberPath="ProductID"/></TabItem>
-              <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Servicos}" Fill="{DynamicResource DecorTextBrush}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Serviços"/></StackPanel></TabItem.Header><controls:DecorDataGridControl x:Name="ServicesCatalogGrid" ItemsSource="{Binding CatalogServices}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" DefaultSortMemberPath="ProductID"/></TabItem>
+              <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Products}" Fill="{DynamicResource DecorTextBrush}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Produtos"/></StackPanel></TabItem.Header><controls:DecorDataGridControl x:Name="ProductsCatalogGrid" PaginationSource="{Binding CatalogPagination}" ItemsSource="{Binding CatalogProducts}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" DefaultSortMemberPath="Code"/></TabItem>
+              <TabItem><TabItem.Header><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Servicos}" Fill="{DynamicResource DecorTextBrush}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Serviços"/></StackPanel></TabItem.Header><controls:DecorDataGridControl x:Name="ServicesCatalogGrid" PaginationSource="{Binding CatalogPagination}" ItemsSource="{Binding CatalogServices}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" DefaultSortMemberPath="Code"/></TabItem>
             </TabControl>
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="4"><Button Classes="catalog-page" Command="{Binding CatalogPreviousCommand}" ToolTip.Tip="Página anterior"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="14" Height="14" Stretch="Uniform"/></Button><Button Classes="catalog-page" Command="{Binding CatalogNextCommand}" ToolTip.Tip="Próxima página"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="14" Height="14" Stretch="Uniform"/></Button></StackPanel>
-            <Grid Grid.Row="3" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnDefinitions="130,*" ColumnSpacing="8">
+            <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnDefinitions="130,*" ColumnSpacing="8">
               <StackPanel Spacing="4"><TextBlock Text="Quantidade"/><Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4"><Grid ColumnDefinitions="*,36"><NumericUpDown controls:QuoteNumericInput.Enabled="True" Value="{Binding QuantityValue}" Minimum="{Binding QuantityMinimum}" Maximum="{Binding QuantityMaximum}" Increment="1" FormatString="{Binding QuantityFormat}" BorderThickness="0" HorizontalContentAlignment="Right" AllowSpin="False" ShowButtonSpinner="False" ParsingNumberStyle="Number"/><TextBlock Grid.Column="1" Text="{Binding QuantityUnitLabel}" ToolTip.Tip="{Binding QuantityUnitDescription}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid></Border></StackPanel>
               <StackPanel Grid.Column="1" Spacing="4"><TextBlock Text="Valor de Venda"/><Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4"><Grid ColumnDefinitions="*,36"><NumericUpDown controls:QuoteNumericInput.Enabled="True" Value="{Binding SaleValue}" Minimum="0" Maximum="999999999" FormatString="N2" Increment="0.01" BorderThickness="0" HorizontalContentAlignment="Right" AllowSpin="False" ShowButtonSpinner="False" ParsingNumberStyle="Number"/><TextBlock Grid.Column="1" Text="{Binding CurrencySymbol}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid></Border></StackPanel>
               <Button Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Right" Command="{Binding SaveLineCommand}"><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cart}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Adicionar item"/></StackPanel></Button>
@@ -115,9 +108,9 @@
               <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,140" ColumnSpacing="12" RowSpacing="4">
                 <TextBlock Text="Subtotal"/><TextBlock Grid.Column="1" Text="{Binding QuoteTotal, StringFormat='{}{0:C2}'}" HorizontalAlignment="Right"/>
                 <TextBlock Grid.Row="1" Text="Desconto" VerticalAlignment="Center"/><Border Grid.Row="1" Grid.Column="1" Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4"><Grid ColumnDefinitions="*,36"><NumericUpDown controls:QuoteNumericInput.Enabled="True" Value="{Binding DiscountValue}" Minimum="0" Maximum="{Binding QuoteTotal}" FormatString="N2" BorderThickness="0" HorizontalContentAlignment="Right" AllowSpin="False" ShowButtonSpinner="False" ParsingNumberStyle="Number"/><TextBlock Grid.Column="1" Text="{Binding CurrencySymbol}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid></Border>
-                <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#0066CC" Padding="8,4" CornerRadius="4"><Grid ColumnDefinitions="Auto,*" ColumnSpacing="16"><TextBlock Text="Total" FontSize="24" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding NetTotal, StringFormat='{}{0:C2}'}" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Right"/></Grid></Border>
+                <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#0066CC" Padding="8,4" CornerRadius="4"><Grid ColumnDefinitions="Auto,*" ColumnSpacing="16"><TextBlock Text="Total" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="{Binding NetTotal, StringFormat='{}{0:C2}'}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Right"/></Grid></Border>
               </Grid>
-              <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,4,0,0"><StackPanel Spacing="2"><TextBlock Text="Observações" FontSize="12"/><TextBox Text="{Binding Notes}" MaxLength="{Binding NotesLimit}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="80"/><TextBlock Text="{Binding NotesCounter}" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource DecorTextMutedBrush}"/></StackPanel></Border>
+              <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,4,0,0"><StackPanel Spacing="2"><TextBlock Text="Observações" FontSize="12"/><TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" MaxLength="{Binding NotesLimit}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="80"/><TextBlock Text="{Binding NotesCounter}" FontSize="12" HorizontalAlignment="Right" Foreground="{DynamicResource DecorTextMutedBrush}"/></StackPanel></Border>
             </Grid>
             </Border>
           </Grid>

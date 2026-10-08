@@ -26,7 +26,7 @@
       </StackPanel>
     </Grid>
     <Panel Grid.Row="1">
-      <controls:DecorDataGridControl x:Name="RolesGrid" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}"
+      <controls:DecorDataGridControl x:Name="RolesGrid" PaginationSource="{Binding}" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}"
                                       IsVisible="{Binding !IsEditing}" DefaultSortMemberPath="RoleName"
                                       IsEnabled="{Binding IsIdle}"
                                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>

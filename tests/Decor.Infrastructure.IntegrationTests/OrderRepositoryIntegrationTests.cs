@@ -128,6 +128,16 @@ public sealed class OrderRepositoryIntegrationTests(MariaDbFixture fixture) : IC
                 PRIMARY KEY (ProductID)
             ) ENGINE=InnoDB;
 
+            CREATE TABLE IF NOT EXISTS services (
+                ServiceID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                Description VARCHAR(255) NOT NULL,
+                IsActive TINYINT(1) NOT NULL DEFAULT 1,
+                CostPrice DECIMAL(10,2) NULL,
+                SalePrice DECIMAL(10,2) NULL,
+                EmployeeCommissionValue DECIMAL(10,2) NULL,
+                Observations TEXT NULL
+            ) ENGINE=InnoDB;
+
             CREATE TABLE IF NOT EXISTS product_specification_attributes (
                 AttributeID INT NOT NULL AUTO_INCREMENT,
                 ProductCategoryID INT NOT NULL,
@@ -159,17 +169,28 @@ public sealed class OrderRepositoryIntegrationTests(MariaDbFixture fixture) : IC
             CREATE TABLE IF NOT EXISTS quote_items (
                 QuoteItemID INT NOT NULL AUTO_INCREMENT,
                 QuoteSectionID INT NOT NULL,
-                ProductID INT NOT NULL,
+                ProductID INT NULL,
+                ServiceID INT NULL,
                 Quantity DECIMAL(12,3) NOT NULL DEFAULT 0,
                 UnitPrice DECIMAL(12,2) NULL,
                 HasInstallationService TINYINT(1) NOT NULL DEFAULT 0,
-                PRIMARY KEY (QuoteItemID)
+                PRIMARY KEY (QuoteItemID),
+                FOREIGN KEY (ServiceID) REFERENCES services(ServiceID),
+                CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL))
             ) ENGINE=InnoDB;
         ");
 
         var migrationsDir = Path.Combine(AppContext.BaseDirectory, "Migrations");
         var orderSql = await File.ReadAllTextAsync(Path.Combine(migrationsDir, "20260911_add_order_commercial.sql"));
         await connection.ExecuteAsync(orderSql);
+        await connection.ExecuteAsync(@"
+            ALTER TABLE order_items DROP FOREIGN KEY FK_order_items_products;
+            ALTER TABLE order_items MODIFY COLUMN ProductID INT NULL,
+                ADD COLUMN IF NOT EXISTS ServiceID INT NULL,
+                ADD CONSTRAINT FK_order_items_products FOREIGN KEY (ProductID) REFERENCES products(ProductID),
+                ADD CONSTRAINT FK_order_items_services FOREIGN KEY (ServiceID) REFERENCES services(ServiceID),
+                ADD CONSTRAINT CK_order_items_reference CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL));
+        ");
     }
 
     private OrderRepository CreateRepository()

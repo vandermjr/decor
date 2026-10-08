@@ -20,7 +20,19 @@ public class GridControlThemeColors
             DataType_Decimal_Negative = new SolidColorBrush(Color.Parse("#FF7272")),
             DataType_Boolean = new SolidColorBrush(Color.Parse("#F0F0F0"))
         }
-        : new GridControlThemeColors();
+        : new GridControlThemeColors
+        {
+            GridLines = new SolidColorBrush(Color.Parse("#E4E7EB")),
+            HeaderBackground = new SolidColorBrush(Color.Parse("#F0F2F5")),
+            HeaderText = new SolidColorBrush(Color.Parse("#30363E")),
+            CellText = new SolidColorBrush(Color.Parse("#30363E")),
+            DataType_Int = new SolidColorBrush(Color.Parse("#0057A8")),
+            DataType_Text = new SolidColorBrush(Color.Parse("#176B35")),
+            DataType_DateTime = new SolidColorBrush(Color.Parse("#9A4100")),
+            DataType_Decimal_Positive = new SolidColorBrush(Color.Parse("#176B35")),
+            DataType_Decimal_Negative = new SolidColorBrush(Color.Parse("#B32D35")),
+            DataType_Boolean = new SolidColorBrush(Color.Parse("#30363E"))
+        };
 
     /// <summary>
     /// Background color for the grid area.

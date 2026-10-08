@@ -83,16 +83,14 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_ServiceWithoutStockUnit_Saves()
+    public async Task ProductService_ServiceWithoutStockUnit_DoesNotPersist()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
 
-        await service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Service));
-
-        repository.SaveCalls.Should().Be(1);
-        repository.LastSaved.Should().NotBeNull();
-        repository.LastSaved!.StockUnitID.Should().BeNull();
+        var action = () => service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Service));
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
     }
 
     [Fact]
@@ -121,16 +119,14 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_ServiceWithSubgroup_AutoClearsSubgroupAndSaves()
+    public async Task ProductService_ServiceWithSubgroup_DoesNotPersist()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
 
-        await service.SaveProductAsync(CreateProduct(subgroupId: 1, productType: ProductType.Service));
-
-        repository.SaveCalls.Should().Be(1);
-        repository.LastSaved.Should().NotBeNull();
-        repository.LastSaved!.SubgroupID.Should().BeNull();
+        var action = () => service.SaveProductAsync(CreateProduct(subgroupId: 1, productType: ProductType.Service));
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
     }
 
     [Fact]
@@ -146,15 +142,13 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_DefaultInstallationServiceReferencingSelf_ThrowsValidationException()
+    public async Task ProductService_DefaultInstallationServiceWithSameNumericId_Saves()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsEdit));
 
-        var action = () => service.SaveProductAsync(CreateProduct(productId: 7, defaultInstallationServiceId: 7));
-
-        await action.Should().ThrowAsync<ValidationException>();
-        repository.SaveCalls.Should().Be(0);
+        await service.SaveProductAsync(CreateProduct(productId: 7, defaultInstallationServiceId: 7));
+        repository.SaveCalls.Should().Be(1);
     }
 
     [Fact]

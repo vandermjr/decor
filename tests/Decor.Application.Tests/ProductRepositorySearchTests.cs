@@ -9,6 +9,20 @@ namespace Decor.Application.Tests;
 public sealed class ProductRepositorySearchTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task QuotedPhraseAndLiteralStockTextUseSharedTokens(bool synchronous)
+    {
+        var (sql, parameters) = await BuildQuery("\"piso branco\" \"sem estoque\" tipo:produto estoque > 2", synchronous);
+        Assert.Equal(4, parameters.Values.Count(value => Equals(value, "piso branco")));
+        Assert.Equal(4, parameters.Values.Count(value => Equals(value, "sem estoque")));
+        Assert.Equal(ProductType.Good, parameters["ProductType"]);
+        Assert.Equal(2m, parameters["StockQuantity"]);
+        Assert.DoesNotContain("p.StockQuantity =", sql);
+        Assert.Contains(") AND (", sql);
+    }
+
+    [Theory]
     [InlineData("sem estoque", "=")]
     [InlineData("estoque = 0", "=")]
     [InlineData("com estoque negativo", "<")]
@@ -30,7 +44,7 @@ public sealed class ProductRepositorySearchTests
     {
         var (sql, parameters) = await BuildQuery("piso arquitech");
         Assert.Matches(@"(?i)LEFT(?: OUTER)? JOIN\s+`?brands`?", sql);
-        Assert.Contains("p.IsActive = @IsActive AND (", sql);
+        Assert.Contains("p.IsActive = @IsActive AND p.ProductType = @ProductType AND (", sql);
         Assert.Contains(") AND (", sql);
         foreach (var column in new[] { "p.Description", "b.BrandName", "p.Barcode", "p.ManufacturerRef" })
             Assert.Equal(2, sql.Split(column + " LIKE").Length - 1);
@@ -47,7 +61,9 @@ public sealed class ProductRepositorySearchTests
         var (sql, parameters) = await BuildQuery("piso estoque acima de 1,25 " + typePhrase);
         Assert.Contains("p.ProductType = @ProductType", sql);
         Assert.Contains("p.StockQuantity > @StockQuantity", sql);
-        Assert.Equal(type, parameters["ProductType"]);
+        Assert.Equal(ProductType.Good, parameters["ProductType"]);
+        if (type == ProductType.Service)
+            Assert.Contains(parameters, parameter => parameter.Key != "ProductType" && Equals(parameter.Value, ProductType.Service));
         Assert.Equal(1.25m, Assert.IsType<decimal>(parameters["StockQuantity"]));
         Assert.True(sql.IndexOf("p.ProductType =", StringComparison.Ordinal) < sql.IndexOf("LIMIT", StringComparison.Ordinal));
         Assert.Contains("LIMIT 5", sql);
