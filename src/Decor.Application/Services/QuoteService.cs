@@ -125,9 +125,8 @@ public class QuoteService(
 
     public async Task DeleteQuoteAsync(int quoteId, CancellationToken cancellationToken = default)
     {
-        Require(DecorPermissions.QuotesDelete);
-        var affectedRows = await _quoteRepository.DeleteAsync(quoteId, cancellationToken);
-        if (affectedRows != 1) throw new InvalidOperationException("O orçamento não foi encontrado ou não pôde ser excluído.");
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.FromException(new ValidationException("Orçamentos não podem ser excluídos. Cancele ou converta o orçamento em pedido."));
     }
 
     public async Task<QuoteSectionDTO> CreateSectionAsync(int quoteId, QuoteSectionType sectionType, CancellationToken cancellationToken = default)

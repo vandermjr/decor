@@ -60,6 +60,26 @@ public sealed class CommercialServiceItemTests
         Assert.Equal(5, roundTrip.ServiceID);
         Assert.Equal(10m, roundTrip.UnitPrice);
         Assert.True(roundTrip.HasInstallationService);
+
+        var cancelledOrder = new Order
+        {
+            CustomerID = 1,
+            QuoteSectionID = 2,
+            Status = OrderStatus.Cancelled,
+            CancellationReason = "Solicitado pelo cliente"
+        };
+        cancelledOrder.ToDTO().FromDTO().CancellationReason.Should().Be("Solicitado pelo cliente");
+    }
+
+    [Fact]
+    public void OrderDtoValidator_RequiresReasonForCancelledOrders()
+    {
+        var validator = new OrderDTOValidator();
+        var order = new Order { CustomerID = 1, QuoteSectionID = 1, Status = OrderStatus.Cancelled };
+        Assert.Contains(validator.Validate(order.ToDTO()), error => error.Contains("motivo do cancelamento", StringComparison.OrdinalIgnoreCase));
+
+        order.CancellationReason = "Solicitado pelo cliente";
+        Assert.DoesNotContain(validator.Validate(order.ToDTO()), error => error.Contains("motivo do cancelamento", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]

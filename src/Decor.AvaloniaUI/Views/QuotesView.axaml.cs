@@ -2,13 +2,17 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Media;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Decor.AvaloniaUI.Icons;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Decor.Core.DTOs;
 using Decor.AvaloniaUI.Services;
 using Decor.AvaloniaUI.ViewModels;
+using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Decor.AvaloniaUI.Views;
@@ -21,16 +25,26 @@ public partial class QuotesView : UserControl
     public QuotesView()
     {
         InitializeComponent();
-        QuotesGrid.InitializeColumns(typeof(QuoteListItem), propertyName => propertyName switch
+        QuotesGrid.InitializeColumns(typeof(QuoteListItem), propertyName =>
         {
-            nameof(QuoteListItem.QuoteID) => "Código",
-            nameof(QuoteListItem.CustomerID) => "Cliente",
-            nameof(QuoteListItem.CreatedByEmployeeID) => "Responsável",
-            nameof(QuoteListItem.SourcePartnerID) => "Parceiro",
-            _ => propertyName
+            var dtoPropertyName = propertyName switch
+            {
+                nameof(QuoteListItem.QuoteID) => nameof(QuoteDTO.QuoteID),
+                nameof(QuoteListItem.CreatedAt) => nameof(QuoteDTO.CreatedAt),
+                nameof(QuoteListItem.CustomerName) => nameof(QuoteDTO.CustomerName),
+                nameof(QuoteListItem.CreatedByEmployeeName) => nameof(QuoteDTO.CreatedByEmployeeName),
+                nameof(QuoteListItem.Status) => nameof(QuoteDTO.ListStatus),
+                nameof(QuoteListItem.TotalDisplay) => nameof(QuoteDTO.ListTotal),
+                _ => propertyName
+            };
+            var displayName = typeof(QuoteDTO).GetProperty(dtoPropertyName)?.GetCustomAttribute<DisplayAttribute>()?.GetName()
+                ?? propertyName;
+            return propertyName == nameof(QuoteListItem.QuoteID) ? "Código" : displayName;
         }, propertyName => propertyName == nameof(QuoteListItem.QuoteID)
             ? new DataGridLength(100)
-            : new DataGridLength(1, DataGridLengthUnitType.Star));
+            : new DataGridLength(1, DataGridLengthUnitType.Star),
+            [nameof(QuoteListItem.QuoteID), nameof(QuoteListItem.CreatedAt), nameof(QuoteListItem.CustomerName),
+                nameof(QuoteListItem.CreatedByEmployeeName), nameof(QuoteListItem.Status), nameof(QuoteListItem.TotalDisplay)]);
         QuotesGrid.ValueMatchChanged += (_, args) =>
         {
             if (DataContext is QuotesViewModel viewModel) viewModel.SetValueMatch(args.ColumnName, args.MatchCount);
@@ -172,12 +186,83 @@ public partial class QuotesView : UserControl
             || TopLevel.GetTopLevel(this) is not Window owner)
             return;
 
-        var searchViewModel = _services.GetRequiredService<ContextualSearchViewModel>();
-        await searchViewModel.InitializeAsync(context);
-        var dialog = new ContextualSearchWindow(searchViewModel);
+        Control lookupView;
+        INotifyPropertyChanged lookupViewModel;
+        Func<object?> getSelected;
+        string selectionProperty;
+        var title = context switch
+        {
+            LookupSearchContext.Customer => "Selecionar cliente",
+            LookupSearchContext.Employee => "Selecionar funcionário",
+            LookupSearchContext.Partner => "Selecionar parceiro",
+            LookupSearchContext.Product => "Selecionar produto",
+            _ => "Selecionar serviço"
+        };
+
+        switch (context)
+        {
+            case LookupSearchContext.Customer:
+            {
+                var viewModel = _services.GetRequiredService<CustomersViewModel>();
+                viewModel.SelectionMode = true;
+                lookupView = new CustomersView(viewModel);
+                lookupViewModel = viewModel;
+                getSelected = () => viewModel.SelectedItem is { IsActive: true } customer ? customer : null;
+                selectionProperty = nameof(viewModel.SelectedItem);
+                viewModel.SearchCommand.Execute(null);
+                break;
+            }
+            case LookupSearchContext.Employee:
+            {
+                var viewModel = _services.GetRequiredService<EmployeesViewModel>();
+                viewModel.SelectionMode = true;
+                lookupView = new EmployeesView(viewModel);
+                lookupViewModel = viewModel;
+                getSelected = () => viewModel.SelectedEmployee is { IsActive: true } employee ? employee : null;
+                selectionProperty = nameof(viewModel.SelectedEmployee);
+                break;
+            }
+            case LookupSearchContext.Partner:
+            {
+                var viewModel = _services.GetRequiredService<PartnersViewModel>();
+                viewModel.SelectionMode = true;
+                lookupView = new PartnersView(viewModel);
+                lookupViewModel = viewModel;
+                getSelected = () => viewModel.SelectedPartner is { IsActive: true } partner ? partner : null;
+                selectionProperty = nameof(viewModel.SelectedPartner);
+                viewModel.SearchCommand.Execute(null);
+                break;
+            }
+            case LookupSearchContext.Product:
+            {
+                var viewModel = _services.GetRequiredService<ProductsViewModel>();
+                viewModel.SelectionMode = true;
+                lookupView = new ProductsView(viewModel);
+                lookupViewModel = viewModel;
+                getSelected = () => viewModel.SelectedProduct is { IsActive: true } product ? product : null;
+                selectionProperty = nameof(viewModel.SelectedProduct);
+                viewModel.SearchCommand.Execute(null);
+                break;
+            }
+            case LookupSearchContext.Service:
+            {
+                var viewModel = _services.GetRequiredService<ServicesViewModel>();
+                viewModel.SelectionMode = true;
+                lookupView = new ServicesView(viewModel);
+                lookupViewModel = viewModel;
+                getSelected = () => viewModel.SelectedService is { IsActive: true } service ? service : null;
+                selectionProperty = nameof(viewModel.SelectedService);
+                viewModel.SearchCommand.Execute(null);
+                break;
+            }
+            default:
+                return;
+        }
+
+        var dialog = new LookupSelectionWindow(lookupView, lookupViewModel, getSelected, selectionProperty, title);
         var accepted = await _navigationService.ShowDialogAsync<bool>(owner, dialog);
-        if (accepted == true && dialog.SelectedResult is { } result)
-            quoteViewModel.ApplyLookupSelection(context, result.Value);
+        if (accepted && dialog.SelectedValue is { } selected)
+            quoteViewModel.ApplyLookupSelection(context, selected);
     }
 
 }

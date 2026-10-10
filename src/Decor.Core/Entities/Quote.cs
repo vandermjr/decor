@@ -45,4 +45,16 @@ public class Quote
 
     [NotMapped]
     public ICollection<QuoteSection> Sections { get; set; } = new List<QuoteSection>();
+
+    [NotMapped]
+    public string? CustomerName { get; set; }
+
+    [NotMapped]
+    public string? CreatedByEmployeeName { get; set; }
+
+    [NotMapped]
+    public string? ListStatus { get; set; }
+
+    [NotMapped]
+    public decimal? ListTotal { get; set; }
 }

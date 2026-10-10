@@ -73,6 +73,31 @@ public sealed class UnitOfMeasureServiceTests
     }
 
     [Fact]
+    public async Task SaveUnitOfMeasure_DeactivationRequiresDedicatedPermission()
+    {
+        var repo = new TrackingUnitOfMeasureRepository();
+        repo.Units.Add(new UnitOfMeasure { UnitOfMeasureID = 7, Code = "M", Description = "Metro", AllowsFraction = true, IsActive = true });
+        var service = CreateService(repo, DecorPermissions.UnitsOfMeasureEdit);
+
+        var act = () => service.SaveUnitOfMeasureAsync(new UnitOfMeasureDTO(7, "M", "Metro", true, false));
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        repo.Units[0].IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveUnitOfMeasure_DeactivatesWhenEditAndDeactivatePermissionsAreGranted()
+    {
+        var repo = new TrackingUnitOfMeasureRepository();
+        repo.Units.Add(new UnitOfMeasure { UnitOfMeasureID = 7, Code = "M", Description = "Metro", AllowsFraction = true, IsActive = true });
+        var service = CreateService(repo, DecorPermissions.UnitsOfMeasureEdit, DecorPermissions.UnitsOfMeasureDeactivate);
+
+        await service.SaveUnitOfMeasureAsync(new UnitOfMeasureDTO(7, "M", "Metro", true, false));
+
+        repo.Units[0].IsActive.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task DeactivateUnitOfMeasure_Existing_UpdatesToInactive()
     {
         var repo = new TrackingUnitOfMeasureRepository();

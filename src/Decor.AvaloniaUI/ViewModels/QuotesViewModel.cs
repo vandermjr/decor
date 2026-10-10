@@ -12,7 +12,11 @@ using Decor.Core.Interfaces.Services;
 namespace Decor.AvaloniaUI.ViewModels;
 
 public sealed record QuoteListItem(int QuoteID, int CustomerID, int CreatedByEmployeeID, string Source,
-    int? SourcePartnerID, DateTime CreatedAt, string? Notes);
+    int? SourcePartnerID, DateTime CreatedAt, string? Notes, string CustomerName = "", string CreatedByEmployeeName = "",
+    string Status = "", decimal Total = 0m)
+{
+    public string TotalDisplay => Total.ToString("C2", CultureInfo.GetCultureInfo("pt-BR"));
+}
 public sealed record QuoteCustomerOption(int CustomerID, string Name, string? Document, string? Phone = null)
 {
     public override string ToString() => string.Join(" · ", new[] { Name, Document, Phone }.Where(value => !string.IsNullOrWhiteSpace(value)));
@@ -87,8 +91,6 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
-    private bool _showDeleteConfirmation;
-    private QuoteListItem? _quoteToDelete;
     private QuoteCustomerOption? _selectedCustomer;
     private QuoteEmployeeOption? _selectedEmployee;
     private QuotePartnerOption? _selectedPartner;
@@ -138,11 +140,8 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         RejectSectionCommand = new RelayCommand(async () => await UpdateSectionStatusAsync(QuoteSectionStatus.Rejected), () => CanRejectSection);
         NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => CanNew);
         EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => CanEdit);
-        DeleteCommand = new RelayCommand(BeginDelete, () => CanDelete);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(async () => await ReturnToListAsync(), () => CanCancel);
-        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
-        CancelDeleteCommand = new RelayCommand(CancelDelete, () => true);
     }
 
     public GridListState<QuoteListItem> Listing { get; }
@@ -197,11 +196,15 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         }
     }
     public string QuoteState => Sections.Count > 0 && Sections.All(section => section.DTO.Status == (int)QuoteSectionStatus.Rejected)
-        ? "CANCELADO" : Sections.Count > 0 && Sections.All(section => section.DTO.Status == (int)QuoteSectionStatus.ConvertedToOrder)
-            ? "CONVERTIDO" : "ABERTO";
+        ? "CANCELADO" : Sections.Count > 0
+            && Sections.Any(section => section.DTO.Status == (int)QuoteSectionStatus.ConvertedToOrder)
+            && Sections.All(section => section.DTO.Status is (int)QuoteSectionStatus.Rejected or (int)QuoteSectionStatus.ConvertedToOrder)
+                ? FormatOrderReferences(Sections.Where(section => section.DTO.Status == (int)QuoteSectionStatus.ConvertedToOrder)
+                    .Select(section => section.DTO.OrderID)) : "ABERTO";
     public bool IsQuoteOpen => QuoteState == "ABERTO";
     public bool IsQuoteCancelled => QuoteState == "CANCELADO";
-    public bool IsQuoteConverted => QuoteState == "CONVERTIDO";
+    public bool IsQuoteConverted => QuoteState.StartsWith("Ref. Pedido Nº ", StringComparison.Ordinal)
+        || QuoteState == "PEDIDO CONVERTIDO";
     public string CurrencySymbol => string.IsNullOrWhiteSpace(CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol)
         || CultureInfo.CurrentCulture.Equals(CultureInfo.InvariantCulture)
         ? CultureInfo.GetCultureInfo("pt-BR").NumberFormat.CurrencySymbol
@@ -258,11 +261,8 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     public ICommand RejectSectionCommand { get; }
     public ICommand NewCommand { get; }
     public ICommand EditCommand { get; }
-    public ICommand DeleteCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
-    public ICommand ConfirmDeleteCommand { get; }
-    public ICommand CancelDeleteCommand { get; }
     public string SearchText { get => _searchText; set => SetField(ref _searchText, value); }
     public string StatusMessage { get => _statusMessage; private set => SetField(ref _statusMessage, value); }
     public string ErrorMessage { get => _errorMessage; private set { if (SetField(ref _errorMessage, value)) OnPropertyChanged(nameof(HasError)); } }
@@ -472,8 +472,6 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     public bool CanRejectSection => IsEditing && !IsBusy && _authorizationService.HasPermission(DecorPermissions.QuotesApprove)
         && SelectedSection?.DTO.Status is (int)QuoteSectionStatus.AwaitingQuotation or (int)QuoteSectionStatus.Sent;
     public string CodeDisplay => RecordCodeDisplay.ForExistingRecord(CurrentQuoteId);
-    public string DeleteConfirmationMessage => _quoteToDelete is null ? string.Empty : $"Excluir o orçamento { _quoteToDelete.QuoteID }?";
-    public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set => SetField(ref _showDeleteConfirmation, value); }
     public QuoteListItem? SelectedItem
     {
         get => _selectedItem;
@@ -507,7 +505,6 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     public bool CanSearch => _authorizationService.HasPermission(DecorPermissions.QuotesView) && !IsBusy && !IsEditing;
     public bool CanNew => _authorizationService.HasPermission(DecorPermissions.QuotesCreate) && !IsBusy && !IsEditing;
     public bool CanEdit => _authorizationService.HasPermission(DecorPermissions.QuotesEdit) && SelectedItem is not null && !IsBusy && !IsEditing;
-    public bool CanDelete => _authorizationService.HasPermission(DecorPermissions.QuotesDelete) && SelectedItem is not null && !IsBusy && !IsEditing;
     public bool CanSave => IsEditing && !IsBusy && IsQuoteOpen
         && _authorizationService.HasPermission(CurrentQuoteId > 0 ? DecorPermissions.QuotesEdit : DecorPermissions.QuotesCreate);
     public bool CanCancel => IsEditing && !IsBusy;
@@ -880,7 +877,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         QuoteSectionStatus.Sent => "Enviada",
         QuoteSectionStatus.Approved => "Aprovada",
         QuoteSectionStatus.Rejected => "Rejeitada",
-        QuoteSectionStatus.ConvertedToOrder => "Convertida em venda",
+        QuoteSectionStatus.ConvertedToOrder => "Convertida em pedido",
         _ => "Desconhecido"
     };
 
@@ -1011,36 +1008,10 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         _ => "Própria"
     };
 
-    public void BeginDelete()
+    private static string FormatOrderReferences(IEnumerable<int?> orderIds)
     {
-        if (SelectedItem is null) return;
-        _quoteToDelete = SelectedItem;
-        ShowDeleteConfirmation = true;
-        OnPropertyChanged(nameof(DeleteConfirmationMessage));
-    }
-
-    public void CancelDelete()
-    {
-        _quoteToDelete = null;
-        ShowDeleteConfirmation = false;
-        OnPropertyChanged(nameof(DeleteConfirmationMessage));
-    }
-
-    public async Task ConfirmDeleteAsync()
-    {
-        if (_quoteToDelete is null) return;
-        IsBusy = true;
-        try
-        {
-            await _quoteService.DeleteQuoteAsync(_quoteToDelete.QuoteID);
-            CancelDelete();
-            SelectedItem = null;
-            StatusMessage = "Orçamento excluído.";
-            await LoadListingAsync();
-        }
-        catch (UnauthorizedAccessException) { StatusMessage = "Você não possui permissão para excluir orçamentos."; }
-        catch (Exception) { StatusMessage = "Não foi possível excluir o orçamento."; }
-        finally { IsBusy = false; }
+        var references = orderIds.Where(orderId => orderId is > 0).Select(orderId => orderId!.Value).Distinct().Order().ToArray();
+        return references.Length == 0 ? "PEDIDO CONVERTIDO" : $"Ref. Pedido Nº {string.Join(", ", references)}";
     }
 
     private void ClearSearch()
@@ -1075,7 +1046,8 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         SelectedItem = null;
         Listing.Load(all.Select(quote => new QuoteListItem(quote.QuoteID, quote.CustomerID,
             quote.CreatedByEmployeeID, FormatSourceType(quote.SourceType),
-            quote.SourcePartnerID, quote.CreatedAt, quote.Notes)));
+            quote.SourcePartnerID, quote.CreatedAt, quote.Notes, quote.CustomerName ?? "(sem nome)",
+            quote.CreatedByEmployeeName ?? "(sem nome)", quote.ListStatus ?? "ABERTO", quote.ListTotal ?? 0m)));
     }
 
     private async Task<bool> SaveAsync()
@@ -1121,15 +1093,15 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     private void RefreshCommands()
     {
         CatalogPagination.Refresh();
-        foreach (var command in new[] { SearchCommand, ClearSearchCommand, NewCommand, EditCommand, DeleteCommand,
-                 SaveCommand, CancelCommand, ConfirmDeleteCommand, CreateSectionCommand, SaveLineCommand,
+        foreach (var command in new[] { SearchCommand, ClearSearchCommand, NewCommand, EditCommand,
+             SaveCommand, CancelCommand, CreateSectionCommand, SaveLineCommand,
                  RequestQuotationCommand, SendSectionCommand, ApproveSectionCommand, RejectSectionCommand,
                  ClearProductsCommand, SearchProductsCommand, CatalogPreviousCommand, CatalogNextCommand,
                  ClearCustomerCommand, ClearEmployeeCommand, NewLineCommand,
                  GeneratePdfCommand, CancelQuoteCommand, ConvertToOrderCommand })
             if (command is RelayCommand relayCommand) relayCommand.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(CanSearch)); OnPropertyChanged(nameof(CanNew)); OnPropertyChanged(nameof(CanEdit));
-        OnPropertyChanged(nameof(CanDelete)); OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanCancel));
+        OnPropertyChanged(nameof(CanSave)); OnPropertyChanged(nameof(CanCancel));
         OnPropertyChanged(nameof(CanManageSections)); OnPropertyChanged(nameof(CanManageLines));
         OnPropertyChanged(nameof(CanRequestQuotation)); OnPropertyChanged(nameof(CanSendSection));
         OnPropertyChanged(nameof(CanApproveSection)); OnPropertyChanged(nameof(CanRejectSection));

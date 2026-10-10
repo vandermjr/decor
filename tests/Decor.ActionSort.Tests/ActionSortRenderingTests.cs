@@ -73,7 +73,6 @@ public sealed class ActionSortRenderingTests
         {
             Settle(window);
             Assert.False(ButtonFor(view, viewModel.EditCommand).IsVisible);
-            Assert.False(ButtonFor(view, viewModel.DeleteCommand).IsVisible);
             var newButton = ButtonFor(view, viewModel.NewCommand);
             Assert.True(newButton.IsVisible);
             authorization.Setup(service => service.HasPermission(DecorPermissions.QuotesCreate)).Returns(false);

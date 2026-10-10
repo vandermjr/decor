@@ -42,6 +42,27 @@ public sealed class QuotesViewModelTests
     }
 
     [Fact]
+    public async Task InitializeAsync_ProjectsQuoteListNamesStatusAndTotal()
+    {
+        var fixture = new Fixture();
+        var createdAt = new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
+        var quote = new QuoteDTO(42, 10, 5, null, (int)QuoteSourceType.Own, createdAt, null,
+            CustomerName: "Cliente da lista", CreatedByEmployeeName: "Vendedor da lista",
+            ListStatus: "ABERTO", ListTotal: 1234.56m);
+        fixture.Quotes.Setup(service => service.SearchQuotesAsync(string.Empty, 1, 500, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([quote]);
+
+        await fixture.ViewModel.InitializeAsync();
+
+        var item = Assert.Single(fixture.ViewModel.Items);
+        Assert.Equal("Cliente da lista", item.CustomerName);
+        Assert.Equal("Vendedor da lista", item.CreatedByEmployeeName);
+        Assert.Equal("ABERTO", item.Status);
+        Assert.Equal(1234.56m, item.Total);
+        Assert.Equal("R$ 1.234,56", item.TotalDisplay);
+    }
+
+    [Fact]
     public async Task BeginNewAsync_OpensPersistedDraftWithoutLoadingCatalogs()
     {
         var fixture = new Fixture();
@@ -722,6 +743,24 @@ public sealed class QuotesViewModelTests
     }
 
     [Fact]
+    public async Task QuoteState_WithConvertedAndRejectedSectionsIsConvertedToOrder()
+    {
+        var fixture = new Fixture();
+        await fixture.ViewModel.BeginNewAsync();
+        var createdAt = new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc);
+        fixture.ViewModel.Sections.Clear();
+        fixture.ViewModel.Sections.Add(new QuoteSectionOption(
+            new QuoteSectionDTO(81, 42, 1, (int)QuoteSectionStatus.ConvertedToOrder, null, null, createdAt, [], 93), "Pedido"));
+        fixture.ViewModel.Sections.Add(new QuoteSectionOption(
+            new QuoteSectionDTO(82, 42, 1, (int)QuoteSectionStatus.Rejected, null, null, createdAt, []), "Cancelada"));
+
+        Assert.Equal("Ref. Pedido Nº 93", fixture.ViewModel.QuoteState);
+        Assert.True(fixture.ViewModel.IsQuoteConverted);
+        Assert.False(fixture.ViewModel.IsQuoteOpen);
+        Assert.False(fixture.ViewModel.IsQuoteCancelled);
+    }
+
+    [Fact]
     public async Task ConvertToOrderAsync_RefreshesListingAfterSaveAndConversion()
     {
         var fixture = new Fixture(new QuoteItemDTO(11, 81, 7, 2m, 100m, false));
@@ -731,7 +770,7 @@ public sealed class QuotesViewModelTests
 
         await InvokeAsync(fixture.ViewModel, "ConvertToOrderAsync");
 
-        Assert.Equal("CONVERTIDO", fixture.ViewModel.QuoteState);
+        Assert.Equal("Ref. Pedido Nº 99", fixture.ViewModel.QuoteState);
         Assert.False(fixture.ViewModel.IsQuoteOpen);
         Assert.False(fixture.ViewModel.IsQuoteCancelled);
         Assert.False(fixture.ViewModel.CanSave);
@@ -959,7 +998,6 @@ public sealed class QuotesViewModelTests
         services.AddSingleton(Mock.Of<IPartnerService>());
         services.AddSingleton(Mock.Of<IAuthenticatedUserContext>());
         services.AddTransient<QuotesViewModel>();
-        services.AddTransient<ContextualSearchViewModel>();
         fixture.Services.Setup(service => service.SearchServicesAsync("", 1, 200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { Service(8) });
         using var provider = services.BuildServiceProvider();
@@ -968,11 +1006,9 @@ public sealed class QuotesViewModelTests
         await quote.BeginNewAsync();
         quote.CatalogTabIndex = 1;
         await SearchAsync(quote, "Service");
-        var lookup = provider.GetRequiredService<ContextualSearchViewModel>();
-        await lookup.InitializeAsync(LookupSearchContext.Service);
-
         Assert.Equal(8, Assert.Single(quote.CatalogServices).ServiceID);
-        Assert.IsType<ServiceDTO>(Assert.Single(lookup.Results).Value);
+        quote.ApplyLookupSelection(LookupSearchContext.Service, Service(8));
+        Assert.Equal(8, quote.SelectedProduct?.ServiceID);
         Assert.False(quote.HasError);
         fixture.Products.VerifyNoOtherCalls();
     }
@@ -1233,7 +1269,11 @@ public sealed class QuotesViewModelTests
             Orders.Setup(service => service.ConvertFromQuoteAsync(81, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
-                    _quote = _quote with { Sections = _quote.Sections!.Select(section => section with { Status = (int)QuoteSectionStatus.ConvertedToOrder }).ToArray() };
+                    _quote = _quote with { Sections = _quote.Sections!.Select(section => section with
+                    {
+                        Status = (int)QuoteSectionStatus.ConvertedToOrder,
+                        OrderID = 99
+                    }).ToArray() };
                     return new OrderDTO(99, 81, 10, 1, 1, false, null, null, createdAt);
                 });
             Products.Setup(service => service.GetProductByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))

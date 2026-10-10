@@ -264,6 +264,17 @@ public sealed class QuoteAggregateValidationTests
         Assert.Null(repository.DeletedItem);
     }
 
+    [Fact]
+    public async Task DeleteQuoteAsync_IsRejectedWithoutRepositoryAccess()
+    {
+        var repository = new TrackingQuoteRepository();
+
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            CreateService(repository, DecorPermissions.QuotesDelete).DeleteQuoteAsync(42));
+
+        Assert.False(repository.WasDeleted);
+    }
+
     [Theory]
     [InlineData(DecorPermissions.QuotesDelete)]
     [InlineData(DecorPermissions.QuotesCreate)]

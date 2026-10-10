@@ -30,6 +30,7 @@ public sealed class SalesViewModel : IStatusBarSource
     private string _sectionIdInput = string.Empty;
     private string _statusMessage = string.Empty;
     private string _errorMessage = string.Empty;
+    private string _cancellationReason = string.Empty;
     private bool _isBusy;
     private bool _requiresDownPayment;
     private DateTimeOffset? _manufacturingDeadline;
@@ -57,7 +58,7 @@ public sealed class SalesViewModel : IStatusBarSource
         ApproveCommand = new RelayCommand(async () => await ApproveAsync(), () => CanApprove);
         CancelCommand = new RelayCommand(BeginCancel, () => CanCancel);
         ConfirmCancelCommand = new RelayCommand(async () => await ConfirmCancelAsync(), () => CanConfirmCancel);
-        DismissCancelCommand = new RelayCommand(() => ShowCancelConfirmation = false);
+        DismissCancelCommand = new RelayCommand(DismissCancel);
         AddInstallmentCommand = new RelayCommand(AddInstallment, () => CanEditPaymentPlan);
         RemoveInstallmentCommand = new RelayCommand(RemoveInstallment, () => CanRemoveInstallment);
         CreatePaymentPlanCommand = new RelayCommand(async () => await CreatePaymentPlanAsync(), () => CanCreatePaymentPlan);
@@ -79,6 +80,7 @@ public sealed class SalesViewModel : IStatusBarSource
     public string SectionIdInput { get => _sectionIdInput; set => SetField(ref _sectionIdInput, value); }
     public string StatusMessage { get => _statusMessage; private set => SetField(ref _statusMessage, value); }
     public string ErrorMessage { get => _errorMessage; private set { if (SetField(ref _errorMessage, value)) OnPropertyChanged(nameof(HasError)); } }
+    public string CancellationReason { get => _cancellationReason; set => SetField(ref _cancellationReason, value); }
     public ObservableCollection<PaymentMethodDTO> PaymentMethods => _paymentMethods;
     public ObservableCollection<OrderInstallmentDTO> Installments => _installments;
     public ObservableCollection<PaymentPlanEntry> PlanEntries => _planEntries;
@@ -126,6 +128,9 @@ public sealed class SalesViewModel : IStatusBarSource
     private bool CanConfirmCancel => ShowCancelConfirmation && CanCancel;
     private bool CanRemoveInstallment => CanConfigurePaymentPlan && SelectedPlanEntry is not null;
     public bool HasSelectedOrder => SelectedItem is not null;
+    public bool HasCancellationReason => _selectedOrderDetails?.Status == (int)OrderStatus.Cancelled
+        && !string.IsNullOrWhiteSpace(_selectedOrderDetails.CancellationReason);
+    public string SelectedCancellationReason => _selectedOrderDetails?.CancellationReason ?? string.Empty;
     public decimal SelectedOrderTotal => (_selectedOrderDetails?.Items ?? []).Sum(item => item.Quantity * item.UnitPrice);
     public decimal PaymentPlanTotal => _planEntries.Sum(entry => entry.Amount);
     public bool HasInstallmentPlan => _installments.Count > 0;
@@ -209,6 +214,8 @@ public sealed class SalesViewModel : IStatusBarSource
             _selectedOrderDetails = order;
             _ordersById[orderId] = order;
             OnPropertyChanged(nameof(SelectedOrderTotal));
+            OnPropertyChanged(nameof(HasCancellationReason));
+            OnPropertyChanged(nameof(SelectedCancellationReason));
 
             if (_authorizationService.HasPermission(DecorPermissions.OrderInstallmentsView))
             {
@@ -327,18 +334,40 @@ public sealed class SalesViewModel : IStatusBarSource
 
     private void BeginCancel()
     {
-        if (SelectedOrder is not null) ShowCancelConfirmation = true;
+        if (SelectedOrder is null) return;
+        CancellationReason = string.Empty;
+        ErrorMessage = string.Empty;
+        ShowCancelConfirmation = true;
+    }
+
+    private void DismissCancel()
+    {
+        ShowCancelConfirmation = false;
+        CancellationReason = string.Empty;
+        ErrorMessage = string.Empty;
     }
 
     private async Task ConfirmCancelAsync()
     {
         if (!CanConfirmCancel || SelectedOrder is not { } order) return;
+        var reason = CancellationReason.Trim();
+        if (reason.Length == 0)
+        {
+            ErrorMessage = "Informe o motivo do cancelamento do pedido.";
+            return;
+        }
+        if (reason.Length > 500)
+        {
+            ErrorMessage = "O motivo do cancelamento deve ter no máximo 500 caracteres.";
+            return;
+        }
         IsBusy = true;
         ErrorMessage = string.Empty;
         try
         {
-            await _orderService.CancelOrderAsync(order.OrderID);
+            await _orderService.CancelOrderAsync(order.OrderID, reason);
             ShowCancelConfirmation = false;
+            CancellationReason = string.Empty;
             StatusMessage = $"Venda {order.OrderID} cancelada.";
             await LoadAsync();
         }

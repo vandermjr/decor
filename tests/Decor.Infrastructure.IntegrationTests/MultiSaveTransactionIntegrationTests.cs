@@ -12,6 +12,7 @@ using Decor.FluentSqlBuilder;
 using Decor.FluentSqlBuilder.Dialects.MariaDB;
 using Decor.Infrastructure.Data;
 using Decor.Infrastructure.Data.Repositories;
+using Decor.Infrastructure.Services;
 using FluentAssertions;
 using MySqlConnector;
 
@@ -19,6 +20,61 @@ namespace Decor.Infrastructure.IntegrationTests;
 
 public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture) : IClassFixture<MariaDbFixture>
 {
+    [Fact]
+    public async Task DatabaseHealthService_ReportsConfiguredDatabaseOnline()
+    {
+        var service = new DatabaseHealthService(new DatabaseConnection(fixture.ConnectionString));
+
+        (await service.IsOnlineAsync()).Should().BeTrue();
+        service.ConnectionDescription.Should().Contain("decor_integration").And.Contain("Conexão:");
+        service.ConnectionDescription.ToLowerInvariant().Should().NotContain("password");
+    }
+
+    [Fact]
+    public async Task QuoteSearchPage_IncludesNamesConsolidatedStatusAndNetTotal()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await EnsureOrderTablesAsync(connection);
+
+        var customerId = await InsertIdAsync(connection, "INSERT INTO customers (Name, IsActive) VALUES ('Quote List Customer', 1);");
+        var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Quote List Employee', 1);");
+        var quoteId = await InsertIdAsync(connection, $"INSERT INTO quotes (CustomerID, CreatedByEmployeeID, SourceType, CreatedAt, DiscountAmount) VALUES ({customerId}, {employeeId}, 1, NOW(), 15.00);");
+        var approvedSectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 1, 4, NOW());");
+        var rejectedSectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 2, 5, NOW());");
+        var productId = await InsertIdAsync(connection, "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Quote List Item', 1, 1);");
+        await connection.ExecuteAsync("INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES (@SectionID, @ProductID, 2, 100, 0), (@SectionID, @ProductID, 3, 50, 0)", new { SectionID = approvedSectionId, ProductID = productId });
+        await connection.ExecuteAsync("INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES (@SectionID, @ProductID, 1, 25, 0)", new { SectionID = rejectedSectionId, ProductID = productId });
+
+        var quote = (await CreateQuoteRepository().SearchGetByAsync(quoteId.ToString(), 1, 10)).Should()
+            .ContainSingle(item => item.QuoteID == quoteId).Subject;
+
+        quote.CustomerName.Should().Be("Quote List Customer");
+        quote.CreatedByEmployeeName.Should().Be("Quote List Employee");
+        quote.ListStatus.Should().Be("ABERTO");
+        quote.ListTotal.Should().Be(360m);
+    }
+
+    [Fact]
+    public async Task QuoteSearchPage_WithConvertedAndRejectedSectionsReportsConvertedToOrder()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await EnsureOrderTablesAsync(connection);
+
+        var customerId = await InsertIdAsync(connection, "INSERT INTO customers (Name, IsActive) VALUES ('Mixed Quote Customer', 1);");
+        var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Mixed Quote Employee', 1);");
+        var quoteId = await InsertIdAsync(connection, $"INSERT INTO quotes (CustomerID, CreatedByEmployeeID, SourceType, CreatedAt) VALUES ({customerId}, {employeeId}, 1, NOW());");
+        var convertedSectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 1, 6, NOW());");
+        await connection.ExecuteAsync("INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES (@QuoteID, 2, 5, NOW())", new { QuoteID = quoteId });
+        var orderId = await InsertIdAsync(connection, $"INSERT INTO orders (QuoteSectionID, CustomerID, OrderType, Status, CreatedAt) VALUES ({convertedSectionId}, {customerId}, 1, 1, NOW());");
+
+        var quote = (await CreateQuoteRepository().SearchGetByAsync(quoteId.ToString(), 1, 10)).Should()
+            .ContainSingle(item => item.QuoteID == quoteId).Subject;
+
+        quote.ListStatus.Should().Be($"Ref. Pedido Nº {orderId}");
+        var completeQuote = await CreateQuoteRepository().GetCompleteQuoteAsync(quoteId);
+        completeQuote!.Sections.Single(section => section.QuoteSectionID == convertedSectionId).OrderID.Should().Be(orderId);
+    }
+
     [Fact]
     public async Task ConvertFromQuote_WhenSecondOrderItemFails_RollsBackEntireConversion()
     {
@@ -214,7 +270,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
             CREATE TABLE IF NOT EXISTS quote_sections (QuoteSectionID INT AUTO_INCREMENT PRIMARY KEY, QuoteID INT NOT NULL, SectionType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, SentToCustomerAt DATETIME NULL, ApprovedAt DATETIME NULL, CreatedAt DATETIME NOT NULL) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS quote_items (QuoteItemID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, ProductID INT NULL, ServiceID INT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2), HasInstallationService TINYINT(1) NOT NULL, FOREIGN KEY (ServiceID) REFERENCES services(ServiceID), CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL))) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS quote_item_specification_values (ValueID INT AUTO_INCREMENT PRIMARY KEY, QuoteItemID INT NOT NULL, AttributeID INT NOT NULL, Value VARCHAR(255) NOT NULL, FOREIGN KEY (QuoteItemID) REFERENCES quote_items(QuoteItemID)) ENGINE=InnoDB;
-            CREATE TABLE IF NOT EXISTS orders (OrderID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, CustomerID INT NOT NULL, OrderType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, RequiresDownPayment TINYINT(1) NULL, ManufacturingDeadline DATE NULL, InstallationDeadline DATE NULL, CreatedAt DATETIME NOT NULL, UNIQUE KEY (QuoteSectionID)) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS orders (OrderID INT AUTO_INCREMENT PRIMARY KEY, QuoteSectionID INT NOT NULL, CustomerID INT NOT NULL, OrderType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, RequiresDownPayment TINYINT(1) NULL, ManufacturingDeadline DATE NULL, InstallationDeadline DATE NULL, CreatedAt DATETIME NOT NULL, CancellationReason VARCHAR(500) NULL, UNIQUE KEY (QuoteSectionID)) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS order_items (OrderItemID INT AUTO_INCREMENT PRIMARY KEY, OrderID INT NOT NULL, QuoteItemID INT NOT NULL, ProductID INT NULL, ServiceID INT NULL, Quantity DECIMAL(12,3) NOT NULL, UnitPrice DECIMAL(12,2) NOT NULL, HasInstallationService TINYINT(1) NOT NULL, SentToProductionAt DATETIME NULL, SentToProductionByEmployeeID INT NULL, CONSTRAINT FK_test_order_items_order FOREIGN KEY (OrderID) REFERENCES orders(OrderID), CONSTRAINT FK_test_order_items_quote FOREIGN KEY (QuoteItemID) REFERENCES quote_items(QuoteItemID), CONSTRAINT FK_test_order_items_product FOREIGN KEY (ProductID) REFERENCES products(ProductID), FOREIGN KEY (ServiceID) REFERENCES services(ServiceID), CHECK ((ProductID IS NOT NULL) <> (ServiceID IS NOT NULL))) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS order_item_specification_values (ValueID INT AUTO_INCREMENT PRIMARY KEY, OrderItemID INT NOT NULL, AttributeID INT NOT NULL, Value VARCHAR(255) NOT NULL, CONSTRAINT FK_test_spec_order FOREIGN KEY (OrderItemID) REFERENCES order_items(OrderItemID)) ENGINE=InnoDB;");
     }

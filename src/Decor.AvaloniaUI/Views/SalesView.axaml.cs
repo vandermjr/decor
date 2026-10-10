@@ -1,6 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using Decor.Core.DTOs;
 using Decor.AvaloniaUI.ViewModels;
 
 namespace Decor.AvaloniaUI.Views;
@@ -18,6 +21,8 @@ public partial class SalesView : UserControl
             nameof(SaleListItem.OrderType) => "Tipo",
             nameof(SaleListItem.Status) => "Estado",
             nameof(SaleListItem.DownPayment) => "Entrada",
+            nameof(SaleListItem.CreatedAt) => typeof(OrderDTO).GetProperty(nameof(OrderDTO.CreatedAt))?
+                .GetCustomAttribute<DisplayAttribute>()?.GetName() ?? propertyName,
             _ => propertyName
         }, propertyName => propertyName == nameof(SaleListItem.OrderID)
             ? new DataGridLength(120)

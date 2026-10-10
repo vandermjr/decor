@@ -115,36 +115,6 @@ public sealed class RemainingActionPermissionTests
     }
 
     [Theory]
-    [InlineData(LookupSearchContext.Customer, DecorPermissions.CustomersView)]
-    [InlineData(LookupSearchContext.Employee, DecorPermissions.EmployeesView)]
-    [InlineData(LookupSearchContext.Partner, DecorPermissions.PartnersView)]
-    [InlineData(LookupSearchContext.Product, DecorPermissions.ProductsView)]
-    [InlineData(LookupSearchContext.Service, DecorPermissions.ServicesView)]
-    public async Task ContextualSearch_DeniedViewBlocksSelectedContext(LookupSearchContext context, string permission)
-    {
-        var customers = new Mock<ICustomerService>(MockBehavior.Strict);
-        var employees = new Mock<IEmployeeService>(MockBehavior.Strict);
-        var partners = new Mock<IPartnerService>(MockBehavior.Strict);
-        var products = new Mock<IProductService>(MockBehavior.Strict);
-        var services = new Mock<IServiceCatalogService>(MockBehavior.Strict);
-        var authorization = new Mock<IAuthorizationService>();
-        authorization.Setup(value => value.HasPermission(It.IsAny<string>())).Returns(true);
-        authorization.Setup(value => value.HasPermission(permission)).Returns(false);
-        var viewModel = new ContextualSearchViewModel(customers.Object, employees.Object, partners.Object,
-            products.Object, services.Object, authorization.Object);
-
-        await viewModel.InitializeAsync(context);
-        Assert.False(viewModel.SearchCommand.CanExecute(null));
-        await viewModel.SearchAsync();
-
-        Assert.Empty(customers.Invocations);
-        Assert.Empty(employees.Invocations);
-        Assert.Empty(partners.Invocations);
-        Assert.Empty(products.Invocations);
-        Assert.Empty(services.Invocations);
-    }
-
-    [Theory]
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(false, false)]
@@ -213,7 +183,7 @@ public sealed class RemainingActionPermissionTests
         viewModel.ConfirmCancelCommand.Execute(null);
 
         Assert.True(viewModel.ShowCancelConfirmation);
-        orders.Verify(service => service.CancelOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        orders.Verify(service => service.CancelOrderAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]

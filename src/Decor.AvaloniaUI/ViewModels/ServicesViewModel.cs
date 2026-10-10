@@ -22,6 +22,7 @@ public sealed class ServicesViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private bool _selectionMode;
     private bool _showDeleteConfirmation;
     private int _serviceId;
     private string _description = string.Empty;
@@ -77,6 +78,17 @@ public sealed class ServicesViewModel : IStatusBarSource, IWorkspaceDocumentStat
         }
     }
     public bool IsAdding => IsEditing && _isNew;
+    public bool SelectionMode
+    {
+        get => _selectionMode;
+        set
+        {
+            if (!SetField(ref _selectionMode, value)) return;
+            if (value && IsEditing) CancelEdit();
+            if (value && ShowDeleteConfirmation) CancelDelete();
+            RefreshCommands();
+        }
+    }
     public int ServiceId { get => _serviceId; private set { SetField(ref _serviceId, value); OnPropertyChanged(nameof(ServiceCodeDisplay)); } }
     public string ServiceCodeDisplay => IsAdding ? "Novo" : RecordCodeDisplay.ForExistingRecord(ServiceId);
     public string Description { get => _description; set => SetField(ref _description, value); }
@@ -98,10 +110,10 @@ public sealed class ServicesViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public string DeleteConfirmationMessage => $"Excluir o servi\u00e7o \"{_serviceToDelete?.Description}\"?";
     private bool CanSearch => !IsBusy && !IsEditing && !ShowDeleteConfirmation && _authorization.HasPermission(DecorPermissions.ServicesView);
-    public bool CanNew => CanSearch && _authorization.HasPermission(DecorPermissions.ServicesCreate);
-    public bool CanEdit => CanSearch && SelectedService is not null && _authorization.HasPermission(DecorPermissions.ServicesEdit);
-    public bool CanDelete => CanSearch && SelectedService is not null && _authorization.HasPermission(DecorPermissions.ServicesDelete);
-    public bool CanSave => IsEditing && !IsBusy && _authorization.HasPermission(_isNew ? DecorPermissions.ServicesCreate : DecorPermissions.ServicesEdit);
+    public bool CanNew => !SelectionMode && CanSearch && _authorization.HasPermission(DecorPermissions.ServicesCreate);
+    public bool CanEdit => !SelectionMode && CanSearch && SelectedService is not null && _authorization.HasPermission(DecorPermissions.ServicesEdit);
+    public bool CanDelete => !SelectionMode && CanSearch && SelectedService is not null && _authorization.HasPermission(DecorPermissions.ServicesDelete);
+    public bool CanSave => !SelectionMode && IsEditing && !IsBusy && _authorization.HasPermission(_isNew ? DecorPermissions.ServicesCreate : DecorPermissions.ServicesEdit);
     public bool CanCancel => IsEditing && !IsBusy;
     private bool CanConfirmDelete => ShowDeleteConfirmation && _serviceToDelete is not null && !IsBusy && _authorization.HasPermission(DecorPermissions.ServicesDelete);
 

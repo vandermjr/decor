@@ -183,6 +183,8 @@ public sealed class OrderRepositoryIntegrationTests(MariaDbFixture fixture) : IC
         var migrationsDir = Path.Combine(AppContext.BaseDirectory, "Migrations");
         var orderSql = await File.ReadAllTextAsync(Path.Combine(migrationsDir, "20260911_add_order_commercial.sql"));
         await connection.ExecuteAsync(orderSql);
+        var cancellationReasonSql = await File.ReadAllTextAsync(Path.Combine(migrationsDir, "20261009_add_order_cancellation_reason.sql"));
+        await connection.ExecuteAsync(cancellationReasonSql);
         await connection.ExecuteAsync(@"
             ALTER TABLE order_items DROP FOREIGN KEY FK_order_items_products;
             ALTER TABLE order_items MODIFY COLUMN ProductID INT NULL,

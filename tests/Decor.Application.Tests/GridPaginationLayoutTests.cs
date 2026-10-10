@@ -15,6 +15,18 @@ namespace Decor.Application.Tests;
 [Collection("Shared grid pagination")]
 public sealed class GridPaginationLayoutTests
 {
+    [Fact]
+    public void Shared_grid_frame_encloses_the_data_grid_empty_state_and_pagination_footer()
+    {
+        var control = new DecorDataGridControl();
+        var frame = control.FindControl<Border>("GridFrame")!;
+
+        Assert.Equal(new Thickness(1), frame.BorderThickness);
+        Assert.NotNull(frame.FindControl<DataGrid>("InnerDataGrid"));
+        Assert.NotNull(frame.FindControl<Panel>("EmptyOverlay"));
+        Assert.NotNull(frame.FindControl<Border>("PaginationFooter"));
+    }
+
     [Theory]
     [InlineData(1000, 1, 0, 2, false)]
     [InlineData(600, 0, 1, 1, false)]

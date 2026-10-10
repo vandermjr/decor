@@ -34,6 +34,29 @@ public sealed partial class DecorGridPresentationTests
         Assert.Null(catalog.Attribute("KeyDown"));
     }
 
+    [Fact]
+    public void Quote_listing_exposes_creation_date_from_the_quote_dto()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (!File.Exists(Path.Combine(root!.FullName, "Decor.sln"))) root = root.Parent;
+        var code = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "QuotesView.axaml.cs"));
+
+        Assert.Contains(nameof(QuoteListItem.CreatedAt), code);
+        Assert.Contains(nameof(QuoteDTO.CreatedAt), code);
+        Assert.Equal("Data de criação", typeof(QuoteDTO).GetProperty(nameof(QuoteDTO.CreatedAt))!
+            .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+            .Cast<System.ComponentModel.DataAnnotations.DisplayAttribute>().Single().GetName());
+    }
+
+    [Fact]
+    public void Quote_listing_has_no_delete_action_or_confirmation()
+    {
+        var document = ReadXaml("Views", "QuotesView.axaml");
+        Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding DeleteCommand}"
+            || (string?)element.Attribute("IsVisible") == "{Binding ShowDeleteConfirmation}");
+        Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Text") == "Excluir");
+    }
+
     [Theory]
     [InlineData("ID", "Código")]
     [InlineData("ID da Marca", "Código da Marca")]
@@ -388,10 +411,10 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
-    public void Quote_party_and_product_selection_use_contextual_search_buttons()
+    public void Quote_lookup_uses_existing_views_inside_a_select_cancel_modal()
     {
         var quote = ReadXaml("Views", "QuotesView.axaml");
-        var searchWindow = ReadXaml("Views", "ContextualSearchWindow.axaml");
+        var selectionWindow = ReadXaml("Views", "LookupSelectionWindow.axaml");
         var quoteTextBindings = quote.Descendants().Where(element => element.Name.LocalName == "TextBox")
             .Select(element => (string?)element.Attribute("Text")).ToArray();
 
@@ -401,8 +424,15 @@ public sealed partial class DecorGridPresentationTests
         Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Click") == "SearchCustomer_Click");
         Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Click") == "SearchEmployee_Click");
         Assert.Contains(quote.Descendants(), element => element.Name.LocalName == "DecorDataGridControl" && (string?)element.Attribute("ItemsSource") == "{Binding CatalogProducts}");
-        Assert.Contains(searchWindow.Descendants(), element => element.Name.LocalName == "DecorDataGridControl");
-        Assert.Contains(searchWindow.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Content") == "OK");
+        Assert.Contains(selectionWindow.Descendants(), element => element.Name.LocalName == "ContentControl"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "LookupContent");
+        Assert.Contains(selectionWindow.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Content") == "Selecionar");
+        Assert.Contains(selectionWindow.Descendants(), element => element.Name.LocalName == "Button" && (string?)element.Attribute("Content") == "Cancelar");
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (!File.Exists(Path.Combine(root!.FullName, "Decor.sln"))) root = root.Parent;
+        var code = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "QuotesView.axaml.cs"));
+        foreach (var view in new[] { "CustomersView", "EmployeesView", "PartnersView", "ProductsView", "ServicesView" })
+            Assert.Contains($"new {view}(viewModel)", code);
     }
 
     [Fact]

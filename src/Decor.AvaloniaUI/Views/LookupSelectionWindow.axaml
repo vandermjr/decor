@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Decor.AvaloniaUI.Views.LookupSelectionWindow"
+        Title="Selecionar registro"
+        Width="1000"
+        Height="700"
+        MinWidth="720"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="*,Auto">
+    <ContentControl x:Name="LookupContent"/>
+    <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="16">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="Selecionar" x:Name="AcceptButton" Click="Accept_Click" Classes="decor-action"/>
+        <Button Content="Cancelar" Click="Cancel_Click" Classes="decor-action"/>
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>

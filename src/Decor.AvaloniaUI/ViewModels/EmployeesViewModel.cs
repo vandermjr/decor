@@ -21,6 +21,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private bool _selectionMode;
     private bool _showDeleteConfirmation;
     private int _employeeId;
     private string _name = string.Empty;
@@ -82,12 +83,22 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
         }
     }
     public bool IsAdding => IsEditing && _isNew;
+    public bool SelectionMode
+    {
+        get => _selectionMode;
+        set
+        {
+            if (!SetField(ref _selectionMode, value)) return;
+            if (value && IsEditing) CancelEdit();
+            RefreshCommands();
+        }
+    }
     public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public string DeleteConfirmationMessage => _employeeToDelete is null ? string.Empty : $"Excluir o funcionário \"{_employeeToDelete.Name}\"?";
-    public bool CanNew => _authorizationService.HasPermission(DecorPermissions.EmployeesCreate) && !IsBusy && !IsEditing;
-    public bool CanEdit => _authorizationService.HasPermission(DecorPermissions.EmployeesEdit) && SelectedEmployee is not null && !IsBusy && !IsEditing;
-    public bool CanDelete => _authorizationService.HasPermission(DecorPermissions.EmployeesDelete) && SelectedEmployee is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? DecorPermissions.EmployeesCreate : DecorPermissions.EmployeesEdit);
+    public bool CanNew => !SelectionMode && _authorizationService.HasPermission(DecorPermissions.EmployeesCreate) && !IsBusy && !IsEditing;
+    public bool CanEdit => !SelectionMode && _authorizationService.HasPermission(DecorPermissions.EmployeesEdit) && SelectedEmployee is not null && !IsBusy && !IsEditing;
+    public bool CanDelete => !SelectionMode && _authorizationService.HasPermission(DecorPermissions.EmployeesDelete) && SelectedEmployee is not null && !IsBusy && !IsEditing;
+    public bool CanSave => !SelectionMode && IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? DecorPermissions.EmployeesCreate : DecorPermissions.EmployeesEdit);
     private bool CanConfirmDelete => !IsBusy && ShowDeleteConfirmation && _employeeToDelete is not null && _authorizationService.HasPermission(DecorPermissions.EmployeesDelete);
     public bool CanCancel => IsEditing && !IsBusy;
     public EmployeeDTO? SelectedEmployee

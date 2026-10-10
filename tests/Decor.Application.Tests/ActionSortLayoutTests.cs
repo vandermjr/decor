@@ -34,7 +34,6 @@ public class ActionSortLayoutTests
     [Theory]
     [InlineData("New", "Create")]
     [InlineData("Edit", "Edit")]
-    [InlineData("Delete", "Delete")]
     public void Quote_listing_actions_have_icons_and_hide_when_unavailable(string action, string icon)
     {
         var document = Load("Views/QuotesView.axaml");

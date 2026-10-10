@@ -12,5 +12,6 @@ public record OrderDTO(
     [property: Display(Name = "Prazo de fabricação")] DateTime? ManufacturingDeadline,
     [property: Display(Name = "Prazo de instalação")] DateTime? InstallationDeadline,
     [property: Display(Name = "Data de criação")] DateTime CreatedAt,
-    [property: Display(Name = "Itens do pedido")] IReadOnlyList<OrderItemDTO>? Items = null
+    [property: Display(Name = "Itens do pedido")] IReadOnlyList<OrderItemDTO>? Items = null,
+    [property: Display(Name = "Motivo do cancelamento")] string? CancellationReason = null
 );

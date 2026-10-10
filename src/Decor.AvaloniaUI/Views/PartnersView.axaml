@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Decor.AvaloniaUI.Controls"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             xmlns:icons="using:Decor.AvaloniaUI.Icons"
+             x:Class="Decor.AvaloniaUI.Views.PartnersView"
+             x:DataType="vm:PartnersViewModel">
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
+      <controls:DecorSearchField x:Name="SearchTextBox" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar parceiros"
+                                SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}" Classes="decor-action">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/>
+            <TextBlock Text="Novo parceiro" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}" Classes="decor-action">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource DecorEditIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/>
+            <TextBlock Text="Editar" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" Classes="decor-action">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform"/>
+            <TextBlock Text="Excluir" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Grid>
+    <Panel Grid.Row="1">
+      <controls:DecorDataGridControl x:Name="PartnersGrid" PaginationSource="{Binding}" DefaultSortMemberPath="Name"
+                                    ItemsSource="{Binding Partners}" SelectedItem="{Binding SelectedPartner, Mode=TwoWay}"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsVisible="{Binding !IsEditing}"/>
+      <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsEditing}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="12" Margin="0,0,20,0" IsEnabled="{Binding !IsBusy}">
+            <TextBlock Text="Informações do Parceiro" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,12"/>
+            <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="Código" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                  <TextBlock Text="{Binding PartnerCodeDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsActive}" OnContent="Ativo" OffContent="Inativo" MinWidth="115"/>
+              </Grid>
+            </Border>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto" RowSpacing="12">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Nome" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <TextBox Text="{Binding Name}" MaxLength="150" controls:DecorRequiredField.IsRequired="True"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="Documento" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <TextBox Text="{Binding Document}" MaxLength="20"/>
+              </StackPanel>
+              <StackPanel Grid.Row="1" Spacing="4">
+                <TextBlock Text="Telefone" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <TextBox Text="{Binding Phone}" MaxLength="20"/>
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                <TextBlock Text="Tipo de parceiro" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <ComboBox ItemsSource="{Binding PartnerTypes}" SelectedItem="{Binding PartnerType, Mode=TwoWay}"/>
+              </StackPanel>
+            </Grid>
+            <Border Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}">
+              <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+        <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Command="{Binding SaveCommand}" IsVisible="{Binding CanSave}" Classes="decor-action">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{DynamicResource DecorAccentBrush}" Width="16" Height="16" Stretch="Uniform"/>
+                <TextBlock Text="Salvar" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Classes="decor-action">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform"/>
+                <TextBlock Text="Cancelar" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Border>
+      </Grid>
+      <Panel Background="{DynamicResource DecorOverlayBrush}" IsVisible="{Binding ShowDeleteConfirmation}" ZIndex="1000">
+        <Border VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="400" Margin="16" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8">
+          <StackPanel Spacing="16">
+            <TextBlock Text="Confirmação de exclusão" FontSize="{DynamicResource DecorFontSizeSection}"/>
+            <TextBlock Text="{Binding DeleteConfirmationMessage}" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+              <Button Content="Sim, excluir" Command="{Binding ConfirmDeleteCommand}" Classes="decor-action"/>
+              <Button Content="Cancelar" Command="{Binding CancelDeleteCommand}" Classes="decor-action"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </Panel>
+    </Panel>
+  </Grid>
+</UserControl>

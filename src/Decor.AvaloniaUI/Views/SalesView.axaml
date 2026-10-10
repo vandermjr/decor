@@ -23,6 +23,10 @@
     <controls:DecorDataGridControl Grid.Row="2" x:Name="SalesGrid" PaginationSource="{Binding}" DefaultSortMemberPath="OrderID" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/>
     <Border Grid.Row="3" Padding="12,10,12,0" Margin="0,10,0,0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" IsVisible="{Binding HasSelectedOrder}">
       <StackPanel Spacing="8">
+        <StackPanel IsVisible="{Binding HasCancellationReason}" Spacing="2">
+          <TextBlock Text="Motivo do cancelamento" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <TextBlock Text="{Binding SelectedCancellationReason}" TextWrapping="Wrap"/>
+        </StackPanel>
         <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
           <TextBlock Text="Plano de pagamento" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5"><TextBlock Text="Total da venda:"/><TextBlock Text="{Binding SelectedOrderTotal, StringFormat='{}{0:C2}'}" FontWeight="{DynamicResource DecorFontWeightHeading}"/></StackPanel>
@@ -64,7 +68,7 @@
       </StackPanel>
     </Border>
     <Panel Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource DecorOverlayBrush}" IsVisible="{Binding ShowCancelConfirmation}" ZIndex="1000">
-      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="400" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8"><StackPanel Spacing="16"><TextBlock Text="Cancelar venda" FontSize="{DynamicResource DecorFontSizeSection}"/><TextBlock Text="Confirma o cancelamento da venda selecionada?" TextWrapping="Wrap"/><Grid ColumnDefinitions="*,*" ColumnSpacing="12"><Button Content="Sim, cancelar"   Command="{Binding ConfirmCancelCommand}" Classes="decor-action"/><Button Grid.Column="1" Content="Voltar" Command="{Binding DismissCancelCommand}" Classes="decor-action"/></Grid></StackPanel></Border>
+      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="440" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8"><StackPanel Spacing="16"><TextBlock Text="Cancelar pedido" FontSize="{DynamicResource DecorFontSizeSection}"/><TextBlock Text="Informe o motivo para cancelar o pedido." TextWrapping="Wrap"/><Border controls:DecorRequiredField.IsRequired="True"><TextBox Text="{Binding CancellationReason}" MaxLength="500" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="72" PlaceholderText="Motivo do cancelamento"/></Border><TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" IsVisible="{Binding HasError}"/><Grid ColumnDefinitions="*,*" ColumnSpacing="12"><Button Content="Sim, cancelar" Command="{Binding ConfirmCancelCommand}" IsEnabled="{Binding CanCancel}" Classes="decor-action"/><Button Grid.Column="1" Content="Voltar" Command="{Binding DismissCancelCommand}" Classes="decor-action"/></Grid></StackPanel></Border>
     </Panel>
   </Grid>
 </UserControl>

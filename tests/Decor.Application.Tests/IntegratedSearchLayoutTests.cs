@@ -17,7 +17,6 @@ public sealed class IntegratedSearchLayoutTests
     [InlineData("SalesView.axaml", true)]
     [InlineData("QuotesView.axaml", true)]
     [InlineData("PermissionsView.axaml", true)]
-    [InlineData("ContextualSearchWindow.axaml", false)]
     public void Search_fields_use_shared_control_without_changing_bindings_or_placement(string view, bool hasClear)
     {
         var document = ReadView(view);
@@ -47,11 +46,6 @@ public sealed class IntegratedSearchLayoutTests
             Assert.Equal("3", (string?)action.Attribute("Grid.Column"));
             if (view == "UsersView.axaml")
                 Assert.Equal("4", (string?)Assert.Single(field.Parent.Elements(), element => (string?)element.Attribute("Command") == "{Binding EditUserCommand}").Attribute("Grid.Column"));
-        }
-        else if (view == "ContextualSearchWindow.axaml")
-        {
-            Assert.Equal("1", (string?)field.Attribute("Grid.Row"));
-            Assert.Equal("{Binding SearchHint}", (string?)field.Attribute("PlaceholderText"));
         }
         else if (view == "SalesView.axaml")
         {

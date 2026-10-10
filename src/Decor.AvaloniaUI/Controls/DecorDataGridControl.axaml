@@ -55,7 +55,10 @@
         </Style>
     </UserControl.Styles>
     
-    <Grid ColumnDefinitions="*" RowDefinitions="*,Auto">
+        <Border x:Name="GridFrame"
+            BorderBrush="{DynamicResource DecorBorderBrush}"
+            BorderThickness="1">
+        <Grid ColumnDefinitions="*" RowDefinitions="*,Auto">
         <!-- Main DataGrid -->
         <DataGrid x:Name="InnerDataGrid"
                   ItemsSource="{Binding ItemsSource, ElementName=Root}"
@@ -112,5 +115,6 @@
             </Grid>
         </Border>
     </Grid>
+    </Border>
     
 </UserControl>

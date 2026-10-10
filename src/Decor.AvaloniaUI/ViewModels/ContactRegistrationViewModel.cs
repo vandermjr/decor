@@ -45,6 +45,7 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private bool _selectionMode;
     private bool _showDeleteConfirmation;
     private int _recordId;
     private int _recordCount;
@@ -176,10 +177,20 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
     public bool IsAdding => IsEditing && _isNew;
     public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public bool CanSearch => _authorizationService.HasPermission(_viewPermission) && !IsBusy && !IsEditing;
-    public bool CanNew => _authorizationService.HasPermission(_createPermission) && !IsBusy && !IsEditing;
-    public bool CanEdit => _authorizationService.HasPermission(_editPermission) && SelectedItem is not null && !IsBusy && !IsEditing;
-    public bool CanDelete => _authorizationService.HasPermission(_deletePermission) && SelectedItem is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? _createPermission : _editPermission);
+    public bool SelectionMode
+    {
+        get => _selectionMode;
+        set
+        {
+            if (!SetField(ref _selectionMode, value)) return;
+            if (value && IsEditing) CancelEdit();
+            RefreshCommands();
+        }
+    }
+    public bool CanNew => !SelectionMode && _authorizationService.HasPermission(_createPermission) && !IsBusy && !IsEditing;
+    public bool CanEdit => !SelectionMode && _authorizationService.HasPermission(_editPermission) && SelectedItem is not null && !IsBusy && !IsEditing;
+    public bool CanDelete => !SelectionMode && _authorizationService.HasPermission(_deletePermission) && SelectedItem is not null && !IsBusy && !IsEditing;
+    public bool CanSave => !SelectionMode && IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? _createPermission : _editPermission);
     private bool CanConfirmDelete => !IsBusy && ShowDeleteConfirmation && _itemToDelete is not null && _authorizationService.HasPermission(_deletePermission);
     public bool CanCancel => IsEditing && !IsBusy;
 

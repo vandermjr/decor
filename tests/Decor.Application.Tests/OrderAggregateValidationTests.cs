@@ -131,9 +131,10 @@ public sealed class OrderAggregateValidationTests
         var order = new Order { OrderID = 1, Status = OrderStatus.Approved, CustomerID = 10, QuoteSectionID = 100 };
         orderRepo.SetOrderForTest(order);
 
-        await service.CancelOrderAsync(1);
+        await service.CancelOrderAsync(1, "Cliente solicitou o cancelamento.");
 
         order.Status.Should().Be(OrderStatus.Cancelled);
+        order.CancellationReason.Should().Be("Cliente solicitou o cancelamento.");
         reservationService.ReleasedOrders.Should().Contain(1);
     }
 
@@ -146,10 +147,34 @@ public sealed class OrderAggregateValidationTests
         var order = new Order { OrderID = 1, Status = OrderStatus.Cancelled, CustomerID = 10, QuoteSectionID = 100 };
         orderRepo.SetOrderForTest(order);
 
-        var act = () => service.CancelOrderAsync(1);
+        var act = () => service.CancelOrderAsync(1, "Motivo");
 
         await act.Should().ThrowAsync<ValidationException>()
             .WithMessage("*cancelado*");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Cancel_RequiresNonEmptyReasonBeforeReadingOrder(string reason)
+    {
+        var orderRepo = new TrackingOrderRepository();
+        var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), DecorPermissions.OrdersCancel);
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.CancelOrderAsync(1, reason));
+
+        Assert.Equal(0, orderRepo.CompleteOrderReads);
+    }
+
+    [Fact]
+    public async Task Cancel_RejectsReasonLongerThan500Characters()
+    {
+        var orderRepo = new TrackingOrderRepository();
+        var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), DecorPermissions.OrdersCancel);
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.CancelOrderAsync(1, new string('x', 501)));
+
+        Assert.Equal(0, orderRepo.CompleteOrderReads);
     }
 
     [Fact]
@@ -233,7 +258,7 @@ public sealed class OrderAggregateValidationTests
         var installmentService = new TrackingOrderInstallmentService();
         var service = CreateService(new TrackingQuoteRepository(), orderRepo, new FixedProductRepository(), new TrackingStockReservationService(), installmentService, DecorPermissions.OrdersCancel);
 
-        await service.CancelOrderAsync(10);
+        await service.CancelOrderAsync(10, "Cancelamento solicitado pelo cliente.");
 
         installmentService.CancelledOrders.Should().Contain(10);
     }
@@ -367,6 +392,7 @@ public sealed class OrderAggregateValidationTests
         private int _nextOrderId = 1;
         private int _nextItemId = 1;
         private int _nextSpecId = 1;
+        public int CompleteOrderReads { get; private set; }
 
         public void SetOrderForTest(Order order) => _order = order;
         public void SetOrderItemForTest(OrderItem item) => _orderItem = item;
@@ -387,7 +413,11 @@ public sealed class OrderAggregateValidationTests
             => Task.FromResult<IReadOnlyList<Order>>(_order != null ? [_order] : []);
 
         public Task<Order?> GetByIdAsync(int orderId, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(_order);
-        public Task<Order?> GetCompleteOrderAsync(int orderId, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(_order);
+        public Task<Order?> GetCompleteOrderAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            CompleteOrderReads++;
+            return Task.FromResult<Order?>(_order);
+        }
         public Task<Order?> GetByQuoteSectionIdAsync(int quoteSectionId, CancellationToken cancellationToken = default)
             => Task.FromResult(_ordersBySection.TryGetValue(quoteSectionId, out var o) ? o : null);
         public Task<OrderItem?> GetOrderItemByIdAsync(int orderItemId, CancellationToken cancellationToken = default) => Task.FromResult<OrderItem?>(_orderItem);

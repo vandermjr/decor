@@ -234,9 +234,15 @@ public class OrderService(
         await _orderRepository.SaveAsync(order, cancellationToken);
     }
 
-    public async Task CancelOrderAsync(int orderId, CancellationToken cancellationToken = default)
+    public async Task CancelOrderAsync(int orderId, string reason, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.OrdersCancel);
+
+        var cancellationReason = reason?.Trim();
+        if (string.IsNullOrWhiteSpace(cancellationReason))
+            throw new ValidationException("Informe o motivo do cancelamento do pedido.");
+        if (cancellationReason.Length > 500)
+            throw new ValidationException("O motivo do cancelamento deve ter no máximo 500 caracteres.");
 
         var order = await _orderRepository.GetCompleteOrderAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException($"Pedido com ID {orderId} não encontrado.");
@@ -245,6 +251,7 @@ public class OrderService(
             throw new ValidationException("O pedido só pode ser cancelado se estiver com status Pendente de Aprovação ou Aprovado.");
 
         order.Status = OrderStatus.Cancelled;
+        order.CancellationReason = cancellationReason;
 
         await _orderRepository.SaveAsync(order, cancellationToken);
         await _stockReservationService.ReleaseActiveReservationsForOrderAsync(orderId, cancellationToken);

@@ -112,6 +112,48 @@ public sealed class FormFieldPresentationTests
     }
 
     [Fact]
+    public void Login_footer_shows_system_version_and_database_connectivity()
+    {
+        var document = Read("LoginWindow.axaml");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "{Binding SystemVersion, StringFormat='Versão {0}'}");
+        var databaseIcon = Assert.Single(document.Descendants(), element => element.Name.LocalName == "PathIcon"
+            && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id"
+                && attribute.Value == "{x:Static icons:DecorIconId+Common.Database}"));
+        var iconHost = databaseIcon.Parent!;
+        Assert.Equal("18", (string?)iconHost.Attribute("Width"));
+        Assert.Equal("18", (string?)iconHost.Attribute("Height"));
+        Assert.Equal("{Binding DatabaseConnectionDescription}", (string?)iconHost.Attribute("ToolTip.Tip"));
+        Assert.Contains(iconHost.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("IsVisible") == "{Binding IsDatabaseOnline}"
+            && (string?)element.Attribute("Background") == "#218647");
+        var offlineX = Assert.Single(iconHost.Descendants(), element => element.Name.LocalName == "PathIcon"
+            && (string?)element.Attribute("IsVisible") == "{Binding !IsDatabaseOnline}");
+        Assert.Equal("#C62828", (string?)offlineX.Attribute("Foreground"));
+        var status = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "{Binding DatabaseStatusText}");
+        Assert.Same(iconHost.Parent, status.Parent!.Parent);
+        Assert.True(iconHost.Parent!.Elements().ToList().IndexOf(iconHost) < iconHost.Parent.Elements().ToList().IndexOf(status.Parent));
+    }
+
+    [Fact]
+    public void Login_heading_uses_title_scale_and_has_space_before_the_fields()
+    {
+        var heading = Assert.Single(Read("LoginWindow.axaml").Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "Bem-vindo!");
+
+        Assert.Equal("32", (string?)heading.Attribute("FontSize"));
+        Assert.Equal("{DynamicResource DecorFontWeightHeading}", (string?)heading.Attribute("FontWeight"));
+        Assert.Equal("0,0,0,24", (string?)heading.Attribute("Margin"));
+        Assert.Equal("Center", (string?)heading.Attribute("HorizontalAlignment"));
+        Assert.Equal("Center", (string?)heading.Attribute("TextAlignment"));
+        Assert.Equal("Center", (string?)heading.Parent!.Attribute("VerticalAlignment"));
+        var renderTransform = Assert.Single(heading.Elements(), element => element.Name.LocalName == "TextBlock.RenderTransform");
+        var titleTransform = Assert.Single(renderTransform.Elements(), element => element.Name.LocalName == "TranslateTransform");
+        Assert.Equal("-20", (string?)titleTransform.Attribute("Y"));
+    }
+
+    [Fact]
     public void Permission_sections_are_not_mandatory_registration_fields()
     {
         var document = Read("RolesView.axaml");

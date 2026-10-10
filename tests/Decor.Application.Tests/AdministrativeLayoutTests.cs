@@ -128,6 +128,12 @@ public sealed class AdministrativeLayoutTests
         Assert.Equal("1", (string?)right.Attribute("Grid.Column"));
         Assert.Equal("2", (string?)Assert.Single(document.Descendants(), element => element.Name.LocalName == "ScrollViewer"
             && (string?)element.Attribute("Name") == "DocumentTabsScroller").Attribute("Grid.Column"));
+        var scroller = Assert.Single(document.Descendants(), element => element.Name.LocalName == "ScrollViewer"
+            && (string?)element.Attribute("Name") == "DocumentTabsScroller");
+        var leftRule = Assert.Single(scroller.Elements(), element => element.Name.LocalName == "Border");
+        Assert.Equal("1,0,0,0", (string?)leftRule.Attribute("BorderThickness"));
+        Assert.Equal("{DynamicResource DecorBorderBrush}", (string?)leftRule.Attribute("BorderBrush"));
+        Assert.Equal("ItemsControl", leftRule.Elements().Single().Name.LocalName);
         Assert.Equal("grid-page-button", (string?)left.Attribute("Classes"));
         Assert.Equal("grid-page-button", (string?)right.Attribute("Classes"));
 
@@ -150,6 +156,23 @@ public sealed class AdministrativeLayoutTests
             && (string?)setter.Attribute("Value") == "{DynamicResource DecorScrollTrackBrush}");
         var disabledStyle = Assert.Single(buttonStyles, style => (string?)style.Attribute("Selector") == "Button.grid-page-button:disabled");
         Assert.Contains(disabledStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Opacity" && (string?)setter.Attribute("Value") == "0.35");
+    }
+
+    [Fact]
+    public void Profile_flyout_header_is_rounded_and_inactive_document_tabs_keep_the_bottom_rule()
+    {
+        var document = ReadXaml("MainWindow.axaml");
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var userFlyout = Assert.Single(document.Descendants(), element => (string?)element.Attribute(xaml + "Key") == "UserFlyout");
+        var profileName = Assert.Single(userFlyout.Descendants(), element => (string?)element.Attribute("Text") == "{Binding UserPresentationName}");
+        Assert.Equal("7,7,0,0", (string?)profileName.Ancestors().First(element => element.Name.LocalName == "Border").Attribute("CornerRadius"));
+
+        var tabBorder = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("PointerPressed") == "DocumentTab_PointerPressed");
+        Assert.Contains(tabBorder.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("Height") == "1"
+            && (string?)element.Attribute("Background") == "{DynamicResource DecorBorderBrush}"
+            && (string?)element.Attribute("IsVisible") == "{Binding !IsActive}");
     }
 
     [Fact]

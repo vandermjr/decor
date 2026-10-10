@@ -23,6 +23,13 @@ public sealed class UserSettingsService(
         };
     }
 
+    public async Task<DecorThemeStyle> GetThemeForUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0) return DecorDefaults.Theme;
+        var setting = await userSettingsRepository.GetAsync(userId, DecorUserSettings.Theme, cancellationToken);
+        return ParseTheme(setting?.SettingValue);
+    }
+
     public Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default) =>
         SetAsync(DecorUserSettings.Theme, theme.ToString(), cancellationToken);
 

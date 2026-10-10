@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         }
 
         services.AddSingleton<IDatabaseConnection>(sp => new DatabaseConnection(connectionString));
+        services.AddTransient<IDatabaseHealthService, DatabaseHealthService>();
         services.AddSingleton<IDialect, MariaDBDialect>();
         services.AddTransient(sp => FluentCommandBuilder.Create(sp.GetRequiredService<IDialect>()));
         services.AddTransient<Func<FluentCommandBuilder>>(sp => () => sp.GetRequiredService<FluentCommandBuilder>());

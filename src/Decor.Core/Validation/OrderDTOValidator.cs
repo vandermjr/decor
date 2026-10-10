@@ -24,6 +24,11 @@ public class OrderDTOValidator : IDTOValidator<OrderDTO>
         if (dto.Status is < 1 or > 7)
             errors.Add("O status do pedido é inválido.");
 
+        if (dto.Status == (int)Entities.OrderStatus.Cancelled && string.IsNullOrWhiteSpace(dto.CancellationReason))
+            errors.Add("Informe o motivo do cancelamento do pedido.");
+        if (dto.CancellationReason?.Length > 500)
+            errors.Add("O motivo do cancelamento deve ter no máximo 500 caracteres.");
+
         return errors;
     }
 }

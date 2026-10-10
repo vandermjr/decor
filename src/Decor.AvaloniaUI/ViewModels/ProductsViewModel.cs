@@ -25,6 +25,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private bool _selectionMode;
     private string _statusMessage = string.Empty;
     private int _productId;
     private string? _barcode, _description, _manufacturerRef, _auxiliarRef, _dimensions, _observations;
@@ -127,12 +128,22 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
 
     public bool IsListVisible => !IsEditing;
     public bool IsAdding => IsEditing && _isNew;
+    public bool SelectionMode
+    {
+        get => _selectionMode;
+        set
+        {
+            if (!SetField(ref _selectionMode, value)) return;
+            if (value && IsEditing) CancelEdit();
+            RaiseCommandStates();
+        }
+    }
 
     // Propriedades para visibilidade/estado de botões
     public bool CanSearch => !IsBusy && !IsEditing && (_authorizationService?.CanView("Products") ?? true);
-    public bool CanNew => !IsBusy && !IsEditing && (_authorizationService?.CanCreate("Products") ?? true);
-    public bool CanEdit => SelectedProduct is not null && !IsBusy && !IsEditing && (_authorizationService?.CanEdit("Products") ?? true);
-    public bool CanSave => IsEditing && !IsBusy && (_isNew
+    public bool CanNew => !SelectionMode && !IsBusy && !IsEditing && (_authorizationService?.CanCreate("Products") ?? true);
+    public bool CanEdit => !SelectionMode && SelectedProduct is not null && !IsBusy && !IsEditing && (_authorizationService?.CanEdit("Products") ?? true);
+    public bool CanSave => !SelectionMode && IsEditing && !IsBusy && (_isNew
         ? _authorizationService?.CanCreate("Products") ?? true
         : _authorizationService?.CanEdit("Products") ?? true);
     public bool CanCancel => IsEditing && !IsBusy;

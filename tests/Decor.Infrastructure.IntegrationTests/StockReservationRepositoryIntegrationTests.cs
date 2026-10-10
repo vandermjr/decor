@@ -224,6 +224,7 @@ public sealed class StockReservationRepositoryIntegrationTests(MariaDbFixture fi
                 ManufacturingDeadline DATE NULL,
                 InstallationDeadline DATE NULL,
                 CreatedAt DATETIME NOT NULL,
+                CancellationReason VARCHAR(500) NULL,
                 PRIMARY KEY (OrderID)
             ) ENGINE=InnoDB;
 

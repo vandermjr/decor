@@ -10,5 +10,6 @@ public record QuoteSectionDTO(
     [property: Display(Name = "Enviado em")] DateTime? SentToCustomerAt,
     [property: Display(Name = "Aprovado em")] DateTime? ApprovedAt,
     [property: Display(Name = "Criado em")] DateTime CreatedAt,
-    [property: Display(Name = "Itens")] IReadOnlyList<QuoteItemDTO>? Items = null
+    [property: Display(Name = "Itens")] IReadOnlyList<QuoteItemDTO>? Items = null,
+    [property: Display(Name = "Pedido")] int? OrderID = null
 );

@@ -22,7 +22,7 @@
     <Flyout x:Key="UserFlyout" Placement="BottomEdgeAlignedRight" ShowMode="Transient">
       <Border MinWidth="300" MaxWidth="360" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8">
         <StackPanel>
-          <Border Padding="16,14" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0,0,1">
+          <Border Padding="16,14" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0,0,1" CornerRadius="7,7,0,0">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
               <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource DecorAccentBrush}">
                 <TextBlock Text="{Binding UserInitials}" Foreground="{DynamicResource DecorSelectionForegroundBrush}" FontSize="16" FontWeight="{DynamicResource DecorFontWeightHeading}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -185,11 +185,18 @@
                 <MenuItem Header="Marcas" Command="{Binding ShowBrandsCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Brands}"/></MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="Unidades de medida" Command="{Binding ShowUnitsOfMeasureCommand}"
+                          IsVisible="{Binding CanViewUnitsOfMeasure}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Classifications}"/></MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Clientes" Command="{Binding ShowCustomersCommand}" IsVisible="{Binding CanViewCustomers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Fornecedores" Command="{Binding ShowSuppliersCommand}" IsVisible="{Binding CanViewSuppliers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Parceiros" Command="{Binding ShowPartnersCommand}" IsVisible="{Binding CanViewPartners}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Funcionários" Command="{Binding ShowEmployeesCommand}" IsVisible="{Binding CanViewEmployees}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
@@ -415,6 +422,7 @@
                         ScrollChanged="DocumentTabsScroller_ScrollChanged"
                         BringIntoViewOnFocusChange="False"
                         Padding="2,0">
+            <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1,0,0,0">
             <ItemsControl ItemsSource="{Binding OpenDocuments}" ZIndex="1">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -439,6 +447,7 @@
                       <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" IsVisible="{Binding IsActive}"/>
                       <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsHighlighted}" Margin="0,0,0,1"/>
                       <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsActive}" Margin="0,0,0,-1"/>
+                      <Border Grid.Row="1" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource DecorBorderBrush}" VerticalAlignment="Bottom" IsVisible="{Binding !IsActive}"/>
                       <StackPanel Grid.Row="1" Margin="12,0,0,0" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" MinWidth="0">
                         <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"
                                   icons:DecorIcon.Id="{Binding IconId}" VerticalAlignment="Center"/>
@@ -475,6 +484,7 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            </Border>
           </ScrollViewer>
         </Grid>
       </Border>
