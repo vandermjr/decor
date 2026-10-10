@@ -492,10 +492,12 @@ public partial class DecorDataGridControl : UserControl
         _innerGrid.Columns.Clear();
         CacheProperties(dtoType);
 
-        var properties = propertyNames is null
+        var properties = (propertyNames is null
             ? dtoType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             : propertyNames.Select(name => dtoType.GetProperty(name)
-                ?? throw new ArgumentException($"Propriedade '{name}' não existe em {dtoType.Name}.", nameof(propertyNames))).ToArray();
+                ?? throw new ArgumentException($"Propriedade '{name}' não existe em {dtoType.Name}.", nameof(propertyNames))).ToArray())
+            .OrderBy(property => property.Name == "IsActive" ? 1 : 0)
+            .ToArray();
 
         foreach (var property in properties)
         {
@@ -531,7 +533,7 @@ public partial class DecorDataGridControl : UserControl
             _innerGrid.Columns.Add(column);
         }
 
-        foreach (var column in _additionalColumns) _innerGrid.Columns.Add(column);
+        foreach (var column in _additionalColumns) AddColumnInDisplayOrder(column);
 
         ConfigureColumnPresentation();
     }
@@ -561,7 +563,16 @@ public partial class DecorDataGridControl : UserControl
         ArgumentNullException.ThrowIfNull(column);
         if (_additionalColumns.Contains(column)) return;
         _additionalColumns.Add(column);
-        _innerGrid?.Columns.Add(column);
+        if (_innerGrid is not null) AddColumnInDisplayOrder(column);
+    }
+
+    private void AddColumnInDisplayOrder(DataGridColumn column)
+    {
+        var stateColumn = _innerGrid!.Columns.FirstOrDefault(existing => existing.Header as string == "Estado");
+        if (stateColumn is null)
+            _innerGrid.Columns.Add(column);
+        else
+            _innerGrid.Columns.Insert(_innerGrid.Columns.IndexOf(stateColumn), column);
     }
 
     private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)

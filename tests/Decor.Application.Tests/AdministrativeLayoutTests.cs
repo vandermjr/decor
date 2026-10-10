@@ -41,9 +41,11 @@ public sealed class AdministrativeLayoutTests
     {
         var document = ReadXaml($"Views/{view}");
         var rootGrid = Assert.Single(document.Root!.Elements(), element => element.Name.LocalName == "Grid");
-        var toolbar = rootGrid.Elements().First();
+        var toolbar = view == "GroupsView.axaml"
+            ? Assert.Single(rootGrid.Elements(), element => element.Descendants().Any(child => child.Name.LocalName == "DecorSearchField"))
+            : rootGrid.Elements().First();
         Assert.Equal("Grid", toolbar.Name.LocalName);
-        Assert.Null(toolbar.Attribute("Grid.Row"));
+        Assert.Equal(view == "GroupsView.axaml" ? "1" : null, (string?)toolbar.Attribute("Grid.Row"));
         foreach (var command in new[] { "NewCommand", "EditCommand" })
         {
             var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == $"{{Binding {command}}}");
@@ -212,8 +214,8 @@ public sealed class AdministrativeLayoutTests
         foreach (var command in new[] { "NewCommand", "EditCommand" })
         {
             var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == $"{{Binding {command}}}");
-            Assert.Equal("2", (string?)button.Parent!.Attribute("Grid.Column"));
-            Assert.Null(button.Parent!.Parent!.Attribute("Grid.Row"));
+            Assert.Equal("1", (string?)button.Parent!.Attribute("Grid.Column"));
+            Assert.Equal("1", (string?)button.Parent!.Parent!.Attribute("Grid.Row"));
         }
         Assert.DoesNotContain(document.Descendants().Attributes(), attribute => attribute.Value.Contains("HierarchyLevel", StringComparison.Ordinal));
     }

@@ -16,7 +16,10 @@ public partial class EmployeesView : UserControl
             getDisplayName: null,
             getColumnWidth: propertyName => propertyName == nameof(EmployeeDTO.EmployeeID)
                 ? new DataGridLength(80)
-                : new DataGridLength(1, DataGridLengthUnitType.Star));
+                : new DataGridLength(1, DataGridLengthUnitType.Star),
+            propertyNames: [nameof(EmployeeDTO.EmployeeID), nameof(EmployeeDTO.Name), nameof(EmployeeDTO.JobTitle),
+                nameof(EmployeeDTO.BaseSalary), nameof(EmployeeDTO.WorkScheduleNote), nameof(EmployeeDTO.Document),
+                nameof(EmployeeDTO.Phone), nameof(EmployeeDTO.IsActive)]);
         EmployeesGrid.ValueMatchChanged += (_, eventArgs) =>
         {
             if (DataContext is EmployeesViewModel viewModel)
@@ -28,7 +31,6 @@ public partial class EmployeesView : UserControl
     public EmployeesView(EmployeesViewModel viewModel) : this()
     {
         DataContext = viewModel;
-        _ = viewModel.InitializeAsync();
     }
 
 }

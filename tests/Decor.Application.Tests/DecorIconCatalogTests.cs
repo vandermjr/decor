@@ -52,6 +52,7 @@ public class DecorIconCatalogTests
             DecorIconId.Actions.Report,
             DecorIconId.Actions.Close,
             DecorIconId.Actions.Clear,
+            DecorIconId.Actions.Filter,
             DecorIconId.Actions.Copy,
             DecorIconId.Actions.Cart,
             DecorIconId.User.Profile,
@@ -78,7 +79,7 @@ public class DecorIconCatalogTests
             DecorIconId.Navigation.SortDescending
         ];
 
-        Assert.Equal(56, expectedIds.Length);
+        Assert.Equal(57, expectedIds.Length);
         Assert.Equal(expectedIds.OrderBy(id => id.Value), DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
     }
@@ -96,7 +97,7 @@ public class DecorIconCatalogTests
             .OrderBy(id => id.Value)
             .ToArray();
 
-        Assert.Equal(56, declaredIds.Length);
+        Assert.Equal(57, declaredIds.Length);
         Assert.Equal(declaredIds, DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.Null(typeof(DecorIconId.Actions).GetProperty("Generic"));
         Assert.DoesNotContain(DecorIconCatalog.Ids, id => id.Value == "Actions." + "Generic");
@@ -122,8 +123,9 @@ public class DecorIconCatalogTests
 
         var geometries = DecorIconCatalog.Ids.Select(id => DecorIconCatalog.Get(id)).ToArray();
 
-        Assert.Equal(49, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Equal(50, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
         Assert.NotSame(DecorIconCatalog.Get(DecorIconId.Application.Help), DecorIconCatalog.Get(DecorIconId.Application.Info));
+        Assert.NotSame(DecorIconCatalog.Get(DecorIconId.Actions.Filter), DecorIconCatalog.Get(DecorIconId.User.Preferences));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Settings), DecorIconCatalog.Get(DecorIconId.Modules.Configuracoes));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Modules.Estoque), DecorIconCatalog.Get(DecorIconId.Forms.Products));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Actions.Create), DecorIconCatalog.Get(DecorIconId.Actions.Add));

@@ -33,7 +33,7 @@
     </ListBox>
     </Grid>
     <Panel Grid.RowSpan="2" IsVisible="{Binding IsEditing}">
-      <views:UserFormView DataContext="{Binding ActiveForm}"/>
+      <views:UserFormView x:Name="UserForm" DataContext="{Binding ActiveForm}"/>
     </Panel>
   </Grid>
 </UserControl>

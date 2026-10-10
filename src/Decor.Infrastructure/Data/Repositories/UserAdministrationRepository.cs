@@ -60,7 +60,7 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 .Where(w => w.Equals<UserPermissionOverride>(o => o.UserID, userId))
                 .OrderBy(o => o.Ascending<Permission>(p => p.PermissionID)))
             .Select<Employee>(s => s
-                .WithColumns<Employee>(employee => employee.Name)
+                .WithColumns<Employee>(employee => employee.EmployeeID, employee => employee.Name)
                 .Where(w => w.Equals<Employee>(employee => employee.UserID, userId))
                 .OrderBy(o => o.Ascending<Employee>(employee => employee.EmployeeID)))
             .Build();
@@ -72,10 +72,15 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
         var roles = (await results.ReadAsync<AdministrativeRoleDTO>()).ToArray();
         var overrides = (await results.ReadAsync<PermissionOverrideDTO>()).ToArray();
         var employee = await results.ReadFirstOrDefaultAsync<Employee>();
-        return new AdministrativeUserDTO(user.UserID, user.Username, user.DisplayName, user.IsActive, roles, overrides, employee?.Name);
+        return new AdministrativeUserDTO(user.UserID, user.Username, user.DisplayName, user.IsActive, roles, overrides,
+            employee?.Name, employee?.EmployeeID);
     }
 
     public async Task<int> CreateWithRolesAsync(string username, string displayName, string passwordHash, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default)
+        => await CreateWithRolesAndEmployeeAsync(username, displayName, passwordHash, roleIds, null, cancellationToken);
+
+    public async Task<int> CreateWithRolesAndEmployeeAsync(string username, string displayName, string passwordHash,
+        IReadOnlyCollection<int> roleIds, int? employeeId, CancellationToken cancellationToken = default)
     {
         using var connection = _databaseConnection.CreateConnection();
         connection.Open();
@@ -97,6 +102,9 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
                 await connection.ExecuteAsync(new CommandDefinition(rolesSql, rolesParameters, transaction, cancellationToken: cancellationToken));
             }
 
+            if (employeeId is int selectedEmployeeId)
+                await AssignNewEmployeeAsync(connection, transaction, id, selectedEmployeeId, cancellationToken);
+
             transaction.Commit();
             return id;
         }
@@ -105,6 +113,39 @@ public sealed class UserAdministrationRepository(IDatabaseConnection databaseCon
             transaction.Rollback();
             throw;
         }
+    }
+
+    public async Task AssignEmployeeAsync(int userId, int? employeeId, CancellationToken cancellationToken = default)
+    {
+        using var connection = _databaseConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                "UPDATE employees SET UserID = NULL WHERE UserID = @UserID",
+                new { UserID = userId }, transaction, cancellationToken: cancellationToken));
+
+            if (employeeId is int selectedEmployeeId)
+                await AssignNewEmployeeAsync(connection, transaction, userId, selectedEmployeeId, cancellationToken);
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    private static async Task AssignNewEmployeeAsync(System.Data.IDbConnection connection,
+        System.Data.IDbTransaction transaction, int userId, int employeeId, CancellationToken cancellationToken)
+    {
+        var affected = await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE employees SET UserID = @UserID WHERE EmployeeID = @EmployeeID AND IsActive = 1 AND UserID IS NULL",
+            new { UserID = userId, EmployeeID = employeeId }, transaction, cancellationToken: cancellationToken));
+        if (affected != 1)
+            throw new InvalidOperationException("O funcionário selecionado não existe ou já está vinculado a outro usuário.");
     }
 
     public async Task<bool> UpdateAsync(int userId, string username, string displayName, CancellationToken cancellationToken = default)

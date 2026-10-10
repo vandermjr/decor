@@ -367,6 +367,41 @@ public sealed class UsersAdministrationWorkflowTests
     }
 
     [Fact]
+    public async Task UnifiedForm_CreatesUserWithSelectedEmployeeAssociation()
+    {
+        var users = new UsersService();
+        var form = new UserFormViewModel(users, new RolesService()) { Username = "ana" };
+        await form.InitializeAsync();
+        form.SetEmployee(new EmployeeDTO(19, "Ana Silva", null, null, null, null, null, true, null));
+
+        await form.SaveAsync();
+
+        users.CreatedEmployeeId.Should().Be(19);
+        users.CreateCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task UnifiedForm_ChangesAndClearsExistingEmployeeAssociation()
+    {
+        var users = new UsersService();
+        var user = User() with { EmployeeID = 15, EmployeeName = "Pessoa anterior" };
+        var form = new UserFormViewModel(users, new RolesService(), user: user);
+        await form.InitializeAsync();
+        form.SetEmployee(new EmployeeDTO(19, "Ana Silva", null, null, null, null, null, true, null));
+        await form.SaveAsync();
+
+        users.AssignedEmployeeId.Should().Be(19);
+        form.WasSaved.Should().BeTrue();
+
+        var clear = new UserFormViewModel(users, new RolesService(), user: user);
+        await clear.InitializeAsync();
+        clear.ClearEmployeeCommand.Execute(null);
+        await clear.SaveAsync();
+        users.AssignedEmployeeId.Should().BeNull();
+        users.AssignedEmployeeUserId.Should().Be(user.UserID);
+    }
+
+    [Fact]
     public async Task UnifiedForm_PartialSaveRetryDoesNotRepeatSuccessfulUsernameWrite()
     {
         var users = new UsersService { Save = () => Task.FromException(new UnauthorizedAccessException("Atribuição negada")) };
@@ -805,6 +840,9 @@ public sealed class UsersAdministrationWorkflowTests
         public Func<Task<IReadOnlyList<AdministrativeUserDTO>>>? Search { get; set; }
         public int? SavedUserId { get; private set; }
         public int[] SavedRoles { get; private set; } = [];
+        public int? CreatedEmployeeId { get; private set; }
+        public int? AssignedEmployeeId { get; private set; }
+        public int? AssignedEmployeeUserId { get; private set; }
         public int SaveCalls { get; private set; }
         public int SearchCalls { get; private set; }
         public (string Username, string DisplayName)? LastNames { get; private set; }
@@ -813,6 +851,14 @@ public sealed class UsersAdministrationWorkflowTests
         public Task<AdministrativeUserDTO?> GetByIdAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult<AdministrativeUserDTO?>(User());
         public async Task<TemporaryPasswordResult> CreateAsync(string username, string displayName, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default)
         { CreateCalls++; CreatedRoles = roleIds.ToArray(); LastNames = (username, displayName); await Create(); return new TemporaryPasswordResult("Password123!"); }
+        public async Task<TemporaryPasswordResult> CreateWithEmployeeAsync(string username, string displayName, IReadOnlyCollection<int> roleIds,
+            int? employeeId, CancellationToken cancellationToken = default)
+        {
+            CreatedEmployeeId = employeeId;
+            return await CreateAsync(username, displayName, roleIds, cancellationToken);
+        }
+        public Task AssignEmployeeAsync(int userId, int? employeeId, CancellationToken cancellationToken = default)
+        { AssignedEmployeeUserId = userId; AssignedEmployeeId = employeeId; return Task.CompletedTask; }
         public Task UpdateAsync(int userId, string username, string displayName, CancellationToken cancellationToken = default)
         { UpdateCalls++; LastNames = (username, displayName); return Update(); }
         public Task SetActiveAsync(int userId, bool active, CancellationToken cancellationToken = default)

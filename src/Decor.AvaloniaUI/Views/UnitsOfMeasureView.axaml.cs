@@ -47,7 +47,6 @@ public partial class UnitsOfMeasureView : UserControl
     public UnitsOfMeasureView(UnitsOfMeasureViewModel viewModel) : this()
     {
         DataContext = viewModel;
-        _ = viewModel.InitializeAsync();
     }
 
     private void UpdateSubscription()

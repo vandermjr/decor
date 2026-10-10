@@ -48,6 +48,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Report { get; } = new("Actions.Report");
         public static DecorIconId Close { get; } = new("Actions.Close");
         public static DecorIconId Clear { get; } = new("Actions.Clear");
+        public static DecorIconId Filter { get; } = new("Actions.Filter");
         public static DecorIconId Copy { get; } = new("Actions.Copy");
         public static DecorIconId Cart { get; } = new("Actions.Cart");
     }

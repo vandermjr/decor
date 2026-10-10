@@ -35,6 +35,140 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
+    public void Empty_grid_overlay_preserves_headers_and_pointer_interaction()
+    {
+        var document = ReadXaml("Controls", "DecorDataGridControl.axaml");
+        var grid = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DataGrid"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "InnerDataGrid");
+        var overlay = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Panel"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "EmptyOverlay");
+
+        Assert.Equal("Column", (string?)grid.Attribute("HeadersVisibility"));
+        Assert.Equal("Auto", (string?)grid.Attribute("HorizontalScrollBarVisibility"));
+        Assert.Equal("Transparent", (string?)overlay.Attribute("Background"));
+        Assert.Equal("False", (string?)overlay.Attribute("IsHitTestVisible"));
+    }
+
+    [Fact]
+    public void Shared_search_actions_follow_search_clear_filter_information_order()
+    {
+        var document = ReadXaml("Controls", "DecorSearchField.axaml");
+        var actions = new[] { "SearchButton", "ClearButton", "FilterButton", "InfoButton" }
+            .Select(name => Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+                && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == name))
+            .ToArray();
+
+        Assert.Equal(new[] { "1", "2", "3", "4" }, actions.Select(action => (string?)action.Attribute("Grid.Column")));
+        Assert.Equal("False", (string?)actions[2].Attribute("IsEnabled"));
+        Assert.Contains(actions[2].Attributes(), attribute => attribute.Name.LocalName.Contains("HideWhenDisabled", StringComparison.Ordinal)
+            && attribute.Value == "False");
+        Assert.Null(actions[3].Element("Button.Flyout"));
+        Assert.Equal("Informações da pesquisa", (string?)actions[3].Attribute("AutomationProperties.Name"));
+        Assert.Contains("SearchHelp", (string?)actions[3].Attribute("ToolTip.Tip"));
+    }
+
+    [Fact]
+    public void Shared_search_runs_while_typing_with_a_short_debounce()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln"))) root = root.Parent;
+        Assert.NotNull(root);
+        var source = File.ReadAllText(Path.Combine(root!.FullName, "src", "Decor.AvaloniaUI", "Controls", "DecorSearchField.axaml.cs"));
+
+        Assert.Contains("DispatcherTimer", source);
+        Assert.Contains("FromMilliseconds(350)", source);
+        Assert.Contains("_searchTimer.Start()", source);
+        Assert.Contains("ExecuteSearch()", source);
+    }
+
+    [Theory]
+    [InlineData("EmployeesView.axaml.cs")]
+    [InlineData("QuotesView.axaml.cs")]
+    [InlineData("UnitsOfMeasureView.axaml.cs")]
+    [InlineData("UsersView.axaml.cs")]
+    [InlineData("GroupsView.axaml.cs")]
+    public void Primary_listings_do_not_search_automatically_when_opened(string file)
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln"))) root = root.Parent;
+        Assert.NotNull(root);
+        var source = File.ReadAllText(Path.Combine(root!.FullName, "src", "Decor.AvaloniaUI", "Views", file));
+        if (file == "UsersView.axaml.cs")
+            source = source.Split("private async Task OpenEmployeeLookupAsync()", StringSplitOptions.None)[0];
+        Assert.DoesNotContain("viewModel.InitializeAsync()", source);
+    }
+
+    [Fact]
+    public void Security_groups_listing_has_the_shared_search_field()
+    {
+        var document = ReadXaml("Views", "GroupsView.axaml");
+        AssertSearchField(document, "SearchText", "SearchCommand", "ClearSearchCommand");
+        var grid = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorDataGridControl"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "RolesGrid");
+        Assert.Equal("{Binding Roles}", (string?)grid.Attribute("ItemsSource"));
+        Assert.Equal("2", (string?)grid.Parent?.Attribute("Grid.Row"));
+    }
+
+    [Fact]
+    public void Employee_grid_hides_user_id_and_employee_form_keeps_it_read_only()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln"))) root = root.Parent;
+        Assert.NotNull(root);
+        var code = File.ReadAllText(Path.Combine(root!.FullName, "src", "Decor.AvaloniaUI", "Views", "EmployeesView.axaml.cs"));
+        var view = ReadXaml("Views", "EmployeesView.axaml");
+
+        Assert.DoesNotContain(nameof(EmployeeDTO.UserID), code);
+        var userIdField = Assert.Single(view.Descendants(), element => element.Name.LocalName == "TextBox"
+            && (string?)element.Attribute("Text") == "{Binding UserIdInput}");
+        Assert.Equal("True", (string?)userIdField.Attribute("IsReadOnly"));
+    }
+
+    [Fact]
+    public void User_form_employee_lookup_uses_read_only_display_and_search_and_clear_actions()
+    {
+        var document = ReadXaml("Views", "UserFormView.axaml");
+        var employeeName = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
+            && (string?)element.Attribute("Text") == "{Binding EmployeeName}");
+        Assert.Equal("True", (string?)employeeName.Attribute("IsReadOnly"));
+        Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding ClearEmployeeCommand}");
+        Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Click") == "SearchEmployee_Click");
+    }
+
+    [Fact]
+    public void Generated_state_column_is_always_last()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+
+        control.InitializeColumns(typeof(AdministrativeUserDTO), propertyNames:
+            [nameof(AdministrativeUserDTO.IsActive), nameof(AdministrativeUserDTO.EmployeeName), nameof(AdministrativeUserDTO.UserID)]);
+
+        Assert.Equal("Estado", grid.Columns.Last().Header);
+    }
+
+    [Fact]
+    public void Additional_actions_are_inserted_before_the_state_column()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+        control.InitializeColumns(typeof(AdministrativeUserDTO), propertyNames:
+            [nameof(AdministrativeUserDTO.UserID), nameof(AdministrativeUserDTO.IsActive)]);
+        var action = new DataGridTemplateColumn { Header = "Ação", CanUserSort = false };
+
+        control.AddColumn(action);
+
+        Assert.Same(action, grid.Columns[^2]);
+        Assert.Equal("Estado", grid.Columns[^1].Header);
+    }
+
+    [Fact]
     public void Quote_listing_exposes_creation_date_from_the_quote_dto()
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);
@@ -177,6 +311,7 @@ public sealed partial class DecorGridPresentationTests
     [InlineData("EmployeesView.axaml")]
     [InlineData("UsersView.axaml")]
     [InlineData("PermissionsView.axaml")]
+    [InlineData("GroupsView.axaml")]
     public void Search_buttons_use_shared_accessible_style_and_only_the_search_icon(string file)
     {
         var document = ReadXaml("Views", file);
@@ -227,13 +362,14 @@ public sealed partial class DecorGridPresentationTests
     [InlineData("EmployeesView.axaml")]
     [InlineData("UsersView.axaml")]
     [InlineData("PermissionsView.axaml")]
+    [InlineData("GroupsView.axaml")]
     public void Searches_can_be_cleared_next_to_the_search_button(string file)
     {
         var document = ReadXaml("Views", file);
         AssertSearchField(document, "SearchText", "SearchCommand", "ClearSearchCommand");
         var shared = ReadXaml("Controls", "DecorSearchField.axaml");
-        var search = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchCommand, ElementName=Root}");
-        var clear = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearCommand, ElementName=Root}");
+        var search = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchActionCommand, ElementName=Root}");
+        var clear = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearActionCommand, ElementName=Root}");
         Assert.Equal("search-action", (string?)clear.Attribute("Classes"));
         Assert.Equal("{Binding HasClearCommand, ElementName=Root}", (string?)clear.Attribute("IsVisible"));
         Assert.Equal("Limpar pesquisa", (string?)clear.Attribute("AutomationProperties.Name"));
@@ -708,18 +844,15 @@ public sealed partial class DecorGridPresentationTests
         Assert.Equal("True", (string?)border.Attribute("ClipToBounds"));
         var focus = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "Border#FieldBorder:focus-within");
         AssertSetter(focus, "BorderBrush", "{DynamicResource DecorFieldFocusBrush}");
-        var help = Assert.Single(document.Descendants(), element => (string?)element.Attribute(name) == "HelpButton");
-        Assert.Same(input.Parent, help.Parent);
-        Assert.Equal("3", (string?)help.Attribute("Grid.Column"));
-        Assert.Equal("{Binding HasSearchHelp, ElementName=Root}", (string?)help.Attribute("IsVisible"));
-        Assert.Equal("{Binding SearchHelp, ElementName=Root}", (string?)help.Attribute("ToolTip.Tip"));
-        Assert.Equal("Ajuda da pesquisa", (string?)help.Attribute("AutomationProperties.Name"));
-        var helpText = Assert.Single(help.Descendants(), element => (string?)element.Attribute(name) == "HelpText");
-        Assert.Equal("TextBlock", helpText.Name.LocalName);
-        Assert.Equal("Wrap", (string?)helpText.Attribute("TextWrapping"));
-        Assert.Contains(helpText.Ancestors(), element => element.Name.LocalName == "Flyout");
-        var icon = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "PathIcon.help-icon");
-        Assert.Contains(icon.Descendants().Attributes(), attribute => attribute.Value.Contains("Application.Help", StringComparison.Ordinal));
+        var info = Assert.Single(document.Descendants(), element => (string?)element.Attribute(name) == "InfoButton");
+        Assert.Same(input.Parent, info.Parent);
+        Assert.Equal("4", (string?)info.Attribute("Grid.Column"));
+        Assert.Equal("{Binding HasSearchHelp, ElementName=Root}", (string?)info.Attribute("IsVisible"));
+        Assert.Equal("{Binding SearchHelp, ElementName=Root}", (string?)info.Attribute("ToolTip.Tip"));
+        Assert.Equal("Informações da pesquisa", (string?)info.Attribute("AutomationProperties.Name"));
+        Assert.Null(info.Element("Button.Flyout"));
+        var icon = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "PathIcon.info-icon");
+        Assert.Contains(icon.Descendants().Attributes(), attribute => attribute.Value.Contains("Application.Info", StringComparison.Ordinal));
     }
 
     private static XDocument ReadXaml(string folder, string file)

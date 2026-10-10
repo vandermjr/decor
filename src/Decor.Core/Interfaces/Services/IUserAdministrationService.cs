@@ -5,6 +5,12 @@ public interface IUserAdministrationService
     Task<IReadOnlyList<AdministrativeUserDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default);
     Task<AdministrativeUserDTO?> GetByIdAsync(int userId, CancellationToken cancellationToken = default);
     Task<TemporaryPasswordResult> CreateAsync(string username, string displayName, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default);
+    Task<TemporaryPasswordResult> CreateWithEmployeeAsync(string username, string displayName, IReadOnlyCollection<int> roleIds,
+        int? employeeId, CancellationToken cancellationToken = default) => employeeId is null
+        ? CreateAsync(username, displayName, roleIds, cancellationToken)
+        : Task.FromException<TemporaryPasswordResult>(new NotSupportedException("A associação de funcionários não está disponível."));
+    Task AssignEmployeeAsync(int userId, int? employeeId, CancellationToken cancellationToken = default)
+        => Task.FromException(new NotSupportedException("A associação de funcionários não está disponível."));
     Task UpdateAsync(int userId, string username, string displayName, CancellationToken cancellationToken = default);
     Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default);
     Task ReplaceRolesAsync(int userId, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default);

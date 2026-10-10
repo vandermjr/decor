@@ -24,6 +24,9 @@ public sealed class UserFormViewModel : IUserFormViewModel
     private bool _isBusy;
     private bool _isCompleted;
     private bool _rolesLoaded;
+    private int? _employeeId;
+    private int? _originalEmployeeId;
+    private string? _employeeName;
     private string? _errorMessage;
     private string? _temporaryPassword;
 
@@ -40,6 +43,8 @@ public sealed class UserFormViewModel : IUserFormViewModel
         _context = context;
         UserId = user?.UserID ?? 0;
         _isSystemAdministrator = user?.IsSystemAdministrator ?? false;
+        _employeeId = _originalEmployeeId = user?.EmployeeID;
+        _employeeName = user?.EmployeeName;
         _username = _originalUsername = user?.Username ?? string.Empty;
         _isActive = _originalIsActive = user?.IsActive ?? true;
         _originalRoleIds = user?.Roles.Select(role => role.RoleID).ToHashSet() ?? [];
@@ -53,6 +58,7 @@ public sealed class UserFormViewModel : IUserFormViewModel
         {
             if (!IsBusy) CloseRequested?.Invoke(this, EventArgs.Empty);
         }, () => !IsBusy);
+        ClearEmployeeCommand = new RelayCommand(ClearEmployee, () => CanClearEmployee);
     }
 
     public int UserId { get; }
@@ -62,6 +68,7 @@ public sealed class UserFormViewModel : IUserFormViewModel
     public ObservableCollection<EditUserRoleOption> Groups { get; } = [];
     public ICommand SaveCommand { get; }
     public ICommand DismissCommand { get; }
+    public ICommand ClearEmployeeCommand { get; }
     public string DismissButtonText => IsCompleted ? "Concluir" : "Cancelar";
     public bool WasSaved { get; private set; }
     public string? CreatedUsername { get; private set; }
@@ -71,6 +78,21 @@ public sealed class UserFormViewModel : IUserFormViewModel
     public string? TemporaryPassword => _temporaryPassword;
     public bool HasTemporaryPassword => !string.IsNullOrWhiteSpace(TemporaryPassword);
     public string Username { get => _username; set => SetField(ref _username, value); }
+    public int? EmployeeID
+    {
+        get => _employeeId;
+        private set
+        {
+            if (!SetField(ref _employeeId, value)) return;
+            OnPropertyChanged(nameof(HasEmployee));
+            OnPropertyChanged(nameof(CanClearEmployee));
+            ((RelayCommand)ClearEmployeeCommand).RaiseCanExecuteChanged();
+        }
+    }
+    public string? EmployeeName { get => _employeeName; private set => SetField(ref _employeeName, value); }
+    public bool HasEmployee => EmployeeID is not null;
+    public bool CanSelectEmployee => CanEditFields;
+    public bool CanClearEmployee => CanEditFields && HasEmployee;
     public bool IsActive { get => _isActive; set => SetField(ref _isActive, value); }
     public bool IsBusy => _isBusy;
     public bool IsCompleted => _isCompleted;
@@ -87,6 +109,26 @@ public sealed class UserFormViewModel : IUserFormViewModel
     private bool CanSave => CanEditFields && (!IsAdding || _rolesLoaded);
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? CloseRequested;
+    public event EventHandler? EmployeeLookupRequested;
+
+    public void RequestEmployeeLookup()
+    {
+        if (CanSelectEmployee) EmployeeLookupRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SetEmployee(EmployeeDTO employee)
+    {
+        if (!CanSelectEmployee) return;
+        EmployeeID = employee.EmployeeID;
+        EmployeeName = employee.Name;
+    }
+
+    private void ClearEmployee()
+    {
+        if (!CanClearEmployee) return;
+        EmployeeID = null;
+        EmployeeName = null;
+    }
 
     public async Task InitializeAsync()
     {
@@ -152,7 +194,8 @@ public sealed class UserFormViewModel : IUserFormViewModel
             SetError("Você não possui permissão para atribuir grupos a este usuário.");
             return;
         }
-        var changeCount = (usernameChanged ? 1 : 0) + (activeChanged ? 1 : 0) + (groupsChanged ? 1 : 0);
+        var employeeChanged = EmployeeID != _originalEmployeeId;
+        var changeCount = (usernameChanged ? 1 : 0) + (activeChanged ? 1 : 0) + (groupsChanged ? 1 : 0) + (employeeChanged ? 1 : 0);
         if (!IsAdding && _context?.User?.UserID == UserId && changeCount > 1)
         {
             SetError("Altere apenas o usuário, o estado ou os grupos por vez na própria conta. A sessão será encerrada após salvar.");
@@ -164,7 +207,7 @@ public sealed class UserFormViewModel : IUserFormViewModel
         {
             if (IsAdding)
             {
-                var result = await _users.CreateAsync(username, username, roleIds.ToArray());
+                var result = await _users.CreateWithEmployeeAsync(username, username, roleIds.ToArray(), EmployeeID);
                 CreatedUsername = username;
                 _temporaryPassword = result.TemporaryPassword;
                 _isCompleted = true;
@@ -174,6 +217,12 @@ public sealed class UserFormViewModel : IUserFormViewModel
             }
             else
             {
+                if (employeeChanged)
+                {
+                    await _users.AssignEmployeeAsync(UserId, EmployeeID);
+                    _originalEmployeeId = EmployeeID;
+                    WasSaved = true;
+                }
                 if (usernameChanged)
                 {
                     await _users.UpdateAsync(UserId, username, username);
@@ -224,10 +273,11 @@ public sealed class UserFormViewModel : IUserFormViewModel
 
     private void RefreshState()
     {
-        foreach (var property in new[] { nameof(CanEditFields), nameof(CanChangeActive), nameof(CanEditGroups) })
+        foreach (var property in new[] { nameof(CanEditFields), nameof(CanChangeActive), nameof(CanEditGroups), nameof(CanSelectEmployee), nameof(CanClearEmployee) })
             OnPropertyChanged(property);
         ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
         ((RelayCommand)DismissCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)ClearEmployeeCommand).RaiseCanExecuteChanged();
     }
 
     private void SetError(string? value)

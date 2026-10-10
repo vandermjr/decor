@@ -25,7 +25,7 @@ public sealed class DecorSearchFieldTests
         Assert.Contains(innerFocus.Elements(), setter => (string?)setter.Attribute("Property") == "BorderThickness" && (string?)setter.Attribute("Value") == "0");
         var buttonStyle = Assert.Single(styles, element => (string?)element.Attribute("Selector") == "Button.search-action");
         Assert.Contains(buttonStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Width" && (string?)setter.Attribute("Value") == "36");
-        Assert.Contains(buttonStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Height" && (string?)setter.Attribute("Value") == "34");
+        Assert.Contains(buttonStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Height" && (string?)setter.Attribute("Value") == "32");
         Assert.Contains(buttonStyle.Elements(), setter => (string?)setter.Attribute("Property") == "FocusAdorner" && (string?)setter.Attribute("Value") == "{x:Null}");
     }
 

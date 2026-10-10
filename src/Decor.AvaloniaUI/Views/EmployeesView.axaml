@@ -78,7 +78,7 @@
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
                 <TextBlock Text="Código do usuário vinculado (opcional)" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                <TextBox Text="{Binding UserIdInput}"/>
+                <TextBox Text="{Binding UserIdInput}" IsReadOnly="True"/>
               </StackPanel>
               <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Spacing="4">
                 <TextBlock Text="Observação de horário" FontWeight="{DynamicResource DecorFontWeightBase}"/>

@@ -22,6 +22,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
     private bool _isEditing;
     private bool _isNew;
     private bool _selectionMode;
+    private int? _employeeSelectionUserId;
     private bool _showDeleteConfirmation;
     private int _employeeId;
     private string _name = string.Empty;
@@ -92,6 +93,11 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
             if (value && IsEditing) CancelEdit();
             RefreshCommands();
         }
+    }
+    public int? EmployeeSelectionUserId
+    {
+        get => _employeeSelectionUserId;
+        set => _employeeSelectionUserId = value;
     }
     public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public string DeleteConfirmationMessage => _employeeToDelete is null ? string.Empty : $"Excluir o funcionário \"{_employeeToDelete.Name}\"?";
@@ -275,6 +281,9 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
                 all.AddRange(employees);
                 page++;
             } while (employees.Count == pageSize);
+            if (SelectionMode)
+                all = all.Where(employee => employee.IsActive
+                    && (employee.UserID is null || employee.UserID == EmployeeSelectionUserId)).ToList();
             Listing.Load(all);
             OnPropertyChanged(nameof(EmployeeCodeDisplay));
 

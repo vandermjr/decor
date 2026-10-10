@@ -20,8 +20,13 @@ public partial class UserFormView : UserControl
         DataContextChanged += (_, _) =>
         {
             if (_form is not null) _form.PropertyChanged -= FormPropertyChanged;
+            if (_form is not null) _form.EmployeeLookupRequested -= FormEmployeeLookupRequested;
             _form = DataContext as UserFormViewModel;
-            if (_form is not null) _form.PropertyChanged += FormPropertyChanged;
+            if (_form is not null)
+            {
+                _form.PropertyChanged += FormPropertyChanged;
+                _form.EmployeeLookupRequested += FormEmployeeLookupRequested;
+            }
             Dispatcher.UIThread.Post(() =>
             {
                 _formScrollViewer.ScrollToHome();
@@ -29,6 +34,14 @@ public partial class UserFormView : UserControl
             });
         };
     }
+
+    public event EventHandler? EmployeeLookupRequested;
+
+    private void SearchEmployee_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs args)
+        => _form?.RequestEmployeeLookup();
+
+    private void FormEmployeeLookupRequested(object? sender, EventArgs args)
+        => EmployeeLookupRequested?.Invoke(sender, args);
 
     private void FormPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {

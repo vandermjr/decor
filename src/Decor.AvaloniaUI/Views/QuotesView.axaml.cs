@@ -126,7 +126,6 @@ public partial class QuotesView : UserControl
         _navigationService = navigationService;
         DataContext = viewModel;
         viewModel.PdfRequested += GeneratePdf;
-        _ = viewModel.InitializeAsync();
     }
 
     private async void SearchCustomer_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>

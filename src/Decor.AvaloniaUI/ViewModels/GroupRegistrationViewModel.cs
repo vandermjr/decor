@@ -15,6 +15,7 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
     private readonly IAuthorizationService _authorization;
     private readonly HashSet<int> _editableRoleIds = [];
     private AdministrativeRoleDTO? _selectedRole;
+    private string _searchText = string.Empty;
     private string _name = string.Empty;
     private string? _description;
     private int _hierarchyLevel;
@@ -28,6 +29,8 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
         _service = service;
         _context = context;
         _authorization = authorization;
+        SearchCommand = new RelayCommand(async () => await SearchRolesAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         NewCommand = new RelayCommand(New, () => CanCreate);
         EditCommand = new RelayCommand(() => IsEditing = true, () => CanEdit);
         CancelCommand = new RelayCommand(Cancel, () => IsEditing && !IsBusy);
@@ -39,6 +42,8 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
     public ObservableCollection<AdministrativeRoleDTO> Roles { get; } = [];
     public GridListState<AdministrativeRoleDTO> Listing { get; }
     public ICommand NewCommand { get; }
+    public ICommand SearchCommand { get; }
+    public ICommand ClearSearchCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand SaveCommand { get; }
@@ -60,10 +65,12 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
         }
     }
 
+    public string SearchText { get => _searchText; set => SetField(ref _searchText, value); }
     public string Name { get => _name; set => SetField(ref _name, value); }
     public string? Description { get => _description; set => SetField(ref _description, value); }
     public int HierarchyLevel { get => _hierarchyLevel; set => SetField(ref _hierarchyLevel, value); }
     private bool HasEditPermission => _context.IsAuthenticated && _authorization.HasPermission(DecorPermissions.RolesEdit);
+    public bool CanSearch => !IsBusy && !IsEditing && _context.IsAuthenticated && _authorization.HasPermission(DecorPermissions.RolesView);
     public bool CanCreate => !IsBusy && !IsEditing && HasEditPermission;
     public bool CanEdit => !IsBusy && !IsEditing && HasEditPermission && SelectedRole is not null && _editableRoleIds.Contains(SelectedRole.RoleID);
     public bool CanSave => !IsBusy && IsEditing && HasEditPermission && (_isNew || SelectedRole is not null && _editableRoleIds.Contains(SelectedRole.RoleID));
@@ -74,6 +81,7 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
         {
             if (!SetField(ref _isEditing, value)) return;
             OnPropertyChanged(nameof(IsAdding));
+            OnPropertyChanged(nameof(CanSearch));
             OnPropertyChanged(nameof(StatusMessage));
             Listing.Refresh();
             RefreshCommands();
@@ -132,6 +140,44 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
         finally { IsBusy = false; }
     }
 
+    private async Task SearchRolesAsync()
+    {
+        if (!CanSearch) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            var roles = await _service.GetRolesAsync();
+            var editableIds = await _service.GetEditableRoleIdsAsync();
+            _editableRoleIds.Clear();
+            _editableRoleIds.UnionWith(editableIds);
+            var query = IntelligentSearchQuery.Parse(SearchText);
+            var matches = roles.Where(role => Matches(role, query)).ToArray();
+            SelectedRole = null;
+            Listing.Load(matches);
+        }
+        catch (Exception exception) { ErrorMessage = Message(exception, "Não foi possível pesquisar os grupos."); }
+        finally { IsBusy = false; }
+    }
+
+    private static bool Matches(AdministrativeRoleDTO role, IntelligentSearchQuery query)
+    {
+        if (query.IsIdSearch)
+            return query.Id == role.RoleID;
+
+        var fields = $"{role.RoleName} {role.Description}";
+        return query.Tokens.All(token => fields.Contains(token, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void ClearSearch()
+    {
+        if (!CanSearch) return;
+        SearchText = string.Empty;
+        SelectedRole = null;
+        Listing.Clear();
+        ErrorMessage = null;
+    }
+
     private void New()
     {
         if (!CanCreate) return;
@@ -182,9 +228,12 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
     private void RefreshCommands()
     {
         OnPropertyChanged(nameof(CanCreate));
+        OnPropertyChanged(nameof(CanSearch));
         OnPropertyChanged(nameof(CanEdit));
         OnPropertyChanged(nameof(CanSave));
         ((RelayCommand)NewCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)SearchCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)ClearSearchCommand).RaiseCanExecuteChanged();
         ((RelayCommand)EditCommand).RaiseCanExecuteChanged();
         ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
         ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();

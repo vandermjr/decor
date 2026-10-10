@@ -28,6 +28,26 @@
           <TextBox x:Name="UsernameTextBox" Text="{Binding Username, Mode=TwoWay}" MaxLength="50" IsEnabled="{Binding CanEditFields}" controls:DecorRequiredField.IsRequired="True"/>
         </StackPanel>
         <StackPanel Spacing="4">
+          <TextBlock Text="Funcionário vinculado (opcional)" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+          <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}"
+                  BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+              <TextBox Text="{Binding EmployeeName}" IsReadOnly="True" BorderThickness="0" Padding="10,0"
+                       VerticalContentAlignment="Center" PlaceholderText="Nenhum funcionário vinculado"/>
+              <Button Grid.Column="1" Classes="field-action decor-action" Command="{Binding ClearEmployeeCommand}"
+                      IsVisible="{Binding HasEmployee}" IsEnabled="{Binding CanClearEmployee}" ToolTip.Tip="Remover vínculo">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}"
+                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="14" Height="14" Stretch="Uniform"/>
+              </Button>
+              <Button Grid.Column="2" Classes="field-action decor-action" Click="SearchEmployee_Click"
+                      IsEnabled="{Binding CanSelectEmployee}" ToolTip.Tip="Pesquisar funcionário">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}"
+                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+              </Button>
+            </Grid>
+          </Border>
+        </StackPanel>
+        <StackPanel Spacing="4">
           <TextBlock Text="Grupos associados" FontWeight="{DynamicResource DecorFontWeightBase}"/>
           <ListBox ItemsSource="{Binding Groups}" IsEnabled="{Binding CanEditGroups}"
                    ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
