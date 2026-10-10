@@ -71,15 +71,8 @@ public partial class ServicesView : UserControl
         if (DataContext is ServicesViewModel { IsBusy: false } viewModel)
         {
             if (viewModel.IsEditing) DescriptionTextBox.Focus();
-            else SearchTextBox.Focus();
+            else SearchTextBox.FocusTextInput();
         }
     });
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs args)
-    {
-        if (args.Key != Key.Enter) return;
-        if (DataContext is ServicesViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-        args.Handled = true;
-    }
 }

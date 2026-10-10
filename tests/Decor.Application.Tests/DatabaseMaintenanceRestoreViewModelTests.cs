@@ -407,7 +407,8 @@ public sealed class DatabaseMaintenanceRestoreViewModelTests : IDisposable
         public bool HasPermission(string permissionCode)
         {
             RequestedPermissions.Add(permissionCode);
-            return HasRestorePermission && permissionCode == DecorPermissions.DatabaseMaintenanceRestore;
+            return permissionCode == DecorPermissions.DatabaseMaintenanceView
+                || HasRestorePermission && permissionCode == DecorPermissions.DatabaseMaintenanceRestore;
         }
 
         public bool CanView(string resource) => false;

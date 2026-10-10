@@ -30,6 +30,8 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
 
         if (!string.IsNullOrWhiteSpace(dto.Barcode))
         {
+            if (dto.Barcode.Any(character => character is < '0' or > '9'))
+                errors.Add("O Código de Barras deve conter apenas números.");
             if (dto.Barcode.Length is not 13 and not 8)
             {
                 errors.Add("O Código de Barras deve ter 13 ou 8 caracteres.");

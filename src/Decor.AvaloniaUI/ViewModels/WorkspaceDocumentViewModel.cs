@@ -47,7 +47,7 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
         "users" => DecorIconId.Forms.Users,
         "roles" => DecorIconId.Forms.PermissionGroups,
         "permissions" => DecorIconId.Forms.Permissions,
-        "about" => DecorIconId.Application.Help,
+        "about" => DecorIconId.Application.Info,
         "database-maintenance" => DecorIconId.Forms.DatabaseMaintenance,
         "system-icons" => DecorIconId.Application.Settings,
         "user-options" => DecorIconId.User.Preferences,

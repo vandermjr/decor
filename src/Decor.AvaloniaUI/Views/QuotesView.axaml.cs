@@ -88,9 +88,12 @@ public partial class QuotesView : UserControl
                 ToolTip.SetTip(button, "Remover item");
                 if (line is not null && DataContext is QuotesViewModel model)
                 {
-                    button.IsVisible = model.Sections.Any(section => section.DTO.QuoteSectionID == line.DTO.QuoteSectionID
-                        && section.DTO.Status == (int)Decor.Core.Entities.QuoteSectionStatus.Draft);
                     button.Bind(Button.IsEnabledProperty, new Binding(nameof(QuotesViewModel.CanManageSections)) { Source = model });
+                    if (model.Sections.Any(section => section.DTO.QuoteSectionID == line.DTO.QuoteSectionID
+                        && section.DTO.Status == (int)Decor.Core.Entities.QuoteSectionStatus.Draft))
+                        button.Bind(Button.IsVisibleProperty, new Binding(nameof(Button.IsEffectivelyEnabled)) { Source = button });
+                    else
+                        button.IsVisible = false;
                 }
                 button.Click += async (_, _) =>
                 {
@@ -100,7 +103,7 @@ public partial class QuotesView : UserControl
                 return button;
             })
         });
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
     }
 
     public QuotesView(QuotesViewModel viewModel, IServiceProvider services, INavigationService navigationService) : this()
@@ -177,11 +180,4 @@ public partial class QuotesView : UserControl
             quoteViewModel.ApplyLookupSelection(context, result.Value);
     }
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-        if (DataContext is QuotesViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-        e.Handled = true;
-    }
 }

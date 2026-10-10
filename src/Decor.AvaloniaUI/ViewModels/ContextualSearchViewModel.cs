@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
@@ -25,6 +26,7 @@ public sealed class ContextualSearchViewModel : INotifyPropertyChanged
     private readonly IPartnerService _partnerService;
     private readonly IProductService _productService;
     private readonly IServiceCatalogService? _serviceCatalogService;
+    private readonly IAuthorizationService? _authorization;
     private string _searchText = string.Empty;
     private string _title = "Pesquisar";
     private string _searchHint = "Digite para pesquisar";
@@ -36,15 +38,27 @@ public sealed class ContextualSearchViewModel : INotifyPropertyChanged
     private int _searchGeneration;
 
     public ContextualSearchViewModel(ICustomerService customerService, IEmployeeService employeeService,
-        IPartnerService partnerService, IProductService productService, IServiceCatalogService? serviceCatalogService = null)
+        IPartnerService partnerService, IProductService productService, IServiceCatalogService? serviceCatalogService = null,
+        IAuthorizationService? authorization = null)
     {
         _customerService = customerService;
         _employeeService = employeeService;
         _partnerService = partnerService;
         _productService = productService;
         _serviceCatalogService = serviceCatalogService;
-        SearchCommand = new RelayCommand(async () => await SearchAsync(), () => !IsBusy);
+        _authorization = authorization;
+        SearchCommand = new RelayCommand(async () => await SearchAsync(), () => !IsBusy && HasViewPermission);
     }
+
+    private bool HasViewPermission => _authorization?.HasPermission(_context switch
+    {
+        LookupSearchContext.Customer => DecorPermissions.CustomersView,
+        LookupSearchContext.Employee => DecorPermissions.EmployeesView,
+        LookupSearchContext.Partner => DecorPermissions.PartnersView,
+        LookupSearchContext.Product => DecorPermissions.ProductsView,
+        LookupSearchContext.Service => DecorPermissions.ServicesView,
+        _ => string.Empty
+    }) ?? true;
 
     public ObservableCollection<LookupSearchItem> Results { get; } = [];
     public ICommand SearchCommand { get; }
@@ -60,6 +74,7 @@ public sealed class ContextualSearchViewModel : INotifyPropertyChanged
     public async Task InitializeAsync(LookupSearchContext context)
     {
         _context = context;
+        ((RelayCommand)SearchCommand).RaiseCanExecuteChanged();
         Title = context switch
         {
             LookupSearchContext.Customer => "Pesquisar cliente",
@@ -84,6 +99,7 @@ public sealed class ContextualSearchViewModel : INotifyPropertyChanged
 
     public async Task SearchAsync()
     {
+        if (!HasViewPermission) return;
         var generation = ++_searchGeneration;
         _searchCancellation?.Cancel();
         using var cancellation = new CancellationTokenSource();

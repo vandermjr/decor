@@ -52,6 +52,7 @@ public partial class DecorDataGridControl : UserControl
     private Border? _paginationFooter;
     private Grid? _paginationLayout;
     private GridPaginationState? _automaticPagination;
+    private readonly DataGridCollectionView _emptyPaginationView = new(Array.Empty<object>());
     private bool _ownsAutomaticPageSize;
     private int _automaticPageSize = 10;
     private bool _gridElementsInitialized;
@@ -113,6 +114,7 @@ public partial class DecorDataGridControl : UserControl
         }
         _paginationFooter = this.FindControl<Border>("PaginationFooter");
         _paginationLayout = this.FindControl<Grid>("PaginationLayout");
+        ConfigurePagination();
         _styler = new DefaultGridControlStyler();
         _styler.ApplyTheme(CreateThemeColors());
         var application = global::Avalonia.Application.Current;
@@ -242,7 +244,7 @@ public partial class DecorDataGridControl : UserControl
         if (_innerGrid is null)
             return;
 
-        var view = _innerGrid.CollectionView as DataGridCollectionView;
+        var view = _innerGrid.CollectionView as DataGridCollectionView ?? _emptyPaginationView;
         if (PaginationSource is null && _automaticPagination is not null && ReferenceEquals(_automaticPagination.View, view))
             return;
 
@@ -253,7 +255,7 @@ public partial class DecorDataGridControl : UserControl
             if (_ownsAutomaticPageSize)
             {
                 _automaticPagination.View.PageSize = 0;
-                if (view is not null && !ReferenceEquals(view, _automaticPagination.View))
+                if (!ReferenceEquals(view, _automaticPagination.View) && !ReferenceEquals(ItemsSource, view))
                     view.PageSize = 0;
             }
             _automaticPagination = null;
@@ -261,7 +263,7 @@ public partial class DecorDataGridControl : UserControl
 
         if (PaginationSource is not null)
             EffectivePaginationSource = PaginationSource;
-        else if (view is not null)
+        else
         {
             _ownsAutomaticPageSize = view.PageSize == 0;
             if (_ownsAutomaticPageSize)
@@ -269,8 +271,6 @@ public partial class DecorDataGridControl : UserControl
             _automaticPagination = new GridPaginationState(view);
             EffectivePaginationSource = _automaticPagination;
         }
-        else
-            EffectivePaginationSource = null;
 
         UpdatePaginationLayout();
     }

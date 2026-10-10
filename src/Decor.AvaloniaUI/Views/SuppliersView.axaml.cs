@@ -22,7 +22,7 @@ public partial class SuppliersView : UserControl
             if (DataContext is SuppliersViewModel viewModel)
                 viewModel.SetValueMatch(eventArgs.ColumnName, eventArgs.MatchCount);
         };
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
     }
 
     public SuppliersView(SuppliersViewModel viewModel) : this()
@@ -31,11 +31,4 @@ public partial class SuppliersView : UserControl
         _ = viewModel.InitializeAsync();
     }
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-        if (DataContext is SuppliersViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-        e.Handled = true;
-    }
 }

@@ -38,7 +38,7 @@
             <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
 
           </Grid>
-          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar"/>
+          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar" Classes="decor-action"/>
         </StackPanel>
       </Border>
 

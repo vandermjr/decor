@@ -15,7 +15,7 @@ public partial class ProductsView : UserControl
     {
         InitializeComponent();
         ConfigureGridColumns();
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
         ProductsGrid.ValueMatchChanged += (_, eventArgs) =>
         {
             if (DataContext is ProductsViewModel viewModel)
@@ -62,13 +62,4 @@ public partial class ProductsView : UserControl
         _ => new DataGridLength(1, DataGridLengthUnitType.Star)
     };
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-
-        if (DataContext is ProductsViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-
-        e.Handled = true;
-    }
 }

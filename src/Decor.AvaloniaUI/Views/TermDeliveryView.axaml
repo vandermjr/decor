@@ -19,8 +19,8 @@
         <NumericUpDown Grid.Column="3" TabIndex="1" Value="{Binding Quantity}" Minimum="0"/>
         <TextBlock Grid.Column="3" Grid.Row="1" Text="{Binding QuantityError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasQuantityError}"/>
 
-        <Button Grid.Column="4" TabIndex="2" Content="Adicionar" Command="{Binding AddProductCommand}"/>
-        <Button Grid.Column="5" TabIndex="3" Content="Remover" Command="{Binding RemoveTermCommand}"/>
+        <Button Grid.Column="4" TabIndex="2" Content="Adicionar" Command="{Binding AddProductCommand}" Classes="decor-action"/>
+        <Button Grid.Column="5" TabIndex="3" Content="Remover" Command="{Binding RemoveTermCommand}" Classes="decor-action"/>
 
         <TextBlock Grid.Row="2" Text="Cliente" VerticalAlignment="Center"/>
         <TextBox Grid.Row="2" Grid.Column="1" TabIndex="4" Text="{Binding CustomerName}" PlaceholderText="Nome do cliente"/>
@@ -28,7 +28,7 @@
         <TextBlock Grid.Row="2" Grid.Column="2" Text="Endereço" VerticalAlignment="Center"/>
         <TextBox Grid.Row="2" Grid.Column="3" TabIndex="5" Text="{Binding CustomerAddress}" PlaceholderText="Endereço"/>
 
-        <Button Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" TabIndex="6" Content="Gerar Relatório" Command="{Binding GenerateReportCommand}"/>
+        <Button Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" TabIndex="6" Content="Gerar Relatório" Command="{Binding GenerateReportCommand}" Classes="decor-action"/>
       </Grid>
     </Border>
 
@@ -55,8 +55,8 @@
           <TextBlock Text="Confirmação de Remoção" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
           <TextBlock Text="{Binding DeleteConfirmationMessage}" TextWrapping="Wrap" Foreground="#333333"/>
           <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-            <Button Grid.Column="0" TabIndex="0" Content="Sim, remover" Background="#B3261E" Foreground="White" Command="{Binding ConfirmDeleteCommand}"/>
-            <Button Grid.Column="1" TabIndex="1" Content="Não, cancelar" Background="#E0E0E0" Foreground="#333333" Command="{Binding CancelDeleteCommand}"/>
+            <Button Grid.Column="0" TabIndex="0" Content="Sim, remover"   Command="{Binding ConfirmDeleteCommand}" Classes="decor-action"/>
+            <Button Grid.Column="1" TabIndex="1" Content="Não, cancelar" Background="#E0E0E0" Foreground="#333333" Command="{Binding CancelDeleteCommand}" Classes="decor-action"/>
           </Grid>
         </StackPanel>
       </Border>

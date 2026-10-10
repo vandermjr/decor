@@ -19,6 +19,9 @@
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorBorderBrush">#CBD1D9</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorFieldFocusBrush">#000000</SolidColorBrush>
+                <SolidColorBrush x:Key="TextControlBorderBrushFocused">#000000</SolidColorBrush>
+                <SolidColorBrush x:Key="ComboBoxBackgroundBorderBrushFocused">#000000</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextBrush">#30363E</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextMutedBrush">#68717D</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush">#F0F2F5</SolidColorBrush>
@@ -60,6 +63,9 @@
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#2C3035</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#272B30</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorBorderBrush">#3B4046</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorFieldFocusBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="TextControlBorderBrushFocused">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="ComboBoxBackgroundBorderBrushFocused">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextBrush">#E3E7EC</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextMutedBrush">#AAB4C0</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentBrush">#3D94D1</SolidColorBrush>
@@ -86,6 +92,9 @@
 <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <Style Selector="Button.decor-action, controls|DecorSearchField Button.search-action">
+        <Setter Property="controls:DecorActionAvailability.HideWhenDisabled" Value="True" />
+    </Style>
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource DecorWindowBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
@@ -128,11 +137,56 @@
         <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderThickness" Value="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}" />
+    </Style>
+    <Style Selector="TextBox:focus:not(:error) /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}" />
     </Style>
     <Style Selector="ComboBox">
         <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ComboBox:focus-within:not(:error) /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}" />
+    </Style>
+    <Style Selector="ComboBox:focus-within:not(:error) /template/ Border#HighlightBackground">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}" />
+    </Style>
+    <Style Selector="NumericUpDown">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <Style Selector="NumericUpDown:focus-within:not(:error)">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ ButtonSpinner#PART_Spinner">
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <Style Selector="DatePicker">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <Style Selector="DatePicker:focus-within:not(:error)">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}" />
+    </Style>
+    <Style Selector="DatePicker /template/ Button#PART_FlyoutButton">
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
     </Style>
     <Style Selector="ComboBox /template/ PathIcon#DropDownGlyph">
         <Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Navigation.Dropdown}" />

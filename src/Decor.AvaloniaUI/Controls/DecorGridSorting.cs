@@ -61,7 +61,7 @@ public sealed class DecorGridSorting
         States.Add(grid, state);
         grid.PropertyChanged += (_, args) =>
         {
-            if (args.Property == ItemsControl.ItemsSourceProperty)
+            if (args.Property == DataGrid.ItemsSourceProperty)
                 state.Observe();
         };
         state.Observe();

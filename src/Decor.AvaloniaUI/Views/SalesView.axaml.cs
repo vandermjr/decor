@@ -26,7 +26,7 @@ public partial class SalesView : UserControl
         {
             if (DataContext is SalesViewModel viewModel) viewModel.SetValueMatch(args.ColumnName, args.MatchCount);
         };
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
     }
 
     public SalesView(SalesViewModel viewModel) : this()
@@ -35,11 +35,4 @@ public partial class SalesView : UserControl
         _ = viewModel.InitializeAsync();
     }
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-        if (DataContext is SalesViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-        e.Handled = true;
-    }
 }

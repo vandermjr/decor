@@ -29,7 +29,7 @@ public partial class UsersView : UserControl
 		};
 		AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() =>
 		{
-			if (DataContext is UsersViewModel { IsEditing: false }) SearchTextBox.Focus();
+			if (DataContext is UsersViewModel { IsEditing: false }) SearchTextBox.FocusTextInput();
 		});
 	}
 
@@ -39,7 +39,7 @@ public partial class UsersView : UserControl
 		viewModel.PropertyChanged += (_, args) =>
 		{
 			if (args.PropertyName == nameof(UsersViewModel.IsEditing) && !viewModel.IsEditing)
-				Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+				Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
 		};
 		_ = viewModel.InitializeAsync();
 	}
@@ -49,11 +49,4 @@ public partial class UsersView : UserControl
 	{
 	}
 
-	private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-	{
-		if (e.Key != Key.Enter) return;
-		e.Handled = true;
-		if (DataContext is UsersViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-			viewModel.SearchCommand.Execute(null);
-	}
 }

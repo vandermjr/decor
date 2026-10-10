@@ -322,7 +322,7 @@
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
                 <MenuItem Header="Sobre o Sistema" Command="{Binding ShowAboutCommand}">
-                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Help}"/></MenuItem.Icon>
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Info}"/></MenuItem.Icon>
                 </MenuItem>
               </MenuFlyout>
             </Button.Flyout>
@@ -380,63 +380,102 @@
       <Border Grid.Row="0"
               Height="37"
               Background="{DynamicResource DecorWindowBackgroundBrush}"
-          ClipToBounds="False"
+              ClipToBounds="False"
               IsVisible="{Binding HasOpenDocuments}">
-        <Grid>
-          <Border VerticalAlignment="Bottom" Height="1" Background="{DynamicResource DecorBorderBrush}"/>
-          <ItemsControl ItemsSource="{Binding OpenDocuments}" ZIndex="1">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal"/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:WorkspaceDocumentViewModel">
-            <Border Height="37"
-                  Background="{DynamicResource DecorSurfaceBrush}"
-                    BorderBrush="{DynamicResource DecorBorderBrush}"
-                    BorderThickness="0,0,1,0"
-                  ClipToBounds="False"
-                  Cursor="Hand"
-                    PointerEntered="DocumentTab_PointerEntered"
-                    PointerExited="DocumentTab_PointerExited"
-                    PointerPressed="DocumentTab_PointerPressed">
-              <Grid RowDefinitions="1,*" ColumnDefinitions="Auto,28" ColumnSpacing="7">
-                <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" IsVisible="{Binding IsActive}"/>
-                <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsHighlighted}" Margin="0,0,0,1"/>
-                <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsActive}" Margin="0,0,0,-1"/>
-                <StackPanel Grid.Row="1" Margin="12,0,0,0" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-                  <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"
-                            icons:DecorIcon.Id="{Binding IconId}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding Title}" Foreground="{DynamicResource DecorTextBrush}" VerticalAlignment="Center"/>
-                </StackPanel>
-                <Ellipse Grid.Row="1" Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource DecorEditIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowModificationIndicator}"/>
-                <Ellipse Grid.Row="1" Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource DecorAddIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowAdditionIndicator}"/>
-                <Button Grid.Row="1" Grid.Column="1"
-                        Width="18"
-                        Height="18"
-                    MinWidth="18"
-                    MinHeight="18"
-                        Padding="0"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Margin="0"
-                        HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        IsVisible="{Binding ShowCloseButton}"
-                        ToolTip.Tip="Fechar aba"
-                    Command="{Binding CloseCommand}">
-                  <PathIcon Width="10" Height="10"
-                        icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}"
-                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Button>
-              </Grid>
-            </Border>
-          </DataTemplate>
-          </ItemsControl.ItemTemplate>
-          </ItemsControl>
+        <Grid ColumnDefinitions="Auto,Auto,*" Margin="0">
+          <Border VerticalAlignment="Bottom" Height="1" Background="{DynamicResource DecorBorderBrush}" Grid.ColumnSpan="3"/>
+          <Button Grid.Column="0"
+                  Name="DocumentTabsScrollLeft"
+              Classes="grid-page-button"
+              Margin="2,0"
+                  VerticalAlignment="Center"
+                  ToolTip.Tip="Abas anteriores"
+                  Click="DocumentTabsScrollLeft_Click">
+            <PathIcon Width="16" Height="16"
+                     icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}"
+                 Foreground="{DynamicResource DecorTextBrush}"
+                     icons:DecorIcon.Weight="400"/>
+          </Button>
+          <Button Grid.Column="1"
+            Name="DocumentTabsScrollRight"
+            Classes="grid-page-button"
+            Margin="2,0"
+            VerticalAlignment="Center"
+            ToolTip.Tip="Próximas abas"
+            Click="DocumentTabsScrollRight_Click">
+            <PathIcon Width="16" Height="16"
+               icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}"
+               Foreground="{DynamicResource DecorTextBrush}"
+               icons:DecorIcon.Weight="400"/>
+          </Button>
+          <ScrollViewer Grid.Column="2"
+                        Name="DocumentTabsScroller"
+                        HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollBarVisibility="Disabled"
+                        ScrollChanged="DocumentTabsScroller_ScrollChanged"
+                        BringIntoViewOnFocusChange="False"
+                        Padding="2,0">
+            <ItemsControl ItemsSource="{Binding OpenDocuments}" ZIndex="1">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:WorkspaceDocumentViewModel">
+                  <Border Height="37"
+                          MinWidth="110"
+                          MaxWidth="220"
+                          Background="{DynamicResource DecorSurfaceBrush}"
+                          BorderBrush="{DynamicResource DecorBorderBrush}"
+                          BorderThickness="0,0,1,0"
+                          ClipToBounds="False"
+                          Cursor="Hand"
+                          ToolTip.Tip="{Binding Title}"
+                          PointerEntered="DocumentTab_PointerEntered"
+                          PointerExited="DocumentTab_PointerExited"
+                          PointerPressed="DocumentTab_PointerPressed">
+                    <Grid RowDefinitions="1,*" ColumnDefinitions="Auto,28" ColumnSpacing="7">
+                      <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" IsVisible="{Binding IsActive}"/>
+                      <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsHighlighted}" Margin="0,0,0,1"/>
+                      <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsActive}" Margin="0,0,0,-1"/>
+                      <StackPanel Grid.Row="1" Margin="12,0,0,0" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" MinWidth="0">
+                        <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"
+                                  icons:DecorIcon.Id="{Binding IconId}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Title}"
+                                   Foreground="{DynamicResource DecorTextBrush}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="150"/>
+                      </StackPanel>
+                      <Ellipse Grid.Row="1" Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource DecorEditIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowModificationIndicator}"/>
+                      <Ellipse Grid.Row="1" Grid.Column="1" Width="8" Height="8" Fill="{DynamicResource DecorAddIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowAdditionIndicator}"/>
+                      <Button Grid.Row="1" Grid.Column="1"
+                              Width="18"
+                              Height="18"
+                              MinWidth="18"
+                              MinHeight="18"
+                              Padding="0"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Margin="0"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              HorizontalContentAlignment="Center"
+                              VerticalContentAlignment="Center"
+                              IsVisible="{Binding ShowCloseButton}"
+                              ToolTip.Tip="Fechar aba"
+                              Command="{Binding CloseCommand}">
+                        <PathIcon Width="10" Height="10"
+                                  icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
         </Grid>
       </Border>
 

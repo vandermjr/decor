@@ -17,7 +17,7 @@ public partial class BrandsView : UserControl
             if (DataContext is BrandsViewModel viewModel)
                 viewModel.SetValueMatch(eventArgs.ColumnName, eventArgs.MatchCount);
         };
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
     }
 
     public BrandsView(BrandsViewModel viewModel)
@@ -37,13 +37,4 @@ public partial class BrandsView : UserControl
                 : new DataGridLength(1, DataGridLengthUnitType.Star));
     }
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-
-        if (DataContext is BrandsViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-
-        e.Handled = true;
-    }
 }

@@ -56,10 +56,10 @@ public sealed class SalesViewModel : IStatusBarSource
         ConvertCommand = new RelayCommand(async () => await ConvertAsync(), () => CanConvert);
         ApproveCommand = new RelayCommand(async () => await ApproveAsync(), () => CanApprove);
         CancelCommand = new RelayCommand(BeginCancel, () => CanCancel);
-        ConfirmCancelCommand = new RelayCommand(async () => await ConfirmCancelAsync(), () => !IsBusy);
+        ConfirmCancelCommand = new RelayCommand(async () => await ConfirmCancelAsync(), () => CanConfirmCancel);
         DismissCancelCommand = new RelayCommand(() => ShowCancelConfirmation = false);
         AddInstallmentCommand = new RelayCommand(AddInstallment, () => CanEditPaymentPlan);
-        RemoveInstallmentCommand = new RelayCommand(RemoveInstallment, () => SelectedPlanEntry is not null && !IsBusy);
+        RemoveInstallmentCommand = new RelayCommand(RemoveInstallment, () => CanRemoveInstallment);
         CreatePaymentPlanCommand = new RelayCommand(async () => await CreatePaymentPlanAsync(), () => CanCreatePaymentPlan);
     }
 
@@ -90,7 +90,7 @@ public sealed class SalesViewModel : IStatusBarSource
     public bool RequiresDownPayment { get => _requiresDownPayment; set => SetField(ref _requiresDownPayment, value); }
     public DateTimeOffset? ManufacturingDeadline { get => _manufacturingDeadline; set => SetField(ref _manufacturingDeadline, value); }
     public DateTimeOffset? InstallationDeadline { get => _installationDeadline; set => SetField(ref _installationDeadline, value); }
-    public bool ShowCancelConfirmation { get => _showCancelConfirmation; private set => SetField(ref _showCancelConfirmation, value); }
+    public bool ShowCancelConfirmation { get => _showCancelConfirmation; private set { if (SetField(ref _showCancelConfirmation, value)) RefreshCommands(); } }
     public SaleListItem? SelectedItem
     {
         get => _selectedItem;
@@ -123,6 +123,8 @@ public sealed class SalesViewModel : IStatusBarSource
     public bool CanApprove => _authorizationService.HasPermission(DecorPermissions.OrdersApprove) && SelectedOrder?.Status == (int)OrderStatus.PendingApproval && !IsBusy;
     public bool CanCancel => _authorizationService.HasPermission(DecorPermissions.OrdersCancel)
         && SelectedOrder?.Status is (int)OrderStatus.PendingApproval or (int)OrderStatus.Approved && !IsBusy;
+    private bool CanConfirmCancel => ShowCancelConfirmation && CanCancel;
+    private bool CanRemoveInstallment => CanConfigurePaymentPlan && SelectedPlanEntry is not null;
     public bool HasSelectedOrder => SelectedItem is not null;
     public decimal SelectedOrderTotal => (_selectedOrderDetails?.Items ?? []).Sum(item => item.Quantity * item.UnitPrice);
     public decimal PaymentPlanTotal => _planEntries.Sum(entry => entry.Amount);
@@ -255,8 +257,8 @@ public sealed class SalesViewModel : IStatusBarSource
 
     private void RemoveInstallment()
     {
-        if (SelectedPlanEntry is null) return;
-        _planEntries.Remove(SelectedPlanEntry);
+        if (!CanRemoveInstallment || SelectedPlanEntry is not { } entry) return;
+        _planEntries.Remove(entry);
         SelectedPlanEntry = null;
         OnPropertyChanged(nameof(PaymentPlanTotal));
         RefreshCommands();
@@ -330,7 +332,7 @@ public sealed class SalesViewModel : IStatusBarSource
 
     private async Task ConfirmCancelAsync()
     {
-        if (SelectedOrder is not { } order) return;
+        if (!CanConfirmCancel || SelectedOrder is not { } order) return;
         IsBusy = true;
         ErrorMessage = string.Empty;
         try

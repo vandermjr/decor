@@ -12,14 +12,18 @@ using Decor.AvaloniaUI.ViewModels;
 
 namespace Decor.Application.Tests;
 
-public sealed partial class DecorGridPresentationTests
+[Collection("Shared grid pagination")]
+public sealed class GridPaginationLayoutTests
 {
     [Theory]
-    [InlineData(1000, 1, 0, 2)]
-    [InlineData(600, 0, 1, 1)]
-    public void Native_scrollbar_is_moved_without_losing_it_on_repeated_initialization(double width, int column, int row, int columns)
+    [InlineData(1000, 1, 0, 2, false)]
+    [InlineData(600, 0, 1, 1, false)]
+    [InlineData(1000, 1, 0, 2, true)]
+    [InlineData(600, 0, 1, 1, true)]
+    [InlineData(300, 0, 1, 1, true)]
+    public void Native_scrollbar_is_moved_without_losing_it_on_repeated_initialization(double width, int column, int row, int columns, bool empty)
     {
-        var control = new DecorDataGridControl { PaginationSource = new PaginationSource() };
+        var control = new DecorDataGridControl { PaginationSource = empty ? null : new PaginationSource() };
         typeof(Visual).GetProperty(nameof(Visual.Bounds))!.SetValue(control, new Rect(0, 0, width, 400));
         var horizontal = new ScrollBar { Name = "PART_HorizontalScrollbar", Orientation = Orientation.Horizontal };
         var vertical = new ScrollBar { Name = "PART_VerticalScrollbar", Orientation = Orientation.Vertical };
@@ -42,6 +46,9 @@ public sealed partial class DecorGridPresentationTests
             Assert.Equal(column, Grid.GetColumn(horizontal));
             Assert.Equal(row, Grid.GetRow(horizontal));
             Assert.Equal(columns, footer.ColumnDefinitions.Count);
+            Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
+            Assert.Equal(1, Grid.GetRow(control.FindControl<Border>("PaginationFooter")!));
+            Assert.Equal(0, Grid.GetRow(control.FindControl<Panel>("EmptyOverlay")!));
             Assert.Equal(10, horizontal.Height);
             Assert.Equal(10, vertical.Width);
             Assert.Equal(0, rows.Margin.Bottom);
@@ -59,11 +66,16 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
-    public void Auxiliary_grids_have_no_paging_controls()
+    public void Auxiliary_grids_have_paging_controls_before_the_first_query()
     {
         var control = new DecorDataGridControl();
         Assert.Null(control.PaginationSource);
-        Assert.False(control.FindControl<Border>("PaginationFooter")!.IsVisible);
+        var state = Assert.IsType<GridPaginationState>(control.EffectivePaginationSource);
+        Assert.True(state.HasPagination);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
+        Assert.IsType<WrapPanel>(control.FindControl<Panel>("PaginationControls"));
+        Assert.True(double.IsNaN(control.FindControl<Panel>("PaginationControls")!.Height));
     }
 
     private sealed class PaginationSource : IStatusBarSource

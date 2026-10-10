@@ -116,7 +116,7 @@ public sealed class GroupRegistrationViewModel : INotifyPropertyChanged, IWorksp
 
     public async Task InitializeAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy || !_context.IsAuthenticated || !_authorization.HasPermission(DecorPermissions.RolesView)) return;
         IsBusy = true;
         ErrorMessage = null;
         try

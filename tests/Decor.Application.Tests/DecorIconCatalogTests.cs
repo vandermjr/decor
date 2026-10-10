@@ -23,6 +23,7 @@ public class DecorIconCatalogTests
             DecorIconId.Application.Home,
             DecorIconId.Application.Settings,
             DecorIconId.Application.Help,
+            DecorIconId.Application.Info,
             DecorIconId.Application.ThemeToggle,
             DecorIconId.Modules.Cadastros,
             DecorIconId.Modules.Compras,
@@ -77,7 +78,7 @@ public class DecorIconCatalogTests
             DecorIconId.Navigation.SortDescending
         ];
 
-        Assert.Equal(55, expectedIds.Length);
+        Assert.Equal(56, expectedIds.Length);
         Assert.Equal(expectedIds.OrderBy(id => id.Value), DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.All(expectedIds, id => Assert.IsAssignableFrom<Geometry>(DecorIconCatalog.Get(id)));
     }
@@ -95,7 +96,7 @@ public class DecorIconCatalogTests
             .OrderBy(id => id.Value)
             .ToArray();
 
-        Assert.Equal(55, declaredIds.Length);
+        Assert.Equal(56, declaredIds.Length);
         Assert.Equal(declaredIds, DecorIconCatalog.Ids.OrderBy(id => id.Value));
         Assert.Null(typeof(DecorIconId.Actions).GetProperty("Generic"));
         Assert.DoesNotContain(DecorIconCatalog.Ids, id => id.Value == "Actions." + "Generic");
@@ -121,7 +122,8 @@ public class DecorIconCatalogTests
 
         var geometries = DecorIconCatalog.Ids.Select(id => DecorIconCatalog.Get(id)).ToArray();
 
-        Assert.Equal(48, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Equal(49, geometries.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.NotSame(DecorIconCatalog.Get(DecorIconId.Application.Help), DecorIconCatalog.Get(DecorIconId.Application.Info));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Application.Settings), DecorIconCatalog.Get(DecorIconId.Modules.Configuracoes));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Modules.Estoque), DecorIconCatalog.Get(DecorIconId.Forms.Products));
         Assert.Same(DecorIconCatalog.Get(DecorIconId.Actions.Create), DecorIconCatalog.Get(DecorIconId.Actions.Add));

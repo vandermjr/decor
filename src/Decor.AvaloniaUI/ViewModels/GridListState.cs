@@ -39,7 +39,7 @@ public sealed class GridListState<T> : IStatusBarSource
     public bool HasStatusPrimary => HasPagination;
     public IReadOnlyList<T> AllItems => _all;
     public int TotalCount => _all.Count;
-    public int CurrentPage => _currentPage;
+    public int CurrentPage => TotalCount == 0 ? 0 : _currentPage;
     public int TotalPages => TotalCount == 0 ? 0 : (int)Math.Ceiling((double)TotalCount / _pageSize);
     private bool CanNavigate => _isListVisible();
 
@@ -51,9 +51,9 @@ public sealed class GridListState<T> : IStatusBarSource
     public bool HasNextPage => _currentPage < TotalPages;
     public bool HasFirstPage => HasPreviousPage;
     public bool HasLastPage => HasNextPage;
-    public bool HasPagination => _isListVisible() && TotalCount > 0;
+    public bool HasPagination => _isListVisible();
     public string? PaginationStatus => HasPagination ? $"Registros encontrados: {TotalCount}" : null;
-    public string? PaginationPageStatus => HasPagination ? $"Página {_currentPage} de {TotalPages}" : null;
+    public string? PaginationPageStatus => HasPagination ? $"Página {CurrentPage} de {TotalPages}" : null;
     public IReadOnlyList<int> PageSizeOptions => AvailablePageSizes;
 
     public int SelectedPageSize
@@ -154,16 +154,16 @@ public sealed class GridPaginationState : IStatusBarSource, IDisposable
     public event PropertyChangedEventHandler? PropertyChanged;
     public int TotalCount => View.TotalItemCount;
     public int TotalPages => TotalCount == 0 ? 0 : View.PageSize == 0 ? 1 : (int)Math.Ceiling((double)TotalCount / View.PageSize);
-    public int CurrentPage => Math.Max(1, View.PageIndex + 1);
+    public int CurrentPage => TotalCount == 0 ? 0 : Math.Max(1, View.PageIndex + 1);
     public string StatusMessage => string.Empty;
     public string? StatusPrimary => PaginationStatus;
     public string? StatusSecondary => null;
     public bool HasStatusPrimary => HasPagination;
     public bool HasStatusSecondary => false;
-    public bool HasPagination => TotalCount > 0;
+    public bool HasPagination => true;
     public string? PaginationStatus => HasPagination ? $"Registros encontrados: {TotalCount}" : null;
     public string? PaginationPageStatus => HasPagination ? $"Página {CurrentPage} de {TotalPages}" : null;
-    public bool HasPreviousPage => View.PageIndex > 0;
+    public bool HasPreviousPage => TotalCount > 0 && View.PageIndex > 0;
     public bool HasNextPage => CurrentPage < TotalPages;
     public bool HasFirstPage => HasPreviousPage;
     public bool HasLastPage => HasNextPage;

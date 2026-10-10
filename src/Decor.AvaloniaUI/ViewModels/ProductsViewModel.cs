@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
@@ -16,6 +18,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private readonly IFamilyService _familyService;
     private readonly IGroupService _groupService;
     private readonly ISubgroupService _subgroupService;
+    private readonly IAuthorizationService? _authorizationService;
 
     private ProductDTO? _selectedProduct;
     private string _searchText = string.Empty;
@@ -42,7 +45,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IClassService classService,
         IFamilyService familyService,
         IGroupService groupService,
-        ISubgroupService subgroupService)
+        ISubgroupService subgroupService,
+        IAuthorizationService? authorizationService = null)
     {
         _productService = productService;
         _brandService = brandService;
@@ -50,14 +54,15 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         _familyService = familyService;
         _groupService = groupService;
         _subgroupService = subgroupService;
+        _authorizationService = authorizationService;
 
-        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => !IsBusy && !IsEditing);
-        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         Listing = new GridListState<ProductDTO>(Products, () => !IsEditing);
         Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
-        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => !IsBusy && !IsEditing);
-        EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => SelectedProduct is not null && !IsBusy && !IsEditing);
-        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => IsEditing && !IsBusy);
+        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => CanNew);
+        EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => CanEdit);
+        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => IsEditing && !IsBusy);
     }
 
@@ -124,9 +129,12 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool IsAdding => IsEditing && _isNew;
 
     // Propriedades para visibilidade/estado de botões
-    public bool CanNew => !IsBusy && !IsEditing;
-    public bool CanEdit => SelectedProduct is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy;
+    public bool CanSearch => !IsBusy && !IsEditing && (_authorizationService?.CanView("Products") ?? true);
+    public bool CanNew => !IsBusy && !IsEditing && (_authorizationService?.CanCreate("Products") ?? true);
+    public bool CanEdit => SelectedProduct is not null && !IsBusy && !IsEditing && (_authorizationService?.CanEdit("Products") ?? true);
+    public bool CanSave => IsEditing && !IsBusy && (_isNew
+        ? _authorizationService?.CanCreate("Products") ?? true
+        : _authorizationService?.CanEdit("Products") ?? true);
     public bool CanCancel => IsEditing && !IsBusy;
 
     public string StatusMessage
@@ -245,8 +253,14 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public string? Observations
     {
         get => _observations;
-        set => SetField(ref _observations, value);
+        set
+        {
+            if (SetField(ref _observations, QuoteNotesRules.Truncate(value)))
+                OnPropertyChanged(nameof(ObservationsCounter));
+        }
     }
+
+    public string ObservationsCounter => $"{(_observations ?? string.Empty).EnumerateRunes().Count()}/{QuoteNotesRules.MaximumBytes} caracteres";
 
     public BrandDTO? SelectedBrand
     {

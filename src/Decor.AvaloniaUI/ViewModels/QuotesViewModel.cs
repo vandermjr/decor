@@ -508,7 +508,8 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     public bool CanNew => _authorizationService.HasPermission(DecorPermissions.QuotesCreate) && !IsBusy && !IsEditing;
     public bool CanEdit => _authorizationService.HasPermission(DecorPermissions.QuotesEdit) && SelectedItem is not null && !IsBusy && !IsEditing;
     public bool CanDelete => _authorizationService.HasPermission(DecorPermissions.QuotesDelete) && SelectedItem is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy && IsQuoteOpen;
+    public bool CanSave => IsEditing && !IsBusy && IsQuoteOpen
+        && _authorizationService.HasPermission(CurrentQuoteId > 0 ? DecorPermissions.QuotesEdit : DecorPermissions.QuotesCreate);
     public bool CanCancel => IsEditing && !IsBusy;
     public string? StatusPrimary => null;
     public string? StatusSecondary => Listing.StatusSecondary;
@@ -1157,10 +1158,12 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         public bool HasStatusPrimary => HasPagination;
         public bool HasStatusSecondary => false;
         public bool HasPagination => _owner.IsEditing;
-        public string? PaginationStatus => HasPagination ? _owner.CatalogPageDisplay : null;
+        public string? PaginationStatus => HasPagination
+            ? _owner.Products.Count == 0 ? "Página 0 de 0" : _owner.CatalogPageDisplay
+            : null;
         public string? PaginationPageStatus => PaginationStatus;
-        public bool HasPreviousPage => CanNavigate && _owner.HasCatalogPrevious;
-        public bool HasNextPage => CanNavigate && _owner.HasCatalogNext;
+        public bool HasPreviousPage => CanNavigate && _owner.Products.Count > 0 && _owner.HasCatalogPrevious;
+        public bool HasNextPage => CanNavigate && _owner.Products.Count > 0 && _owner.HasCatalogNext;
         public bool HasFirstPage => HasPreviousPage;
         public bool HasLastPage => false;
         public ICommand FirstPageCommand { get; }
@@ -1179,7 +1182,8 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
                 _owner._hasCatalogNext = false;
                 _owner.NotifyCatalogPage();
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPageSize)));
-                _ = _owner.SearchProductsAsync();
+                if (_owner.IsEditing && !string.IsNullOrWhiteSpace(_owner.ProductSearchText))
+                    _ = _owner.SearchProductsAsync();
             }
         }
 

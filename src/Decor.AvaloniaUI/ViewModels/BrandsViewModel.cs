@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
@@ -10,6 +11,7 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 {
     private readonly IBrandService _brandService;
+    private readonly IAuthorizationService? _authorizationService;
     private BrandDTO? _selectedBrand;
     private string _searchText = string.Empty;
     private string _statusMessage = string.Empty;
@@ -23,19 +25,20 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     private bool _showDeleteConfirmation;
     private BrandDTO? _brandToDelete;
 
-    public BrandsViewModel(IBrandService brandService)
+    public BrandsViewModel(IBrandService brandService, IAuthorizationService? authorizationService = null)
     {
         _brandService = brandService;
-        SearchCommand = new RelayCommand(async () => await LoadBrandsAsync());
-        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        _authorizationService = authorizationService;
+        SearchCommand = new RelayCommand(async () => await LoadBrandsAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         Listing = new GridListState<BrandDTO>(Brands, () => !IsEditing);
         Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
-        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => !IsBusy);
-        EditCommand = new RelayCommand(BeginEdit, () => SelectedBrand is not null && !IsBusy && !IsEditing);
-        DeleteCommand = new RelayCommand(BeginDelete, () => SelectedBrand is not null && !IsBusy && !IsEditing);
-        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
+        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => CanNew);
+        EditCommand = new RelayCommand(BeginEdit, () => CanEdit);
+        DeleteCommand = new RelayCommand(BeginDelete, () => CanDelete);
+        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => CanConfirmDelete);
         CancelDeleteCommand = new RelayCommand(CancelDelete, () => true);
-        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => IsEditing && !IsBusy);
+        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => IsEditing && !IsBusy);
     }
 
@@ -118,10 +121,13 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         ? RecordCodeDisplay.ForNewRecord(_recordCount)
         : RecordCodeDisplay.ForExistingRecord(BrandId);
 
-    public bool CanNew => !IsBusy && !IsEditing;
-    public bool CanEdit => SelectedBrand is not null && !IsBusy && !IsEditing;
-    public bool CanDelete => SelectedBrand is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy;
+    private bool HasPermission(string permission) => _authorizationService?.HasPermission(permission) ?? true;
+    public bool CanSearch => !IsBusy && !IsEditing && HasPermission(DecorPermissions.BrandsView);
+    public bool CanNew => !IsBusy && !IsEditing && HasPermission(DecorPermissions.BrandsCreate);
+    public bool CanEdit => SelectedBrand is not null && !IsBusy && !IsEditing && HasPermission(DecorPermissions.BrandsEdit);
+    public bool CanDelete => SelectedBrand is not null && !IsBusy && !IsEditing && HasPermission(DecorPermissions.BrandsDelete);
+    public bool CanSave => IsEditing && !IsBusy && HasPermission(_isNew ? DecorPermissions.BrandsCreate : DecorPermissions.BrandsEdit);
+    private bool CanConfirmDelete => !IsBusy && ShowDeleteConfirmation && _brandToDelete is not null && HasPermission(DecorPermissions.BrandsDelete);
     public bool CanCancel => IsEditing && !IsBusy;
 
     public BrandDTO? SelectedBrand
@@ -161,7 +167,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
     public bool ShowDeleteConfirmation
     {
         get => _showDeleteConfirmation;
-        private set => SetField(ref _showDeleteConfirmation, value);
+        private set { if (SetField(ref _showDeleteConfirmation, value)) RaiseCommandStates(); }
     }
 
     public BrandDTO? BrandToDelete => _brandToDelete;
@@ -180,6 +186,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     public async Task BeginNewAsync()
     {
+        if (!HasPermission(DecorPermissions.BrandsCreate)) return;
         try
         {
             _recordCount = await RecordCodeDisplay.CountAllAsync(async (page, pageSize) =>
@@ -201,6 +208,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     public void BeginEdit()
     {
+        if (!HasPermission(DecorPermissions.BrandsEdit)) return;
         if (SelectedBrand is null)
         {
             return;
@@ -235,6 +243,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     public void BeginDelete()
     {
+        if (!CanDelete) return;
         if (SelectedBrand is null)
         {
             return;
@@ -254,6 +263,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     public async Task ConfirmDeleteAsync()
     {
+        if (!CanConfirmDelete) return;
         if (_brandToDelete is null)
         {
             return;
@@ -309,6 +319,7 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
 
     private async Task SaveAsync()
     {
+        if (!CanSave) return;
         IsBusy = true;
         ClearFieldErrors();
         try
@@ -367,6 +378,8 @@ public sealed class BrandsViewModel : IStatusBarSource, IWorkspaceDocumentState
         if (SaveCommand is RelayCommand relaySave) relaySave.RaiseCanExecuteChanged();
         if (CancelCommand is RelayCommand relayCancel) relayCancel.RaiseCanExecuteChanged();
         if (NewCommand is RelayCommand relayNew) relayNew.RaiseCanExecuteChanged();
+        if (SearchCommand is RelayCommand relaySearch) relaySearch.RaiseCanExecuteChanged();
+        if (ConfirmDeleteCommand is RelayCommand relayConfirm) relayConfirm.RaiseCanExecuteChanged();
         if (ClearSearchCommand is RelayCommand relayClear) relayClear.RaiseCanExecuteChanged();
     }
 

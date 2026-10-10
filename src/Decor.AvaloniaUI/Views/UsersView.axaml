@@ -1,26 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:views="using:Decor.AvaloniaUI.Views" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" xmlns:controls="using:Decor.AvaloniaUI.Controls" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
   <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
     <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
-      <Border Grid.ColumnSpan="3" Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
-      <Grid ColumnDefinitions="*,36,36">
-      <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar usuário" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
-      <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Pesquisar">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-      </Button>
-      <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Limpar pesquisa">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-      </Button>
-      </Grid>
-      </Border>
-      <Button Grid.Column="3" Command="{Binding NewUserCommand}">
+        <controls:DecorSearchField x:Name="SearchTextBox" Grid.ColumnSpan="3" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar usuário"
+                    SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
+      <Button Grid.Column="3" Command="{Binding NewUserCommand}" Classes="decor-action">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
           <TextBlock Text="Novo usuário" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>
-      <Button Grid.Column="4" Command="{Binding EditUserCommand}">
+      <Button Grid.Column="4" Command="{Binding EditUserCommand}" Classes="decor-action">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+          <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource DecorEditIndicatorBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
           <TextBlock Text="Editar usuário" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>
@@ -30,7 +21,7 @@
     <controls:DecorDataGridControl x:Name="UsersGrid" PaginationSource="{Binding}" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
                                     DefaultSortMemberPath="PresentationName"
                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-    <TextBlock Grid.Row="1" Text="Grupos associados" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,4,0,0"/>
+    <TextBlock Grid.Row="1" Text="Grupos associados" FontWeight="{DynamicResource DecorFontWeightBase}" Margin="0,4,0,0"/>
     <ListBox Grid.Row="2" ItemsSource="{Binding SelectedUser.Roles}" SelectionMode="Single"
              ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
              BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" MinHeight="80">

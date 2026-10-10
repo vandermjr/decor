@@ -56,7 +56,8 @@ public sealed class ServicesViewModelTests
         viewModel.ClearSearchCommand.Execute(null);
         Assert.Empty(viewModel.Services);
         Assert.Empty(viewModel.SearchText);
-        Assert.False(viewModel.HasPagination);
+        Assert.True(viewModel.HasPagination);
+        Assert.Equal("Página 0 de 0", viewModel.PaginationPageStatus);
     }
 
     [Fact]

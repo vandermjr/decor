@@ -103,7 +103,7 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
         DeleteCommand = new RelayCommand(BeginDelete, () => CanDelete);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => CanCancel);
-        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
+        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => CanConfirmDelete);
         CancelDeleteCommand = new RelayCommand(CancelDelete, () => true);
     }
 
@@ -174,12 +174,13 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
     }
 
     public bool IsAdding => IsEditing && _isNew;
-    public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set => SetField(ref _showDeleteConfirmation, value); }
+    public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public bool CanSearch => _authorizationService.HasPermission(_viewPermission) && !IsBusy && !IsEditing;
     public bool CanNew => _authorizationService.HasPermission(_createPermission) && !IsBusy && !IsEditing;
     public bool CanEdit => _authorizationService.HasPermission(_editPermission) && SelectedItem is not null && !IsBusy && !IsEditing;
     public bool CanDelete => _authorizationService.HasPermission(_deletePermission) && SelectedItem is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy;
+    public bool CanSave => IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? _createPermission : _editPermission);
+    private bool CanConfirmDelete => !IsBusy && ShowDeleteConfirmation && _itemToDelete is not null && _authorizationService.HasPermission(_deletePermission);
     public bool CanCancel => IsEditing && !IsBusy;
 
     public TDto? SelectedItem
@@ -283,6 +284,7 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
 
     public async Task ConfirmDeleteAsync()
     {
+        if (!CanConfirmDelete) return;
         if (_itemToDelete is null) return;
         IsBusy = true;
         try
@@ -353,6 +355,7 @@ public abstract class ContactRegistrationViewModel<TDto> : IStatusBarSource, IWo
 
     private async Task SaveAsync()
     {
+        if (!CanSave) return;
         ErrorMessage = string.Empty;
         IsBusy = true;
         try

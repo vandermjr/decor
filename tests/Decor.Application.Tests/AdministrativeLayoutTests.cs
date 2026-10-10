@@ -112,6 +112,47 @@ public sealed class AdministrativeLayoutTests
     }
 
     [Fact]
+    public void Document_tab_scroll_buttons_stay_visible_before_the_tab_strip()
+    {
+        var document = ReadXaml("MainWindow.axaml");
+        var left = Assert.Single(document.Descendants(), element =>
+            element.Name.LocalName == "Button" && ((string?)element.Attribute("Name") == "DocumentTabsScrollLeft"
+                || (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "DocumentTabsScrollLeft"));
+        var right = Assert.Single(document.Descendants(), element =>
+            element.Name.LocalName == "Button" && ((string?)element.Attribute("Name") == "DocumentTabsScrollRight"
+                || (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "DocumentTabsScrollRight"));
+
+        Assert.NotEqual("False", (string?)left.Attribute("IsVisible"));
+        Assert.NotEqual("False", (string?)right.Attribute("IsVisible"));
+        Assert.Equal("0", (string?)left.Attribute("Grid.Column"));
+        Assert.Equal("1", (string?)right.Attribute("Grid.Column"));
+        Assert.Equal("2", (string?)Assert.Single(document.Descendants(), element => element.Name.LocalName == "ScrollViewer"
+            && (string?)element.Attribute("Name") == "DocumentTabsScroller").Attribute("Grid.Column"));
+        Assert.Equal("grid-page-button", (string?)left.Attribute("Classes"));
+        Assert.Equal("grid-page-button", (string?)right.Attribute("Classes"));
+
+        var arrowIcons = new[] { left, right }
+            .SelectMany(button => button.Descendants().Where(element => element.Name.LocalName == "PathIcon"))
+            .ToArray();
+        Assert.Equal(2, arrowIcons.Length);
+        Assert.All(arrowIcons, icon => Assert.Equal("16", (string?)icon.Attribute("Width")));
+        Assert.All(arrowIcons, icon => Assert.Equal("16", (string?)icon.Attribute("Height")));
+        Assert.All(arrowIcons, icon => Assert.Equal("{DynamicResource DecorTextBrush}", (string?)icon.Attribute("Foreground")));
+        Assert.All(arrowIcons, icon => Assert.Equal("400", (string?)icon.Attributes().Single(attribute => attribute.Name.LocalName == "DecorIcon.Weight").Value));
+
+        var app = ReadXaml("App.axaml");
+        var buttonStyles = app.Descendants().Where(element => element.Name.LocalName == "Style").ToArray();
+        var gridPageStyle = Assert.Single(buttonStyles, style => (string?)style.Attribute("Selector") == "Button.grid-page-button");
+        Assert.Contains(gridPageStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Width" && (string?)setter.Attribute("Value") == "26");
+        Assert.Contains(gridPageStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Height" && (string?)setter.Attribute("Value") == "24");
+        var hoverStyle = Assert.Single(buttonStyles, style => (string?)style.Attribute("Selector") == "Button.grid-page-button:pointerover");
+        Assert.Contains(hoverStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Background"
+            && (string?)setter.Attribute("Value") == "{DynamicResource DecorScrollTrackBrush}");
+        var disabledStyle = Assert.Single(buttonStyles, style => (string?)style.Attribute("Selector") == "Button.grid-page-button:disabled");
+        Assert.Contains(disabledStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Opacity" && (string?)setter.Attribute("Value") == "0.35");
+    }
+
+    [Fact]
     public void Settings_groups_access_and_database_maintenance_in_submenus()
     {
         var document = ReadXaml("MainWindow.axaml");
@@ -131,7 +172,11 @@ public sealed class AdministrativeLayoutTests
         Assert.DoesNotContain(document.Descendants().Attributes(), attribute => attribute.Value.Contains("SaveGroupsCommand", StringComparison.Ordinal)
             || attribute.Value.Contains("ToggleActiveCommand", StringComparison.Ordinal));
         Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Text") == "{Binding StatusMessage}");
-        Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearSearchCommand}");
+        var search = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField");
+        Assert.Equal("{Binding SearchText, Mode=TwoWay}", (string?)search.Attribute("Text"));
+        Assert.Equal("{Binding SearchCommand}", (string?)search.Attribute("SearchCommand"));
+        Assert.Equal("{Binding ClearSearchCommand}", (string?)search.Attribute("ClearCommand"));
+        Assert.Equal("SearchTextBox", (string?)search.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")));
         var groups = Assert.Single(document.Descendants(), element => (string?)element.Attribute("ItemsSource") == "{Binding SelectedUser.Roles}");
         Assert.Equal("ListBox", groups.Name.LocalName);
         Assert.Contains(groups.Parent!.Elements(), element => (string?)element.Attribute("Text") == "Grupos associados");
@@ -166,9 +211,11 @@ public sealed class AdministrativeLayoutTests
         var document = ReadXaml("Views/EditUserWindow.axaml");
         var code = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Text") == "{Binding UserCodeDisplay}");
         var status = Assert.Single(document.Descendants(), element => element.Name.LocalName == "ToggleSwitch");
-        Assert.Same(code.Parent!.Parent!.Parent, status.Parent!.Parent!.Parent);
-        Assert.Equal("1", (string?)code.Parent!.Parent!.Parent!.Attribute("Grid.Row"));
-        Assert.Equal("2", (string?)status.Parent!.Parent!.Attribute("Grid.Column"));
+        var identity = AssertIdentityHeader(code, status);
+        Assert.Equal("1", (string?)identity.Parent!.Attribute("Grid.Row"));
+        var username = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
+            && (string?)element.Attribute("Text") == "{Binding Username}");
+        AssertRequiredInputWithNormalLabel(username, "Usuário");
         foreach (var command in new[] { "SaveCommand", "CancelCommand" })
         {
             var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == $"{{Binding {command}}}");
@@ -195,23 +242,26 @@ public sealed class AdministrativeLayoutTests
         var header = document.Root.Elements().Single().Elements().First();
         Assert.Equal("StackPanel", header.Name.LocalName);
         Assert.Equal("{Binding FormTitle}", (string?)header.Elements().First().Attribute("Text"));
-        var identity = header.Elements().ElementAt(1);
-        Assert.Equal("Grid", identity.Name.LocalName);
-        Assert.Equal("Auto,*,Auto", (string?)identity.Attribute("ColumnDefinitions"));
+        var identityBorder = header.Elements().ElementAt(1);
+        var code = Assert.Single(identityBorder.Descendants(), element => (string?)element.Attribute("Text") == "{Binding UserCodeDisplay}");
+        var status = Assert.Single(identityBorder.Descendants(), element => element.Name.LocalName == "ToggleSwitch");
+        var identity = AssertIdentityHeader(code, status);
+        Assert.Same(identityBorder, identity.Parent);
         Assert.DoesNotContain(identity.AncestorsAndSelf().Attributes(), attribute => attribute.Name.LocalName == "IsVisible");
-        var code = Assert.Single(identity.Descendants(), element => (string?)element.Attribute("Text") == "{Binding UserCodeDisplay}");
-        Assert.Null(code.Parent!.Parent!.Attribute("Grid.Column"));
-        var status = Assert.Single(identity.Descendants(), element => element.Name.LocalName == "ToggleSwitch");
-        Assert.Equal("2", (string?)status.Parent!.Parent!.Attribute("Grid.Column"));
-        Assert.Contains(status.Parent.Elements(), element => (string?)element.Attribute("Text") == "Estado");
+        Assert.DoesNotContain(identity.Descendants(), element => (string?)element.Attribute("Text") == "Estado");
+        Assert.Equal("{Binding IsActive, Mode=TwoWay}", (string?)status.Attribute("IsChecked"));
+        Assert.Equal("Ativo", (string?)status.Attribute("OnContent"));
+        Assert.Equal("Bloqueado", (string?)status.Attribute("OffContent"));
         Assert.DoesNotContain(identity.Descendants(), element => element.Name.LocalName is "Path" or "PathIcon");
         Assert.Equal("{Binding CanChangeActive}", (string?)status.Attribute("IsEnabled"));
         var groups = Assert.Single(document.Descendants(), element => (string?)element.Attribute("ItemsSource") == "{Binding Groups}"
             && (string?)element.Attribute("IsEnabled") == "{Binding CanEditGroups}");
         Assert.Equal("ListBox", groups.Name.LocalName);
         Assert.Contains(groups.Parent!.Elements(), element => (string?)element.Attribute("Text") == "Grupos associados");
-        Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
+        var username = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
             && (string?)element.Attribute("Text") == "{Binding Username, Mode=TwoWay}");
+        AssertRequiredInputWithNormalLabel(username, "Usuário");
+        Assert.DoesNotContain(groups.Attributes(), attribute => attribute.Name.LocalName == "DecorRequiredField.IsRequired");
         foreach (var command in new[] { "SaveCommand", "DismissCommand" })
         {
             var button = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == $"{{Binding {command}}}");
@@ -251,25 +301,53 @@ public sealed class AdministrativeLayoutTests
     public void Quote_product_search_is_embedded_and_back_icon_has_standard_size()
     {
         var document = ReadXaml("Views/QuotesView.axaml");
-        var search = Assert.Single(document.Descendants(), element =>
-            (string?)element.Attribute("Text") == "{Binding ProductSearchText}");
-        Assert.Equal("0", (string?)search.Attribute("BorderThickness"));
-        var button = Assert.Single(document.Descendants(), element =>
-            (string?)element.Attribute("Command") == "{Binding SearchProductsCommand}");
-        Assert.Same(search.Parent, button.Parent);
-        Assert.Equal("Border", button.Parent!.Parent!.Name.LocalName);
-        Assert.Equal("field-action", (string?)button.Attribute("Classes"));
+        var search = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
+            && (string?)element.Attribute("Text") == "{Binding ProductSearchText, Mode=TwoWay}");
+        Assert.Equal("{Binding SearchProductsCommand}", (string?)search.Attribute("SearchCommand"));
+        Assert.Equal("{Binding ClearProductsCommand}", (string?)search.Attribute("ClearCommand"));
+        Assert.Equal("Pesquisar produtos e serviços", (string?)search.Attribute("PlaceholderText"));
+        Assert.False(string.IsNullOrWhiteSpace((string?)search.Attribute("SearchHelp")));
         var back = Assert.Single(document.Descendants(), element =>
             (string?)element.Attribute("Command") == "{Binding CancelCommand}");
         Assert.Equal("36", (string?)back.Attribute("Height"));
-        Assert.Equal("field-action", (string?)back.Attribute("Classes"));
+        var classes = ((string?)back.Attribute("Classes") ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Contains("field-action", classes);
+        Assert.Contains("decor-action", classes);
         var icon = Assert.Single(back.Elements());
         Assert.Equal("16", (string?)icon.Attribute("Width"));
         Assert.Equal("16", (string?)icon.Attribute("Height"));
+        Assert.Equal("{DynamicResource DecorDangerBrush}", (string?)icon.Attribute("Fill"));
         var total = Assert.Single(document.Descendants(), element =>
             (string?)element.Attribute("Background") == "#0066CC");
         Assert.All(total.Descendants().Where(element => element.Name.LocalName == "TextBlock"),
             element => Assert.Equal("White", (string?)element.Attribute("Foreground")));
+    }
+
+    private static XElement AssertIdentityHeader(XElement code, XElement status)
+    {
+        var identity = code.Parent!.Parent!;
+        Assert.Same(identity, status.Parent!.Parent);
+        Assert.Equal("Grid", identity.Name.LocalName);
+        Assert.Equal("Auto,*,Auto", (string?)identity.Attribute("ColumnDefinitions"));
+        Assert.Null(identity.Attribute("RowDefinitions"));
+        Assert.Null(code.Parent.Attribute("Grid.Column"));
+        Assert.Equal("2", (string?)status.Parent.Attribute("Grid.Column"));
+        var border = identity.Parent!;
+        Assert.Equal("Border", border.Name.LocalName);
+        Assert.Equal("{DynamicResource DecorSurfaceRaisedBrush}", (string?)border.Attribute("Background"));
+        Assert.Equal("1", (string?)border.Attribute("BorderThickness"));
+        Assert.Same(identity, Assert.Single(border.Elements()));
+        Assert.DoesNotContain(identity.Descendants(), element => element.Name.LocalName == "Border");
+        Assert.Contains(code.Parent.Elements(), element => (string?)element.Attribute("Text") == "Código");
+        return identity;
+    }
+
+    private static void AssertRequiredInputWithNormalLabel(XElement input, string text)
+    {
+        Assert.Contains(input.Attributes(), attribute => attribute.Name.LocalName == "DecorRequiredField.IsRequired" && attribute.Value == "True");
+        var label = Assert.Single(input.Parent!.Elements(), element => (string?)element.Attribute("Text") == text);
+        Assert.Equal("{DynamicResource DecorFontWeightBase}", (string?)label.Attribute("FontWeight"));
+        Assert.DoesNotContain(label.Attributes(), attribute => attribute.Name.LocalName == "DecorRequiredField.IsRequired");
     }
 
     private static XElement AssertFooter(XDocument document, string command)

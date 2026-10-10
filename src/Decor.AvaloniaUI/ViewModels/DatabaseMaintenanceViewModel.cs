@@ -61,10 +61,10 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
         ConfirmRestoreCommand = new RelayCommand(async () => await RestoreAsync(), () => CanRestore && ShowRestoreConfirmation && RestoreConfirmation == "RESTAURAR BANCO");
         CancelRestoreCommand = new RelayCommand(() => { ShowRestoreConfirmation = false; RestoreConfirmation = string.Empty; }, () => !IsRestoring);
         FinishRestoreCommand = new RelayCommand(() => _userContext?.SignOut(), () => RestoreCompleted);
-        _saveScheduleCommand = new RelayCommand(SaveSchedule);
-        _startImmediateBackupCommand = new RelayCommand(async () => await StartImmediateBackupAsync(), () => !IsBackupRunning && !IsRestoring && !RestoreCompleted);
-        _newScheduleCommand = new RelayCommand(NewSchedule);
-        _deleteSelectedScheduleCommand = new RelayCommand(DeleteSelectedSchedule, () => SelectedSchedule is not null);
+        _saveScheduleCommand = new RelayCommand(SaveSchedule, () => CanUseBackup);
+        _startImmediateBackupCommand = new RelayCommand(async () => await StartImmediateBackupAsync(), () => CanUseBackup && !IsBackupRunning);
+        _newScheduleCommand = new RelayCommand(NewSchedule, () => CanUseBackup);
+        _deleteSelectedScheduleCommand = new RelayCommand(DeleteSelectedSchedule, () => CanUseBackup && SelectedSchedule is not null);
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => OnBackupPreviewChanged();
         _clockTimer.Start();
@@ -324,7 +324,8 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
     public bool CanRestore => _restoreService is not null && _userContext?.IsAuthenticated == true
         && _authorization?.HasPermission(DecorPermissions.DatabaseMaintenanceRestore) == true
         && !IsRestoring && !IsBackupRunning && !RestoreCompleted;
-    public bool CanUseBackup => !IsRestoring && !RestoreCompleted;
+    public bool CanUseBackup => !IsRestoring && !RestoreCompleted
+        && (_authorization?.HasPermission(DecorPermissions.DatabaseMaintenanceView) ?? true);
     public bool IsRestoring { get => _isRestoring; private set { if (Set(ref _isRestoring, value)) RefreshRestoreCommands(); } }
     public bool ShowRestoreConfirmation { get => _showRestoreConfirmation; private set { if (Set(ref _showRestoreConfirmation, value)) RefreshRestoreCommands(); } }
     public bool RestoreCompleted { get => _restoreCompleted; private set { if (Set(ref _restoreCompleted, value)) RefreshRestoreCommands(); } }
@@ -352,6 +353,9 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
         ((RelayCommand)CancelRestoreCommand).RaiseCanExecuteChanged();
         ((RelayCommand)FinishRestoreCommand).RaiseCanExecuteChanged();
         _startImmediateBackupCommand?.RaiseCanExecuteChanged();
+        _saveScheduleCommand?.RaiseCanExecuteChanged();
+        _newScheduleCommand?.RaiseCanExecuteChanged();
+        _deleteSelectedScheduleCommand?.RaiseCanExecuteChanged();
     }
 
     private void RequestRestore()
@@ -403,6 +407,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private void SaveSchedule()
     {
+        if (!CanUseBackup) return;
         Summary = string.Empty;
 
         if (!TryGetScheduledAt(out var scheduledAt))
@@ -463,7 +468,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private async Task StartImmediateBackupAsync()
     {
-        if (IsBackupRunning || IsRestoring || RestoreCompleted)
+        if (IsBackupRunning || !CanUseBackup)
             return;
 
         Summary = string.Empty;
@@ -494,6 +499,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private void NewSchedule()
     {
+        if (!CanUseBackup) return;
         _editingScheduleId = null;
         SelectedSchedule = null;
         BackupDate = DateTimeOffset.Now.Date;
@@ -507,7 +513,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     public void LoadSelectedScheduleForEditing()
     {
-        if (SelectedSchedule is null)
+        if (!CanUseBackup || SelectedSchedule is null)
             return;
 
         _editingScheduleId = SelectedSchedule.Id;
@@ -532,7 +538,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private void DeleteSelectedSchedule()
     {
-        if (SelectedSchedule is null)
+        if (!CanUseBackup || SelectedSchedule is null)
             return;
 
         var removedSchedule = SelectedSchedule;

@@ -26,21 +26,12 @@ public sealed partial class DecorGridPresentationTests
     public void Quote_listing_search_and_clear_are_embedded_like_the_catalog_search()
     {
         var document = ReadXaml("Views", "QuotesView.axaml");
-        var search = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchCommand}");
-        var clear = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearSearchCommand}");
-        var text = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
-            && (string?)element.Attribute("Text") == "{Binding SearchText}");
-        Assert.Same(text.Parent, search.Parent);
-        Assert.Same(text.Parent, clear.Parent);
-        Assert.Equal("0", (string?)text.Attribute("BorderThickness"));
-        Assert.Null(text.Parent!.Attribute("ColumnSpacing"));
-        var border = text.Parent.Parent!;
-        Assert.Equal("Border", border.Name.LocalName);
-        var catalogText = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBox"
-            && (string?)element.Attribute("Text") == "{Binding ProductSearchText}");
-        foreach (var name in new[] { "Height", "ClipToBounds", "Background", "BorderBrush", "BorderThickness", "CornerRadius" })
-            Assert.Equal((string?)catalogText.Parent!.Parent!.Attribute(name), (string?)border.Attribute(name));
-        Assert.Equal("SearchTextBox_KeyDown", (string?)text.Attribute("KeyDown"));
+        var listing = AssertSearchField(document, "SearchText", "SearchCommand", "ClearSearchCommand");
+        var catalog = AssertSearchField(document, "ProductSearchText", "SearchProductsCommand", "ClearProductsCommand");
+        Assert.Equal("SearchTextBox", (string?)listing.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")));
+        Assert.Equal(listing.Name, catalog.Name);
+        Assert.Null(listing.Attribute("KeyDown"));
+        Assert.Null(catalog.Attribute("KeyDown"));
     }
 
     [Theory]
@@ -166,14 +157,20 @@ public sealed partial class DecorGridPresentationTests
     public void Search_buttons_use_shared_accessible_style_and_only_the_search_icon(string file)
     {
         var document = ReadXaml("Views", file);
-        var search = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
-            && (string?)element.Attribute("Command") == "{Binding SearchCommand}");
-
-        Assert.Equal("search-button", (string?)search.Attribute("Classes"));
+        var field = AssertSearchField(document, "SearchText", "SearchCommand", "ClearSearchCommand");
+        Assert.Equal(file == "PermissionsView.axaml" ? null : "SearchTextBox",
+            (string?)field.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")));
+        var shared = ReadXaml("Controls", "DecorSearchField.axaml");
+        var search = Assert.Single(shared.Descendants(), element => (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "SearchButton");
+        Assert.Equal("search-action", (string?)search.Attribute("Classes"));
+        Assert.Equal("Pesquisar", (string?)search.Attribute("ToolTip.Tip"));
+        Assert.Equal("Pesquisar", (string?)search.Attribute("AutomationProperties.Name"));
         Assert.DoesNotContain(search.Descendants(), element => element.Name.LocalName == "TextBlock");
         var icon = Assert.Single(search.Elements());
-        Assert.Equal("Path", icon.Name.LocalName);
-        Assert.Contains(icon.Attributes(), attribute => attribute.Value.Contains("Actions.Search", StringComparison.Ordinal));
+        Assert.Equal("PathIcon", icon.Name.LocalName);
+        Assert.Equal("search-icon", (string?)icon.Attribute("Classes"));
+        var style = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Selector") == "PathIcon.search-icon");
+        Assert.Contains(style.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Search", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -210,12 +207,18 @@ public sealed partial class DecorGridPresentationTests
     public void Searches_can_be_cleared_next_to_the_search_button(string file)
     {
         var document = ReadXaml("Views", file);
-        var search = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchCommand}");
-        var clear = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearSearchCommand}");
-        Assert.Equal("clear-search-button", (string?)clear.Attribute("Classes"));
+        AssertSearchField(document, "SearchText", "SearchCommand", "ClearSearchCommand");
+        var shared = ReadXaml("Controls", "DecorSearchField.axaml");
+        var search = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding SearchCommand, ElementName=Root}");
+        var clear = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Command") == "{Binding ClearCommand, ElementName=Root}");
+        Assert.Equal("search-action", (string?)clear.Attribute("Classes"));
+        Assert.Equal("{Binding HasClearCommand, ElementName=Root}", (string?)clear.Attribute("IsVisible"));
+        Assert.Equal("Limpar pesquisa", (string?)clear.Attribute("AutomationProperties.Name"));
         Assert.Same(search.Parent, clear.Parent);
         Assert.Equal(int.Parse((string?)search.Attribute("Grid.Column") ?? "0") + 1, int.Parse((string?)clear.Attribute("Grid.Column") ?? "0"));
-        Assert.Contains(clear.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Clear", StringComparison.Ordinal));
+        Assert.Equal("clear-icon", (string?)Assert.Single(clear.Elements()).Attribute("Classes"));
+        var style = Assert.Single(shared.Descendants(), element => (string?)element.Attribute("Selector") == "PathIcon.clear-icon");
+        Assert.Contains(style.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Clear", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -542,6 +545,11 @@ public sealed partial class DecorGridPresentationTests
         var editing = false;
         var listing = new Decor.AvaloniaUI.ViewModels.GridListState<int>(page, () => !editing);
 
+        Assert.True(listing.HasPagination);
+        Assert.Equal("Registros encontrados: 0", listing.PaginationStatus);
+        Assert.Equal("Página 0 de 0", listing.PaginationPageStatus);
+        Assert.All(new[] { listing.FirstPageCommand, listing.PreviousPageCommand, listing.NextPageCommand, listing.LastPageCommand },
+            command => Assert.False(command.CanExecute(null)));
         listing.Load(Enumerable.Range(1, 25));
         Assert.Equal(10, page.Count);
         Assert.Equal("Registros encontrados: 25", listing.PaginationStatus);
@@ -555,11 +563,19 @@ public sealed partial class DecorGridPresentationTests
 
         editing = true;
         Assert.False(listing.HasPagination);
+        Assert.Null(listing.PaginationStatus);
+        Assert.Null(listing.PaginationPageStatus);
         Assert.Null(listing.StatusSecondary);
         editing = false;
         listing.Clear();
         Assert.Empty(page);
-        Assert.False(listing.HasPagination);
+        Assert.True(listing.HasPagination);
+        Assert.Equal("Registros encontrados: 0", listing.PaginationStatus);
+        Assert.Equal("Página 0 de 0", listing.PaginationPageStatus);
+        Assert.Null(listing.StatusSecondary);
+        Assert.Equal(25, listing.SelectedPageSize);
+        Assert.All(new[] { listing.FirstPageCommand, listing.PreviousPageCommand, listing.NextPageCommand, listing.LastPageCommand },
+            command => Assert.False(command.CanExecute(null)));
     }
 
     [Fact]
@@ -634,6 +650,46 @@ public sealed partial class DecorGridPresentationTests
             Assert.Equal(source is "{Binding CatalogProducts}" or "{Binding CatalogServices}" ? "{Binding CatalogPagination}" : null,
                 (string?)contextual.Attribute("PaginationSource"));
         }
+    }
+
+    private static XElement AssertSearchField(XDocument document, string text, string searchCommand, string clearCommand)
+    {
+        var field = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
+            && (string?)element.Attribute("Text") == $"{{Binding {text}, Mode=TwoWay}}");
+        Assert.Equal($"{{Binding {searchCommand}}}", (string?)field.Attribute("SearchCommand"));
+        Assert.Equal($"{{Binding {clearCommand}}}", (string?)field.Attribute("ClearCommand"));
+        Assert.False(string.IsNullOrWhiteSpace((string?)field.Attribute("PlaceholderText")));
+        Assert.False(string.IsNullOrWhiteSpace((string?)field.Attribute("SearchHelp") ?? DecorSearchField.GenericSearchHelp));
+        return field;
+    }
+
+    [Fact]
+    public void Shared_search_keeps_named_input_help_and_unified_focus_border()
+    {
+        Assert.Equal(DecorSearchField.GenericSearchHelp, DecorSearchField.SearchHelpProperty.GetMetadata(typeof(DecorSearchField)).DefaultValue);
+        var document = ReadXaml("Controls", "DecorSearchField.axaml");
+        var name = XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml");
+        var input = Assert.Single(document.Descendants(), element => (string?)element.Attribute(name) == "SearchInput");
+        Assert.Equal("{Binding Text, ElementName=Root, Mode=TwoWay}", (string?)input.Attribute("Text"));
+        Assert.Equal("0", (string?)input.Attribute("BorderThickness"));
+        var border = input.Parent!.Parent!;
+        Assert.Equal("FieldBorder", (string?)border.Attribute(name));
+        Assert.Equal("1", (string?)border.Attribute("BorderThickness"));
+        Assert.Equal("True", (string?)border.Attribute("ClipToBounds"));
+        var focus = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "Border#FieldBorder:focus-within");
+        AssertSetter(focus, "BorderBrush", "{DynamicResource DecorFieldFocusBrush}");
+        var help = Assert.Single(document.Descendants(), element => (string?)element.Attribute(name) == "HelpButton");
+        Assert.Same(input.Parent, help.Parent);
+        Assert.Equal("3", (string?)help.Attribute("Grid.Column"));
+        Assert.Equal("{Binding HasSearchHelp, ElementName=Root}", (string?)help.Attribute("IsVisible"));
+        Assert.Equal("{Binding SearchHelp, ElementName=Root}", (string?)help.Attribute("ToolTip.Tip"));
+        Assert.Equal("Ajuda da pesquisa", (string?)help.Attribute("AutomationProperties.Name"));
+        var helpText = Assert.Single(help.Descendants(), element => (string?)element.Attribute(name) == "HelpText");
+        Assert.Equal("TextBlock", helpText.Name.LocalName);
+        Assert.Equal("Wrap", (string?)helpText.Attribute("TextWrapping"));
+        Assert.Contains(helpText.Ancestors(), element => element.Name.LocalName == "Flyout");
+        var icon = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Selector") == "PathIcon.help-icon");
+        Assert.Contains(icon.Descendants().Attributes(), attribute => attribute.Value.Contains("Application.Help", StringComparison.Ordinal));
     }
 
     private static XDocument ReadXaml(string folder, string file)

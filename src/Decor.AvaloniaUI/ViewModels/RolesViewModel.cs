@@ -165,6 +165,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     public async Task InitializeAsync()
     {
+        if (!(_authorizationService?.HasPermission(DecorPermissions.RolesView) ?? true)) return;
         IsLoading = true;
         ErrorMessage = null;
         try
@@ -187,6 +188,7 @@ public sealed class RolesViewModel : INotifyPropertyChanged
 
     private async Task LoadPermissionsAsync(int roleId, int requestVersion)
     {
+        if (!(_authorizationService?.HasPermission(DecorPermissions.RolesView) ?? true)) return;
         IsLoading = true;
         ErrorMessage = null;
         try

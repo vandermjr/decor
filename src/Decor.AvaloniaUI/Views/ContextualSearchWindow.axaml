@@ -16,14 +16,8 @@
       <TextBlock Text="{Binding Title}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
       <TextBlock Text="Selecione um resultado e confirme com OK." Foreground="{DynamicResource DecorTextMutedBrush}"/>
     </StackPanel>
-    <Border Grid.Row="1" Height="42" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
-    <Grid ColumnDefinitions="*,36">
-      <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="{Binding SearchHint}" MinHeight="40" FontSize="16" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
-      <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Pesquisar">
-        <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
-      </Button>
-    </Grid>
-    </Border>
+    <controls:DecorSearchField x:Name="SearchTextBox" Grid.Row="1" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="{Binding SearchHint}"
+                              SearchCommand="{Binding SearchCommand}"/>
     <Grid Grid.Row="2" RowDefinitions="Auto,*" RowSpacing="6">
       <TextBlock Text="{Binding ResultCount}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
       <Panel Grid.Row="1">
@@ -35,8 +29,8 @@
     </Grid>
     <Border Grid.Row="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-        <Button Content="Cancelar" Click="Cancel_Click" MinWidth="100"/>
-        <Button Content="OK" Click="Accept_Click" IsEnabled="{Binding SelectedItem}" MinWidth="100" Background="{DynamicResource DecorAccentBrush}" Foreground="White"/>
+        <Button Content="Cancelar" Click="Cancel_Click" MinWidth="100" Classes="decor-action"/>
+        <Button Content="OK" Click="Accept_Click" IsEnabled="{Binding SelectedItem}" MinWidth="100" Background="{DynamicResource DecorAccentBrush}" Foreground="White" Classes="decor-action"/>
       </StackPanel>
     </Border>
   </Grid>

@@ -36,6 +36,30 @@
 				"${workspaceFolder}/src/Decor.AvaloniaUI/Decor.AvaloniaUI.csproj"
 			],
 			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "seed-dcg-dry-run",
+			"type": "shell",
+			"command": "dotnet run --project ${workspaceFolder}/tools/Decor.TestDataSeed/Decor.TestDataSeed.csproj --artifacts-path ${workspaceFolder}/artifacts/seed-dcg -- --dry-run --config ${workspaceFolder}/src/Decor.AvaloniaUI/appsettings.json --expected-database dcg --confirm-local-development",
+			"problemMatcher": []
+		},
+		{
+			"label": "seed-dcg-apply",
+			"type": "shell",
+			"command": "dotnet run --project ${workspaceFolder}/tools/Decor.TestDataSeed/Decor.TestDataSeed.csproj --artifacts-path ${workspaceFolder}/artifacts/seed-dcg -- --apply --config ${workspaceFolder}/src/Decor.AvaloniaUI/appsettings.json --expected-database dcg --confirm-local-development",
+			"problemMatcher": []
+		},
+		{
+			"label": "action-sort-validation",
+			"type": "shell",
+			"command": "dotnet test /home/junior/Documentos/src/Decor/tests/Decor.Application.Tests/Decor.Application.Tests.csproj --artifacts-path /home/junior/Documentos/src/Decor/artifacts/action-sort-validation --filter \"FullyQualifiedName~ActionSortLayoutTests|FullyQualifiedName~DecorIconCatalogTests\" -m:1 -nr:false --results-directory /home/junior/Documentos/src/Decor/artifacts/action-sort-validation/results --logger \"trx;LogFileName=about-icons.trx\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "action-sort-rendering-validation",
+			"type": "shell",
+			"command": "dotnet run --project /home/junior/Documentos/src/Decor/tests/Decor.ActionSort.Tests/Decor.ActionSort.Tests.csproj --artifacts-path /home/junior/Documentos/src/Decor/artifacts/action-sort-validation -- -parallel none",
+			"problemMatcher": []
 		}
 	]
 }

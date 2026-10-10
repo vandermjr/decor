@@ -50,6 +50,9 @@
         <Style Selector="DataGrid /template/ ScrollBar">
             <Setter Property="Theme" Value="{StaticResource GridScrollBarTheme}"/>
         </Style>
+        <Style Selector="WrapPanel#PaginationControls > Control">
+            <Setter Property="Margin" Value="2,0"/>
+        </Style>
     </UserControl.Styles>
     
     <Grid ColumnDefinitions="*" RowDefinitions="*,Auto">
@@ -87,7 +90,7 @@
         <Border x:Name="PaginationFooter" Grid.Row="1" Background="{DynamicResource DecorSurfaceBrush}"
                 BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" IsVisible="False">
             <Grid x:Name="PaginationLayout" ColumnDefinitions="*,*" RowDefinitions="Auto" Margin="4,3">
-                <StackPanel x:Name="PaginationControls" Orientation="Horizontal" Spacing="4" Height="26"
+                <WrapPanel x:Name="PaginationControls" Orientation="Horizontal"
                             IsVisible="{Binding EffectivePaginationSource.HasPagination, ElementName=Root, FallbackValue=False}"
                             VerticalAlignment="Center">
                     <TextBlock Text="Registros por página:" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
@@ -105,7 +108,7 @@
                             ToolTip.Tip="Próxima página" AutomationProperties.Name="Próxima página">
                         <PathIcon Classes="next-page" Width="16" Height="16" Foreground="{DynamicResource DecorTextBrush}"/>
                     </Button>
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
     </Grid>

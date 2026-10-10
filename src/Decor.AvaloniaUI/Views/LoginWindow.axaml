@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        xmlns:controls="using:Decor.AvaloniaUI.Controls"
         xmlns:icons="using:Decor.AvaloniaUI.Icons"
         x:Class="Decor.AvaloniaUI.Views.LoginWindow"
         x:DataType="vm:LoginViewModel"
@@ -17,10 +18,10 @@
                  FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,4" />
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
-               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" />
+               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
 
       <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
-               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
+               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
 
       <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
               BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
@@ -29,7 +30,7 @@
           <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" />
           <Button Grid.Column="1" TabIndex="3" Width="28" Height="28" Padding="0"
                   ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
-                  Click="CopyErrorButton_OnClick">
+                  Click="CopyErrorButton_OnClick" Classes="decor-action">
             <PathIcon Width="16" Height="16"
                       icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Copy}" />
           </Button>
@@ -40,7 +41,7 @@
 
       <Button Grid.Row="5" TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
               HorizontalAlignment="Stretch" MinHeight="42" Padding="12,9"
-              HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Classes="decor-action">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignIn}"
                 Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"

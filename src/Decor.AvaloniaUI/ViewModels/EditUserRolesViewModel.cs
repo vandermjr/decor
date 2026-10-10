@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Interfaces.Services;
 
@@ -17,6 +18,7 @@ public sealed class EditUserRolesViewModel : INotifyPropertyChanged
 {
     private readonly IUserAdministrationService _userAdministrationService;
     private readonly IRoleAdministrationService _roleAdministrationService;
+    private readonly IAuthorizationService? _authorization;
     private CancellationTokenSource? _operationCancellation;
     private int _userId;
     private string? _errorMessage;
@@ -25,10 +27,12 @@ public sealed class EditUserRolesViewModel : INotifyPropertyChanged
 
     public EditUserRolesViewModel(
         IUserAdministrationService userAdministrationService,
-        IRoleAdministrationService roleAdministrationService)
+        IRoleAdministrationService roleAdministrationService,
+        IAuthorizationService? authorization = null)
     {
         _userAdministrationService = userAdministrationService;
         _roleAdministrationService = roleAdministrationService;
+        _authorization = authorization;
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy);
     }
@@ -64,7 +68,7 @@ public sealed class EditUserRolesViewModel : INotifyPropertyChanged
     }
 
     public bool CanEditFields => !IsBusy && IsInitialized;
-    public bool CanSave => !IsBusy && IsInitialized;
+    public bool CanSave => !IsBusy && IsInitialized && (_authorization?.HasPermission(DecorPermissions.UsersAssignRoles) ?? true);
     public bool IsInitialized
     {
         get => _isInitialized;
@@ -127,6 +131,7 @@ public sealed class EditUserRolesViewModel : INotifyPropertyChanged
 
     private async Task SaveAsync()
     {
+        if (!CanSave) return;
         ErrorMessage = null;
         IsBusy = true;
         var cancellationToken = _operationCancellation?.Token ?? CancellationToken.None;

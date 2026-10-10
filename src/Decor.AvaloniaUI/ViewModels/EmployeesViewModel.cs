@@ -46,7 +46,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
         DeleteCommand = new RelayCommand(BeginDelete, () => CanDelete);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => CanCancel);
-        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
+        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => CanConfirmDelete);
         CancelDeleteCommand = new RelayCommand(CancelDelete, () => true);
     }
 
@@ -82,12 +82,13 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
         }
     }
     public bool IsAdding => IsEditing && _isNew;
-    public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set => SetField(ref _showDeleteConfirmation, value); }
+    public bool ShowDeleteConfirmation { get => _showDeleteConfirmation; private set { if (SetField(ref _showDeleteConfirmation, value)) RefreshCommands(); } }
     public string DeleteConfirmationMessage => _employeeToDelete is null ? string.Empty : $"Excluir o funcionário \"{_employeeToDelete.Name}\"?";
     public bool CanNew => _authorizationService.HasPermission(DecorPermissions.EmployeesCreate) && !IsBusy && !IsEditing;
     public bool CanEdit => _authorizationService.HasPermission(DecorPermissions.EmployeesEdit) && SelectedEmployee is not null && !IsBusy && !IsEditing;
     public bool CanDelete => _authorizationService.HasPermission(DecorPermissions.EmployeesDelete) && SelectedEmployee is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy;
+    public bool CanSave => IsEditing && !IsBusy && _authorizationService.HasPermission(_isNew ? DecorPermissions.EmployeesCreate : DecorPermissions.EmployeesEdit);
+    private bool CanConfirmDelete => !IsBusy && ShowDeleteConfirmation && _employeeToDelete is not null && _authorizationService.HasPermission(DecorPermissions.EmployeesDelete);
     public bool CanCancel => IsEditing && !IsBusy;
     public EmployeeDTO? SelectedEmployee
     {
@@ -223,6 +224,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
 
     public async Task ConfirmDeleteAsync()
     {
+        if (!CanConfirmDelete) return;
         if (_employeeToDelete is null) return;
         IsBusy = true;
         try
@@ -286,6 +288,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
 
     private async Task SaveAsync()
     {
+        if (!CanSave) return;
         ErrorMessage = string.Empty;
         decimal? salary = null;
         if (!string.IsNullOrWhiteSpace(BaseSalaryInput))

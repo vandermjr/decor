@@ -48,7 +48,7 @@ public sealed class EditUserViewModel : IUserFormViewModel
     public string? ErrorMessage { get => _errorMessage; private set { if (SetField(ref _errorMessage, value)) OnPropertyChanged(nameof(HasError)); } }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
     public bool IsBusy { get => _isBusy; private set { if (SetField(ref _isBusy, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); OnPropertyChanged(nameof(CanChangeActive)); } } }
-    public bool CanEditFields => !IsBusy && !_isSystemAdministrator;
+    public bool CanEditFields => !IsBusy && !_isSystemAdministrator && (_authorization?.HasPermission(DecorPermissions.UsersEdit) ?? true);
 
     public void Initialize(AdministrativeUserDTO user)
     {

@@ -6,21 +6,16 @@
              x:Class="Decor.AvaloniaUI.Views.SalesView"
              x:DataType="vm:SalesViewModel">
   <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16">
-    <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
-    <Grid ColumnDefinitions="*,36,36">
-      <TextBox x:Name="SearchTextBox" Text="{Binding SearchText}" PlaceholderText="Pesquisar vendas por código" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
-      <Button Grid.Column="1" Classes="search-button" Command="{Binding SearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Pesquisar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/></Button>
-      <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Limpar pesquisa"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/></Button>
-    </Grid>
-    </Border>
+    <controls:DecorSearchField x:Name="SearchTextBox" Margin="0,0,0,12" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar vendas por código"
+                              SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
     <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,12">
       <TextBox Width="150" Text="{Binding SectionIdInput}" PlaceholderText="Código da seção aprovada" VerticalContentAlignment="Center"/>
-      <Button Grid.Column="1" Command="{Binding ConvertCommand}" IsVisible="{Binding CanConvert}"><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Gerar venda"/></StackPanel></Button>
+      <Button Grid.Column="1" Command="{Binding ConvertCommand}" IsVisible="{Binding CanConvert}" Classes="decor-action"><StackPanel Orientation="Horizontal" Spacing="6"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/><TextBlock Text="Gerar venda"/></StackPanel></Button>
       <ToggleSwitch Grid.Column="2" Content="Exige entrada" IsChecked="{Binding RequiresDownPayment}" IsVisible="{Binding CanApprove}" VerticalAlignment="Center"/>
       <StackPanel Grid.Column="3" Spacing="2" IsVisible="{Binding CanApprove}"><TextBlock Text="Prazo de fabricação" FontSize="{DynamicResource DecorFontSizeCaption}"/><DatePicker SelectedDate="{Binding ManufacturingDeadline}"/></StackPanel>
       <StackPanel Grid.Column="4" Spacing="2" IsVisible="{Binding CanApprove}"><TextBlock Text="Prazo de instalação" FontSize="{DynamicResource DecorFontSizeCaption}"/><DatePicker SelectedDate="{Binding InstallationDeadline}"/></StackPanel>
-      <Button Grid.Column="5" Command="{Binding ApproveCommand}" IsVisible="{Binding CanApprove}"><TextBlock Text="Aprovar"/></Button>
-      <Button Grid.Column="6" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Background="{DynamicResource DecorDangerBrush}" Foreground="White"><TextBlock Text="Cancelar venda"/></Button>
+      <Button Grid.Column="5" Command="{Binding ApproveCommand}" IsVisible="{Binding CanApprove}" Classes="decor-action"><TextBlock Text="Aprovar"/></Button>
+      <Button Grid.Column="6" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}"   Classes="decor-action"><TextBlock Text="Cancelar venda"/></Button>
     </Grid>
     <Border Grid.Row="2" Padding="10" Margin="0,0,0,8" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}" VerticalAlignment="Top" ZIndex="2">
       <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
@@ -51,8 +46,8 @@
           </ComboBox>
           <TextBox Grid.Column="1" Text="{Binding InstallmentAmountInput}" PlaceholderText="Valor"/>
           <DatePicker Grid.Column="2" SelectedDate="{Binding InstallmentDueDate}"/>
-          <Button Grid.Column="3" Command="{Binding AddInstallmentCommand}"><TextBlock Text="Adicionar parcela"/></Button>
-          <Button Grid.Column="4" Command="{Binding RemoveInstallmentCommand}" IsVisible="{Binding HasSelectedPlanEntry}"><TextBlock Text="Remover"/></Button>
+          <Button Grid.Column="3" Command="{Binding AddInstallmentCommand}" Classes="decor-action"><TextBlock Text="Adicionar parcela"/></Button>
+          <Button Grid.Column="4" Command="{Binding RemoveInstallmentCommand}" IsVisible="{Binding HasSelectedPlanEntry}" Classes="decor-action"><TextBlock Text="Remover"/></Button>
         </Grid>
         <ListBox ItemsSource="{Binding PlanEntries}" SelectedItem="{Binding SelectedPlanEntry}" IsVisible="{Binding CanConfigurePaymentPlan}" MinHeight="48" MaxHeight="120">
           <ListBox.ItemTemplate>
@@ -65,11 +60,11 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-        <Button Command="{Binding CreatePaymentPlanCommand}" IsVisible="{Binding CanConfigurePaymentPlan}" HorizontalAlignment="Right"><TextBlock Text="Gravar plano de pagamento"/></Button>
+        <Button Command="{Binding CreatePaymentPlanCommand}" IsVisible="{Binding CanConfigurePaymentPlan}" HorizontalAlignment="Right" Classes="decor-action"><TextBlock Text="Gravar plano de pagamento"/></Button>
       </StackPanel>
     </Border>
     <Panel Grid.Row="0" Grid.RowSpan="3" Background="{DynamicResource DecorOverlayBrush}" IsVisible="{Binding ShowCancelConfirmation}" ZIndex="1000">
-      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="400" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8"><StackPanel Spacing="16"><TextBlock Text="Cancelar venda" FontSize="{DynamicResource DecorFontSizeSection}"/><TextBlock Text="Confirma o cancelamento da venda selecionada?" TextWrapping="Wrap"/><Grid ColumnDefinitions="*,*" ColumnSpacing="12"><Button Content="Sim, cancelar" Background="{DynamicResource DecorDangerBrush}" Foreground="White" Command="{Binding ConfirmCancelCommand}"/><Button Grid.Column="1" Content="Voltar" Command="{Binding DismissCancelCommand}"/></Grid></StackPanel></Border>
+      <Border VerticalAlignment="Center" HorizontalAlignment="Center" Width="400" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="24" CornerRadius="8"><StackPanel Spacing="16"><TextBlock Text="Cancelar venda" FontSize="{DynamicResource DecorFontSizeSection}"/><TextBlock Text="Confirma o cancelamento da venda selecionada?" TextWrapping="Wrap"/><Grid ColumnDefinitions="*,*" ColumnSpacing="12"><Button Content="Sim, cancelar"   Command="{Binding ConfirmCancelCommand}" Classes="decor-action"/><Button Grid.Column="1" Content="Voltar" Command="{Binding DismissCancelCommand}" Classes="decor-action"/></Grid></StackPanel></Border>
     </Panel>
   </Grid>
 </UserControl>

@@ -7,6 +7,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Home { get; } = new("Application.Home");
         public static DecorIconId Settings { get; } = new("Application.Settings");
         public static DecorIconId Help { get; } = new("Application.Help");
+        public static DecorIconId Info { get; } = new("Application.Info");
         public static DecorIconId ThemeToggle { get; } = new("Application.ThemeToggle");
     }
 

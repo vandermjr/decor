@@ -9,10 +9,58 @@ namespace Decor.Application.Tests;
 public sealed class ProductsViewModelStatusTests
 {
     private static ProductDTO Product(int id = 42) => new(id, "789", true, "Produto", 3m, 1, "Marca", 1, "Subgrupo", 1, "Grupo", 1, "Familia", 1, "Classe", "Ref", null, null, null, 1m, 0, null, null, null, null, null);
-    private static ProductsViewModel Create(ProductService? products = null, ClassificationService? classification = null, BrandsViewModelStatusTests.BrandService? brands = null)
+    private static ProductsViewModel Create(ProductService? products = null, ClassificationService? classification = null, BrandsViewModelStatusTests.BrandService? brands = null, IAuthorizationService? authorization = null)
     {
         classification ??= new ClassificationService();
-        return new(products ?? new ProductService(), brands ?? new BrandsViewModelStatusTests.BrandService(), classification, classification, classification, classification);
+        return new(products ?? new ProductService(), brands ?? new BrandsViewModelStatusTests.BrandService(), classification, classification, classification, classification, authorization);
+    }
+
+    [Fact]
+    public void Observations_counter_updates_and_respects_utf8_capacity()
+    {
+        var viewModel = Create();
+        viewModel.ObservationsCounter.Should().Be("0/65535 caracteres");
+        var notifications = new List<string?>();
+        viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+        viewModel.Observations = "abc";
+        viewModel.ObservationsCounter.Should().Be("3/65535 caracteres");
+        notifications.Should().Contain(nameof(ProductsViewModel.ObservationsCounter));
+        viewModel.Observations = new string('a', 70000);
+        viewModel.Observations!.Length.Should().Be(65535);
+    }
+
+    [Fact]
+    public async Task Unpermitted_product_actions_are_unavailable()
+    {
+        var viewModel = Create(authorization: new DeniedAuthorization());
+        viewModel.SelectedProduct = Product();
+        viewModel.CanNew.Should().BeFalse();
+        viewModel.CanEdit.Should().BeFalse();
+        viewModel.SearchCommand.CanExecute(null).Should().BeFalse();
+        viewModel.NewCommand.CanExecute(null).Should().BeFalse();
+        viewModel.EditCommand.CanExecute(null).Should().BeFalse();
+        await viewModel.BeginNewAsync();
+        viewModel.CanSave.Should().BeFalse();
+        viewModel.CancelCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("00123456", false)]
+    [InlineData("abcdefgh", true)]
+    [InlineData("1234567a", true)]
+    public void Barcode_validation_rejects_nonnumeric_codes(string barcode, bool invalid)
+    {
+        var errors = new Decor.Core.Validation.ProductDTOValidator().Validate(Product() with { Barcode = barcode });
+        errors.Any(error => error.Contains("apenas")).Should().Be(invalid);
+    }
+
+    private sealed class DeniedAuthorization : IAuthorizationService
+    {
+        public bool HasPermission(string code) => false;
+        public bool CanView(string resource) => false;
+        public bool CanCreate(string resource) => false;
+        public bool CanEdit(string resource) => false;
+        public bool CanDelete(string resource) => false;
     }
 
     [Theory]
@@ -77,7 +125,7 @@ public sealed class ProductsViewModelStatusTests
         published.Should().BeEmpty();
         AssertNoListingStatus(viewModel);
         viewModel.CancelEdit();
-        viewModel.HasPagination.Should().Be(!empty);
+        viewModel.HasPagination.Should().BeTrue();
     }
 
     [Theory]

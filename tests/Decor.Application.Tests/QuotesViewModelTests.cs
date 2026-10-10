@@ -16,6 +16,20 @@ namespace Decor.Application.Tests;
 public sealed class QuotesViewModelTests
 {
     [Fact]
+    public async Task Persisted_quote_without_edit_permission_cannot_save_export_or_convert()
+    {
+        var fixture = new Fixture();
+        await fixture.ViewModel.BeginNewAsync();
+        fixture.Authorization.Setup(service => service.HasPermission(DecorPermissions.QuotesEdit)).Returns(false);
+
+        Assert.False(fixture.ViewModel.CanSave);
+        Assert.False(fixture.ViewModel.SaveCommand.CanExecute(null));
+        Assert.False(fixture.ViewModel.GeneratePdfCommand.CanExecute(null));
+        Assert.False(fixture.ViewModel.ConvertToOrderCommand.CanExecute(null));
+        Assert.False(fixture.ViewModel.CanManageLines);
+    }
+
+    [Fact]
     public async Task InitializeAsync_LoadsQuotesWithoutSearchingProducts()
     {
         var fixture = new Fixture();
@@ -265,6 +279,12 @@ public sealed class QuotesViewModelTests
         Assert.Equal(25, pagination.SelectedPageSize);
         Assert.Equal(new[] { 10, 25, 50, 100 }, pagination.PageSizeOptions);
         Assert.NotSame(fixture.ViewModel.Listing, pagination);
+        Assert.Empty(fixture.ViewModel.CatalogProducts);
+        Assert.True(pagination.HasPagination);
+        Assert.False(pagination.FirstPageCommand!.CanExecute(null));
+        Assert.False(pagination.PreviousPageCommand!.CanExecute(null));
+        Assert.False(pagination.NextPageCommand!.CanExecute(null));
+        Assert.False(pagination.LastPageCommand!.CanExecute(null));
         await SearchAsync(fixture.ViewModel, "paged");
         Assert.True(pagination.HasPagination);
         Assert.Equal("Página 1", pagination.PaginationStatus);

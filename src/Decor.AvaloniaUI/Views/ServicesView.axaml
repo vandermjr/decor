@@ -7,33 +7,24 @@
              x:DataType="vm:ServicesViewModel">
   <Grid RowDefinitions="Auto,*" Margin="16">
     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
-      <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
-        <Grid ColumnDefinitions="*,36,36">
-          <TextBox x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText}" PlaceholderText="Pesquisar por código ou descrição" KeyDown="SearchTextBox_KeyDown" BorderThickness="0"/>
-          <Button Grid.Column="1" TabIndex="1" Classes="search-button" Command="{Binding SearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Pesquisar">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
-          </Button>
-          <Button Grid.Column="2" TabIndex="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}" Margin="0" Padding="0" Width="36" MinWidth="36" Height="NaN" MinHeight="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="0" CornerRadius="0" ToolTip.Tip="Limpar pesquisa">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
-          </Button>
-        </Grid>
-      </Border>
+      <controls:DecorSearchField x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar por código ou descrição"
+                                SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}">
+        <Button Command="{Binding NewCommand}" IsVisible="{Binding CanNew}" Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/>
             <TextBlock Text="Novo registro" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
-        <Button Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}">
+        <Button Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}" Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource DecorEditIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/>
             <TextBlock Text="Editar" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
-        <Button Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}" Background="{DynamicResource DecorDangerBrush}" Foreground="White">
+        <Button Command="{Binding DeleteCommand}" IsVisible="{Binding CanDelete}"   Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform"/>
             <TextBlock Text="Excluir" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
@@ -47,36 +38,36 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="0,0,20,0" IsEnabled="{Binding !IsBusy}">
             <TextBlock Text="Informações do Serviço" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,12"/>
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-              <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+            <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Código" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Código" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding ServiceCodeDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
                 </StackPanel>
-              </Border>
-              <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="4">
-                <TextBlock Text="Estado" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+
                 <ToggleSwitch IsChecked="{Binding IsActive}" OnContent="Ativo" OffContent="Inativo"/>
               </StackPanel>
             </Grid>
+            </Border>
             <StackPanel Spacing="4">
-              <TextBlock Text="Descrição" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-              <TextBox x:Name="DescriptionTextBox" Text="{Binding Description}" MaxLength="255"/>
+              <TextBlock Text="Descrição" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <TextBox x:Name="DescriptionTextBox" Text="{Binding Description}" MaxLength="255" controls:DecorRequiredField.IsRequired="True"/>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="Preço de custo" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Preço de custo" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <NumericUpDown Value="{Binding CostPrice}" Minimum="0" Maximum="99999999.99" Increment="0.01" FormatString="N2"/>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="Preço de venda" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Preço de venda" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <NumericUpDown Value="{Binding SalePrice}" Minimum="0" Maximum="99999999.99" Increment="0.01" FormatString="N2"/>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="Comissão do funcionário" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Comissão do funcionário" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <NumericUpDown Value="{Binding EmployeeCommissionValue}" Minimum="0" Maximum="99999999.99" Increment="0.01" FormatString="N2"/>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <TextBox Text="{Binding Observations, UpdateSourceTrigger=PropertyChanged}" MaxLength="65535" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100"/>
               <TextBlock Text="{Binding ObservationsCounter}" HorizontalAlignment="Right" Foreground="{DynamicResource DecorTextMutedBrush}"/>
             </StackPanel>
@@ -85,15 +76,15 @@
         </ScrollViewer>
         <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Command="{Binding SaveCommand}">
+            <Button Command="{Binding SaveCommand}" Classes="decor-action">
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{DynamicResource DecorAccentBrush}" Width="16" Height="16" Stretch="Uniform"/>
                 <TextBlock Text="Salvar" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
-            <Button Command="{Binding CancelCommand}">
+            <Button Command="{Binding CancelCommand}" Classes="decor-action">
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform"/>
                 <TextBlock Text="Cancelar" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
@@ -107,8 +98,8 @@
           <TextBlock Text="Confirmação de Exclusão" FontSize="{DynamicResource DecorFontSizeSection}" TextWrapping="Wrap"/>
           <TextBlock Text="{Binding DeleteConfirmationMessage}" TextWrapping="Wrap"/>
           <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
-            <Button Content="Sim, excluir" Background="{DynamicResource DecorDangerBrush}" Foreground="White" Command="{Binding ConfirmDeleteCommand}"/>
-            <Button Content="Cancelar" Command="{Binding CancelDeleteCommand}"/>
+            <Button Content="Sim, excluir"   Command="{Binding ConfirmDeleteCommand}" Classes="decor-action"/>
+            <Button Content="Cancelar" Command="{Binding CancelDeleteCommand}" Classes="decor-action"/>
           </StackPanel>
         </StackPanel>
       </Border>

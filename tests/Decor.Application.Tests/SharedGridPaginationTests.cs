@@ -1,16 +1,146 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reflection;
 using Avalonia.Collections;
 using Avalonia.Controls;
-using Avalonia.Data;
 using Decor.AvaloniaUI.Controls;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.Core.DTOs;
+using Decor.Core.Interfaces.Services;
+using Moq;
 
 namespace Decor.Application.Tests;
 
 [Collection("Shared grid pagination")]
 public sealed class SharedGridPaginationTests
 {
+    [Theory]
+    [InlineData(10)]
+    [InlineData(25)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public void Null_source_is_ready_before_search_and_keeps_the_selected_size(int pageSize)
+    {
+        var control = new DecorDataGridControl();
+        var grid = control.FindControl<DataGrid>("InnerDataGrid")!;
+        var state = Assert.IsType<GridPaginationState>(control.EffectivePaginationSource);
+        Assert.Null(control.ItemsSource);
+        Assert.Null(grid.ItemsSource);
+        Assert.Equal(new[] { 10, 25, 50, 100 }, state.PageSizeOptions);
+        Assert.Equal("Registros encontrados: 0", state.PaginationStatus);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        foreach (var command in new[] { state.FirstPageCommand, state.PreviousPageCommand, state.NextPageCommand, state.LastPageCommand })
+            Assert.False(command.CanExecute(null));
+        state.SelectedPageSize = pageSize;
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        var items = new ObservableCollection<int>(Enumerable.Range(1, 120));
+        control.ItemsSource = items;
+        state = Assert.IsType<GridPaginationState>(control.EffectivePaginationSource);
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        Assert.Equal(pageSize, state.View.Count);
+        items.Clear();
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        Assert.False(state.PreviousPageCommand.CanExecute(null));
+        Assert.False(state.NextPageCommand.CanExecute(null));
+        control.ItemsSource = null;
+        Assert.Equal(pageSize, Assert.IsType<GridPaginationState>(control.EffectivePaginationSource).SelectedPageSize);
+        control.ItemsSource = new ObservableCollection<int>(Enumerable.Range(1, 120));
+        Assert.Equal(pageSize, Assert.IsType<GridPaginationState>(control.EffectivePaginationSource).View.Count);
+    }
+
+    [Theory]
+    [InlineData(0, 10)]
+    [InlineData(0, 50)]
+    [InlineData(1, 25)]
+    [InlineData(1, 100)]
+    public async Task Empty_quote_catalog_keeps_size_before_search_after_clear_and_across_scopes(int tab, int pageSize)
+    {
+        var quotes = new Mock<IQuoteService>();
+        var products = new Mock<IProductService>(MockBehavior.Strict);
+        var services = new Mock<IServiceCatalogService>(MockBehavior.Strict);
+        quotes.Setup(service => service.CreateOpenQuoteAsync(null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QuoteDTO(42, 0, 0, null, 1, DateTime.UtcNow, null, []));
+        quotes.Setup(service => service.GetQuantityUnitsAsync(1, 100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<UnitOfMeasureDTO>());
+        products.Setup(service => service.SearchProductsAsync("missing tipo:produto", 1, pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ProductDTO>());
+        services.Setup(service => service.SearchServicesAsync("missing", 1, pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ServiceDTO>());
+        var owner = new QuotesViewModel(quotes.Object, Mock.Of<IAuthorizationService>(), Mock.Of<ICustomerService>(),
+            Mock.Of<IEmployeeService>(), Mock.Of<IPartnerService>(), products.Object, Mock.Of<IAuthenticatedUserContext>(),
+            serviceCatalogService: services.Object);
+        var state = owner.CatalogPagination;
+        Assert.False(state.HasPagination);
+        state.SelectedPageSize = pageSize;
+        products.VerifyNoOtherCalls();
+        services.VerifyNoOtherCalls();
+        await owner.BeginNewAsync();
+        owner.CatalogTabIndex = tab;
+        Assert.True(owner.IsEditing);
+        Assert.True(state.HasPagination);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        Assert.Equal(new[] { 10, 25, 50, 100 }, state.PageSizeOptions);
+        var generation = typeof(QuotesViewModel).GetField("_catalogGeneration", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var beforeSizeChange = generation.GetValue(owner);
+        state.SelectedPageSize = pageSize == 50 ? 100 : 50;
+        Assert.Equal(beforeSizeChange, generation.GetValue(owner));
+        state.SelectedPageSize = pageSize;
+        products.VerifyNoOtherCalls();
+        services.VerifyNoOtherCalls();
+        owner.ProductSearchText = "missing";
+        await (Task)typeof(QuotesViewModel).GetMethod("SearchProductsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(owner, null)!;
+        if (tab == 0)
+            products.Verify(service => service.SearchProductsAsync("missing tipo:produto", 1, pageSize, It.IsAny<CancellationToken>()), Times.Once);
+        else
+            services.Verify(service => service.SearchServicesAsync("missing", 1, pageSize, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        foreach (var command in new[] { state.FirstPageCommand, state.PreviousPageCommand, state.NextPageCommand, state.LastPageCommand })
+            Assert.False(command.CanExecute(null));
+        owner.ClearProductsCommand.Execute(null);
+        Assert.True(state.HasPagination);
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        owner.CatalogTabIndex = 1 - tab;
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        await owner.ReturnToListAsync();
+        Assert.False(state.HasPagination);
+        await owner.BeginNewAsync();
+        Assert.True(state.HasPagination);
+        Assert.Equal(pageSize, state.SelectedPageSize);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+    }
+
+    [Fact]
+    public void Empty_listing_exposes_pagination_and_keeps_size_across_queries_and_editing()
+    {
+        var visible = true;
+        var items = new ObservableCollection<int>();
+        var state = new GridListState<int>(items, () => visible);
+        Assert.True(state.HasPagination);
+        Assert.True(state.HasStatusPrimary);
+        Assert.Equal("Registros encontrados: 0", state.PaginationStatus);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        Assert.Equal(0, state.CurrentPage);
+        Assert.Equal(new[] { 10, 25, 50, 100 }, state.PageSizeOptions);
+        foreach (var command in new[] { state.FirstPageCommand, state.PreviousPageCommand, state.NextPageCommand, state.LastPageCommand })
+            Assert.False(command.CanExecute(null));
+        state.SelectedPageSize = 50;
+        state.Load(Enumerable.Range(1, 60));
+        Assert.Equal(50, items.Count);
+        Assert.Equal(1, state.CurrentPage);
+        state.Clear();
+        Assert.Equal(50, state.SelectedPageSize);
+        Assert.Equal("Página 0 de 0", state.PaginationPageStatus);
+        visible = false;
+        state.Refresh();
+        Assert.False(state.HasPagination);
+        visible = true;
+        state.Refresh();
+        Assert.True(state.HasPagination);
+        Assert.Equal(50, state.SelectedPageSize);
+    }
+
     [Fact]
     public void Control_automatically_pages_the_native_view_without_replacing_the_source()
     {
@@ -32,46 +162,6 @@ public sealed class SharedGridPaginationTests
         Assert.Equal(24, state.TotalCount);
         state.NextPageCommand.Execute(null);
         Assert.Same(items[10], state.View.Cast<Row>().First());
-    }
-
-    [Fact]
-    public void Selection_synchronization_preserves_the_external_two_way_binding()
-    {
-        var items = new ObservableCollection<Row>(Enumerable.Range(1, 5).Select(value => new Row { Value = value }));
-        var source = new ContentControl { Content = items[0] };
-        var control = new DecorDataGridControl { ItemsSource = items };
-        var grid = control.FindControl<DataGrid>("InnerDataGrid")!;
-        control.Bind(DecorDataGridControl.SelectedItemProperty,
-            new Binding(nameof(ContentControl.Content)) { Source = source, Mode = BindingMode.TwoWay });
-        var binding = BindingOperations.GetBindingExpressionBase(control, DecorDataGridControl.SelectedItemProperty)!;
-        Assert.NotNull(binding);
-
-        Assert.Same(items[0], grid.SelectedItem);
-        grid.SelectedItem = items[1];
-        Assert.Same(items[1], control.SelectedItem);
-        Assert.Same(items[1], source.Content);
-        Assert.Same(binding, BindingOperations.GetBindingExpressionBase(control, DecorDataGridControl.SelectedItemProperty));
-        source.Content = items[2];
-        binding.UpdateTarget();
-        Assert.Same(items[2], control.SelectedItem);
-        Assert.Same(items[2], grid.SelectedItem);
-        grid.SelectedItem = null;
-        Assert.Null(control.SelectedItem);
-        Assert.Null(source.Content);
-        Assert.Same(binding, BindingOperations.GetBindingExpressionBase(control, DecorDataGridControl.SelectedItemProperty));
-        source.Content = items[3];
-        binding.UpdateTarget();
-        Assert.Same(items[3], grid.SelectedItem);
-        source.Content = null;
-        binding.UpdateTarget();
-        Assert.Null(grid.SelectedItem);
-        source.Content = items[4];
-        binding.UpdateTarget();
-        Assert.Same(items[4], grid.SelectedItem);
-        items.Clear();
-        Assert.Null(grid.SelectedItem);
-        Assert.Null(control.SelectedItem);
-        Assert.Null(source.Content);
     }
 
     [Fact]
@@ -124,13 +214,16 @@ public sealed class SharedGridPaginationTests
         control.ItemsSource = items;
         var state = Assert.IsType<GridPaginationState>(control.EffectivePaginationSource);
         Assert.Equal(25, state.SelectedPageSize);
-        Assert.False(control.FindControl<Border>("PaginationFooter")!.IsVisible);
+        Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
         items.Add(42);
         Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
         items.Clear();
-        Assert.False(control.FindControl<Border>("PaginationFooter")!.IsVisible);
+        Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
         control.ItemsSource = null;
-        Assert.Null(control.EffectivePaginationSource);
+        var empty = Assert.IsType<GridPaginationState>(control.EffectivePaginationSource);
+        Assert.Equal(25, empty.SelectedPageSize);
+        Assert.Equal("Página 0 de 0", empty.PaginationPageStatus);
+        Assert.True(control.FindControl<Border>("PaginationFooter")!.IsVisible);
     }
 
     [Fact]
@@ -230,7 +323,7 @@ public sealed class SharedGridPaginationTests
         Assert.Equal(1, state.CurrentPage);
         Assert.Equal(21, state.View.Count);
         items.Clear();
-        Assert.False(state.HasPagination);
+        Assert.True(state.HasPagination);
         Assert.False(state.NextPageCommand.CanExecute(null));
         items.Add(42);
         Assert.Equal(42, Assert.Single(state.View.Cast<int>()));

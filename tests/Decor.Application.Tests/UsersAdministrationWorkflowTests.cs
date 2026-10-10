@@ -129,7 +129,8 @@ public sealed class UsersAdministrationWorkflowTests
 
         viewModel.NewUserCommand.CanExecute(null).Should().BeFalse();
         viewModel.EditUserCommand.CanExecute(null).Should().BeFalse();
-        viewModel.SearchCommand.CanExecute(null).Should().BeTrue();
+        viewModel.SearchCommand.CanExecute(null).Should().BeFalse();
+        viewModel.ClearSearchCommand.CanExecute(null).Should().BeFalse();
     }
 
     [Fact]
@@ -243,7 +244,7 @@ public sealed class UsersAdministrationWorkflowTests
     public async Task Edit_DeniedStatusChangeDoesNotWrite()
     {
         var users = new UsersService();
-        var viewModel = new EditUserViewModel(users, new Authorization(false));
+        var viewModel = new EditUserViewModel(users, new SelectiveAuthorization(DecorPermissions.UsersDeactivate));
         viewModel.Initialize(User());
         viewModel.CanChangeActive.Should().BeFalse();
         viewModel.IsActive = false;
