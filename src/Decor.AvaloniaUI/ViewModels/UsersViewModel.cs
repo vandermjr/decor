@@ -29,8 +29,8 @@ public sealed class UsersViewModel : IWorkspaceDocumentState, IStatusBarSource
         _roleAdministrationService = roleAdministrationService;
         _authorization = authorization;
         _context = context;
-        SearchCommand = new RelayCommand(async () => await LoadUsersAsync(), () => !IsEditing && !IsBusy);
-        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsEditing && !IsBusy);
+        SearchCommand = new RelayCommand(async () => await LoadUsersAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         ClearSelectionCommand = new RelayCommand(ClearSelection, () => !IsEditing && SelectedUser is not null);
         NewUserCommand = new RelayCommand(() => FormLoadTask = OpenCreateFormAsync(), () => !IsEditing && !IsBusy && Allowed(DecorPermissions.UsersCreate));
         EditUserCommand = new RelayCommand(() => FormLoadTask = OpenEditFormAsync(), () => CanMutateSelected && Allowed(DecorPermissions.UsersEdit));
@@ -59,6 +59,7 @@ public sealed class UsersViewModel : IWorkspaceDocumentState, IStatusBarSource
     public Task FormLoadTask { get; private set; } = Task.CompletedTask;
     public Task FormCloseTask { get; private set; } = Task.CompletedTask;
     private bool CanMutateSelected => !IsEditing && !IsBusy && SelectedUser is { IsSystemAdministrator: false };
+    private bool CanSearch => !IsEditing && !IsBusy && Allowed(DecorPermissions.UsersView);
     private bool Allowed(string permission) => (_context?.IsAuthenticated ?? true) && (_authorization?.HasPermission(permission) ?? true);
 
     public ICommand SearchCommand { get; private set; }
@@ -175,6 +176,7 @@ public sealed class UsersViewModel : IWorkspaceDocumentState, IStatusBarSource
 
     private async Task LoadUsersAsync()
     {
+        if (!Allowed(DecorPermissions.UsersView)) return;
         IsBusy = true;
         try
         {
@@ -200,6 +202,7 @@ public sealed class UsersViewModel : IWorkspaceDocumentState, IStatusBarSource
 
     private void ClearSearch()
     {
+        if (!CanSearch) return;
         SearchText = string.Empty;
         SelectedUser = null;
         Listing.Clear();

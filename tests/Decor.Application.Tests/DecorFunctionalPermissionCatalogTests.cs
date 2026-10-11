@@ -26,6 +26,7 @@ public sealed class DecorFunctionalPermissionCatalogTests
             ("Estoque", "Locais de Estoque"),
             ("Comercial", "Orçamentos"),
             ("Comercial", "Pedidos"),
+            ("Serviços", "Serviços"),
             ("Serviços", "Agenda"),
             ("Financeiro", "Contas a Pagar"),
             ("Financeiro", "Caixa"),
@@ -36,7 +37,7 @@ public sealed class DecorFunctionalPermissionCatalogTests
         };
 
         DecorFunctionalPermissionCatalog.Contexts
-            .Should().HaveCount(22);
+            .Should().HaveCount(23);
 
         DecorFunctionalPermissionCatalog.Contexts
             .Select(context => (context.ModuleName, context.ContextName))
@@ -67,8 +68,8 @@ public sealed class DecorFunctionalPermissionCatalogTests
             .Concat(DecorFunctionalPermissionCatalog.UnclassifiedPermissionCodes)
             .ToArray();
 
-        technicalCodes.Should().HaveCount(130);
-        DecorFunctionalPermissionCatalog.PermissionCodes.Should().HaveCount(125);
+        technicalCodes.Should().HaveCount(134);
+        DecorFunctionalPermissionCatalog.PermissionCodes.Should().HaveCount(129);
         DecorFunctionalPermissionCatalog.TransversalPermissionCodes.Should().HaveCount(4);
         DecorFunctionalPermissionCatalog.UnclassifiedPermissionCodes.Should().HaveCount(1);
         classifiedCodes.Should().OnlyHaveUniqueItems();

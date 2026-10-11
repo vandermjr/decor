@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        xmlns:controls="using:Decor.AvaloniaUI.Controls"
         xmlns:icons="using:Decor.AvaloniaUI.Icons"
         x:Class="Decor.AvaloniaUI.Views.EditUserWindow"
         x:DataType="vm:EditUserViewModel"
@@ -17,23 +18,21 @@
         <ProgressBar Width="60" Height="3" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
       </StackPanel>
     </Grid>
-    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-      <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+    <Border Grid.Row="1" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <TextBlock Text="Código" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+          <TextBlock Text="Código" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
           <TextBlock Text="{Binding UserCodeDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
         </StackPanel>
-      </Border>
-      <Border Grid.Column="2" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,4">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <TextBlock Text="Estado" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
           <ToggleSwitch TabIndex="1" IsChecked="{Binding IsActive, Mode=TwoWay}" OnContent="Ativo" OffContent="Bloqueado" MinWidth="135" IsEnabled="{Binding CanChangeActive}"/>
         </StackPanel>
-      </Border>
     </Grid>
+    </Border>
     <StackPanel Grid.Row="2" Spacing="4">
-      <TextBlock Text="Usuário" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-      <TextBox TabIndex="0" Text="{Binding Username}" MaxLength="50" IsEnabled="{Binding CanEditFields}"/>
+      <TextBlock Text="Usuário" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+      <TextBox TabIndex="0" Text="{Binding Username}" MaxLength="50" IsEnabled="{Binding CanEditFields}" controls:DecorRequiredField.IsRequired="True"/>
     </StackPanel>
     <Border Grid.Row="3" VerticalAlignment="Top" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" IsVisible="{Binding HasError}">
       <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
@@ -42,15 +41,15 @@
     </ScrollViewer>
     <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
       <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-        <Button TabIndex="2" Command="{Binding SaveCommand}">
+        <Button TabIndex="2" Command="{Binding SaveCommand}" Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{DynamicResource DecorAccentBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
             <TextBlock Text="Salvar" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
-        <Button TabIndex="3" Command="{Binding CancelCommand}">
+        <Button TabIndex="3" Command="{Binding CancelCommand}" Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
             <TextBlock Text="Cancelar" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>

@@ -41,6 +41,24 @@ public sealed class UserSettingsServiceTests
     }
 
     [Fact]
+    public async Task GetThemeForUserAsync_LoadsPreferenceBeforeAuthentication()
+    {
+        var repository = new FakeUserSettingsRepository
+        {
+            Settings = new Dictionary<string, UserSetting>
+            {
+                [DecorUserSettings.Theme] = Setting(DecorUserSettings.Theme, "Light")
+            }
+        };
+        var service = new UserSettingsService(repository, new RecordingAuthenticatedUserContext());
+
+        var theme = await service.GetThemeForUserAsync(42);
+
+        theme.Should().Be(DecorThemeStyle.Light);
+        repository.RequestedUserId.Should().Be(42);
+    }
+
+    [Fact]
     public async Task GetAsync_LoadsPersistedLanguage()
     {
         var repository = new FakeUserSettingsRepository
@@ -170,8 +188,11 @@ internal sealed class FakeUserSettingsRepository : IUserSettingsRepository
     public (int UserId, string Key, string Value, UserSettingValueType ValueType)? LastSet { get; private set; }
     public List<(int UserId, string Key, string Value, UserSettingValueType ValueType)> SetCalls { get; } = [];
 
-    public Task<UserSetting?> GetAsync(int userId, string settingKey, CancellationToken cancellationToken = default) =>
-        Task.FromResult<UserSetting?>(Settings.GetValueOrDefault(settingKey));
+    public Task<UserSetting?> GetAsync(int userId, string settingKey, CancellationToken cancellationToken = default)
+    {
+        RequestedUserId = userId;
+        return Task.FromResult<UserSetting?>(Settings.GetValueOrDefault(settingKey));
+    }
 
     public Task<IReadOnlyDictionary<string, UserSetting>> GetAllAsync(int userId, CancellationToken cancellationToken = default)
     {

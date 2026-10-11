@@ -11,16 +11,38 @@ public class GridControlThemeColors
     public static GridControlThemeColors Create(bool isDarkTheme) => isDarkTheme
         ? new GridControlThemeColors
         {
-            ValueMatchBackground = new SolidColorBrush(Color.Parse("#5A5310")),
-            FocusedCellBackground = new SolidColorBrush(Color.Parse("#1C5C85")),
+            ValueMatchBackground = new SolidColorBrush(Color.Parse("#174A63")),
+            FocusedCellBackground = new SolidColorBrush(Color.Parse("#246D8F")),
             DataType_Int = new SolidColorBrush(Color.Parse("#71B7FF")),
             DataType_Text = new SolidColorBrush(Color.Parse("#6DDB87")),
             DataType_DateTime = new SolidColorBrush(Color.Parse("#FFAF66")),
             DataType_Decimal_Positive = new SolidColorBrush(Color.Parse("#6DDB87")),
             DataType_Decimal_Negative = new SolidColorBrush(Color.Parse("#FF7272")),
-            DataType_Boolean = new SolidColorBrush(Color.Parse("#F0F0F0"))
+            DataType_Boolean = new SolidColorBrush(Color.Parse("#F0F0F0")),
+            StockStatusNormal = new SolidColorBrush(Color.Parse("#6DDB87")),
+            StockStatusAttention = new SolidColorBrush(Color.Parse("#FFC266")),
+            StockStatusNegative = new SolidColorBrush(Color.Parse("#FF7272")),
+            StockStatusMadeToOrder = new SolidColorBrush(Color.Parse("#71B7FF"))
         }
-        : new GridControlThemeColors();
+        : new GridControlThemeColors
+        {
+            ValueMatchBackground = new SolidColorBrush(Color.Parse("#D9EFFA")),
+            FocusedCellBackground = new SolidColorBrush(Color.Parse("#D6EEF8")),
+            GridLines = new SolidColorBrush(Color.Parse("#E4E7EB")),
+            HeaderBackground = new SolidColorBrush(Color.Parse("#F0F2F5")),
+            HeaderText = new SolidColorBrush(Color.Parse("#30363E")),
+            CellText = new SolidColorBrush(Color.Parse("#30363E")),
+            DataType_Int = new SolidColorBrush(Color.Parse("#0057A8")),
+            DataType_Text = new SolidColorBrush(Color.Parse("#176B35")),
+            DataType_DateTime = new SolidColorBrush(Color.Parse("#9A4100")),
+            DataType_Decimal_Positive = new SolidColorBrush(Color.Parse("#176B35")),
+            DataType_Decimal_Negative = new SolidColorBrush(Color.Parse("#B32D35")),
+            DataType_Boolean = new SolidColorBrush(Color.Parse("#30363E")),
+            StockStatusNormal = new SolidColorBrush(Color.Parse("#1E5E50")),
+            StockStatusAttention = new SolidColorBrush(Color.Parse("#7A4B00")),
+            StockStatusNegative = new SolidColorBrush(Color.Parse("#9F3027")),
+            StockStatusMadeToOrder = new SolidColorBrush(Color.Parse("#0057A8"))
+        };
 
     /// <summary>
     /// Background color for the grid area.
@@ -96,6 +118,19 @@ public class GridControlThemeColors
     /// Text color for boolean columns.
     /// </summary>
     public IBrush DataType_Boolean { get; set; } = Brushes.Black;
+
+    public IBrush StockStatusNormal { get; set; } = new SolidColorBrush(Color.Parse("#1E5E50"));
+    public IBrush StockStatusAttention { get; set; } = new SolidColorBrush(Color.Parse("#7A4B00"));
+    public IBrush StockStatusNegative { get; set; } = new SolidColorBrush(Color.Parse("#9F3027"));
+    public IBrush StockStatusMadeToOrder { get; set; } = new SolidColorBrush(Color.Parse("#0057A8"));
+
+    public IBrush GetStockStatusBrush(string? status) => status switch
+    {
+        "Atenção" or "Repor" => StockStatusAttention,
+        "Negativo" => StockStatusNegative,
+        "Sob Demanda" => StockStatusMadeToOrder,
+        _ => StockStatusNormal
+    };
 
     /// <summary>
     /// Gets the appropriate brush color for a given property type.

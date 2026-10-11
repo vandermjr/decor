@@ -22,7 +22,8 @@ public class OrderService(
     IAuthorizationService authorizationService,
     IDatabaseConnection? databaseConnection = null,
     ITransactionalOrderRepository? transactionalOrderRepository = null,
-    ITransactionalQuoteRepository? transactionalQuoteRepository = null) : IOrderService
+    ITransactionalQuoteRepository? transactionalQuoteRepository = null,
+    IServiceRepository? serviceRepository = null) : IOrderService
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IQuoteRepository _quoteRepository = quoteRepository;
@@ -78,10 +79,24 @@ public class OrderService(
 
         var fullSection = quote.Sections.FirstOrDefault(s => s.QuoteSectionID == quoteSectionId) ?? section;
 
+        if (quote.CustomerID is null or <= 0 || quote.CreatedByEmployeeID is null or <= 0)
+            throw new ValidationException("Informe cliente e vendedor válidos antes de converter o orçamento.");
+
+        if (fullSection.Items.Any(item => item.Quantity <= 0 || item.UnitPrice is null or < 0))
+            throw new ValidationException("Os itens da seção precisam ter quantidade positiva e preço válido antes da conversão.");
+        foreach (var item in fullSection.Items)
+        {
+            if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+                throw new ValidationException(CommercialItemReference.ValidationMessage);
+            if (item.ServiceID is int serviceId && (serviceRepository is null || !serviceRepository.ServiceExists(serviceId)))
+                throw new ValidationException("O servico informado nao existe.");
+        }
+        var convertedPrices = GetDiscountedUnitPrices(quote);
+
         var order = new Order
         {
             QuoteSectionID = quoteSectionId,
-            CustomerID = quote.CustomerID,
+            CustomerID = quote.CustomerID.Value,
             OrderType = section.SectionType == QuoteSectionType.Catalog ? OrderType.Catalog : OrderType.Custom,
             Status = OrderStatus.PendingApproval,
             RequiresDownPayment = null,
@@ -97,7 +112,7 @@ public class OrderService(
 
         if (_transactionalOrderRepository is null || _transactionalQuoteRepository is null)
         {
-            await SaveWithoutExternalTransactionAsync(order, fullSection, section, cancellationToken);
+            await SaveWithoutExternalTransactionAsync(order, fullSection, section, convertedPrices, cancellationToken);
             return order.ToDTO();
         }
 
@@ -115,8 +130,9 @@ public class OrderService(
                     OrderID = order.OrderID,
                     QuoteItemID = quoteItem.QuoteItemID,
                     ProductID = quoteItem.ProductID,
+                    ServiceID = quoteItem.ServiceID,
                     Quantity = quoteItem.Quantity,
-                    UnitPrice = quoteItem.UnitPrice ?? 0m,
+                    UnitPrice = convertedPrices[quoteItem.QuoteItemID],
                     HasInstallationService = quoteItem.HasInstallationService,
                     SentToProductionAt = null,
                     SentToProductionByEmployeeID = null,
@@ -154,12 +170,39 @@ public class OrderService(
         return order.ToDTO();
     }
 
-    private async Task SaveWithoutExternalTransactionAsync(Order order, QuoteSection fullSection, QuoteSection section, CancellationToken cancellationToken)
+    private static IReadOnlyDictionary<int, decimal> GetDiscountedUnitPrices(Quote quote)
+    {
+        var items = quote.Sections.OrderBy(section => section.QuoteSectionID)
+            .SelectMany(section => section.Items.OrderBy(item => item.QuoteItemID)).ToArray();
+        var subtotal = items.Sum(item => item.Quantity * (item.UnitPrice ?? 0m));
+        if (quote.DiscountAmount < 0 || quote.DiscountAmount > subtotal)
+            throw new ValidationException("O desconto deve ser não negativo e não pode exceder o subtotal do orçamento.");
+        if (quote.DiscountAmount == 0)
+            return items.ToDictionary(item => item.QuoteItemID, item => item.UnitPrice ?? 0m);
+        if (items.Any(item => item.Quantity <= 0 || item.UnitPrice is null or < 0))
+            throw new ValidationException("Todos os itens do orçamento precisam ter quantidade e preço válidos para ratear o desconto.");
+
+        var remainingTotal = subtotal - quote.DiscountAmount;
+        var factor = remainingTotal / subtotal;
+        var prices = new Dictionary<int, decimal>();
+        var lastPricedItem = items.Last(item => item.UnitPrice > 0);
+        foreach (var item in items)
+        {
+            var originalPrice = item.UnitPrice!.Value;
+            var price = item == lastPricedItem ? remainingTotal / item.Quantity : originalPrice * factor;
+            price = Math.Clamp(decimal.Round(price, 2, MidpointRounding.AwayFromZero), 0m, originalPrice);
+            prices.Add(item.QuoteItemID, price);
+            remainingTotal -= price * item.Quantity;
+        }
+        return prices;
+    }
+
+    private async Task SaveWithoutExternalTransactionAsync(Order order, QuoteSection fullSection, QuoteSection section, IReadOnlyDictionary<int, decimal> convertedPrices, CancellationToken cancellationToken)
     {
         await _orderRepository.SaveAsync(order, cancellationToken);
         foreach (var quoteItem in fullSection.Items)
         {
-            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, Quantity = quoteItem.Quantity, UnitPrice = quoteItem.UnitPrice ?? 0m, HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
+            var orderItem = new OrderItem { OrderID = order.OrderID, QuoteItemID = quoteItem.QuoteItemID, ProductID = quoteItem.ProductID, ServiceID = quoteItem.ServiceID, Quantity = quoteItem.Quantity, UnitPrice = convertedPrices[quoteItem.QuoteItemID], HasInstallationService = quoteItem.HasInstallationService, SpecificationValues = [] };
             await _orderRepository.SaveOrderItemAsync(orderItem, cancellationToken);
             foreach (var specValue in quoteItem.SpecificationValues)
             {
@@ -191,9 +234,15 @@ public class OrderService(
         await _orderRepository.SaveAsync(order, cancellationToken);
     }
 
-    public async Task CancelOrderAsync(int orderId, CancellationToken cancellationToken = default)
+    public async Task CancelOrderAsync(int orderId, string reason, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.OrdersCancel);
+
+        var cancellationReason = reason?.Trim();
+        if (string.IsNullOrWhiteSpace(cancellationReason))
+            throw new ValidationException("Informe o motivo do cancelamento do pedido.");
+        if (cancellationReason.Length > 500)
+            throw new ValidationException("O motivo do cancelamento deve ter no máximo 500 caracteres.");
 
         var order = await _orderRepository.GetCompleteOrderAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException($"Pedido com ID {orderId} não encontrado.");
@@ -202,6 +251,7 @@ public class OrderService(
             throw new ValidationException("O pedido só pode ser cancelado se estiver com status Pendente de Aprovação ou Aprovado.");
 
         order.Status = OrderStatus.Cancelled;
+        order.CancellationReason = cancellationReason;
 
         await _orderRepository.SaveAsync(order, cancellationToken);
         await _stockReservationService.ReleaseActiveReservationsForOrderAsync(orderId, cancellationToken);
@@ -224,12 +274,14 @@ public class OrderService(
         if (order.OrderType != OrderType.Custom)
             throw new ValidationException("Envio para produção só é permitido para pedidos do tipo sob encomenda (Custom).");
 
-        var products = await _productRepository.SearchGetByAsync(item.ProductID.ToString(), 1, 1, cancellationToken);
-        var product = products.FirstOrDefault(p => p.ProductID == item.ProductID)
-            ?? (await _productRepository.SearchGetByAsync(null, 1, 1000, cancellationToken)).FirstOrDefault(p => p.ProductID == item.ProductID);
-
-        if (product != null && product.ProductType == ProductType.Service)
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new ValidationException(CommercialItemReference.ValidationMessage);
+        if (item.ServiceID.HasValue)
             throw new ValidationException("Itens do tipo Serviço (Service) não podem ser enviados para produção.");
+
+        var products = await _productRepository.SearchGetByAsync(item.ProductID!.Value.ToString(), 1, 1, cancellationToken);
+        if (!products.Any(product => product.ProductID == item.ProductID))
+            throw new KeyNotFoundException("O produto do item nao foi encontrado.");
 
         item.SentToProductionAt = DateTime.UtcNow;
         item.SentToProductionByEmployeeID = sentToProductionByEmployeeID;

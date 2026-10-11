@@ -21,10 +21,14 @@ public sealed class DecorIcon
 
     public static readonly AttachedProperty<DecorIconId> IdProperty =
         AvaloniaProperty.RegisterAttached<DecorIcon, AvaloniaObject, DecorIconId>("Id");
+    public static readonly AttachedProperty<int> WeightProperty =
+        AvaloniaProperty.RegisterAttached<DecorIcon, AvaloniaObject, int>("Weight");
 
     public static DecorIconId GetId(AvaloniaObject element) => element.GetValue(IdProperty);
 
     public static void SetId(AvaloniaObject element, DecorIconId value) => element.SetValue(IdProperty, value);
+    public static int GetWeight(AvaloniaObject element) => element.GetValue(WeightProperty);
+    public static void SetWeight(AvaloniaObject element, int value) => element.SetValue(WeightProperty, value);
 
     private DecorIcon()
     {
@@ -33,6 +37,7 @@ public sealed class DecorIcon
     static DecorIcon()
     {
         IdProperty.Changed.AddClassHandler<AvaloniaObject>((icon, args) => Register(icon, args.GetNewValue<DecorIconId>()));
+        WeightProperty.Changed.AddClassHandler<AvaloniaObject>((icon, _) => Register(icon, icon.GetValue(IdProperty)));
     }
 
     internal static Geometry GetGeometry(DecorIconId id) => DecorIconCatalog.Get(id, AppearanceService.CurrentAppearance.MaterialSymbolWeight);
@@ -85,7 +90,8 @@ public sealed class DecorIcon
             ClearGeometry(icon);
             return;
         }
-        var geometry = DecorIconCatalog.Get(id, appearance.MaterialSymbolWeight);
+        var weight = icon.GetValue(WeightProperty);
+        var geometry = DecorIconCatalog.Get(id, weight == 0 ? appearance.MaterialSymbolWeight : weight);
         switch (icon)
         {
             case Avalonia.Controls.Shapes.Path path:

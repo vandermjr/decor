@@ -10,30 +10,55 @@
   <UserControl.Resources>
     <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
   </UserControl.Resources>
-  <Grid RowDefinitions="Auto,*" Margin="16">
+  <UserControl.Styles>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridRow">
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-ProductID">
+      <Setter x:SetterTargetType="TextBlock" Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-StockStatus">
+      <Setter x:SetterTargetType="TextBlock" Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-Description">
+      <Setter x:SetterTargetType="TextBlock" Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-AvailableStockQuantity">
+      <Setter x:SetterTargetType="TextBlock" Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Border.quantity-field">
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.quantity-field:focus-within">
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <StackPanel Spacing="4" Margin="0,0,0,16" IsVisible="{Binding !IsEditing}">
+      <TextBlock Text="Produtos" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta de produtos e saldos nos depósitos" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
     <!-- Toolbar -->
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
-        <TextBox x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText}" PlaceholderText="Pesquisar por código ou descrição" KeyDown="SearchTextBox_KeyDown"/>
-        <Button Grid.Column="1" TabIndex="1" Classes="search-button" Command="{Binding SearchCommand}">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Search}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-        </Button>
-        <Button Grid.Column="2" Classes="clear-search-button" Command="{Binding ClearSearchCommand}">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Clear}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-        </Button>
-      </Grid>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
+      <controls:DecorSearchField x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
+                                PlaceholderText="Pesquisar por código, descrição, marca ou referência" SearchHelp="{x:Static controls:DecorSearchField.ProductSearchHelp}"
+                                SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}" IsVisible="{Binding !IsEditing}"/>
       
       <!-- Botões com visibilidade condicional -->
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button TabIndex="2" Command="{Binding NewCommand}" IsVisible="{Binding CanNew}">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
             <TextBlock Text="Novo registro" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
         <Button TabIndex="3" Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource DecorEditIndicatorBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
             <TextBlock Text="Editar" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
@@ -41,9 +66,9 @@
     </Grid>
 
     <!-- DataGrid ou Formulário (alternância) -->
-    <Panel Grid.Row="1">
+    <Panel Grid.Row="2">
       <!-- DataGrid (preenche tela inteira) -->
-      <controls:DecorDataGridControl x:Name="ProductsGrid" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
+      <controls:DecorDataGridControl x:Name="ProductsGrid" Classes="stock-catalog" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
                 SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
@@ -52,81 +77,91 @@
       <!-- Formulário de Edição (substitui DataGrid) -->
       <Border BorderThickness="0" Padding="0" CornerRadius="4" IsVisible="{Binding IsEditing}">
         <Grid RowDefinitions="*,Auto">
-        <ScrollViewer x:Name="ProductFormScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="ProductFormScrollViewer" controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="0,0,20,0">
             <TextBlock FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Text="Informações do Produto" Margin="0,0,0,12"/>
             
+            <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-              <Border Background="{DynamicResource DecorSurfaceRaisedBrush}"
-                      BorderBrush="{DynamicResource DecorBorderBrush}"
-                      BorderThickness="1" CornerRadius="4" Padding="12,8">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Código" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Text="Código" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
                   <TextBlock Text="{Binding ProductCodeDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
                 </StackPanel>
-              </Border>
-              <Border Grid.Column="2" Background="{DynamicResource DecorSurfaceRaisedBrush}"
-                      BorderBrush="{DynamicResource DecorBorderBrush}"
-                      BorderThickness="1" CornerRadius="4" Padding="12,4">
-                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                  <TextBlock Text="Estado" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                   <ToggleSwitch TabIndex="2" IsChecked="{Binding IsActive}" OnContent="Ativo" OffContent="Inativo" MinWidth="115"/>
                 </StackPanel>
-              </Border>
             </Grid>
+            </Border>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="EAN" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-              <TextBox TabIndex="3" Text="{Binding Barcode}"/>
+              <TextBlock Text="EAN" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <TextBox TabIndex="3" Text="{Binding Barcode}" MaxLength="13" Width="180" HorizontalAlignment="Left" controls:DecorNumericInput.DigitsOnly="True"/>
               <TextBlock Text="{Binding BarcodeError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBarcodeError}"/>
             </StackPanel>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="Descrição" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-              <TextBox TabIndex="4" Text="{Binding Description}"/>
+              <TextBlock Text="Descrição" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <TextBox TabIndex="4" Text="{Binding Description}" controls:DecorRequiredField.IsRequired="True"/>
               <TextBlock Text="{Binding DescriptionError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
             </StackPanel>
             
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+            <StackPanel Spacing="4" HorizontalAlignment="Left">
+              <TextBlock Text="Unidade de Estoque" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <ComboBox TabIndex="5" ItemsSource="{Binding StockUnits}" SelectedItem="{Binding SelectedStockUnit}" Width="160" HorizontalAlignment="Left" controls:DecorRequiredField.IsRequired="True">
+                <ComboBox.ItemTemplate><DataTemplate x:DataType="dto:UnitOfMeasureDTO"><TextBlock Text="{Binding Code}"/></DataTemplate></ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <StackPanel Spacing="4" HorizontalAlignment="Left">
+              <TextBlock Text="Aquisição" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <ToggleSwitch TabIndex="6" Content="Comprar somente após pedido confirmado" IsChecked="{Binding IsMadeToOrder, Mode=TwoWay}"/>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="12" HorizontalAlignment="Left">
               <StackPanel Spacing="4">
-                <TextBlock Text="Estoque" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                <NumericUpDown TabIndex="5" Value="{Binding StockQuantity}" Minimum="0"/>
+                <TextBlock Text="Estoque Inicial" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <Border Classes="quantity-field" Width="180" BorderThickness="1" CornerRadius="4">
+                  <NumericUpDown TabIndex="7" Value="{Binding StockQuantity}" Minimum="0" IsEnabled="False" BorderThickness="0" controls:DecorNumericInput.Quantity="True"/>
+                </Border>
                 <TextBlock Text="{Binding StockQuantityError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockQuantityError}"/>
               </StackPanel>
               <StackPanel Spacing="4">
-                <TextBlock Text="Estoque Mínimo" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                <NumericUpDown TabIndex="6" Value="{Binding MinimumStock}" Minimum="0"/>
+                <TextBlock Text="Estoque Mínimo" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <Border Classes="quantity-field" Width="180" BorderThickness="1" CornerRadius="4">
+                  <NumericUpDown TabIndex="6" Value="{Binding MinimumStock}" Minimum="0" BorderThickness="0" controls:DecorNumericInput.Quantity="True"/>
+                </Border>
                 <TextBlock Text="{Binding MinimumStockError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasMinimumStockError}"/>
               </StackPanel>
             </Grid>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="Ref. Fabricante" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Ref. Fabricante" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <TextBox TabIndex="7" Text="{Binding ManufacturerRef}"/>
               <TextBlock Text="{Binding ManufacturerRefError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasManufacturerRefError}"/>
             </StackPanel>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="Ref. Auxiliar" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Ref. Auxiliar" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <TextBox TabIndex="8" Text="{Binding AuxiliarRef}"/>
               <TextBlock Text="{Binding AuxiliarRefError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasAuxiliarRefError}"/>
             </StackPanel>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="Dimensões" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Dimensões" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <TextBox TabIndex="9" Text="{Binding Dimensions}"/>
               <TextBlock Text="{Binding DimensionsError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDimensionsError}"/>
             </StackPanel>
             
             <StackPanel Spacing="4">
-              <TextBlock Text="Marca" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Marca" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <Grid HorizontalAlignment="Left">
                 <!-- Invisible overlapped copy of every brand name: the grid takes the widest text so the ComboBox never resizes. -->
                 <ItemsControl ItemsSource="{Binding Brands}" Opacity="0" IsHitTestVisible="False" Focusable="False" VerticalAlignment="Center">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><Panel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate><DataTemplate x:DataType="dto:BrandDTO"><TextBlock Text="{Binding BrandName}" Margin="12,0,44,0"/></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <ComboBox TabIndex="10" ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}" HorizontalAlignment="Stretch">
+                <ComboBox TabIndex="10" ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}" HorizontalAlignment="Stretch" controls:DecorRequiredField.IsRequired="True">
                   <ComboBox.ItemTemplate><DataTemplate x:DataType="dto:BrandDTO"><TextBlock Text="{Binding BrandName}"/></DataTemplate></ComboBox.ItemTemplate>
                 </ComboBox>
               </Grid>
@@ -137,7 +172,7 @@
             <Grid Height="160" ClipToBounds="True" ColumnDefinitions="1*,1*,1*,1*" ColumnSpacing="8">
               <Border BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
                 <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Classes" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBlock Text="Classes" FontWeight="{DynamicResource DecorFontWeightBase}"/>
                   <ListBox Grid.Row="1" ItemsSource="{Binding Classes}" SelectedItem="{Binding SelectedClass}">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="dto:ClassDTO">
@@ -150,7 +185,7 @@
 
               <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
                 <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Famílias" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBlock Text="Famílias" FontWeight="{DynamicResource DecorFontWeightBase}"/>
                   <ListBox Grid.Row="1" ItemsSource="{Binding Families}" SelectedItem="{Binding SelectedFamily}">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="dto:FamilyDTO">
@@ -163,7 +198,7 @@
 
               <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
                 <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightBase}"/>
                   <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="dto:GroupDTO">
@@ -176,8 +211,8 @@
 
               <Border Grid.Column="3" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
                 <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Subgrupos" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                  <ListBox Grid.Row="1" ItemsSource="{Binding Subgroups}" SelectedItem="{Binding SelectedSubgroup}">
+                  <TextBlock Text="Subgrupos" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                  <ListBox Grid.Row="1" ItemsSource="{Binding Subgroups}" SelectedItem="{Binding SelectedSubgroup}" controls:DecorRequiredField.IsRequired="True">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="dto:SubgroupDTO">
                         <TextBlock Text="{Binding SubgroupName}" VerticalAlignment="Center"/>
@@ -189,8 +224,9 @@
             </Grid>
             
             <StackPanel Spacing="4" Margin="0,8,0,0">
-              <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightBase}"/>
               <TextBox TabIndex="11" Text="{Binding Observations}" AcceptsReturn="True" Height="100" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ObservationsCounter}" HorizontalAlignment="Right" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
               <TextBlock Text="{Binding ObservationsError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasObservationsError}"/>
             </StackPanel>
           </StackPanel>
@@ -199,13 +235,13 @@
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button TabIndex="12" Command="{Binding SaveCommand}" IsVisible="{Binding CanSave}">
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{DynamicResource DecorAccentBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
                 <TextBlock Text="Salvar" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
             <Button TabIndex="13" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}">
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
                 <TextBlock Text="Cancelar" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>

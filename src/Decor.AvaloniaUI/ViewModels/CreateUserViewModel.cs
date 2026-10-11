@@ -20,6 +20,7 @@ public sealed class CreateUserViewModel : IUserFormViewModel
 {
     private readonly IUserAdministrationService _userAdministrationService;
     private readonly IRoleAdministrationService _roleAdministrationService;
+    private readonly IAuthorizationService? _authorization;
     private string _username = string.Empty;
     private string _displayName = string.Empty;
     private string? _errorMessage;
@@ -31,11 +32,13 @@ public sealed class CreateUserViewModel : IUserFormViewModel
 
     public CreateUserViewModel(
         IUserAdministrationService userAdministrationService,
-        IRoleAdministrationService roleAdministrationService)
+        IRoleAdministrationService roleAdministrationService,
+        IAuthorizationService? authorization = null)
     {
         _userAdministrationService = userAdministrationService;
         _roleAdministrationService = roleAdministrationService;
-        CreateCommand = new RelayCommand(async () => await CreateAsync(), () => !IsBusy && !IsCompleted);
+        _authorization = authorization;
+        CreateCommand = new RelayCommand(async () => await CreateAsync(), () => CanEditFields);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty), () => !IsBusy && !IsCompleted);
         FinishCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty), () => IsCompleted);
         DismissCommand = new RelayCommand(() =>
@@ -64,7 +67,7 @@ public sealed class CreateUserViewModel : IUserFormViewModel
     public bool HasTemporaryPassword => !string.IsNullOrWhiteSpace(TemporaryPassword);
     public bool IsBusy { get => _isBusy; private set { if (SetField(ref _isBusy, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); } } }
     public bool IsCompleted { get => _isCompleted; private set { if (SetField(ref _isCompleted, value)) { RaiseCommandStates(); OnPropertyChanged(nameof(CanEditFields)); OnPropertyChanged(nameof(DismissButtonText)); } } }
-    public bool CanEditFields => !IsBusy && !IsCompleted;
+    public bool CanEditFields => !IsBusy && !IsCompleted && (_authorization?.HasPermission(DecorPermissions.UsersCreate) ?? true);
     public string? CreatedUsername { get => _createdUsername; private set => SetField(ref _createdUsername, value); }
 
     public async Task InitializeAsync()

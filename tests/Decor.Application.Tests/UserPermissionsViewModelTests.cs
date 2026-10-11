@@ -217,10 +217,10 @@ public sealed class UserPermissionsViewModelTests
     public void Commands_RequireAuthenticationAndAuthorization(bool authenticated, bool authorized, bool expected)
     {
         var fixture = new Fixture();
+        fixture.SelectUser();
         fixture.Context.IsAuthenticated = authenticated;
         fixture.Authorization.GrantedPermissions.Clear();
         if (authorized) fixture.Authorization.GrantAll();
-        fixture.SelectUser();
 
         fixture.ViewModel.SaveCommand.CanExecute(null).Should().Be(expected);
         fixture.ViewModel.RestoreCommand.CanExecute(null).Should().Be(expected);
@@ -228,6 +228,7 @@ public sealed class UserPermissionsViewModelTests
     }
 
     [Theory]
+    [InlineData(DecorPermissions.UsersView)]
     [InlineData(DecorPermissions.UsersManagePermissions)]
     [InlineData(DecorPermissions.UsersRestorePermissions)]
     [InlineData(DecorPermissions.UsersAssignRoles)]
@@ -235,6 +236,7 @@ public sealed class UserPermissionsViewModelTests
     {
         var fixture = new Fixture();
         fixture.Authorization.GrantedPermissions.Clear();
+        fixture.Authorization.GrantedPermissions.Add(DecorPermissions.UsersView);
         fixture.Authorization.GrantedPermissions.Add(permission);
         fixture.SelectUser();
 
@@ -473,7 +475,7 @@ public sealed class UserPermissionsViewModelTests
         public HashSet<string> GrantedPermissions { get; } = [];
         public FakeAuthorizationService() => GrantAll();
         public void GrantAll() => GrantedPermissions.UnionWith(
-            [DecorPermissions.UsersManagePermissions, DecorPermissions.UsersRestorePermissions, DecorPermissions.UsersAssignRoles]);
+            [DecorPermissions.UsersView, DecorPermissions.UsersManagePermissions, DecorPermissions.UsersRestorePermissions, DecorPermissions.UsersAssignRoles]);
         public bool HasPermission(string permissionCode) => GrantedPermissions.Contains(permissionCode);
         public bool CanView(string resource) => HasPermission($"{resource}.View");
         public bool CanCreate(string resource) => HasPermission($"{resource}.Create");

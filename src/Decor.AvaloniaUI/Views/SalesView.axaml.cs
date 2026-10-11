@@ -1,0 +1,43 @@
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Threading;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using Decor.Core.DTOs;
+using Decor.AvaloniaUI.ViewModels;
+
+namespace Decor.AvaloniaUI.Views;
+
+public partial class SalesView : UserControl
+{
+    public SalesView()
+    {
+        InitializeComponent();
+        SalesGrid.InitializeColumns(typeof(SaleListItem), propertyName => propertyName switch
+        {
+            nameof(SaleListItem.OrderID) => "Código da venda",
+            nameof(SaleListItem.QuoteSectionID) => "Seção do orçamento",
+            nameof(SaleListItem.CustomerID) => "Cliente",
+            nameof(SaleListItem.OrderType) => "Tipo",
+            nameof(SaleListItem.Status) => "Estado",
+            nameof(SaleListItem.DownPayment) => "Entrada",
+            nameof(SaleListItem.CreatedAt) => typeof(OrderDTO).GetProperty(nameof(OrderDTO.CreatedAt))?
+                .GetCustomAttribute<DisplayAttribute>()?.GetName() ?? propertyName,
+            _ => propertyName
+        }, propertyName => propertyName == nameof(SaleListItem.OrderID)
+            ? new DataGridLength(120)
+            : new DataGridLength(1, DataGridLengthUnitType.Star));
+        SalesGrid.ValueMatchChanged += (_, args) =>
+        {
+            if (DataContext is SalesViewModel viewModel) viewModel.SetValueMatch(args.ColumnName, args.MatchCount);
+        };
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
+    }
+
+    public SalesView(SalesViewModel viewModel) : this()
+    {
+        DataContext = viewModel;
+        _ = viewModel.InitializeAsync();
+    }
+
+}

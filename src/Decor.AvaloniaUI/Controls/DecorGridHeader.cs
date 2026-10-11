@@ -1,10 +1,14 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
+using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Icons;
 
@@ -18,8 +22,11 @@ public sealed class DecorGridHeader : IDataTemplate
 
     public static DecorIconId GetIconId(string label) => NormalizeLabel(label) switch
     {
-        "EAN" => DecorIconId.Common.Barcode,
-        var code when code == "Código" || code.StartsWith("Código ", StringComparison.Ordinal) => DecorIconId.Common.Code,
+        var value when value.Equals("EAN", StringComparison.OrdinalIgnoreCase) => DecorIconId.Common.Barcode,
+        var code when code.Equals("Código", StringComparison.OrdinalIgnoreCase)
+            || code.StartsWith("Código ", StringComparison.OrdinalIgnoreCase)
+            || code.Equals("CÓDIGO", StringComparison.OrdinalIgnoreCase)
+            || code.StartsWith("CÓDIGO ", StringComparison.OrdinalIgnoreCase) => DecorIconId.Common.Code,
         "Estado" => DecorIconId.Common.Status,
         _ => default
     };
@@ -55,7 +62,16 @@ public sealed class DecorGridHeader : IDataTemplate
             DecorIcon.SetId(icon, iconId);
             panel.Children.Add(icon);
         }
-        var text = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        var text = new TextBlock
+        {
+            Text = label.ToUpperInvariant(),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            FontWeight = FontWeight.SemiBold,
+            TextTrimming = TextTrimming.None,
+            TextWrapping = TextWrapping.NoWrap
+        };
         Grid.SetColumn(text, hasIcon ? 1 : 0);
         panel.Children.Add(text);
 
@@ -80,10 +96,11 @@ public sealed class DecorGridHeader : IDataTemplate
         icon.Bind(PathIcon.ForegroundProperty,
             new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(DataGridColumnHeader) } });
 
-    // The header's :sortascending/:sortdescending pseudo-classes drive the indicator on the right side.
     private static void TrackSortState(PathIcon icon)
     {
         DataGridColumnHeader? header = null;
+        DataGrid? grid = null;
+        DataGridSortDescriptionCollection? sorts = null;
 
         void Update()
         {
@@ -91,26 +108,56 @@ public sealed class DecorGridHeader : IDataTemplate
                 return;
             var ascending = header.Classes.Contains(":sortascending");
             var descending = header.Classes.Contains(":sortdescending");
+            var column = grid?.Columns.FirstOrDefault(column => Equals(column.Header, header.Content));
+            if (column is not null && sorts is not null)
+            {
+                var sort = sorts.FirstOrDefault(sort => sort.HasPropertyPath && sort.PropertyPath == column.SortMemberPath);
+                ascending = sort?.Direction == ListSortDirection.Ascending;
+                descending = sort?.Direction == ListSortDirection.Descending;
+            }
             icon.Opacity = ascending || descending ? 1 : 0;
             DecorIcon.SetId(icon, ascending ? DecorIconId.Navigation.SortAscending
                 : descending ? DecorIconId.Navigation.SortDescending : default);
         }
 
         void OnClassesChanged(object? sender, NotifyCollectionChangedEventArgs args) => Update();
+        void ObserveSorts()
+        {
+            if (sorts is not null)
+                sorts.CollectionChanged -= OnClassesChanged;
+            sorts = grid?.CollectionView?.SortDescriptions;
+            if (sorts is not null)
+                sorts.CollectionChanged += OnClassesChanged;
+            Update();
+        }
+        void OnGridChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
+        {
+            if (args.Property == DataGrid.ItemsSourceProperty)
+                Dispatcher.UIThread.Post(ObserveSorts);
+        }
 
         icon.AttachedToVisualTree += (_, _) =>
         {
             header = icon.FindAncestorOfType<DataGridColumnHeader>();
             if (header is null)
                 return;
+            grid = header.FindAncestorOfType<DataGrid>();
+            if (grid is not null)
+                grid.PropertyChanged += OnGridChanged;
             header.Classes.CollectionChanged += OnClassesChanged;
-            Update();
+            ObserveSorts();
         };
         icon.DetachedFromVisualTree += (_, _) =>
         {
             if (header is not null)
                 header.Classes.CollectionChanged -= OnClassesChanged;
+            if (grid is not null)
+                grid.PropertyChanged -= OnGridChanged;
+            if (sorts is not null)
+                sorts.CollectionChanged -= OnClassesChanged;
             header = null;
+            grid = null;
+            sorts = null;
         };
     }
 }

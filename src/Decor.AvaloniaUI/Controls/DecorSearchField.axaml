@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Decor.AvaloniaUI.Controls"
+             xmlns:icons="using:Decor.AvaloniaUI.Icons"
+             x:Class="Decor.AvaloniaUI.Controls.DecorSearchField"
+             x:Name="Root" x:CompileBindings="False"
+             Height="36" MinWidth="200" Focusable="False">
+  <UserControl.Styles>
+    <Style Selector="Border#FieldBorder">
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border#FieldBorder:focus-within">
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}"/>
+    </Style>
+    <Style Selector="TextBox.search-input /template/ Border#PART_BorderElement, TextBox.search-input:focus /template/ Border#PART_BorderElement, TextBox.search-input:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Button.search-action">
+      <Setter Property="Width" Value="36"/>
+      <Setter Property="MinWidth" Value="36"/>
+      <Setter Property="Height" Value="32"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="FocusAdorner" Value="{x:Null}"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.search-action /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.search-action.info-action /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="CornerRadius" Value="0,3,3,0"/>
+    </Style>
+    <Style Selector="Button.search-action:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.search-action:focus /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.search-action:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="PathIcon.search-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Search}"/></Style>
+    <Style Selector="PathIcon.clear-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Clear}"/></Style>
+    <Style Selector="PathIcon.filter-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Filter}"/></Style>
+    <Style Selector="PathIcon.info-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Application.Info}"/></Style>
+  </UserControl.Styles>
+  <Border x:Name="FieldBorder" BorderThickness="1" CornerRadius="4" ClipToBounds="True"
+      Background="{DynamicResource DecorControlBrush}">
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+      <TextBox x:Name="SearchInput" Classes="search-input" MinWidth="0" MinHeight="0" Height="34"
+               BorderThickness="0" Background="Transparent" CornerRadius="0" Padding="10,0"
+               VerticalContentAlignment="Center" FocusAdorner="{x:Null}"
+               Text="{Binding Text, ElementName=Root, Mode=TwoWay}"
+               PlaceholderText="{Binding PlaceholderText, ElementName=Root}"
+               AutomationProperties.Name="{Binding PlaceholderText, ElementName=Root}"/>
+      <Button x:Name="SearchButton" Grid.Column="1" Classes="search-action" Command="{Binding SearchActionCommand, ElementName=Root}"
+              ToolTip.Tip="Pesquisar" AutomationProperties.Name="Pesquisar">
+        <PathIcon Classes="search-icon" Width="16" Height="16"/>
+      </Button>
+      <Button x:Name="ClearButton" Grid.Column="2" Classes="search-action" Command="{Binding ClearActionCommand, ElementName=Root}"
+              IsVisible="{Binding HasClearCommand, ElementName=Root}" ToolTip.Tip="Limpar pesquisa" AutomationProperties.Name="Limpar pesquisa">
+        <PathIcon Classes="clear-icon" Width="16" Height="16"/>
+      </Button>
+            <Button x:Name="FilterButton" Grid.Column="3" Classes="search-action filter-action" IsEnabled="False" IsTabStop="False"
+              controls:DecorActionAvailability.HideWhenDisabled="False"
+              ToolTip.Tip="Filtros de pesquisa (em breve)" AutomationProperties.Name="Filtros de pesquisa">
+        <PathIcon Classes="filter-icon" Width="16" Height="16"/>
+      </Button>
+            <Button x:Name="InfoButton" Grid.Column="4" Classes="search-action info-action" Margin="0,0,1,0"
+              CornerRadius="0,3,3,0" IsVisible="{Binding HasSearchHelp, ElementName=Root}"
+              ToolTip.Tip="{Binding SearchHelp, ElementName=Root}" AutomationProperties.Name="Informações da pesquisa">
+        <PathIcon Classes="info-icon" Width="16" Height="16"/>
+      </Button>
+    </Grid>
+  </Border>
+</UserControl>

@@ -38,6 +38,12 @@ public class StockReservationService(
         var orderItem = await _orderRepository.GetOrderItemByIdAsync(orderItemId, cancellationToken)
             ?? throw new KeyNotFoundException($"Item de pedido com ID {orderItemId} não encontrado.");
 
+        if (!CommercialItemReference.IsValid(orderItem.ProductID, orderItem.ServiceID))
+            throw new ValidationException(CommercialItemReference.ValidationMessage);
+        if (orderItem.ServiceID.HasValue)
+            throw new ValidationException("Itens de servico nao podem ser reservados.");
+        var productId = orderItem.ProductID!.Value;
+
         var order = await _orderRepository.GetByIdAsync(orderItem.OrderID, cancellationToken)
             ?? throw new KeyNotFoundException($"Pedido com ID {orderItem.OrderID} não encontrado.");
 
@@ -48,9 +54,6 @@ public class StockReservationService(
         var product = products.FirstOrDefault(p => p.ProductID == orderItem.ProductID)
             ?? (await _productRepository.SearchGetByAsync(null, 1, 1000, cancellationToken)).FirstOrDefault(p => p.ProductID == orderItem.ProductID)
             ?? throw new KeyNotFoundException($"Produto com ID {orderItem.ProductID} não encontrado.");
-
-        if (product.ProductType != ProductType.Good)
-            throw new ValidationException("Produtos do tipo Serviço (Service) não podem ser reservados.");
 
         var existingActive = await _stockReservationRepository.GetActiveByOrderItemIdAsync(orderItemId, cancellationToken);
         if (existingActive != null)
@@ -64,9 +67,9 @@ public class StockReservationService(
         if (location.PartnerID != null || location.LocationType != StockLocationType.Empresa)
             throw new ValidationException("A reserva só pode ser feita em um depósito próprio da empresa.");
 
-        var balance = await _stockBalanceRepository.GetByProductAndLocationAsync(orderItem.ProductID, stockLocationId, cancellationToken);
+        var balance = await _stockBalanceRepository.GetByProductAndLocationAsync(productId, stockLocationId, cancellationToken);
         var currentBalance = balance?.Quantity ?? 0m;
-        var totalActiveReserved = await _stockReservationRepository.GetTotalActiveReservedQuantityAsync(orderItem.ProductID, stockLocationId, cancellationToken);
+        var totalActiveReserved = await _stockReservationRepository.GetTotalActiveReservedQuantityAsync(productId, stockLocationId, cancellationToken);
         var availableStock = currentBalance - totalActiveReserved;
 
         if (quantity > availableStock)
@@ -75,7 +78,7 @@ public class StockReservationService(
         var reservation = new StockReservation
         {
             OrderItemID = orderItemId,
-            ProductID = orderItem.ProductID,
+            ProductID = productId,
             StockLocationID = stockLocationId,
             Quantity = quantity,
             Status = StockReservationStatus.Active,

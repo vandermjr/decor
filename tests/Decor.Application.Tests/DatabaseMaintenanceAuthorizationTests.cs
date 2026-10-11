@@ -169,6 +169,7 @@ public sealed class DatabaseMaintenanceAuthorizationTests
     {
         public T Resolve<T>() where T : class => throw new InvalidOperationException();
         public Task ShowDialogAsync(Avalonia.Controls.Window owner, Avalonia.Controls.Window dialog) => Task.CompletedTask;
+        public Task<TResult> ShowDialogAsync<TResult>(Avalonia.Controls.Window owner, Avalonia.Controls.Window dialog) => Task.FromResult(default(TResult)!);
     }
 
     private sealed class StubThemeService : IThemeService

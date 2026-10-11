@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Avalonia.Controls;
@@ -15,7 +14,8 @@ public partial class ProductsView : UserControl
     {
         InitializeComponent();
         ConfigureGridColumns();
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        ProductsGrid.AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(ApplyProductColumnWidths);
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
         ProductsGrid.ValueMatchChanged += (_, eventArgs) =>
         {
             if (DataContext is ProductsViewModel viewModel)
@@ -27,16 +27,6 @@ public partial class ProductsView : UserControl
         : this()
     {
         DataContext = viewModel;
-        viewModel.PropertyChanged += (_, eventArgs) =>
-        {
-            if (eventArgs.PropertyName == nameof(ProductsViewModel.IsEditing) && viewModel.IsEditing)
-            {
-                // A visibilidade do formulário é atualizada após a propriedade do ViewModel.
-                // Executar na próxima passagem da UI garante que o ScrollViewer já tenha sido
-                // medido e evita reabrir o formulário na posição de rolagem anterior.
-                Dispatcher.UIThread.Post(ProductFormScrollViewer.ScrollToHome);
-            }
-        };
         _ = viewModel.InitializeAsync();
     }
 
@@ -44,31 +34,68 @@ public partial class ProductsView : UserControl
     {
         ProductsGrid.InitializeColumns(
             dtoType: typeof(ProductDTO),
-            getDisplayName: null, // Uses [DisplayAttribute] automatically
-            getColumnWidth: GetColumnWidth
+            getDisplayName: propertyName => (propertyName == nameof(ProductDTO.ProductID)
+                ? "Código"
+                : propertyName == nameof(ProductDTO.StockStatus)
+                    ? "Situação"
+                    : typeof(ProductDTO).GetProperty(propertyName)?.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? propertyName)
+                .ToUpperInvariant(),
+            getColumnWidth: GetColumnWidth,
+            propertyNames:
+            [
+                nameof(ProductDTO.ProductID),
+                nameof(ProductDTO.Description),
+                nameof(ProductDTO.StockUnitCode),
+                nameof(ProductDTO.CurrentStockQuantity),
+                nameof(ProductDTO.ReservedStockQuantity),
+                nameof(ProductDTO.AvailableStockQuantity),
+                nameof(ProductDTO.MinimumStock),
+                nameof(ProductDTO.StockStatus)
+            ]
         );
+    }
+
+    private void ApplyProductColumnWidths()
+    {
+        foreach (var propertyName in new[]
+                 {
+                     nameof(ProductDTO.ProductID),
+                     nameof(ProductDTO.Description),
+                     nameof(ProductDTO.StockUnitCode),
+                     nameof(ProductDTO.CurrentStockQuantity),
+                     nameof(ProductDTO.ReservedStockQuantity),
+                     nameof(ProductDTO.AvailableStockQuantity),
+                     nameof(ProductDTO.MinimumStock),
+                     nameof(ProductDTO.StockStatus)
+                 })
+        {
+            SetColumnWidth(propertyName, DataGridLength.Auto);
+        }
+    }
+
+    private void SetColumnWidth(string propertyName, DataGridLength width)
+    {
+        var column = ProductsGrid.Columns.FirstOrDefault(candidate => candidate.SortMemberPath == propertyName);
+        if (column is not null) column.Width = width;
     }
 
     private static DataGridLength GetColumnWidth(string propertyName) => propertyName switch
     {
-        nameof(ProductDTO.ProductID) => new DataGridLength(70),
-        nameof(ProductDTO.IsActive) => new DataGridLength(80),
-        nameof(ProductDTO.StockQuantity) => new DataGridLength(90),
-        nameof(ProductDTO.Barcode) => new DataGridLength(1, DataGridLengthUnitType.Star),
-        nameof(ProductDTO.Description) => new DataGridLength(2, DataGridLengthUnitType.Star),
-        nameof(ProductDTO.BrandName) => new DataGridLength(1.2, DataGridLengthUnitType.Star),
-        nameof(ProductDTO.ManufacturerRef) => new DataGridLength(1.2, DataGridLengthUnitType.Star),
-        nameof(ProductDTO.Dimensions) => new DataGridLength(1.2, DataGridLengthUnitType.Star),
-        _ => new DataGridLength(1, DataGridLengthUnitType.Star)
+        nameof(ProductDTO.ProductID) => DataGridLength.Auto,
+        nameof(ProductDTO.IsActive) => DataGridLength.Auto,
+        nameof(ProductDTO.StockQuantity) => DataGridLength.Auto,
+        nameof(ProductDTO.MinimumStock) => DataGridLength.Auto,
+        nameof(ProductDTO.CurrentStockQuantity) => DataGridLength.Auto,
+        nameof(ProductDTO.ReservedStockQuantity) => DataGridLength.Auto,
+        nameof(ProductDTO.AvailableStockQuantity) => DataGridLength.Auto,
+        nameof(ProductDTO.StockStatus) => DataGridLength.Auto,
+        nameof(ProductDTO.StockUnitCode) => DataGridLength.Auto,
+        nameof(ProductDTO.Barcode) => DataGridLength.Auto,
+        nameof(ProductDTO.Description) => DataGridLength.Auto,
+        nameof(ProductDTO.BrandName) => DataGridLength.Auto,
+        nameof(ProductDTO.ManufacturerRef) => DataGridLength.Auto,
+        nameof(ProductDTO.Dimensions) => DataGridLength.Auto,
+        _ => DataGridLength.Auto
     };
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-
-        if (DataContext is ProductsViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-
-        e.Handled = true;
-    }
 }

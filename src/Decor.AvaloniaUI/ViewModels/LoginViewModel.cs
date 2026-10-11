@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
@@ -9,28 +10,44 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class LoginViewModel : INotifyPropertyChanged
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly IUserSettingsService? _userSettingsService;
+    private readonly IDatabaseHealthService? _databaseHealthService;
+    private CancellationTokenSource? _themePreviewCancellation;
     private string _userIdInput = string.Empty;
     private string _password = string.Empty;
     private string? _errorMessage;
     private bool _canCopyError;
     private bool _isBusy;
+    private bool _isDatabaseOnline;
 
-    public LoginViewModel(IAuthenticationService authenticationService)
+    public LoginViewModel(IAuthenticationService authenticationService, IUserSettingsService? userSettingsService = null,
+        IDatabaseHealthService? databaseHealthService = null)
     {
         _authenticationService = authenticationService;
+        _userSettingsService = userSettingsService;
+        _databaseHealthService = databaseHealthService;
         LoginCommand = new RelayCommand(async () => await LoginAsync(), () => !IsBusy);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public event Func<Task>? LoginSucceeded;
     public event EventHandler? PasswordChangeRequired;
+    public event Action<DecorThemeStyle>? ThemePreviewChanged;
 
     public ICommand LoginCommand { get; }
+    public string SystemVersion => typeof(LoginViewModel).Assembly.GetName().Version?.ToString() ?? "Não informada";
+    public bool IsDatabaseOnline { get => _isDatabaseOnline; private set => SetField(ref _isDatabaseOnline, value); }
+    public string DatabaseStatusText => IsDatabaseOnline ? "Online" : "Offline";
+    public string DatabaseConnectionDescription => _databaseHealthService?.ConnectionDescription
+        ?? "Banco: não informado | Conexão: não informada";
 
     public string UserIdInput
     {
         get => _userIdInput;
-        set => SetField(ref _userIdInput, value);
+        set
+        {
+            if (SetField(ref _userIdInput, value)) QueueThemePreview(value);
+        }
     }
 
     public string Password
@@ -110,6 +127,57 @@ public sealed class LoginViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    public async Task RefreshDatabaseStatusAsync(CancellationToken cancellationToken = default)
+    {
+        IsDatabaseOnline = false;
+        if (_databaseHealthService is not null)
+        {
+            try { IsDatabaseOnline = await _databaseHealthService.IsOnlineAsync(cancellationToken); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch { IsDatabaseOnline = false; }
+        }
+        OnPropertyChanged(nameof(DatabaseStatusText));
+    }
+
+    public void StopThemePreview() => Interlocked.Exchange(ref _themePreviewCancellation, null)?.Cancel();
+
+    private void QueueThemePreview(string input)
+    {
+        var previous = Interlocked.Exchange(ref _themePreviewCancellation, null);
+        previous?.Cancel();
+        previous?.Dispose();
+
+        if (_userSettingsService is null)
+            return;
+        if (!int.TryParse(input.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
+        {
+            ThemePreviewChanged?.Invoke(DecorDefaults.Theme);
+            return;
+        }
+
+        var cancellation = new CancellationTokenSource();
+        Interlocked.Exchange(ref _themePreviewCancellation, cancellation);
+        _ = PreviewThemeAsync(userId, cancellation);
+    }
+
+    private async Task PreviewThemeAsync(int userId, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(300, cancellation.Token);
+            var theme = await _userSettingsService!.GetThemeForUserAsync(userId, cancellation.Token);
+            if (!cancellation.IsCancellationRequested)
+                ThemePreviewChanged?.Invoke(theme);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch { }
+        finally
+        {
+            if (ReferenceEquals(Interlocked.CompareExchange(ref _themePreviewCancellation, null, cancellation), cancellation))
+                cancellation.Dispose();
         }
     }
 

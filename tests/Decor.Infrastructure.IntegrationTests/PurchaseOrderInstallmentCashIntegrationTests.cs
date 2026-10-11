@@ -99,6 +99,7 @@ public sealed class PurchaseOrderInstallmentCashIntegrationTests(MariaDbFixture 
                 OrderType TINYINT UNSIGNED NOT NULL,
                 Status TINYINT UNSIGNED NOT NULL,
                 CreatedAt DATETIME NOT NULL,
+                CancellationReason VARCHAR(500) NULL,
                 PRIMARY KEY (OrderID)
             ) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS purchase_orders (

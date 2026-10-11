@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
 
@@ -10,6 +11,7 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class TermDeliveryViewModel : INotifyPropertyChanged
 {
     private readonly IProductService _productService;
+    private readonly IAuthorizationService? _authorization;
     private string _productIdText = string.Empty;
     private double _quantity;
     private string? _customerName;
@@ -21,16 +23,20 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
     private Term? _termToDelete;
     private readonly Dictionary<string, string> _fieldErrors = [];
 
-    public TermDeliveryViewModel(IProductService productService)
+    public TermDeliveryViewModel(IProductService productService, IAuthorizationService? authorization = null)
     {
         _productService = productService;
+        _authorization = authorization;
 
-        AddProductCommand = new RelayCommand(async () => await AddProductAsync(), () => !IsBusy);
-        RemoveTermCommand = new RelayCommand(BeginRemove, () => SelectedTerm is not null && !IsBusy);
-        GenerateReportCommand = new RelayCommand(async () => await GenerateReportAsync(), () => !IsBusy && Terms.Count > 0);
-        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => !IsBusy);
+        AddProductCommand = new RelayCommand(async () => await AddProductAsync(), () => CanUseTerm && HasPermission(DecorPermissions.ProductsView));
+        RemoveTermCommand = new RelayCommand(BeginRemove, () => SelectedTerm is not null && CanUseTerm);
+        GenerateReportCommand = new RelayCommand(async () => await GenerateReportAsync(), () => CanUseTerm && Terms.Count > 0);
+        ConfirmDeleteCommand = new RelayCommand(async () => await ConfirmDeleteAsync(), () => CanUseTerm && ShowDeleteConfirmation && _termToDelete is not null);
         CancelDeleteCommand = new RelayCommand(CancelDelete, () => true);
     }
+
+    private bool HasPermission(string permission) => _authorization?.HasPermission(permission) ?? true;
+    private bool CanUseTerm => !IsBusy && HasPermission(DecorPermissions.TermDeliveryView);
 
     public ObservableCollection<Term> Terms { get; } = [];
 
@@ -43,13 +49,13 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
     public Term? SelectedTerm
     {
         get => _selectedTerm;
-        set => SetField(ref _selectedTerm, value);
+        set { if (SetField(ref _selectedTerm, value)) RaiseCommandStates(); }
     }
 
     public bool ShowDeleteConfirmation
     {
         get => _showDeleteConfirmation;
-        private set => SetField(ref _showDeleteConfirmation, value);
+        private set { if (SetField(ref _showDeleteConfirmation, value)) RaiseCommandStates(); }
     }
 
     public Term? TermToDelete => _termToDelete;
@@ -115,7 +121,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
 
     public void BeginRemove()
     {
-        if (SelectedTerm is null)
+        if (!CanUseTerm || SelectedTerm is null)
         {
             return;
         }
@@ -134,7 +140,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
 
     public Task ConfirmDeleteAsync()
     {
-        if (_termToDelete is null)
+        if (!ConfirmDeleteCommand.CanExecute(null) || _termToDelete is null)
         {
             return Task.CompletedTask;
         }
@@ -158,6 +164,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
 
     private async Task AddProductAsync()
     {
+        if (!AddProductCommand.CanExecute(null)) return;
         ClearFieldErrors();
         bool hasErrors = false;
 
@@ -225,6 +232,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
 
     private Task GenerateReportAsync()
     {
+        if (!CanUseTerm) return Task.CompletedTask;
         if (Terms.Count == 0)
         {
             StatusMessage = "Não há itens para gerar o relatório.";

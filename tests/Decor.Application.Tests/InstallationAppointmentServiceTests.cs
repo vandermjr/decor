@@ -12,6 +12,19 @@ namespace Decor.Application.Tests;
 public sealed class InstallationAppointmentServiceTests
 {
     [Fact]
+    public async Task CreateAppointment_AcceptsEligibleServiceOrProductInstallationItem()
+    {
+        var repository = new FakeRepository { ServiceOrderItemExistsResult = true };
+        var service = CreateService(repository, DecorPermissions.InstallationAppointmentsCreate);
+
+        var result = await service.CreateAppointmentAsync(5, new DateTime(2026, 10, 8), null, 10, null, 30);
+
+        result.OrderItemID.Should().Be(5);
+        result.Status.Should().Be(InstallationAppointmentStatus.Scheduled);
+        repository.SaveCalls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task CreateAppointment_RequiresExactlyOneExecutor()
     {
         var repository = new FakeRepository { ServiceOrderItemExistsResult = true };

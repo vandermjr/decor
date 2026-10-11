@@ -31,6 +31,5 @@ public partial class GroupsView : UserControl
     public GroupsView(GroupRegistrationViewModel viewModel) : this()
     {
         DataContext = viewModel;
-        _ = viewModel.InitializeAsync();
     }
 }

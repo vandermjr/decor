@@ -51,14 +51,17 @@ public sealed class DecorGridSorting
 
     private static void Attach(DataGrid grid)
     {
-        if (States.TryGetValue(grid, out _))
+        if (States.TryGetValue(grid, out var existing))
+        {
+            existing.Observe();
             return;
+        }
 
         var state = new State(grid);
         States.Add(grid, state);
         grid.PropertyChanged += (_, args) =>
         {
-            if (args.Property == ItemsControl.ItemsSourceProperty)
+            if (args.Property == DataGrid.ItemsSourceProperty)
                 state.Observe();
         };
         state.Observe();

@@ -1,4 +1,5 @@
 using Dapper;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
@@ -37,13 +38,39 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     public async Task<int> SaveAsync(Quote entity, CancellationToken cancellationToken = default)
     {
         using var connection = _dbConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var affectedRows = await SaveQuoteHeaderAsync(entity, connection, transaction, cancellationToken);
+            if (affectedRows != 1)
+                throw new InvalidOperationException("Não foi possível salvar o orçamento.");
+            foreach (var section in entity.Sections)
+            {
+                section.QuoteID = entity.QuoteID;
+                if (await SaveSectionAsync(section, connection, transaction, cancellationToken) != 1)
+                    throw new InvalidOperationException("Não foi possível salvar a seção do orçamento.");
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            transaction.Commit();
+            return affectedRows;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    private async Task<int> SaveQuoteHeaderAsync(Quote entity, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction, CancellationToken cancellationToken)
+    {
         if (entity.QuoteID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()
                 .Update(u => u.Entity(entity))
                 .Where(w => w.Equals<Quote>(q => q.QuoteID, entity.QuoteID))
                 .Build();
-            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            return await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
         else
         {
@@ -51,7 +78,7 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
                 .Insert(i => i.Entity(entity))
                 .ReturningGeneratedId()
                 .Build();
-            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
             entity.QuoteID = generatedId;
             return 1;
         }
@@ -104,7 +131,56 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
 
         using var connection = _dbConnection.CreateConnection();
         var result = await connection.QueryAsync<Quote>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
-        return result.AsList();
+        var quotes = result.AsList();
+        if (quotes.Count == 0) return quotes;
+
+        const string summarySql = """
+            SELECT q.QuoteID,
+                   c.Name AS CustomerName,
+                   e.Name AS CreatedByEmployeeName,
+                   CASE
+                       WHEN COALESCE(section_summary.SectionCount, 0) = 0 THEN 'ABERTO'
+                       WHEN section_summary.RejectedCount = section_summary.SectionCount THEN 'CANCELADO'
+                       WHEN section_summary.ConvertedCount > 0
+                           AND section_summary.RejectedCount + section_summary.ConvertedCount = section_summary.SectionCount
+                           THEN CONCAT('Ref. Pedido Nº ', COALESCE(section_summary.OrderReferences, 'PEDIDO CONVERTIDO'))
+                       ELSE 'ABERTO'
+                   END AS ListStatus,
+                   COALESCE(item_summary.Subtotal, 0) - COALESCE(q.DiscountAmount, 0) AS ListTotal
+            FROM quotes q
+            LEFT JOIN customers c ON c.CustomerID = q.CustomerID
+            LEFT JOIN employees e ON e.EmployeeID = q.CreatedByEmployeeID
+            LEFT JOIN (
+                  SELECT sections.QuoteID,
+                      COUNT(DISTINCT sections.QuoteSectionID) AS SectionCount,
+                      SUM(sections.Status = 5) AS RejectedCount,
+                      SUM(sections.Status = 6) AS ConvertedCount,
+                      GROUP_CONCAT(DISTINCT CASE WHEN sections.Status = 6 THEN orders.OrderID END
+                          ORDER BY orders.OrderID SEPARATOR ', ') AS OrderReferences
+                  FROM quote_sections sections
+                  LEFT JOIN orders ON orders.QuoteSectionID = sections.QuoteSectionID
+                  GROUP BY sections.QuoteID
+            ) section_summary ON section_summary.QuoteID = q.QuoteID
+            LEFT JOIN (
+                SELECT sections.QuoteID, SUM(items.Quantity * COALESCE(items.UnitPrice, 0)) AS Subtotal
+                FROM quote_sections sections
+                INNER JOIN quote_items items ON items.QuoteSectionID = sections.QuoteSectionID
+                GROUP BY sections.QuoteID
+            ) item_summary ON item_summary.QuoteID = q.QuoteID
+            WHERE q.QuoteID IN @QuoteIDs
+            """;
+        var summaries = await connection.QueryAsync<QuoteListSummary>(new CommandDefinition(summarySql,
+            new { QuoteIDs = quotes.Select(quote => quote.QuoteID).ToArray() }, cancellationToken: cancellationToken));
+        var summariesById = summaries.ToDictionary(summary => summary.QuoteID);
+        foreach (var quote in quotes)
+        {
+            if (!summariesById.TryGetValue(quote.QuoteID, out var summary)) continue;
+            quote.CustomerName = summary.CustomerName;
+            quote.CreatedByEmployeeName = summary.CreatedByEmployeeName;
+            quote.ListStatus = summary.ListStatus;
+            quote.ListTotal = summary.ListTotal;
+        }
+        return quotes;
     }
 
     public async Task<Quote?> GetByIdAsync(int quoteId, CancellationToken cancellationToken = default)
@@ -132,6 +208,15 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             .Build();
 
         var sections = (await connection.QueryAsync<QuoteSection>(new CommandDefinition(secSql, secParams, cancellationToken: cancellationToken))).ToList();
+        if (sections.Count > 0)
+        {
+            var orderReferences = await connection.QueryAsync<SectionOrderReference>(new CommandDefinition(
+                "SELECT QuoteSectionID, OrderID FROM orders WHERE QuoteSectionID IN @SectionIDs",
+                new { SectionIDs = sections.Select(section => section.QuoteSectionID).ToArray() }, cancellationToken: cancellationToken));
+            var orderIdsBySection = orderReferences.ToDictionary(reference => reference.QuoteSectionID, reference => reference.OrderID);
+            foreach (var section in sections)
+                if (orderIdsBySection.TryGetValue(section.QuoteSectionID, out var orderId)) section.OrderID = orderId;
+        }
         quote.Sections = sections;
 
         foreach (var section in sections)
@@ -253,6 +338,8 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
 
     public async Task<int> SaveItemAsync(QuoteItem item, CancellationToken cancellationToken = default)
     {
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new System.ComponentModel.DataAnnotations.ValidationException(CommercialItemReference.ValidationMessage);
         using var connection = _dbConnection.CreateConnection();
         if (item.QuoteItemID != 0)
         {
@@ -271,6 +358,39 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
             var generatedId = await connection.QuerySingleAsync<int>(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
             item.QuoteItemID = generatedId;
             return 1;
+        }
+    }
+
+    public async Task<int> DeleteItemAsync(int quoteItemId, int sectionId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var (sql, parameters) = _createCommandBuilder()
+            .Delete<QuoteItem>()
+            .Where(w => w.Equals<QuoteItem>(item => item.QuoteItemID, quoteItemId)
+                .And().Equals<QuoteItem>(item => item.QuoteSectionID, sectionId))
+            .Build();
+
+        using var connection = _dbConnection.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var (specificationSql, specificationParameters) = _createCommandBuilder()
+                .Delete<QuoteItemSpecificationValue>()
+                .Where(w => w.Equals<QuoteItemSpecificationValue>(value => value.QuoteItemID, quoteItemId))
+                .Build();
+            await connection.ExecuteAsync(new CommandDefinition(specificationSql, specificationParameters, transaction, cancellationToken: cancellationToken));
+            var affectedRows = await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            if (affectedRows != 1)
+                throw new InvalidOperationException("O item nao pertence a secao informada ou nao pode ser excluido.");
+            cancellationToken.ThrowIfCancellationRequested();
+            transaction.Commit();
+            return affectedRows;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
         }
     }
 
@@ -301,5 +421,20 @@ public class QuoteRepository(IDatabaseConnection dbConnection, Func<FluentComman
     {
         if (page < 1) throw new ArgumentOutOfRangeException(nameof(page));
         if (pageSize is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(pageSize));
+    }
+
+    private sealed class QuoteListSummary
+    {
+        public int QuoteID { get; init; }
+        public string? CustomerName { get; init; }
+        public string? CreatedByEmployeeName { get; init; }
+        public string ListStatus { get; init; } = "ABERTO";
+        public decimal ListTotal { get; init; }
+    }
+
+    private sealed class SectionOrderReference
+    {
+        public int QuoteSectionID { get; init; }
+        public int OrderID { get; init; }
     }
 }

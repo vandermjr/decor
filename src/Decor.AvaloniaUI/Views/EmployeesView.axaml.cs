@@ -16,26 +16,21 @@ public partial class EmployeesView : UserControl
             getDisplayName: null,
             getColumnWidth: propertyName => propertyName == nameof(EmployeeDTO.EmployeeID)
                 ? new DataGridLength(80)
-                : new DataGridLength(1, DataGridLengthUnitType.Star));
+                : new DataGridLength(1, DataGridLengthUnitType.Star),
+            propertyNames: [nameof(EmployeeDTO.EmployeeID), nameof(EmployeeDTO.Name), nameof(EmployeeDTO.JobTitle),
+                nameof(EmployeeDTO.BaseSalary), nameof(EmployeeDTO.WorkScheduleNote), nameof(EmployeeDTO.Document),
+                nameof(EmployeeDTO.Phone), nameof(EmployeeDTO.IsActive)]);
         EmployeesGrid.ValueMatchChanged += (_, eventArgs) =>
         {
             if (DataContext is EmployeesViewModel viewModel)
                 viewModel.SetValueMatch(eventArgs.ColumnName, eventArgs.MatchCount);
         };
-        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.Focus());
+        AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(() => SearchTextBox.FocusTextInput());
     }
 
     public EmployeesView(EmployeesViewModel viewModel) : this()
     {
         DataContext = viewModel;
-        _ = viewModel.InitializeAsync();
     }
 
-    private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Enter) return;
-        if (DataContext is EmployeesViewModel viewModel && viewModel.SearchCommand.CanExecute(null))
-            viewModel.SearchCommand.Execute(null);
-        e.Handled = true;
-    }
 }

@@ -14,4 +14,7 @@
 	<ItemGroup>
 	  <PackageReference Include="Dapper" Version="2.1.66" />
 	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Decor.Core\Decor.Core.csproj" />
+  </ItemGroup>
 </Project>

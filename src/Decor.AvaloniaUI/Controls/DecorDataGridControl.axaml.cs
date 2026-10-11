@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
@@ -14,6 +15,8 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Controls.GridStyling;
+using Decor.AvaloniaUI.ViewModels;
+using Decor.Core.DTOs;
 
 namespace Decor.AvaloniaUI.Controls;
 
@@ -47,6 +50,31 @@ public partial class DecorDataGridControl : UserControl
     private Control? _rowsPresenter;
     private ScrollBar? _verticalScrollBar;
     private ScrollBar? _horizontalScrollBar;
+    private Border? _paginationFooter;
+    private Grid? _paginationLayout;
+    private GridPaginationState? _automaticPagination;
+    private readonly DataGridCollectionView _emptyPaginationView = new(Array.Empty<object>());
+    private bool _ownsAutomaticPageSize;
+    private int _automaticPageSize = 10;
+    private bool _gridElementsInitialized;
+
+    public static readonly StyledProperty<IStatusBarSource?> EffectivePaginationSourceProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, IStatusBarSource?>(nameof(EffectivePaginationSource));
+
+    public IStatusBarSource? EffectivePaginationSource
+    {
+        get => GetValue(EffectivePaginationSourceProperty);
+        private set => SetValue(EffectivePaginationSourceProperty, value);
+    }
+
+    public static readonly StyledProperty<IStatusBarSource?> PaginationSourceProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, IStatusBarSource?>(nameof(PaginationSource));
+
+    public IStatusBarSource? PaginationSource
+    {
+        get => GetValue(PaginationSourceProperty);
+        set => SetValue(PaginationSourceProperty, value);
+    }
 
     // Store pending initialization if called before Loaded
     private Type? _pendingDtoType;
@@ -56,6 +84,7 @@ public partial class DecorDataGridControl : UserControl
     private Func<string, string>? _configuredGetDisplayName;
     private Func<string, DataGridLength>? _configuredGetColumnWidth;
     private IReadOnlyList<string>? _configuredPropertyNames;
+    private readonly List<DataGridColumn> _additionalColumns = [];
 
     public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
         AvaloniaProperty.Register<DecorDataGridControl, IEnumerable?>(nameof(ItemsSource));
@@ -78,6 +107,15 @@ public partial class DecorDataGridControl : UserControl
     public DecorDataGridControl()
     {
         InitializeComponent();
+        _innerGrid = this.FindControl<DataGrid>("InnerDataGrid");
+        if (_innerGrid is not null)
+        {
+            _innerGrid.Columns.CollectionChanged += (_, _) => ConfigureColumnPresentation();
+            _innerGrid.PropertyChanged += OnInnerGridPropertyChanged;
+        }
+        _paginationFooter = this.FindControl<Border>("PaginationFooter");
+        _paginationLayout = this.FindControl<Grid>("PaginationLayout");
+        ConfigurePagination();
         _styler = new DefaultGridControlStyler();
         _styler.ApplyTheme(CreateThemeColors());
         var application = global::Avalonia.Application.Current;
@@ -90,6 +128,9 @@ public partial class DecorDataGridControl : UserControl
 
     private void InitializeGridElements()
     {
+        if (_gridElementsInitialized)
+            return;
+        _gridElementsInitialized = true;
         _innerGrid = this.FindControl<DataGrid>("InnerDataGrid");
         _emptyOverlay = this.FindControl<Panel>("EmptyOverlay");
         _emptyMessageTextBlock = this.FindControl<TextBlock>("EmptyMessageTextBlock");
@@ -99,15 +140,6 @@ public partial class DecorDataGridControl : UserControl
         Dispatcher.UIThread.Post(KeepScrollBarsExpanded);
 
         _innerGrid?.AddHandler(PointerPressedEvent, OnGridPointerPressed, handledEventsToo: true);
-
-        // Monitor property changes
-        this.PropertyChanged += (s, e) =>
-        {
-            if (e.Property == ItemsSourceProperty)
-            {
-                OnItemsSourceChanged(ItemsSource);
-            }
-        };
 
         OnItemsSourceChanged(ItemsSource);
 
@@ -133,8 +165,14 @@ public partial class DecorDataGridControl : UserControl
             .FirstOrDefault(control => control.Name == "PART_RowsPresenter");
         _verticalScrollBar = visualDescendants.OfType<ScrollBar>()
             .FirstOrDefault(scrollBar => scrollBar.Name == "PART_VerticalScrollbar");
-        _horizontalScrollBar = visualDescendants.OfType<ScrollBar>()
+        var horizontalScrollBar = visualDescendants.OfType<ScrollBar>()
             .FirstOrDefault(scrollBar => scrollBar.Name == "PART_HorizontalScrollbar");
+        if (horizontalScrollBar is not null && horizontalScrollBar != _horizontalScrollBar)
+        {
+            if (_horizontalScrollBar is not null)
+                _paginationLayout?.Children.Remove(_horizontalScrollBar);
+            _horizontalScrollBar = horizontalScrollBar;
+        }
 
         foreach (var scrollViewer in _innerGrid.GetVisualDescendants().OfType<ScrollViewer>())
         {
@@ -144,15 +182,122 @@ public partial class DecorDataGridControl : UserControl
         foreach (var scrollBar in visualDescendants.OfType<ScrollBar>())
         {
             scrollBar.AllowAutoHide = false;
+            scrollBar.Theme = (ControlTheme)Resources["GridScrollBarTheme"]!;
 
             if (scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical)
-                scrollBar.Width = 14;
+                scrollBar.Width = 10;
             else
-                scrollBar.Height = 14;
+                scrollBar.Height = 10;
+        }
+
+        if (_horizontalScrollBar is not null && _paginationLayout is not null
+            && _horizontalScrollBar.Parent != _paginationLayout)
+        {
+            if (_horizontalScrollBar.Parent is Panel parent)
+                parent.Children.Remove(_horizontalScrollBar);
+            _horizontalScrollBar.Margin = new Thickness(8, 0, 4, 0);
+            _horizontalScrollBar.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+            _horizontalScrollBar.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            Grid.SetColumnSpan(_horizontalScrollBar, 1);
+            _paginationLayout.Children.Add(_horizontalScrollBar);
         }
 
         AttachScrollBarVisibilityHandlers();
+        UpdatePaginationLayout();
         UpdateRowsPresenterMargin();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == PaginationSourceProperty)
+        {
+            ConfigurePagination();
+        }
+        else if (change.Property == EffectivePaginationSourceProperty)
+        {
+            if (change.OldValue is IStatusBarSource previous)
+                previous.PropertyChanged -= OnPaginationSourceChanged;
+            if (change.NewValue is IStatusBarSource current)
+                current.PropertyChanged += OnPaginationSourceChanged;
+            UpdatePaginationLayout();
+        }
+        else if (change.Property == ItemsSourceProperty)
+            OnItemsSourceChanged(ItemsSource);
+        else if (change.Property == SelectedItemProperty && _innerGrid is not null
+            && !ReferenceEquals(_innerGrid.SelectedItem, SelectedItem))
+            _innerGrid.SetCurrentValue(DataGrid.SelectedItemProperty, SelectedItem);
+        else if (change.Property == DefaultSortMemberPathProperty)
+            ConfigureColumnPresentation();
+        else if (change.Property == BoundsProperty)
+            UpdatePaginationLayout();
+    }
+
+    private void OnInnerGridPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.Property == DataGrid.SelectedItemProperty && _innerGrid is not null
+            && !ReferenceEquals(SelectedItem, _innerGrid.SelectedItem))
+            SetCurrentValue(SelectedItemProperty, _innerGrid.SelectedItem);
+    }
+
+    private void ConfigurePagination()
+    {
+        if (_innerGrid is null)
+            return;
+
+        var view = _innerGrid.CollectionView as DataGridCollectionView ?? _emptyPaginationView;
+        if (PaginationSource is null && _automaticPagination is not null && ReferenceEquals(_automaticPagination.View, view))
+            return;
+
+        if (_automaticPagination is not null)
+        {
+            _automaticPageSize = _automaticPagination.SelectedPageSize;
+            _automaticPagination.Dispose();
+            if (_ownsAutomaticPageSize)
+            {
+                _automaticPagination.View.PageSize = 0;
+                if (!ReferenceEquals(view, _automaticPagination.View) && !ReferenceEquals(ItemsSource, view))
+                    view.PageSize = 0;
+            }
+            _automaticPagination = null;
+        }
+
+        if (PaginationSource is not null)
+            EffectivePaginationSource = PaginationSource;
+        else
+        {
+            _ownsAutomaticPageSize = view.PageSize == 0;
+            if (_ownsAutomaticPageSize)
+                view.PageSize = _automaticPageSize;
+            _automaticPagination = new GridPaginationState(view);
+            EffectivePaginationSource = _automaticPagination;
+        }
+
+        UpdatePaginationLayout();
+    }
+
+    private void OnPaginationSourceChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName is null or "" or nameof(IStatusBarSource.HasPagination))
+            UpdatePaginationLayout();
+    }
+
+    private void UpdatePaginationLayout()
+    {
+        if (_paginationFooter is null || _paginationLayout is null)
+            return;
+
+        var hasPagination = EffectivePaginationSource?.HasPagination == true;
+        var compact = hasPagination && Bounds.Width < 820;
+        _paginationFooter.IsVisible = hasPagination || _horizontalScrollBar?.IsVisible == true;
+        _paginationLayout.ColumnDefinitions = new ColumnDefinitions(hasPagination && !compact ? "*,*" : "*");
+        _paginationLayout.RowDefinitions = new RowDefinitions(compact ? "Auto,Auto" : "Auto");
+        if (_horizontalScrollBar is not null)
+        {
+            Grid.SetColumn(_horizontalScrollBar, hasPagination && !compact ? 1 : 0);
+            Grid.SetRow(_horizontalScrollBar, compact ? 1 : 0);
+            _horizontalScrollBar.Margin = compact ? new Thickness(4, 8, 4, 4) : new Thickness(8, 0, 4, 0);
+        }
     }
 
     private void AttachScrollBarVisibilityHandlers()
@@ -174,7 +319,10 @@ public partial class DecorDataGridControl : UserControl
     private void OnScrollBarPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs eventArgs)
     {
         if (eventArgs.Property == Visual.IsVisibleProperty)
+        {
+            UpdatePaginationLayout();
             Dispatcher.UIThread.Post(UpdateRowsPresenterMargin);
+        }
     }
 
     private void UpdateRowsPresenterMargin()
@@ -185,8 +333,8 @@ public partial class DecorDataGridControl : UserControl
         _rowsPresenter.Margin = new Thickness(
             0,
             0,
-            _verticalScrollBar?.IsVisible == true ? 14 : 0,
-            _horizontalScrollBar?.IsVisible == true ? 14 : 0);
+            _verticalScrollBar?.IsVisible == true ? 10 : 0,
+            0);
     }
 
     /// <summary>
@@ -345,10 +493,12 @@ public partial class DecorDataGridControl : UserControl
         _innerGrid.Columns.Clear();
         CacheProperties(dtoType);
 
-        var properties = propertyNames is null
+        var properties = (propertyNames is null
             ? dtoType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             : propertyNames.Select(name => dtoType.GetProperty(name)
-                ?? throw new ArgumentException($"Propriedade '{name}' não existe em {dtoType.Name}.", nameof(propertyNames))).ToArray();
+                ?? throw new ArgumentException($"Propriedade '{name}' não existe em {dtoType.Name}.", nameof(propertyNames))).ToArray())
+            .OrderBy(property => property.Name == "IsActive" ? 1 : 0)
+            .ToArray();
 
         foreach (var property in properties)
         {
@@ -384,19 +534,61 @@ public partial class DecorDataGridControl : UserControl
             _innerGrid.Columns.Add(column);
         }
 
-        var defaultSort = _innerGrid.Columns.FirstOrDefault(column => DecorGridHeader.GetIconId(column.Header as string ?? string.Empty)
-            == Icons.DecorIconId.Common.Code) ?? _innerGrid.Columns.FirstOrDefault();
-        DecorGridSorting.SetDefaultSortMemberPath(_innerGrid, DefaultSortMemberPath ?? defaultSort?.SortMemberPath);
+        foreach (var column in _additionalColumns) AddColumnInDisplayOrder(column);
+
+        ConfigureColumnPresentation();
+    }
+
+    private void ConfigureColumnPresentation()
+    {
+        if (_innerGrid is null)
+            return;
+
+        foreach (var column in _innerGrid.Columns)
+        {
+            if (column.Header is string && column.HeaderTemplate is null)
+                column.HeaderTemplate = new DecorGridHeader();
+            if (string.IsNullOrEmpty(column.SortMemberPath)
+                && column is DataGridBoundColumn { Binding: Binding binding })
+                column.SortMemberPath = binding.Path;
+        }
+
+        var sortableColumns = _innerGrid.Columns.Where(column => !string.IsNullOrEmpty(column.SortMemberPath)).ToArray();
+        var target = sortableColumns.FirstOrDefault(column => DecorGridHeader.GetIconId(column.Header as string ?? string.Empty)
+            == Icons.DecorIconId.Common.Code) ?? sortableColumns.FirstOrDefault();
+        DecorGridSorting.SetDefaultSortMemberPath(_innerGrid, DefaultSortMemberPath ?? target?.SortMemberPath);
+    }
+
+    public void AddColumn(DataGridColumn column)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        if (_additionalColumns.Contains(column)) return;
+        _additionalColumns.Add(column);
+        if (_innerGrid is not null) AddColumnInDisplayOrder(column);
+    }
+
+    private void AddColumnInDisplayOrder(DataGridColumn column)
+    {
+        var stateColumn = _innerGrid!.Columns.FirstOrDefault(existing => existing.Header as string == "Estado");
+        if (stateColumn is null)
+            _innerGrid.Columns.Add(column);
+        else
+            _innerGrid.Columns.Insert(_innerGrid.Columns.IndexOf(stateColumn), column);
     }
 
     private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)
     {
         var foreground = _styler.GetColumnForeground(propertyInfo);
-        var alignment = _styler.GetColumnAlignment(propertyInfo);
+        var alignment = propertyInfo.Name switch
+        {
+            nameof(ProductDTO.ProductID) => TextAlignment.Center,
+            nameof(ProductDTO.StockStatus) => TextAlignment.Center,
+            _ => _styler.GetColumnAlignment(propertyInfo)
+        };
 
         return new DataGridTemplateColumn
         {
-            CellTemplate = new FuncDataTemplate<object?>((_, _) =>
+            CellTemplate = new FuncDataTemplate<object?>((item, _) =>
             {
                 var cellContent = new Border
                 {
@@ -409,6 +601,9 @@ public partial class DecorDataGridControl : UserControl
                     TextAlignment = alignment,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                 };
+                if (propertyInfo.Name == "StockStatus")
+                    textBlock.Foreground = _styler.Theme.GetStockStatusBrush(propertyInfo.GetValue(item)?.ToString());
+                textBlock.Classes.Add($"grid-column-{propertyInfo.Name}");
 
                 textBlock.Bind(TextBlock.TextProperty, new Binding(propertyInfo.Name));
                 cellContent.Child = textBlock;
@@ -500,6 +695,10 @@ public partial class DecorDataGridControl : UserControl
     /// </summary>
     private void OnItemsSourceChanged(IEnumerable? itemsSource)
     {
+        if (_innerGrid is not null && !ReferenceEquals(_innerGrid.ItemsSource, itemsSource))
+            _innerGrid.SetCurrentValue(DataGrid.ItemsSourceProperty, itemsSource);
+        ConfigurePagination();
+
         if (_observedItemsSource is not null)
             _observedItemsSource.CollectionChanged -= OnItemsSourceCollectionChanged;
 
@@ -516,6 +715,9 @@ public partial class DecorDataGridControl : UserControl
     /// </summary>
     private void OnItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        if (e.Action == NotifyCollectionChangedAction.Move)
+            _automaticPagination?.View.Refresh();
+
         if (e.Action == NotifyCollectionChangedAction.Reset)
         {
             _highlightedProperty = null;

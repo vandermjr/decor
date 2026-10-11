@@ -1,5 +1,6 @@
 using System.Reflection;
 using Avalonia.Media;
+using Decor.Core.DTOs;
 
 namespace Decor.AvaloniaUI.Controls.GridStyling;
 
@@ -38,6 +39,24 @@ public class DefaultGridControlStyler : IGridControlStyler
     {
         if (propertyInfo == null)
             return TextAlignment.Left;
+
+        var name = propertyInfo.Name;
+
+        if (name == nameof(ProductDTO.ProductID)
+            || name.EndsWith("ID", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith("Status", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("Status", StringComparison.OrdinalIgnoreCase))
+        {
+            return TextAlignment.Center;
+        }
+
+        if (name == nameof(ProductDTO.StockUnitCode)
+            || name.EndsWith("Code", StringComparison.OrdinalIgnoreCase)
+            && !name.EndsWith("Status", StringComparison.OrdinalIgnoreCase)
+            && !name.EndsWith("ID", StringComparison.OrdinalIgnoreCase))
+        {
+            return TextAlignment.Left;
+        }
 
         var underlyingType = Nullable.GetUnderlyingType(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
 

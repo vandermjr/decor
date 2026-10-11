@@ -68,9 +68,9 @@ public class InstallationAppointmentRepository(IDatabaseConnection dbConnection,
 
     public async Task<bool> ServiceOrderItemExistsAsync(int orderItemId, CancellationToken cancellationToken = default)
     {
-        const string sql = "SELECT COUNT(*) FROM order_items oi INNER JOIN products p ON p.ProductID = oi.ProductID WHERE oi.OrderItemID = @OrderItemID AND p.ProductType = @ProductType";
+        const string sql = "SELECT COUNT(*) FROM order_items oi LEFT JOIN products p ON p.ProductID = oi.ProductID LEFT JOIN services s ON s.ServiceID = oi.ServiceID LEFT JOIN services installation ON installation.ServiceID = p.DefaultInstallationServiceID WHERE oi.OrderItemID = @OrderItemID AND ((oi.ProductID IS NULL AND oi.ServiceID > 0 AND s.ServiceID IS NOT NULL) OR (oi.ServiceID IS NULL AND oi.ProductID > 0 AND oi.HasInstallationService = 1 AND installation.ServiceID IS NOT NULL))";
         using var connection = _dbConnection.CreateConnection();
-        return await connection.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { OrderItemID = orderItemId, ProductType = ProductType.Service }, cancellationToken: cancellationToken)) > 0;
+        return await connection.ExecuteScalarAsync<int>(new CommandDefinition(sql, new { OrderItemID = orderItemId }, cancellationToken: cancellationToken)) > 0;
     }
 
     public async Task<bool> HasActiveConflictAsync(int? executorEmployeeId, int? executorPartnerId, DateTime scheduledDate, int? excludingAppointmentId = null, CancellationToken cancellationToken = default)

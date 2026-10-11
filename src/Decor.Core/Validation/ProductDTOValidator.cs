@@ -7,6 +7,13 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
     {
         var errors = new List<string>();
 
+        if (dto.ProductType != (int)Decor.Core.Entities.ProductType.Good)
+            errors.Add("Serviços não pertencem ao catálogo de produtos.");
+        if (!Enum.IsDefined(dto.AcquisitionMode))
+            errors.Add("O modo de aquisição do produto é inválido.");
+        if (dto.EmployeeCommissionValue is not null)
+            errors.Add("Produtos não possuem comissão de serviço.");
+
         if (dto.ProductID < 0)
             errors.Add("O ID do Produto não pode ser negativo.");
 
@@ -25,6 +32,8 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
 
         if (!string.IsNullOrWhiteSpace(dto.Barcode))
         {
+            if (dto.Barcode.Any(character => character is < '0' or > '9'))
+                errors.Add("O Código de Barras deve conter apenas números.");
             if (dto.Barcode.Length is not 13 and not 8)
             {
                 errors.Add("O Código de Barras deve ter 13 ou 8 caracteres.");
@@ -39,13 +48,10 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
             errors.Add("A descrição não pode exceder 50 caracteres.");
 
         if (dto.StockQuantity < 0)
-            errors.Add("O Estoque Físico não pode ser negativo.");
+            errors.Add("O Estoque Inicial não pode ser negativo.");
 
         if (dto.MinimumStock < 0)
             errors.Add("O Estoque Mínimo não pode ser negativo.");
-
-        if (dto.MinimumStock > dto.StockQuantity)
-            errors.Add("O Estoque Mínimo não pode ser maior que o Estoque Físico.");
 
         if (dto.BrandID > 0 && string.IsNullOrWhiteSpace(dto.BrandName))
             errors.Add("O nome da Marca é obrigatório quando o ID da Marca é informado.");

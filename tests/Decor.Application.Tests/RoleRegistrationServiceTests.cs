@@ -247,6 +247,27 @@ public sealed class RoleRegistrationServiceTests
     }
 
     [Fact]
+    public async Task ViewModel_SearchFiltersByCodeOrAllTextTermsAndClearEmptiesListing()
+    {
+        var (service, _, context) = Create(target: new(2, "Equipe de vendas", "Atendimento comercial", 8, false));
+        var viewModel = new GroupRegistrationViewModel(service, context, new Authorization(true));
+        await viewModel.InitializeAsync();
+        viewModel.Listing.Clear();
+
+        viewModel.SearchText = "vendas comercial";
+        viewModel.SearchCommand.Execute(null);
+        viewModel.Roles.Should().ContainSingle(role => role.RoleID == 2);
+
+        viewModel.SearchText = "2";
+        viewModel.SearchCommand.Execute(null);
+        viewModel.Roles.Should().ContainSingle(role => role.RoleID == 2);
+
+        viewModel.ClearSearchCommand.Execute(null);
+        viewModel.SearchText.Should().BeEmpty();
+        viewModel.Roles.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ViewModel_AdministratorCanEditAndSaveLegacyProtectedSupervisor()
     {
         var (service, repository, context) = Create(target: new(2, SystemRoleDefaults.Supervisors, null, 30, true), administrator: true);

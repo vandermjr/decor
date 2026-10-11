@@ -1,4 +1,5 @@
 using Dapper;
+using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
@@ -178,6 +179,8 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
 
     public async Task<int> SaveOrderItemAsync(OrderItem item, CancellationToken cancellationToken = default)
     {
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new System.ComponentModel.DataAnnotations.ValidationException(CommercialItemReference.ValidationMessage);
         using var connection = _dbConnection.CreateConnection();
         if (item.OrderItemID != 0)
         {
@@ -201,6 +204,8 @@ public class OrderRepository(IDatabaseConnection dbConnection, Func<FluentComman
 
     public async Task<int> SaveOrderItemAsync(OrderItem item, System.Data.IDbConnection connection, System.Data.IDbTransaction? transaction, CancellationToken cancellationToken = default)
     {
+        if (!CommercialItemReference.IsValid(item.ProductID, item.ServiceID))
+            throw new System.ComponentModel.DataAnnotations.ValidationException(CommercialItemReference.ValidationMessage);
         if (item.OrderItemID != 0)
         {
             var (sql, parameters) = _createCommandBuilder()

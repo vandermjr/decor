@@ -3,6 +3,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
 using Avalonia.Input.Platform;
 using Avalonia.Threading;
+using Avalonia.Styling;
+using Decor.Core.Common;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Services;
 using Decor.Core.Interfaces.Services;
@@ -22,6 +24,15 @@ public partial class LoginWindow : Window
     {
         InitializeComponent();
         Opened += (_, _) => Dispatcher.UIThread.Post(FocusUserId, DispatcherPriority.Input);
+        Opened += async (_, _) =>
+        {
+            if (DataContext is LoginViewModel viewModel)
+                await viewModel.RefreshDatabaseStatusAsync();
+        };
+        Closed += (_, _) =>
+        {
+            if (DataContext is LoginViewModel viewModel) viewModel.StopThemePreview();
+        };
     }
 
     private void FocusUserId()
@@ -38,6 +49,7 @@ public partial class LoginWindow : Window
         : this()
     {
         DataContext = viewModel;
+        viewModel.ThemePreviewChanged += ApplyThemePreview;
         _navigationService = navigationService;
         _themeService = themeService;
         _iconAppearanceService = iconAppearanceService;
@@ -45,6 +57,12 @@ public partial class LoginWindow : Window
         _logger = logger;
         viewModel.LoginSucceeded += OnLoginSucceededAsync;
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
+    }
+
+    private static void ApplyThemePreview(DecorThemeStyle theme)
+    {
+        if (global::Avalonia.Application.Current is { } application)
+            application.RequestedThemeVariant = theme == DecorThemeStyle.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
     }
 
     private async Task OnLoginSucceededAsync()

@@ -11,9 +11,22 @@ public sealed class UserAdministrationService(IUserAdministrationRepository repo
     public async Task<IReadOnlyList<AdministrativeUserDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default) { Require(DecorPermissions.UsersView); var users=await repository.SearchAsync(search,cancellationToken); var authority=OperatorAuthority(await repository.GetRolesAsync(cancellationToken)); return authority.IsAdministrator?users:users.Where(u=>u.Roles.Count==0||u.Roles.Max(r=>r.HierarchyLevel)<authority.Level).ToArray(); }
     public async Task<AdministrativeUserDTO?> GetByIdAsync(int userId, CancellationToken cancellationToken = default) { Require(DecorPermissions.UsersView); var user=await repository.GetByIdAsync(userId,cancellationToken); if(user is not null) await EnsureTarget(user,cancellationToken); return user; }
     public async Task<TemporaryPasswordResult> CreateAsync(string username, string displayName, IReadOnlyCollection<int> roleIds, CancellationToken cancellationToken = default)
+        => await CreateWithEmployeeAsync(username, displayName, roleIds, null, cancellationToken);
+
+    public async Task<TemporaryPasswordResult> CreateWithEmployeeAsync(string username, string displayName,
+        IReadOnlyCollection<int> roleIds, int? employeeId, CancellationToken cancellationToken = default)
     {
         Require(DecorPermissions.UsersCreate); ValidateUsername(username); await EnsureRolesAssignable(roleIds,cancellationToken);
-        var password=GenerateTemporaryPassword(); await repository.CreateWithRolesAsync(username.Trim(),username.Trim(),hasher.Hash(password),roleIds,cancellationToken); return new(password);
+        var password=GenerateTemporaryPassword();
+        await repository.CreateWithRolesAndEmployeeAsync(username.Trim(), username.Trim(), hasher.Hash(password), roleIds, employeeId, cancellationToken);
+        return new(password);
+    }
+    public async Task AssignEmployeeAsync(int userId, int? employeeId, CancellationToken cancellationToken = default)
+    {
+        Require(DecorPermissions.UsersEdit);
+        var target = await Target(userId, cancellationToken);
+        EnsureMutable(target);
+        await repository.AssignEmployeeAsync(userId, employeeId, cancellationToken);
     }
     public async Task UpdateAsync(int userId,string username,string displayName,CancellationToken cancellationToken=default) { Require(DecorPermissions.UsersEdit); var target=await Target(userId,cancellationToken); EnsureMutable(target); ValidateUsername(username); if(!await repository.UpdateAsync(target.UserID,username.Trim(),username.Trim(),cancellationToken)) throw new InvalidOperationException("Usuário não encontrado."); if(context.User?.UserID==userId) context.SignOut(); }
     public async Task SetActiveAsync(int userId,bool active,CancellationToken cancellationToken=default) { Require(active?DecorPermissions.UsersActivate:DecorPermissions.UsersDeactivate); EnsureMutable(await Target(userId,cancellationToken)); var admin=await AdministratorRole(cancellationToken); await repository.SetActivePreservingLastAdministratorAsync(userId,active,admin.RoleID,cancellationToken); SignOutIfCurrentUser(userId); }

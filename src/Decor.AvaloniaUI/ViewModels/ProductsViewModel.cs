@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows.Input;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
@@ -16,22 +18,27 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private readonly IFamilyService _familyService;
     private readonly IGroupService _groupService;
     private readonly ISubgroupService _subgroupService;
+    private readonly IUnitOfMeasureService? _unitOfMeasureService;
+    private readonly IAuthorizationService? _authorizationService;
 
     private ProductDTO? _selectedProduct;
     private string _searchText = string.Empty;
     private bool _isBusy;
     private bool _isEditing;
     private bool _isNew;
+    private bool _selectionMode;
     private string _statusMessage = string.Empty;
     private int _productId;
     private string? _barcode, _description, _manufacturerRef, _auxiliarRef, _dimensions, _observations;
     private bool _isActive;
+    private ProductAcquisitionMode _acquisitionMode = ProductAcquisitionMode.Estocado;
     private decimal _stockQuantity, _minimumStock;
     private BrandDTO? _selectedBrand;
     private ClassDTO? _selectedClass;
     private FamilyDTO? _selectedFamily;
     private GroupDTO? _selectedGroup;
     private SubgroupDTO? _selectedSubgroup;
+    private UnitOfMeasureDTO? _selectedStockUnit;
     private readonly Dictionary<string, string> _fieldErrors = [];
     private Task? _lookupsLoadTask;
     private int _recordCount;
@@ -42,7 +49,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IClassService classService,
         IFamilyService familyService,
         IGroupService groupService,
-        ISubgroupService subgroupService)
+        ISubgroupService subgroupService,
+        IAuthorizationService? authorizationService = null,
+        IUnitOfMeasureService? unitOfMeasureService = null)
     {
         _productService = productService;
         _brandService = brandService;
@@ -50,14 +59,16 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         _familyService = familyService;
         _groupService = groupService;
         _subgroupService = subgroupService;
+        _unitOfMeasureService = unitOfMeasureService;
+        _authorizationService = authorizationService;
 
-        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => !IsBusy && !IsEditing);
-        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy && !IsEditing);
+        SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         Listing = new GridListState<ProductDTO>(Products, () => !IsEditing);
         Listing.PropertyChanged += (_, args) => OnPropertyChanged(args.PropertyName);
-        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => !IsBusy && !IsEditing);
-        EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => SelectedProduct is not null && !IsBusy && !IsEditing);
-        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => IsEditing && !IsBusy);
+        NewCommand = new RelayCommand(async () => await BeginNewAsync(), () => CanNew);
+        EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => CanEdit);
+        SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => IsEditing && !IsBusy);
     }
 
@@ -67,6 +78,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public ObservableCollection<FamilyDTO> Families { get; } = [];
     public ObservableCollection<GroupDTO> Groups { get; } = [];
     public ObservableCollection<SubgroupDTO> Subgroups { get; } = [];
+    public ObservableCollection<UnitOfMeasureDTO> StockUnits { get; } = [];
 
     public ICommand SearchCommand { get; }
     public ICommand ClearSearchCommand { get; }
@@ -122,11 +134,24 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
 
     public bool IsListVisible => !IsEditing;
     public bool IsAdding => IsEditing && _isNew;
+    public bool SelectionMode
+    {
+        get => _selectionMode;
+        set
+        {
+            if (!SetField(ref _selectionMode, value)) return;
+            if (value && IsEditing) CancelEdit();
+            RaiseCommandStates();
+        }
+    }
 
     // Propriedades para visibilidade/estado de botões
-    public bool CanNew => !IsBusy && !IsEditing;
-    public bool CanEdit => SelectedProduct is not null && !IsBusy && !IsEditing;
-    public bool CanSave => IsEditing && !IsBusy;
+    public bool CanSearch => !IsBusy && !IsEditing && (_authorizationService?.CanView("Products") ?? true);
+    public bool CanNew => !SelectionMode && !IsBusy && !IsEditing && (_authorizationService?.CanCreate("Products") ?? true);
+    public bool CanEdit => !SelectionMode && SelectedProduct is not null && !IsBusy && !IsEditing && (_authorizationService?.CanEdit("Products") ?? true);
+    public bool CanSave => !SelectionMode && IsEditing && !IsBusy && (_isNew
+        ? _authorizationService?.CanCreate("Products") ?? true
+        : _authorizationService?.CanEdit("Products") ?? true);
     public bool CanCancel => IsEditing && !IsBusy;
 
     public string StatusMessage
@@ -206,6 +231,18 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         set => SetField(ref _isActive, value);
     }
 
+    public bool IsMadeToOrder
+    {
+        get => _acquisitionMode == ProductAcquisitionMode.SobEncomenda;
+        set
+        {
+            var mode = value ? ProductAcquisitionMode.SobEncomenda : ProductAcquisitionMode.Estocado;
+            if (_acquisitionMode == mode) return;
+            _acquisitionMode = mode;
+            OnPropertyChanged();
+        }
+    }
+
     public string? Description
     {
         get => _description;
@@ -245,8 +282,14 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public string? Observations
     {
         get => _observations;
-        set => SetField(ref _observations, value);
+        set
+        {
+            if (SetField(ref _observations, QuoteNotesRules.Truncate(value)))
+                OnPropertyChanged(nameof(ObservationsCounter));
+        }
     }
+
+    public string ObservationsCounter => $"{(_observations ?? string.Empty).EnumerateRunes().Count()}/{QuoteNotesRules.MaximumBytes} caracteres";
 
     public BrandDTO? SelectedBrand
     {
@@ -294,6 +337,12 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     {
         get => _selectedSubgroup;
         set => SetField(ref _selectedSubgroup, value);
+    }
+
+    public UnitOfMeasureDTO? SelectedStockUnit
+    {
+        get => _selectedStockUnit;
+        set => SetField(ref _selectedStockUnit, value);
     }
 
     // Propriedades de erro para cada campo
@@ -359,9 +408,12 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         ProductId = 0;
         Barcode = null;
         IsActive = true;
+        _acquisitionMode = ProductAcquisitionMode.Estocado;
+        OnPropertyChanged(nameof(IsMadeToOrder));
         Description = null;
         StockQuantity = 0;
         MinimumStock = 0;
+        SelectedStockUnit = null;
         ManufacturerRef = null;
         AuxiliarRef = null;
         Dimensions = null;
@@ -392,9 +444,12 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         ProductId = SelectedProduct.ProductID;
         Barcode = SelectedProduct.Barcode;
         IsActive = SelectedProduct.IsActive;
+        _acquisitionMode = SelectedProduct.AcquisitionMode;
+        OnPropertyChanged(nameof(IsMadeToOrder));
         Description = SelectedProduct.Description;
         StockQuantity = SelectedProduct.StockQuantity;
         MinimumStock = SelectedProduct.MinimumStock;
+        SelectedStockUnit = StockUnits.FirstOrDefault(unit => unit.UnitOfMeasureID == SelectedProduct.StockUnitID);
         ManufacturerRef = SelectedProduct.ManufacturerRef;
         AuxiliarRef = SelectedProduct.AuxiliarRef;
         Dimensions = SelectedProduct.Dimensions;
@@ -428,10 +483,18 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             var brandsTask = _brandService.GetAllBrandsAsync();
             var classesTask = _classService.GetAllAsync();
-            await Task.WhenAll(brandsTask, classesTask);
+            var unitsTask = _unitOfMeasureService?.GetAllAsync(pageSize: 500);
+            var lookupTasks = new List<Task> { brandsTask, classesTask };
+            if (unitsTask is not null) lookupTasks.Add(unitsTask);
+            await Task.WhenAll(lookupTasks);
 
             Replace(Brands, await brandsTask);
             Replace(Classes, await classesTask);
+            if (unitsTask is not null)
+            {
+                var units = await unitsTask;
+                Replace(StockUnits, units.Where(unit => unit.IsActive || unit.UnitOfMeasureID == SelectedProduct?.StockUnitID));
+            }
         }
         catch (Exception ex)
         {
@@ -597,7 +660,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 Barcode,
                 IsActive,
                 Description,
-                StockQuantity,
+                0,
                 SelectedBrand?.BrandID,
                 SelectedBrand?.BrandName,
                 SelectedSubgroup?.SubgroupID,
@@ -618,7 +681,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 null,
                 null,
                 null,
-                null);
+                SelectedStockUnit?.UnitOfMeasureID,
+                SelectedStockUnit?.Code,
+                AcquisitionMode: _acquisitionMode);
 
             await _productService.SaveProductAsync(dto);
             StatusMessage = _isNew ? "Produto incluído com sucesso." : "Produto atualizado com sucesso.";
@@ -737,7 +802,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             return "Barcode";
         if (errorMessage.Contains("descrição", StringComparison.OrdinalIgnoreCase))
             return "Description";
-        if (errorMessage.Contains("Estoque Físico", StringComparison.OrdinalIgnoreCase))
+        if (errorMessage.Contains("Estoque Inicial", StringComparison.OrdinalIgnoreCase)
+            || errorMessage.Contains("Estoque Físico", StringComparison.OrdinalIgnoreCase))
             return "StockQuantity";
         if (errorMessage.Contains("Estoque Mínimo", StringComparison.OrdinalIgnoreCase))
             return "MinimumStock";

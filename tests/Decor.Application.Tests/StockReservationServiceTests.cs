@@ -60,11 +60,12 @@ public sealed class StockReservationServiceTests
     }
 
     [Fact]
-    public async Task CreateReservation_ProductTypeService_ThrowsValidationException()
+    public async Task CreateReservation_ServiceIdentity_ThrowsValidationException()
     {
         var testContext = new TestContext();
         testContext.SeedApprovedOrderWithItem(orderId: 1, orderItemId: 10, productId: 100);
-        testContext.SeedProduct(productId: 100, productType: ProductType.Service);
+        testContext.OrderRepo.OrderItems[10].ProductID = null;
+        testContext.OrderRepo.OrderItems[10].ServiceID = 100;
         testContext.SeedStockLocation(locationId: 5, locationType: StockLocationType.Empresa, partnerId: null);
         testContext.SeedStockBalance(productId: 100, locationId: 5, quantity: 50m);
 
@@ -73,7 +74,7 @@ public sealed class StockReservationServiceTests
         var act = () => service.CreateReservationAsync(10, 5, 1, 15m);
 
         await act.Should().ThrowAsync<ValidationException>()
-            .WithMessage("*Serviço*");
+            .WithMessage("*servico*");
     }
 
     [Fact]

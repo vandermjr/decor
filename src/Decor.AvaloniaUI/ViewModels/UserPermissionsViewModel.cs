@@ -58,8 +58,8 @@ public sealed class UserPermissionsViewModel : INotifyPropertyChanged
         _roles = roles;
         _authorization = authorization;
         _context = context;
-        SearchCommand = new RelayCommand(async () => await InitializeAsync(), () => !IsBusy);
-        ClearSearchCommand = new RelayCommand(ClearSearch, () => !IsBusy);
+        SearchCommand = new RelayCommand(async () => await InitializeAsync(), () => CanSearch);
+        ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanChange(DecorPermissions.UsersManagePermissions));
         RestoreCommand = new RelayCommand(async () => await RestoreAsync(), () => CanChange(DecorPermissions.UsersRestorePermissions));
         AssignGroupsCommand = new RelayCommand(() => AssignGroupsRequested?.Invoke(this, EventArgs.Empty), () => CanChange(DecorPermissions.UsersAssignRoles));
@@ -111,6 +111,7 @@ public sealed class UserPermissionsViewModel : INotifyPropertyChanged
 
     public async Task InitializeAsync()
     {
+        if (!CanSearch) return;
         IsBusy = true;
         try
         {
@@ -136,6 +137,7 @@ public sealed class UserPermissionsViewModel : INotifyPropertyChanged
 
     private void ClearSearch()
     {
+        if (!CanSearch) return;
         SearchText = string.Empty;
         SelectedUser = null;
         Users.Clear();
@@ -144,6 +146,7 @@ public sealed class UserPermissionsViewModel : INotifyPropertyChanged
 
     private async Task LoadUserAsync(int userId, int version)
     {
+        if (!_context.IsAuthenticated || !_authorization.HasPermission(DecorPermissions.UsersView)) return;
         IsBusy = true;
         _isLoaded = false;
         StatusMessage = string.Empty;
@@ -209,6 +212,7 @@ public sealed class UserPermissionsViewModel : INotifyPropertyChanged
         finally { IsBusy = false; }
     }
 
+    private bool CanSearch => _context.IsAuthenticated && !IsBusy && _authorization.HasPermission(DecorPermissions.UsersView);
     private bool CanChange(string permission) => _context.IsAuthenticated && _isLoaded && !IsBusy && SelectedUser is not null && !SelectedUser.IsSystemAdministrator && _authorization.HasPermission(permission);
     private void RefreshCommands()
     {

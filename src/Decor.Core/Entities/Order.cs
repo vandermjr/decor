@@ -51,6 +51,9 @@ public class Order
     [Column("CreatedAt")]
     public DateTime CreatedAt { get; set; }
 
+    [Column("CancellationReason")]
+    public string? CancellationReason { get; set; }
+
     [NotMapped]
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }

@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+        xmlns:controls="using:Decor.AvaloniaUI.Controls"
         xmlns:icons="using:Decor.AvaloniaUI.Icons"
         x:Class="Decor.AvaloniaUI.Views.LoginWindow"
         x:DataType="vm:LoginViewModel"
@@ -9,18 +10,24 @@
         Height="560"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
-  <Grid Margin="40" ColumnDefinitions="*,2*" ColumnSpacing="48">
+  <Grid Margin="40" RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" ColumnDefinitions="*,2*" ColumnSpacing="48">
     <Grid Grid.Column="0" MaxWidth="340" HorizontalAlignment="Stretch" VerticalAlignment="Center"
           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="16">
-      <TextBlock Text="Entre para continuar" Foreground="{DynamicResource DecorTextBrush}"
-                 FontSize="{DynamicResource DecorFontSizeSection}"
-                 FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,4" />
+      <TextBlock Text="Bem-vindo!" Foreground="{DynamicResource DecorTextBrush}"
+             FontSize="32"
+                 FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,24"
+                 HorizontalAlignment="Center" TextAlignment="Center">
+        <TextBlock.RenderTransform>
+          <TranslateTransform Y="-20"/>
+        </TextBlock.RenderTransform>
+      </TextBlock>
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
-               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" />
+               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
 
       <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
-               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
+               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
 
       <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
               BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
@@ -29,7 +36,7 @@
           <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap" />
           <Button Grid.Column="1" TabIndex="3" Width="28" Height="28" Padding="0"
                   ToolTip.Tip="Copiar mensagem de erro" IsVisible="{Binding CanCopyError}"
-                  Click="CopyErrorButton_OnClick">
+                  Click="CopyErrorButton_OnClick" Classes="decor-action">
             <PathIcon Width="16" Height="16"
                       icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Copy}" />
           </Button>
@@ -40,7 +47,7 @@
 
       <Button Grid.Row="5" TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
               HorizontalAlignment="Stretch" MinHeight="42" Padding="12,9"
-              HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Classes="decor-action">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignIn}"
                 Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -54,5 +61,30 @@
       <TextBlock Text="Logo do cliente" Foreground="{DynamicResource DecorTextMutedBrush}"
                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Grid>
+    </Grid>
+    <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <TextBlock Text="{Binding SystemVersion, StringFormat='Versão {0}'}"
+                   Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"
+                   VerticalAlignment="Center"/>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Grid Width="18" Height="18" ToolTip.Tip="{Binding DatabaseConnectionDescription}">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextMutedBrush}"
+                      icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Database}"
+                      AutomationProperties.Name="Banco de dados"/>
+            <Border Width="7" Height="7" CornerRadius="4" Background="#218647"
+                    BorderBrush="{DynamicResource DecorSurfaceBrush}" BorderThickness="1"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding IsDatabaseOnline}"/>
+            <PathIcon Width="8" Height="8" Foreground="#C62828"
+                      icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}"
+                      HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding !IsDatabaseOnline}"/>
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+            <TextBlock Text="{Binding DatabaseStatusText}" Foreground="{DynamicResource DecorTextMutedBrush}"
+                       FontSize="{DynamicResource DecorFontSizeCaption}"/>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Border>
   </Grid>
 </Window>

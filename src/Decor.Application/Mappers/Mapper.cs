@@ -16,7 +16,7 @@ public static class Mapper
             Barcode: product.Barcode,
             IsActive: product.IsActive,
             Description: product.Description,
-            StockQuantity: product.StockQuantity,
+            StockQuantity: 0,
             ManufacturerRef: product.ManufacturerRef,
             AuxiliarRef: product.AuxiliaryRef,
             Dimensions: product.Dimensions,
@@ -32,12 +32,16 @@ public static class Mapper
             GroupName: product.Subgroup?.Group?.GroupName,
             SubgroupID: product.Subgroup?.SubgroupID,
             SubgroupName: product.Subgroup?.SubgroupName,
-            ProductType: (int)product.ProductType,
+            ProductType: (int)ProductType.Good,
             CostPrice: product.CostPrice,
             SalePrice: product.SalePrice,
-            EmployeeCommissionValue: product.EmployeeCommissionValue,
+            EmployeeCommissionValue: null,
             DefaultInstallationServiceID: product.DefaultInstallationServiceID,
-            StockUnitID: product.StockUnit?.UnitOfMeasureID ?? product.StockUnitID
+            StockUnitID: product.StockUnit?.UnitOfMeasureID ?? product.StockUnitID,
+            StockUnitCode: product.StockUnit?.Code,
+            CurrentStockQuantity: product.CurrentStockQuantity,
+            ReservedStockQuantity: product.ReservedStockQuantity,
+            AcquisitionMode: product.AcquisitionMode
         );
     }
 
@@ -58,6 +62,7 @@ public static class Mapper
         BrandID = productDto.BrandID ?? 0,
         SubgroupID = productDto.SubgroupID,
         StockUnitID = productDto.StockUnitID,
+        AcquisitionMode = productDto.AcquisitionMode,
         ProductType = (ProductType)productDto.ProductType,
         CostPrice = productDto.CostPrice,
         SalePrice = productDto.SalePrice,
@@ -216,16 +221,16 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
 
     // --- Mapeadores para Quote ---
     public static IEnumerable<QuoteDTO> ToDTO(this IEnumerable<Quote> quotes) => quotes.Select(q => q.ToDTO());
-    public static QuoteDTO ToDTO(this Quote quote) => new(quote.QuoteID, quote.CustomerID, quote.CreatedByEmployeeID, quote.SourcePartnerID, (int)quote.SourceType, quote.CreatedAt, quote.Notes);
-    public static Quote FromDTO(this QuoteDTO quoteDto) => new() { QuoteID = quoteDto.QuoteID, CustomerID = quoteDto.CustomerID, CreatedByEmployeeID = quoteDto.CreatedByEmployeeID, SourcePartnerID = quoteDto.SourcePartnerID, SourceType = (QuoteSourceType)quoteDto.SourceType, CreatedAt = quoteDto.CreatedAt, Notes = quoteDto.Notes };
+    public static QuoteDTO ToDTO(this Quote quote) => new(quote.QuoteID, quote.CustomerID ?? 0, quote.CreatedByEmployeeID ?? 0, quote.SourcePartnerID, (int)quote.SourceType, quote.CreatedAt, quote.Notes, quote.Sections.ToDTO().ToArray(), quote.CreatedByUserID, quote.DiscountAmount, quote.CustomerName, quote.CreatedByEmployeeName, quote.ListStatus, quote.ListTotal);
+    public static Quote FromDTO(this QuoteDTO quoteDto) => new() { QuoteID = quoteDto.QuoteID, CustomerID = quoteDto.CustomerID == 0 ? null : quoteDto.CustomerID, CreatedByEmployeeID = quoteDto.CreatedByEmployeeID == 0 ? null : quoteDto.CreatedByEmployeeID, CreatedByUserID = quoteDto.CreatedByUserID, SourcePartnerID = quoteDto.SourcePartnerID, SourceType = (QuoteSourceType)quoteDto.SourceType, CreatedAt = quoteDto.CreatedAt, Notes = quoteDto.Notes, DiscountAmount = quoteDto.DiscountAmount };
 
     public static IEnumerable<QuoteSectionDTO> ToDTO(this IEnumerable<QuoteSection> sections) => sections.Select(s => s.ToDTO());
-    public static QuoteSectionDTO ToDTO(this QuoteSection section) => new(section.QuoteSectionID, section.QuoteID, (int)section.SectionType, (int)section.Status, section.SentToCustomerAt, section.ApprovedAt, section.CreatedAt);
-    public static QuoteSection FromDTO(this QuoteSectionDTO sectionDto) => new() { QuoteSectionID = sectionDto.QuoteSectionID, QuoteID = sectionDto.QuoteID, SectionType = (QuoteSectionType)sectionDto.SectionType, Status = (QuoteSectionStatus)sectionDto.Status, SentToCustomerAt = sectionDto.SentToCustomerAt, ApprovedAt = sectionDto.ApprovedAt, CreatedAt = sectionDto.CreatedAt };
+    public static QuoteSectionDTO ToDTO(this QuoteSection section) => new(section.QuoteSectionID, section.QuoteID, (int)section.SectionType, (int)section.Status, section.SentToCustomerAt, section.ApprovedAt, section.CreatedAt, section.Items.ToDTO().ToArray(), section.OrderID);
+    public static QuoteSection FromDTO(this QuoteSectionDTO sectionDto) => new() { QuoteSectionID = sectionDto.QuoteSectionID, QuoteID = sectionDto.QuoteID, SectionType = (QuoteSectionType)sectionDto.SectionType, Status = (QuoteSectionStatus)sectionDto.Status, SentToCustomerAt = sectionDto.SentToCustomerAt, ApprovedAt = sectionDto.ApprovedAt, CreatedAt = sectionDto.CreatedAt, OrderID = sectionDto.OrderID };
 
     public static IEnumerable<QuoteItemDTO> ToDTO(this IEnumerable<QuoteItem> items) => items.Select(i => i.ToDTO());
-    public static QuoteItemDTO ToDTO(this QuoteItem item) => new(item.QuoteItemID, item.QuoteSectionID, item.ProductID, item.Quantity, item.UnitPrice, item.HasInstallationService);
-    public static QuoteItem FromDTO(this QuoteItemDTO itemDto) => new() { QuoteItemID = itemDto.QuoteItemID, QuoteSectionID = itemDto.QuoteSectionID, ProductID = itemDto.ProductID, Quantity = itemDto.Quantity, UnitPrice = itemDto.UnitPrice, HasInstallationService = itemDto.HasInstallationService };
+    public static QuoteItemDTO ToDTO(this QuoteItem item) => new(item.QuoteItemID, item.QuoteSectionID, item.ProductID, item.Quantity, item.UnitPrice, item.HasInstallationService, item.ServiceID);
+    public static QuoteItem FromDTO(this QuoteItemDTO itemDto) => new() { QuoteItemID = itemDto.QuoteItemID, QuoteSectionID = itemDto.QuoteSectionID, ProductID = itemDto.ProductID, ServiceID = itemDto.ServiceID, Quantity = itemDto.Quantity, UnitPrice = itemDto.UnitPrice, HasInstallationService = itemDto.HasInstallationService };
 
     public static IEnumerable<QuoteItemSpecificationValueDTO> ToDTO(this IEnumerable<QuoteItemSpecificationValue> values) => values.Select(v => v.ToDTO());
     public static QuoteItemSpecificationValueDTO ToDTO(this QuoteItemSpecificationValue value) => new(value.ValueID, value.QuoteItemID, value.AttributeID, value.Value);
@@ -350,7 +355,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         order.ManufacturingDeadline,
         order.InstallationDeadline,
         order.CreatedAt,
-        order.Items?.Select(i => i.ToDTO()).ToList()
+        order.Items?.Select(i => i.ToDTO()).ToList(),
+        order.CancellationReason
     );
     public static Order FromDTO(this OrderDTO orderDto) => new()
     {
@@ -363,6 +369,7 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         ManufacturingDeadline = orderDto.ManufacturingDeadline,
         InstallationDeadline = orderDto.InstallationDeadline,
         CreatedAt = orderDto.CreatedAt,
+        CancellationReason = orderDto.CancellationReason,
         Items = orderDto.Items?.Select(i => i.FromDTO()).ToList() ?? new List<OrderItem>()
     };
 
@@ -377,7 +384,8 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         item.HasInstallationService,
         item.SentToProductionAt,
         item.SentToProductionByEmployeeID,
-        item.SpecificationValues?.Select(v => v.ToDTO()).ToList()
+        item.SpecificationValues?.Select(v => v.ToDTO()).ToList(),
+        item.ServiceID
     );
     public static OrderItem FromDTO(this OrderItemDTO itemDto) => new()
     {
@@ -385,6 +393,7 @@ public static IEnumerable<BrandDTO> ToDTO(this IEnumerable<Brand> brands) => bra
         OrderID = itemDto.OrderID,
         QuoteItemID = itemDto.QuoteItemID,
         ProductID = itemDto.ProductID,
+        ServiceID = itemDto.ServiceID,
         Quantity = itemDto.Quantity,
         UnitPrice = itemDto.UnitPrice,
         HasInstallationService = itemDto.HasInstallationService,

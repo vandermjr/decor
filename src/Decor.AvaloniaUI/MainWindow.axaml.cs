@@ -1,3 +1,5 @@
+using Avalonia;
+using System.Collections.Specialized;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
@@ -12,15 +14,12 @@ namespace Decor.AvaloniaUI;
 
 public partial class MainWindow : Window
 {
-    private readonly DispatcherTimer _paginationHintTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
-    private Control? _paginationHintTarget;
     private bool _isAboutOpen;
-    private TextBlock PaginationHintText => (TextBlock)((Border)PaginationHintPopup.Child!).Child!;
 
     public MainWindow()
     {
         InitializeComponent();
-        _paginationHintTimer.Tick += PaginationHintTimer_Tick;
+        InitializeDocumentTabScrollBehavior();
     }
 
     public MainWindow(MainViewModel mainViewModel, IAuthenticatedUserContext authenticatedUserContext, INavigationService navigationService)
@@ -57,6 +56,45 @@ public partial class MainWindow : Window
                 _isAboutOpen = false;
             }
         };
+
+        InitializeDocumentTabScrollBehavior(mainViewModel);
+    }
+
+    private void InitializeDocumentTabScrollBehavior(MainViewModel? viewModel = null)
+    {
+        if (viewModel is null)
+        {
+            this.AttachedToVisualTree += (_, _) => UpdateDocumentTabsButtons();
+            this.LayoutUpdated += (_, _) => UpdateDocumentTabsButtons();
+            return;
+        }
+
+        viewModel.OpenDocuments.CollectionChanged += (_, e) =>
+        {
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    ScrollTabsToEnd();
+                    UpdateDocumentTabsButtons();
+                });
+                return;
+            }
+
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(UpdateDocumentTabsButtons);
+        };
+
+        this.AttachedToVisualTree += (_, _) =>
+        {
+            UpdateDocumentTabsButtons();
+            if (viewModel.OpenDocuments.Count > 0)
+                ScrollTabsToEnd();
+        };
+    }
+
+    private void DocumentTabsScroller_ScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        UpdateDocumentTabsButtons();
     }
 
     private static void DocumentTab_PointerEntered(object? sender, PointerEventArgs eventArgs)
@@ -77,6 +115,52 @@ public partial class MainWindow : Window
             document.ActivateCommand.Execute(null);
     }
 
+    private void DocumentTabsScrollLeft_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs)
+    {
+        ScrollDocumentTabs(-220d);
+    }
+
+    private void DocumentTabsScrollRight_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs)
+    {
+        ScrollDocumentTabs(220d);
+    }
+
+    private void ScrollDocumentTabs(double delta)
+    {
+        if (this.FindControl<ScrollViewer>("DocumentTabsScroller") is not { } scroller)
+            return;
+
+        var nextOffset = Math.Clamp(scroller.Offset.X + delta, 0d, Math.Max(0d, scroller.Extent.Width - scroller.Viewport.Width));
+        scroller.Offset = new Vector(nextOffset, scroller.Offset.Y);
+        UpdateDocumentTabsButtons();
+    }
+
+    private void ScrollTabsToEnd()
+    {
+        if (this.FindControl<ScrollViewer>("DocumentTabsScroller") is not { } scroller)
+            return;
+
+        var maxOffset = Math.Max(0d, scroller.Extent.Width - scroller.Viewport.Width);
+        scroller.Offset = new Vector(maxOffset, scroller.Offset.Y);
+        UpdateDocumentTabsButtons();
+    }
+
+    private void UpdateDocumentTabsButtons()
+    {
+        if (this.FindControl<ScrollViewer>("DocumentTabsScroller") is not { } scroller)
+            return;
+
+        if (this.FindControl<Button>("DocumentTabsScrollLeft") is not { } leftButton ||
+            this.FindControl<Button>("DocumentTabsScrollRight") is not { } rightButton)
+            return;
+
+        var maxOffset = Math.Max(0d, scroller.Extent.Width - scroller.Viewport.Width);
+        var hasOverflow = maxOffset > 0.01d;
+
+        leftButton.IsEnabled = hasOverflow && scroller.Offset.X > 0.01d;
+        rightButton.IsEnabled = hasOverflow && scroller.Offset.X < maxOffset - 0.01d;
+    }
+
     private void NotificationsButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs)
     {
         if (sender is Button notificationsButton && Resources["NotificationsFlyout"] is Flyout notificationsFlyout)
@@ -89,42 +173,4 @@ public partial class MainWindow : Window
             userFlyout.ShowAt(userButton);
     }
 
-    private void PaginationHint_PointerEntered(object? sender, PointerEventArgs eventArgs)
-    {
-        _paginationHintTimer.Stop();
-        PaginationHintPopup.IsOpen = false;
-        _paginationHintTarget = sender as Control;
-        if (_paginationHintTarget is not { IsEffectivelyEnabled: true })
-            return;
-
-        PaginationHintText.Text = ToolTip.GetTip(_paginationHintTarget)?.ToString();
-        _paginationHintTimer.Start();
-    }
-
-    private void PaginationHint_PointerExited(object? sender, PointerEventArgs eventArgs)
-    {
-        if (sender != _paginationHintTarget)
-            return;
-
-        _paginationHintTimer.Stop();
-        PaginationHintPopup.IsOpen = false;
-        _paginationHintTarget = null;
-    }
-
-    private void PaginationHint_PointerPressed(object? sender, PointerPressedEventArgs eventArgs)
-    {
-        _paginationHintTimer.Stop();
-        PaginationHintPopup.IsOpen = false;
-        _paginationHintTarget = null;
-    }
-
-    private void PaginationHintTimer_Tick(object? sender, EventArgs eventArgs)
-    {
-        _paginationHintTimer.Stop();
-        if (_paginationHintTarget is not { IsPointerOver: true, IsEffectivelyEnabled: true } target)
-            return;
-
-        PaginationHintPopup.PlacementTarget = target;
-        PaginationHintPopup.IsOpen = true;
-    }
 }

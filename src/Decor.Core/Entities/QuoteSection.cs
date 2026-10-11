@@ -45,5 +45,8 @@ public class QuoteSection
     public DateTime CreatedAt { get; set; }
 
     [NotMapped]
+    public int? OrderID { get; set; }
+
+    [NotMapped]
     public ICollection<QuoteItem> Items { get; set; } = new List<QuoteItem>();
 }

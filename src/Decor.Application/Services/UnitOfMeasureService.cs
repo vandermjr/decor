@@ -51,11 +51,10 @@ public sealed class UnitOfMeasureService(
             throw new ValidationException(string.Join("\n", dtoErrors));
 
         var existing = unitOfMeasure.UnitOfMeasureID == 0 ? null : await _unitOfMeasureRepository.GetByIdAsync(unitOfMeasure.UnitOfMeasureID, cancellationToken);
+        if (existing is { IsActive: true } && !unitOfMeasure.IsActive)
+            Require(DecorPermissions.UnitsOfMeasureDeactivate);
+
         var entity = unitOfMeasure.FromDTO();
-        if (existing is not null && unitOfMeasure.IsActive != true)
-        {
-            entity.IsActive = existing.IsActive;
-        }
 
         var repoErrors = _repoValidator.Validate(entity);
         if (repoErrors.Any())

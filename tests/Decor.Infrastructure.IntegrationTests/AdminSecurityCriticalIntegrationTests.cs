@@ -169,6 +169,45 @@ public sealed class AdminSecurityCriticalIntegrationTests(MariaDbFixture fixture
     }
 
     [Fact]
+    public async Task EmployeeAssociation_CreateAndReplaceIsAtomicAndRejectsAlreadyLinkedEmployees()
+    {
+        await using var connection = new MySqlConnection(fixture.ConnectionString);
+        await using var isolation = await PrepareIsolationAsync(connection);
+        var firstEmployeeId = await connection.QuerySingleAsync<int>(
+            "INSERT INTO employees (Name, IsActive) VALUES (@Name, 1); SELECT LAST_INSERT_ID();",
+            new { Name = UniqueName("emp") });
+        var secondEmployeeId = await connection.QuerySingleAsync<int>(
+            "INSERT INTO employees (Name, IsActive) VALUES (@Name, 1); SELECT LAST_INSERT_ID();",
+            new { Name = UniqueName("emp") });
+        var replacementEmployeeId = await connection.QuerySingleAsync<int>(
+            "INSERT INTO employees (Name, IsActive) VALUES (@Name, 1); SELECT LAST_INSERT_ID();",
+            new { Name = UniqueName("emp") });
+        var inactiveEmployeeId = await connection.QuerySingleAsync<int>(
+            "INSERT INTO employees (Name, IsActive) VALUES (@Name, 0); SELECT LAST_INSERT_ID();",
+            new { Name = UniqueName("emp") });
+        var repository = CreateUserAdministrationRepository();
+        var firstUserId = await repository.CreateWithRolesAndEmployeeAsync(
+            UniqueName("usr"), "First", "hash", [], firstEmployeeId);
+        var secondUserId = await repository.CreateWithRolesAndEmployeeAsync(
+            UniqueName("usr"), "Second", "hash", [], secondEmployeeId);
+
+        var conflict = async () => await repository.AssignEmployeeAsync(firstUserId, secondEmployeeId);
+        await conflict.Should().ThrowAsync<InvalidOperationException>().WithMessage("*já está vinculado*");
+        var inactive = async () => await repository.AssignEmployeeAsync(firstUserId, inactiveEmployeeId);
+        await inactive.Should().ThrowAsync<InvalidOperationException>().WithMessage("*não existe ou já está vinculado*");
+
+        (await connection.QuerySingleAsync<int?>("SELECT UserID FROM employees WHERE EmployeeID = @EmployeeID", new { EmployeeID = firstEmployeeId }))
+            .Should().Be(firstUserId);
+        (await connection.QuerySingleAsync<int?>("SELECT UserID FROM employees WHERE EmployeeID = @EmployeeID", new { EmployeeID = secondEmployeeId }))
+            .Should().Be(secondUserId);
+
+        await repository.AssignEmployeeAsync(firstUserId, replacementEmployeeId);
+        (await connection.QuerySingleAsync<int?>("SELECT UserID FROM employees WHERE EmployeeID = @EmployeeID", new { EmployeeID = firstEmployeeId }))
+            .Should().BeNull();
+        (await repository.GetByIdAsync(firstUserId))!.EmployeeID.Should().Be(replacementEmployeeId);
+    }
+
+    [Fact]
     public async Task ReplaceRolesPreservingLastAdministratorAsync_WhenInsertFails_RollsBackPreviousRoles()
     {
         await using var connection = new MySqlConnection(fixture.ConnectionString);
@@ -276,6 +315,7 @@ public sealed class AdminSecurityCriticalIntegrationTests(MariaDbFixture fixture
 
     private async Task<SeedAdminIsolation> PrepareIsolationAsync(MySqlConnection connection)
     {
+        await connection.ExecuteAsync("CREATE TABLE IF NOT EXISTS employees (EmployeeID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(150) NOT NULL, IsActive TINYINT(1) NOT NULL DEFAULT 1, UserID INT NULL, KEY IX_employees_UserID (UserID)) ENGINE=InnoDB;");
         var originalSeedState = await CaptureSeedAdminStateAsync(connection);
         await CleanupDistinctTestDataAsync(connection);
         var adminRoleId = await GetOrCreateRoleAsync(connection, SeedAdminRoleName);
@@ -332,6 +372,14 @@ public sealed class AdminSecurityCriticalIntegrationTests(MariaDbFixture fixture
 
     private async Task CleanupDistinctTestDataAsync(MySqlConnection connection)
     {
+        await connection.ExecuteAsync(
+            "UPDATE employees SET UserID = NULL WHERE UserID IN (SELECT UserID FROM users WHERE Username LIKE @UserLike);",
+            new { UserLike = "f1_%" });
+        await connection.ExecuteAsync("UPDATE employees SET UserID = NULL WHERE Name LIKE @EmployeeLike;",
+            new { EmployeeLike = "f1_emp_%" });
+        await connection.ExecuteAsync("DELETE FROM employees WHERE Name LIKE @EmployeeLike;",
+            new { EmployeeLike = "f1_emp_%" });
+
         await connection.ExecuteAsync(
             "DELETE FROM user_permission_overrides WHERE UserID IN (SELECT UserID FROM users WHERE Username LIKE @UserLike);",
             new { UserLike = "f1_%" });

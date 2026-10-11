@@ -47,10 +47,11 @@ namespace Decor.FluentSqlBuilder.Clauses
         public WhereConditionChainBuilder WithDynamicSearchFilter<TIdEntity, TStringEntity>(
             string? arg,
             Expression<Func<TIdEntity, object?>> idPropertySelector,
-            Expression<Func<TStringEntity, object?>> stringPropertySelector)
+            Expression<Func<TStringEntity, object?>> stringPropertySelector,
+            params Expression<Func<TStringEntity, object?>>[] additionalTextSelectors)
             where TIdEntity : class
             where TStringEntity : class
-            => _parentWhereBuilder.WithDynamicSearchFilter(arg, idPropertySelector, stringPropertySelector);
+            => _parentWhereBuilder.WithDynamicSearchFilter(arg, idPropertySelector, stringPropertySelector, additionalTextSelectors);
 
         public WhereConditionChainBuilder FullText<TEntity>(
             string searchTerm,

@@ -7,6 +7,7 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Home { get; } = new("Application.Home");
         public static DecorIconId Settings { get; } = new("Application.Settings");
         public static DecorIconId Help { get; } = new("Application.Help");
+        public static DecorIconId Info { get; } = new("Application.Info");
         public static DecorIconId ThemeToggle { get; } = new("Application.ThemeToggle");
     }
 
@@ -47,7 +48,9 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Report { get; } = new("Actions.Report");
         public static DecorIconId Close { get; } = new("Actions.Close");
         public static DecorIconId Clear { get; } = new("Actions.Clear");
+        public static DecorIconId Filter { get; } = new("Actions.Filter");
         public static DecorIconId Copy { get; } = new("Actions.Copy");
+        public static DecorIconId Cart { get; } = new("Actions.Cart");
     }
 
     public static class User

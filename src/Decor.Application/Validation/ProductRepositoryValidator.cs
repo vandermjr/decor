@@ -11,6 +11,9 @@ public class ProductRepositoryValidator(IProductRepository Repository) : IReposi
     {
         var errors = new List<string>();
 
+        if (product.ProductType != ProductType.Good)
+            errors.Add("Serviços devem ser cadastrados no catálogo de serviços.");
+
         if (!_repository.BrandExists(product.BrandID))
         {
             errors.Add("A marca informada não existe.");
@@ -28,7 +31,7 @@ public class ProductRepositoryValidator(IProductRepository Repository) : IReposi
 
         if (product.DefaultInstallationServiceID.HasValue && !_repository.ServiceProductExists(product.DefaultInstallationServiceID.Value))
         {
-            errors.Add("O serviço de instalação padrão informado não existe ou não é do tipo Serviço.");
+            errors.Add("O serviço de instalação padrão informado não existe no catálogo de serviços.");
         }
 
         return errors;

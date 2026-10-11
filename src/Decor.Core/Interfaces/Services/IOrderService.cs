@@ -9,6 +9,6 @@ public interface IOrderService
     Task<OrderDTO> GetOrderByIdAsync(int orderId, CancellationToken cancellationToken = default);
     Task<OrderDTO> ConvertFromQuoteAsync(int quoteSectionId, CancellationToken cancellationToken = default);
     Task ApproveOrderAsync(int orderId, bool requiresDownPayment, DateTime? manufacturingDeadline = null, DateTime? installationDeadline = null, CancellationToken cancellationToken = default);
-    Task CancelOrderAsync(int orderId, CancellationToken cancellationToken = default);
+    Task CancelOrderAsync(int orderId, string reason, CancellationToken cancellationToken = default);
     Task SendItemToProductionAsync(int orderItemId, int sentToProductionByEmployeeID, CancellationToken cancellationToken = default);
 }

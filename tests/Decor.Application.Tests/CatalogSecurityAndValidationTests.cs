@@ -83,16 +83,49 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_ServiceWithoutStockUnit_Saves()
+    public async Task ProductService_AlwaysPersistsInitialStockAsZero()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
 
-        await service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Service));
+        await service.SaveProductAsync(CreateProduct(stockUnitId: 7, productType: ProductType.Good) with { StockQuantity = 4m });
 
         repository.SaveCalls.Should().Be(1);
-        repository.LastSaved.Should().NotBeNull();
-        repository.LastSaved!.StockUnitID.Should().BeNull();
+        repository.LastSaved!.StockQuantity.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ProductService_PreservesMadeToOrderAcquisitionMode()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
+        var dto = CreateProduct(stockUnitId: 7, productType: ProductType.Good) with
+        {
+            AcquisitionMode = ProductAcquisitionMode.SobEncomenda
+        };
+
+        await service.SaveProductAsync(dto);
+
+        repository.LastSaved!.AcquisitionMode.Should().Be(ProductAcquisitionMode.SobEncomenda);
+    }
+
+    [Fact]
+    public void ProductDTOValidator_AllowsMinimumStockAboveInitialStock()
+    {
+        var errors = new ProductDTOValidator().Validate(CreateProduct() with { StockQuantity = 1m, MinimumStock = 5m });
+
+        errors.Should().NotContain(error => error.Contains("Estoque Mínimo", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ProductService_ServiceWithoutStockUnit_DoesNotPersist()
+    {
+        var repository = new TrackingProductRepository();
+        var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
+
+        var action = () => service.SaveProductAsync(CreateProduct(stockUnitId: null, productType: ProductType.Service));
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
     }
 
     [Fact]
@@ -121,16 +154,14 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_ServiceWithSubgroup_AutoClearsSubgroupAndSaves()
+    public async Task ProductService_ServiceWithSubgroup_DoesNotPersist()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsCreate));
 
-        await service.SaveProductAsync(CreateProduct(subgroupId: 1, productType: ProductType.Service));
-
-        repository.SaveCalls.Should().Be(1);
-        repository.LastSaved.Should().NotBeNull();
-        repository.LastSaved!.SubgroupID.Should().BeNull();
+        var action = () => service.SaveProductAsync(CreateProduct(subgroupId: 1, productType: ProductType.Service));
+        await action.Should().ThrowAsync<ValidationException>();
+        repository.SaveCalls.Should().Be(0);
     }
 
     [Fact]
@@ -146,15 +177,13 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
-    public async Task ProductService_DefaultInstallationServiceReferencingSelf_ThrowsValidationException()
+    public async Task ProductService_DefaultInstallationServiceWithSameNumericId_Saves()
     {
         var repository = new TrackingProductRepository();
         var service = new ProductService(repository, new ProductDTOValidator(), new ValidProductRepositoryValidator(), new FixedAuthorizationService(DecorPermissions.ProductsEdit));
 
-        var action = () => service.SaveProductAsync(CreateProduct(productId: 7, defaultInstallationServiceId: 7));
-
-        await action.Should().ThrowAsync<ValidationException>();
-        repository.SaveCalls.Should().Be(0);
+        await service.SaveProductAsync(CreateProduct(productId: 7, defaultInstallationServiceId: 7));
+        repository.SaveCalls.Should().Be(1);
     }
 
     [Fact]
@@ -191,7 +220,7 @@ public sealed class CatalogSecurityAndValidationTests
         ProductType productType = ProductType.Good,
         decimal? employeeCommissionValue = null,
         int? defaultInstallationServiceId = null) => new(
-        productId, "12345678", true, "Produto válido", 1, brandId, "Marca", subgroupId, "Subgrupo", 1, "Grupo", 1, "Família", 1, "Classe", null, null, null, null, 0, (int)productType, null, null, employeeCommissionValue, defaultInstallationServiceId, stockUnitId);
+        productId, "12345678", true, "Produto válido", 0, brandId, "Marca", subgroupId, "Subgrupo", 1, "Grupo", 1, "Família", 1, "Classe", null, null, null, null, 0, (int)productType, null, null, employeeCommissionValue, defaultInstallationServiceId, stockUnitId);
 
 
     private sealed class FixedAuthorizationService(params string[] permissions) : IAuthorizationService

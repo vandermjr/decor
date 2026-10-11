@@ -35,8 +35,8 @@
     <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <ProgressBar Width="100" Height="3" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
-      <Button TabIndex="1" Content="Cancelar" Command="{Binding CancelCommand}"/>
-      <Button TabIndex="2" Content="Salvar" Command="{Binding SaveCommand}"/>
+      <Button TabIndex="1" Content="Cancelar" Command="{Binding CancelCommand}" Classes="decor-action"/>
+      <Button TabIndex="2" Content="Salvar" Command="{Binding SaveCommand}" Classes="decor-action"/>
     </StackPanel>
     </Border>
   </Grid>
