@@ -38,7 +38,8 @@
                                       IsVisible="{Binding !IsEditing}"/>
       <Border Padding="0" IsVisible="{Binding IsEditing}">
         <Grid RowDefinitions="*,Auto">
-          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <ScrollViewer controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                        VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="12" Margin="0,0,20,0">
               <TextBlock Text="{Binding FormTitle}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">

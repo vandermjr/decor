@@ -68,6 +68,7 @@ public class ProductService(
         if (repoErrors.Any())
             throw new ValidationException(string.Join("\n", repoErrors));
 
+        productEntity.StockQuantity = 0;
         var affectedRows = await _productRepository.SaveAsync(productEntity, cancellationToken);
         if (affectedRows != 1)
             throw new InvalidOperationException("Não foi possível salvar o produto.");

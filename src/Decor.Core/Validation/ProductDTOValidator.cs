@@ -9,6 +9,8 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
 
         if (dto.ProductType != (int)Decor.Core.Entities.ProductType.Good)
             errors.Add("Serviços não pertencem ao catálogo de produtos.");
+        if (!Enum.IsDefined(dto.AcquisitionMode))
+            errors.Add("O modo de aquisição do produto é inválido.");
         if (dto.EmployeeCommissionValue is not null)
             errors.Add("Produtos não possuem comissão de serviço.");
 
@@ -46,13 +48,10 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
             errors.Add("A descrição não pode exceder 50 caracteres.");
 
         if (dto.StockQuantity < 0)
-            errors.Add("O Estoque Físico não pode ser negativo.");
+            errors.Add("O Estoque Inicial não pode ser negativo.");
 
         if (dto.MinimumStock < 0)
             errors.Add("O Estoque Mínimo não pode ser negativo.");
-
-        if (dto.MinimumStock > dto.StockQuantity)
-            errors.Add("O Estoque Mínimo não pode ser maior que o Estoque Físico.");
 
         if (dto.BrandID > 0 && string.IsNullOrWhiteSpace(dto.BrandName))
             errors.Add("O nome da Marca é obrigatório quando o ID da Marca é informado.");

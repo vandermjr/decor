@@ -1,6 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:Decor.AvaloniaUI.ViewModels" xmlns:views="using:Decor.AvaloniaUI.Views" xmlns:dtos="using:Decor.Core.DTOs" xmlns:icons="using:Decor.AvaloniaUI.Icons" xmlns:controls="using:Decor.AvaloniaUI.Controls" x:Class="Decor.AvaloniaUI.Views.UsersView" x:DataType="vm:UsersViewModel">
-  <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
-    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
+  <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+    <StackPanel Spacing="4" Margin="0,0,0,4" IsVisible="{Binding !IsEditing}">
+      <TextBlock Text="Usuários" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta de usuários e grupos associados" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding !IsEditing}">
         <controls:DecorSearchField x:Name="SearchTextBox" Grid.ColumnSpan="3" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar usuário"
                     SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
       <Button Grid.Column="3" Command="{Binding NewUserCommand}" Classes="decor-action">
@@ -17,7 +21,7 @@
       </Button>
     </Grid>
 
-    <Grid Grid.Row="1" RowDefinitions="2*,Auto,*" RowSpacing="8" IsVisible="{Binding !IsEditing}">
+    <Grid Grid.Row="2" RowDefinitions="2*,Auto,*" RowSpacing="8" IsVisible="{Binding !IsEditing}">
     <controls:DecorDataGridControl x:Name="UsersGrid" PaginationSource="{Binding}" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
                                     DefaultSortMemberPath="PresentationName"
                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
@@ -32,7 +36,7 @@
       </ListBox.ItemTemplate>
     </ListBox>
     </Grid>
-    <Panel Grid.RowSpan="2" IsVisible="{Binding IsEditing}">
+    <Panel Grid.RowSpan="3" IsVisible="{Binding IsEditing}">
       <views:UserFormView x:Name="UserForm" DataContext="{Binding ActiveForm}"/>
     </Panel>
   </Grid>

@@ -12,7 +12,11 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class IconCatalogViewModel : INotifyPropertyChanged
 {
     private readonly IIconAppearanceService _iconAppearanceService;
+    private readonly IStockSettingsService? _stockSettingsService;
     private int _iconWeight;
+    private bool _allowNegativeStock;
+    private string _selectedSettingsSection = "StockMovements";
+    private string _stockSettingsStatus = string.Empty;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
 
@@ -31,12 +35,39 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
     public string IconWeightDisplay => IconWeight.ToString(CultureInfo.InvariantCulture);
     public ICommand ApplyCommand { get; }
+    public ICommand SaveStockSettingsCommand { get; }
+    public bool IsIconSettingsSelected => _selectedSettingsSection == "Icons";
+    public bool IsStockMovementsSelected => _selectedSettingsSection == "StockMovements";
+    public string StockSettingsStatus
+    {
+        get => _stockSettingsStatus;
+        private set => SetField(ref _stockSettingsStatus, value);
+    }
 
-    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService)
+    public string SelectedSettingsSection
+    {
+        get => _selectedSettingsSection;
+        set
+        {
+            if (!SetField(ref _selectedSettingsSection, value)) return;
+            OnPropertyChanged(nameof(IsIconSettingsSelected));
+            OnPropertyChanged(nameof(IsStockMovementsSelected));
+        }
+    }
+
+    public bool AllowNegativeStock
+    {
+        get => _allowNegativeStock;
+        set => SetField(ref _allowNegativeStock, value);
+    }
+
+    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IStockSettingsService? stockSettingsService = null)
     {
         _iconAppearanceService = iconAppearanceService;
+        _stockSettingsService = stockSettingsService;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
         ApplyCommand = new RelayCommand(async () => await ApplyAsync());
+        SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
         foreach (var family in DecorIconCatalog.GetFamilyGroups())
         {
             var group = new IconCatalogFamilyViewModel(family.Name);
@@ -47,9 +78,34 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task InitializeAsync()
+    {
+        if (_stockSettingsService is null) return;
+        AllowNegativeStock = await _stockSettingsService.GetAllowNegativeStockAsync();
+    }
+
     private async Task ApplyAsync()
     {
         await _iconAppearanceService.SetAppearanceAsync(IconWeight, _iconAppearanceService.CurrentAppearance.StrokeThickness);
+    }
+
+    private async Task SaveStockSettingsAsync()
+    {
+        if (_stockSettingsService is null)
+        {
+            StockSettingsStatus = "As configurações de estoque não estão disponíveis.";
+            return;
+        }
+
+        try
+        {
+            await _stockSettingsService.SetAllowNegativeStockAsync(AllowNegativeStock);
+            StockSettingsStatus = "Configuração de estoque salva.";
+        }
+        catch
+        {
+            StockSettingsStatus = "Não foi possível salvar a configuração de estoque.";
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -61,7 +117,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
         field = value;
         OnPropertyChanged(propertyName);
-        OnPropertyChanged(propertyName == nameof(IconWeight) ? nameof(IconWeightDisplay) : null);
+        if (propertyName == nameof(IconWeight)) OnPropertyChanged(nameof(IconWeightDisplay));
         return true;
     }
 

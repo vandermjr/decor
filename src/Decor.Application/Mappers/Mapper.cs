@@ -16,7 +16,7 @@ public static class Mapper
             Barcode: product.Barcode,
             IsActive: product.IsActive,
             Description: product.Description,
-            StockQuantity: product.StockQuantity,
+            StockQuantity: 0,
             ManufacturerRef: product.ManufacturerRef,
             AuxiliarRef: product.AuxiliaryRef,
             Dimensions: product.Dimensions,
@@ -37,7 +37,11 @@ public static class Mapper
             SalePrice: product.SalePrice,
             EmployeeCommissionValue: null,
             DefaultInstallationServiceID: product.DefaultInstallationServiceID,
-            StockUnitID: product.StockUnit?.UnitOfMeasureID ?? product.StockUnitID
+            StockUnitID: product.StockUnit?.UnitOfMeasureID ?? product.StockUnitID,
+            StockUnitCode: product.StockUnit?.Code,
+            CurrentStockQuantity: product.CurrentStockQuantity,
+            ReservedStockQuantity: product.ReservedStockQuantity,
+            AcquisitionMode: product.AcquisitionMode
         );
     }
 
@@ -58,6 +62,7 @@ public static class Mapper
         BrandID = productDto.BrandID ?? 0,
         SubgroupID = productDto.SubgroupID,
         StockUnitID = productDto.StockUnitID,
+        AcquisitionMode = productDto.AcquisitionMode,
         ProductType = (ProductType)productDto.ProductType,
         CostPrice = productDto.CostPrice,
         SalePrice = productDto.SalePrice,

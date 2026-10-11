@@ -8,7 +8,7 @@
       <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="12,10"/>
       <Setter Property="Width" Value="170"/>
       <Setter Property="Height" Value="176"/>
@@ -16,79 +16,77 @@
     </Style>
   </UserControl.Styles>
 
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="18" Spacing="22">
-      <StackPanel Spacing="4">
-        <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-        <TextBlock Text="Aparência global dos ícones do sistema." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
-      </StackPanel>
-
-      <Border Background="{DynamicResource DecorSurfaceRaisedBrush}"
-              BorderBrush="{DynamicResource DecorBorderBrush}"
-              BorderThickness="1"
-              CornerRadius="10"
-              Padding="14">
-        <StackPanel Spacing="12">
-          <TextBlock Text="Aparência dos ícones" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="10">
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Peso do ícone" VerticalAlignment="Center"/>
-            <Slider Grid.Row="0" Grid.Column="1"
-                    Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True"
-                    Value="{Binding IconWeight, Mode=TwoWay}"/>
-            <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
-
-          </Grid>
-          <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar" Classes="decor-action"/>
-        </StackPanel>
-      </Border>
-
-      <ItemsControl ItemsSource="{Binding FamilyGroups}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:IconCatalogFamilyViewModel">
-            <Border Margin="0,0,0,18" Padding="0" Background="Transparent">
-              <StackPanel Spacing="10">
-                <TextBlock Text="{Binding Name}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-
-                <ItemsControl ItemsSource="{Binding Items}">
-                  <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                      <WrapPanel />
-                    </ItemsPanelTemplate>
-                  </ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:IconCatalogItemViewModel">
-                      <Border Classes="icon-card">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                          <Path Data="{Binding Geometry}"
-                                Width="42"
-                                Height="42"
-                                Stretch="Uniform"
-                              Fill="{DynamicResource DecorTextBrush}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
-
-                          <TextBlock Text="{Binding Name}"
-                                     FontWeight="{DynamicResource DecorFontWeightHeading}"
-                                     HorizontalAlignment="Center"
-                                     TextAlignment="Center"/>
-
-                          <TextBlock Text="{Binding FullId}"
-                                     Foreground="{DynamicResource DecorTextMutedBrush}"
-                                     FontSize="{DynamicResource DecorFontSizeCaption}"
-                                     HorizontalAlignment="Center"
-                                     TextAlignment="Center"
-                                     TextTrimming="CharacterEllipsis"
-                                     MaxWidth="140"/>
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+  <Grid ColumnDefinitions="230,*" ColumnSpacing="16" Margin="18">
+    <StackPanel Grid.Column="0" Spacing="12">
+      <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" TextWrapping="Wrap"/>
+      <TreeView x:Name="SettingsTree" SelectionChanged="SettingsTree_SelectionChanged">
+        <TreeViewItem Header="Geral" IsExpanded="True">
+          <TreeViewItem Header="Aparência dos ícones" Tag="Icons"/>
+        </TreeViewItem>
+        <TreeViewItem Header="Estoque" IsExpanded="True">
+          <TreeViewItem Header="Movimentações" Tag="StockMovements" IsSelected="True"/>
+        </TreeViewItem>
+      </TreeView>
     </StackPanel>
-  </ScrollViewer>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <TextBlock Text="Preferências gerais e regras dos módulos." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsStockMovementsSelected}" Spacing="12">
+          <TextBlock Text="Estoque / Movimentações" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <StackPanel Spacing="12">
+              <ToggleSwitch Content="Permitir venda com estoque negativo" IsChecked="{Binding AllowNegativeStock, Mode=TwoWay}"/>
+              <TextBlock Text="Quando desativado, a venda é bloqueada se a quantidade exceder o saldo disponível. Quando ativado, a venda pode prosseguir após confirmação." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <TextBlock Text="{Binding StockSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <Button Grid.Column="1" Command="{Binding SaveStockSettingsCommand}" Content="Salvar" Classes="decor-action"/>
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsIconSettingsSelected}" Spacing="18">
+          <TextBlock Text="Aparência dos ícones" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <TextBlock Text="Peso do ícone" VerticalAlignment="Center"/>
+                <Slider Grid.Column="1" Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True" Value="{Binding IconWeight, Mode=TwoWay}"/>
+                <TextBlock Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
+              </Grid>
+              <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar" Classes="decor-action"/>
+            </StackPanel>
+          </Border>
+          <ItemsControl ItemsSource="{Binding FamilyGroups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:IconCatalogFamilyViewModel">
+                <StackPanel Spacing="10" Margin="0,0,0,18">
+                  <TextBlock Text="{Binding Name}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                  <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:IconCatalogItemViewModel">
+                        <Border Classes="icon-card">
+                          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                            <Path Data="{Binding Geometry}" Width="42" Height="42" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Name}" FontWeight="{DynamicResource DecorFontWeightHeading}" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <TextBlock Text="{Binding FullId}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" HorizontalAlignment="Center" TextAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="140"/>
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

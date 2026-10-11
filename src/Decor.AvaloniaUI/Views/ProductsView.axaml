@@ -11,6 +11,25 @@
     <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
   </UserControl.Resources>
   <UserControl.Styles>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridRow">
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-ProductID">
+      <Setter x:SetterTargetType="TextBlock" Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-StockStatus">
+      <Setter x:SetterTargetType="TextBlock" Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-Description">
+      <Setter x:SetterTargetType="TextBlock" Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="controls|DecorDataGridControl.stock-catalog .grid-column-AvailableStockQuantity">
+      <Setter x:SetterTargetType="TextBlock" Property="FontWeight" Value="SemiBold"/>
+    </Style>
     <Style Selector="Border.quantity-field">
       <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
     </Style>
@@ -18,9 +37,13 @@
       <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}"/>
     </Style>
   </UserControl.Styles>
-  <Grid RowDefinitions="Auto,*" Margin="16">
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <StackPanel Spacing="4" Margin="0,0,0,16" IsVisible="{Binding !IsEditing}">
+      <TextBlock Text="Produtos" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta de produtos e saldos nos depósitos" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
     <!-- Toolbar -->
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12">
       <controls:DecorSearchField x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
                                 PlaceholderText="Pesquisar por código, descrição, marca ou referência" SearchHelp="{x:Static controls:DecorSearchField.ProductSearchHelp}"
                                 SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}" IsVisible="{Binding !IsEditing}"/>
@@ -43,9 +66,9 @@
     </Grid>
 
     <!-- DataGrid ou Formulário (alternância) -->
-    <Panel Grid.Row="1">
+    <Panel Grid.Row="2">
       <!-- DataGrid (preenche tela inteira) -->
-      <controls:DecorDataGridControl x:Name="ProductsGrid" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
+      <controls:DecorDataGridControl x:Name="ProductsGrid" Classes="stock-catalog" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
                 SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
@@ -54,7 +77,8 @@
       <!-- Formulário de Edição (substitui DataGrid) -->
       <Border BorderThickness="0" Padding="0" CornerRadius="4" IsVisible="{Binding IsEditing}">
         <Grid RowDefinitions="*,Auto">
-        <ScrollViewer x:Name="ProductFormScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="ProductFormScrollViewer" controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="0,0,20,0">
             <TextBlock FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Text="Informações do Produto" Margin="0,0,0,12"/>
             
@@ -82,17 +106,29 @@
               <TextBlock Text="{Binding DescriptionError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
             </StackPanel>
             
+            <StackPanel Spacing="4" HorizontalAlignment="Left">
+              <TextBlock Text="Unidade de Estoque" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <ComboBox TabIndex="5" ItemsSource="{Binding StockUnits}" SelectedItem="{Binding SelectedStockUnit}" Width="160" HorizontalAlignment="Left" controls:DecorRequiredField.IsRequired="True">
+                <ComboBox.ItemTemplate><DataTemplate x:DataType="dto:UnitOfMeasureDTO"><TextBlock Text="{Binding Code}"/></DataTemplate></ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+
+            <StackPanel Spacing="4" HorizontalAlignment="Left">
+              <TextBlock Text="Aquisição" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+              <ToggleSwitch TabIndex="6" Content="Comprar somente após pedido confirmado" IsChecked="{Binding IsMadeToOrder, Mode=TwoWay}"/>
+            </StackPanel>
+
             <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="12" HorizontalAlignment="Left">
               <StackPanel Spacing="4">
-                <TextBlock Text="Estoque" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                <Border Classes="quantity-field" Width="160" BorderThickness="1" CornerRadius="4">
-                  <NumericUpDown TabIndex="5" Value="{Binding StockQuantity}" Minimum="0" BorderThickness="0" controls:DecorNumericInput.Quantity="True"/>
+                <TextBlock Text="Estoque Inicial" FontWeight="{DynamicResource DecorFontWeightBase}"/>
+                <Border Classes="quantity-field" Width="180" BorderThickness="1" CornerRadius="4">
+                  <NumericUpDown TabIndex="7" Value="{Binding StockQuantity}" Minimum="0" IsEnabled="False" BorderThickness="0" controls:DecorNumericInput.Quantity="True"/>
                 </Border>
                 <TextBlock Text="{Binding StockQuantityError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockQuantityError}"/>
               </StackPanel>
               <StackPanel Spacing="4">
                 <TextBlock Text="Estoque Mínimo" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                <Border Classes="quantity-field" Width="160" BorderThickness="1" CornerRadius="4">
+                <Border Classes="quantity-field" Width="180" BorderThickness="1" CornerRadius="4">
                   <NumericUpDown TabIndex="6" Value="{Binding MinimumStock}" Minimum="0" BorderThickness="0" controls:DecorNumericInput.Quantity="True"/>
                 </Border>
                 <TextBlock Text="{Binding MinimumStockError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasMinimumStockError}"/>

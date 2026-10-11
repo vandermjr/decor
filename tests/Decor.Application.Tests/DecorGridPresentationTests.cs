@@ -3,9 +3,13 @@ using System.Reflection;
 using System.Xml.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Media;
+using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Controls;
+using Decor.AvaloniaUI.Controls.GridStyling;
 using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.AvaloniaUI.Views;
 using Decor.Core.DTOs;
 
 namespace Decor.Application.Tests;
@@ -138,6 +142,18 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
+    public void Product_catalog_columns_use_auto_width_for_header_readability()
+    {
+        var method = typeof(ProductsView).GetMethod("GetColumnWidth", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        var productIdWidth = (DataGridLength)method.Invoke(null, [nameof(ProductDTO.ProductID)])!;
+        var descriptionWidth = (DataGridLength)method.Invoke(null, [nameof(ProductDTO.Description)])!;
+
+        Assert.Equal(DataGridLengthUnitType.Auto, productIdWidth.UnitType);
+        Assert.Equal(DataGridLengthUnitType.Auto, descriptionWidth.UnitType);
+    }
+
+    [Fact]
     public void Generated_state_column_is_always_last()
     {
         var control = new DecorDataGridControl();
@@ -204,6 +220,27 @@ public sealed partial class DecorGridPresentationTests
         Assert.Equal(expected, DecorGridHeader.NormalizeLabel(label));
     }
 
+    [Fact]
+    public void Product_grid_specific_columns_keep_expected_alignment()
+    {
+        var styler = new DefaultGridControlStyler();
+
+        Assert.Equal(TextAlignment.Center, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.ProductID))!));
+        Assert.Equal(TextAlignment.Center, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.StockStatus))!));
+        Assert.Equal(TextAlignment.Left, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.StockUnitCode))!));
+    }
+
+    [Fact]
+    public void Grid_headers_show_full_labels_without_ellipsis_truncation()
+    {
+        var header = new DecorGridHeader();
+        var grid = Assert.IsType<Grid>(header.Build("Descrição do produto"));
+
+        var text = grid.GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.Equal(Avalonia.Media.TextTrimming.None, text.TextTrimming);
+        Assert.Equal(TextAlignment.Center, text.TextAlignment);
+    }
+
     [Theory]
     [InlineData("Código")]
     [InlineData("ID da Marca")]
@@ -242,6 +279,21 @@ public sealed partial class DecorGridPresentationTests
         Assert.Equal("Estado", status.Header);
         Assert.True(status.MinWidth >= 130);
         Assert.All(grid.Columns, column => Assert.False(string.IsNullOrEmpty(column.SortMemberPath)));
+    }
+
+    [Fact]
+    public void Product_stock_status_cell_template_reads_the_row_item()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+        control.InitializeColumns(typeof(ProductDTO), propertyNames: [nameof(ProductDTO.StockStatus)]);
+        var statusColumn = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns));
+
+        var cell = statusColumn.CellTemplate!.Build(ProductStockGridTests.CreateProduct(5m, 0m, 1m));
+
+        Assert.IsType<Border>(cell);
     }
 
     [Fact]

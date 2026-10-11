@@ -54,6 +54,12 @@ public class Product
     [Column("StockQuantity")] // Opcional
     public decimal StockQuantity { get; set; }
 
+    [NotMapped]
+    public decimal CurrentStockQuantity { get; set; }
+
+    [NotMapped]
+    public decimal ReservedStockQuantity { get; set; }
+
     [Column("MinimumStock")] // Opcional
     public decimal MinimumStock { get; set; }
 

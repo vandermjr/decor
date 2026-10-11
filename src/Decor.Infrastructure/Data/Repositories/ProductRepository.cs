@@ -68,8 +68,10 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     {
         var (sql, parameters) = BuildSearchQuery(arg, null, null);
         using var connection = _dbConnection.CreateConnection();
-        return connection.Query<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
+        var products = connection.Query<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
             sql, MapProduct, parameters, splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID").ToList();
+        LoadStockSummary(connection, products);
+        return products;
     }
 
     public async Task<IReadOnlyList<Product>> SearchGetByAsync(string? arg = null, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
@@ -80,7 +82,85 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var result = await connection.QueryAsync<Product, Brand, Class, Family, Group, Subgroup, UnitOfMeasure, Product>(
             new CommandDefinition(sql, parameters, cancellationToken: cancellationToken), MapProduct,
             splitOn: "BrandID,ClassID,FamilyID,GroupID,SubgroupID,UnitOfMeasureID");
-        return result.AsList();
+        var products = result.AsList();
+        await LoadStockSummaryAsync(connection, products, cancellationToken);
+        return products;
+    }
+
+    private static void LoadStockSummary(System.Data.IDbConnection connection, IReadOnlyCollection<Product> products)
+    {
+        if (products.Count == 0) return;
+        const string sql = """
+            SELECT p.ProductID,
+                   COALESCE(balances.Quantity, 0) AS CurrentStockQuantity,
+                   COALESCE(reservations.Quantity, 0) AS ReservedStockQuantity
+            FROM products p
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS Quantity
+                FROM stock_balances
+                WHERE ProductID IN @ProductIDs
+                GROUP BY ProductID
+            ) balances ON balances.ProductID = p.ProductID
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS Quantity
+                FROM stock_reservations
+                WHERE Status = @ActiveStatus AND ProductID IN @ProductIDs
+                GROUP BY ProductID
+            ) reservations ON reservations.ProductID = p.ProductID
+            WHERE p.ProductID IN @ProductIDs
+            """;
+        var summaries = connection.Query<ProductStockSummary>(sql, new
+        {
+            ProductIDs = products.Select(product => product.ProductID).ToArray(),
+            ActiveStatus = StockReservationStatus.Active
+        }).ToDictionary(summary => summary.ProductID);
+        foreach (var product in products)
+        {
+            if (!summaries.TryGetValue(product.ProductID, out var summary)) continue;
+            product.CurrentStockQuantity = summary.CurrentStockQuantity;
+            product.ReservedStockQuantity = summary.ReservedStockQuantity;
+        }
+    }
+
+    private static async Task LoadStockSummaryAsync(System.Data.IDbConnection connection, IReadOnlyCollection<Product> products, CancellationToken cancellationToken)
+    {
+        if (products.Count == 0) return;
+        const string sql = """
+            SELECT p.ProductID,
+                   COALESCE(balances.Quantity, 0) AS CurrentStockQuantity,
+                   COALESCE(reservations.Quantity, 0) AS ReservedStockQuantity
+            FROM products p
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS Quantity
+                FROM stock_balances
+                WHERE ProductID IN @ProductIDs
+                GROUP BY ProductID
+            ) balances ON balances.ProductID = p.ProductID
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS Quantity
+                FROM stock_reservations
+                WHERE Status = @ActiveStatus AND ProductID IN @ProductIDs
+                GROUP BY ProductID
+            ) reservations ON reservations.ProductID = p.ProductID
+            WHERE p.ProductID IN @ProductIDs
+            """;
+        var rows = await connection.QueryAsync<ProductStockSummary>(new CommandDefinition(sql,
+            new { ProductIDs = products.Select(product => product.ProductID).ToArray(), ActiveStatus = StockReservationStatus.Active },
+            cancellationToken: cancellationToken));
+        var summaries = rows.ToDictionary(summary => summary.ProductID);
+        foreach (var product in products)
+        {
+            if (!summaries.TryGetValue(product.ProductID, out var summary)) continue;
+            product.CurrentStockQuantity = summary.CurrentStockQuantity;
+            product.ReservedStockQuantity = summary.ReservedStockQuantity;
+        }
+    }
+
+    private sealed class ProductStockSummary
+    {
+        public int ProductID { get; init; }
+        public decimal CurrentStockQuantity { get; init; }
+        public decimal ReservedStockQuantity { get; init; }
     }
 
     private (string Sql, Dictionary<string, object?> Parameters) BuildSearchQuery(string? arg, int? page, int? pageSize)

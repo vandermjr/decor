@@ -6,12 +6,15 @@
              xmlns:controls="using:Decor.AvaloniaUI.Controls"
              x:Class="Decor.AvaloniaUI.Views.GroupsView"
              x:DataType="vm:GroupRegistrationViewModel">
-  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="12">
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-      <TextBlock Text="Cadastro de grupos de segurança" FontSize="{DynamicResource DecorFontSizeTitle}" TextWrapping="Wrap"/>
+  <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Grupos de segurança" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta e manutenção dos grupos de acesso" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
       <ProgressBar Grid.Column="1" Width="120" Height="6" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
     </Grid>
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
       <controls:DecorSearchField x:Name="SearchTextBox" Text="{Binding SearchText, Mode=TwoWay}"
                   PlaceholderText="Pesquisar grupos por código, nome ou descrição"
                   SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"
@@ -31,13 +34,14 @@
         </Button>
       </StackPanel>
     </Grid>
-    <Panel Grid.Row="2">
+    <Panel Grid.Row="3">
       <controls:DecorDataGridControl x:Name="RolesGrid" PaginationSource="{Binding}" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole, Mode=TwoWay}"
                                       IsVisible="{Binding !IsEditing}" DefaultSortMemberPath="RoleName"
                                       IsEnabled="{Binding IsIdle}"
                                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
       <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsEditing}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6" IsEnabled="{Binding IsIdle}" VerticalAlignment="Top">
         <TextBlock Text="Nome" FontWeight="{DynamicResource DecorFontWeightBase}"/>
         <TextBox Grid.Row="1" Text="{Binding Name, Mode=TwoWay}" MaxLength="50" controls:DecorRequiredField.IsRequired="True"/>
@@ -63,7 +67,7 @@
         </Border>
       </Grid>
     </Panel>
-    <TextBlock Grid.Row="3" Text="{Binding ErrorMessage}" IsVisible="{Binding HasError}"
+    <TextBlock Grid.Row="4" Text="{Binding ErrorMessage}" IsVisible="{Binding HasError}"
                Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
   </Grid>
 </UserControl>

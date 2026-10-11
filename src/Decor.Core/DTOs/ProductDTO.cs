@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Decor.Core.Common.Attributes;
+using Decor.Core.Entities;
 
 namespace Decor.Core.DTOs;
 
@@ -9,7 +10,7 @@ public record ProductDTO(
     [property: Display(Name = "Código de Barras"), Browsable(true)] string? Barcode,
     [property: Display(Name = "Ativo"), Browsable(true)] bool IsActive,
     [property: Display(Name = "Descrição"), Browsable(true)] string? Description,
-    [property: Display(Name = "Estoque"), Browsable(true)] decimal StockQuantity,
+    [property: Display(Name = "Estoque Inicial"), Browsable(true)] decimal StockQuantity,
     [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? BrandID,
     [property: Display(Name = "Marca"), Browsable(true)] string? BrandName,    
     [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? SubgroupID,
@@ -24,11 +25,30 @@ public record ProductDTO(
     [property: Display(Name = "Ref. Auxiliar"), Browsable(false)] string? AuxiliarRef,
     [property: Display(Name = "Dimensões"), Browsable(true)] string? Dimensions,
     [property: Display(Name = "Observações"), Browsable(false)] string? Observations,
-    [property: Display(Name = "Estoque Mínimo"), Browsable(false)] decimal MinimumStock,
+    [property: Display(Name = "Estoque Mínimo"), Browsable(true)] decimal MinimumStock,
     [property: Display(Name = "Tipo"), Browsable(false)] int ProductType,
     [property: Display(Name = "Preço de Custo"), Browsable(true)] decimal? CostPrice,
     [property: Display(Name = "Preço de Venda"), Browsable(true)] decimal? SalePrice,
     [property: Display(Name = "Comissão do Funcionário"), Browsable(false)] decimal? EmployeeCommissionValue,
     [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? DefaultInstallationServiceID,
-    [property: KeyProperty, Display(Name = "ID da Unidade de Estoque"), Browsable(false)] int? StockUnitID
-);
+    [property: KeyProperty, Display(Name = "ID da Unidade de Estoque"), Browsable(false)] int? StockUnitID,
+    [property: Display(Name = "Unidade"), Browsable(true)] string? StockUnitCode = null,
+    [property: Display(Name = "Estoque Físico"), Browsable(true)] decimal CurrentStockQuantity = 0,
+    [property: Display(Name = "Reservado"), Browsable(true)] decimal ReservedStockQuantity = 0,
+    [property: Display(Name = "Modo de Aquisição"), Browsable(false)] ProductAcquisitionMode AcquisitionMode = ProductAcquisitionMode.Estocado
+)
+{
+    [Display(Name = "Disponível"), Browsable(true)]
+    public decimal AvailableStockQuantity => CurrentStockQuantity - ReservedStockQuantity;
+
+    [Display(Name = "Situação"), Browsable(true)]
+    public string StockStatus => AcquisitionMode == ProductAcquisitionMode.SobEncomenda
+        ? "Sob Demanda"
+        : CurrentStockQuantity < 0
+        ? "Negativo"
+        : AvailableStockQuantity <= 0 && MinimumStock > 0
+            ? "Repor"
+            : AvailableStockQuantity < MinimumStock
+                ? "Atenção"
+                : "Positivo";
+}

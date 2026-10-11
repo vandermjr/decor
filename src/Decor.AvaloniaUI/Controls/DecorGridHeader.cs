@@ -22,8 +22,11 @@ public sealed class DecorGridHeader : IDataTemplate
 
     public static DecorIconId GetIconId(string label) => NormalizeLabel(label) switch
     {
-        "EAN" => DecorIconId.Common.Barcode,
-        var code when code == "Código" || code.StartsWith("Código ", StringComparison.Ordinal) => DecorIconId.Common.Code,
+        var value when value.Equals("EAN", StringComparison.OrdinalIgnoreCase) => DecorIconId.Common.Barcode,
+        var code when code.Equals("Código", StringComparison.OrdinalIgnoreCase)
+            || code.StartsWith("Código ", StringComparison.OrdinalIgnoreCase)
+            || code.Equals("CÓDIGO", StringComparison.OrdinalIgnoreCase)
+            || code.StartsWith("CÓDIGO ", StringComparison.OrdinalIgnoreCase) => DecorIconId.Common.Code,
         "Estado" => DecorIconId.Common.Status,
         _ => default
     };
@@ -59,7 +62,16 @@ public sealed class DecorGridHeader : IDataTemplate
             DecorIcon.SetId(icon, iconId);
             panel.Children.Add(icon);
         }
-        var text = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        var text = new TextBlock
+        {
+            Text = label.ToUpperInvariant(),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            FontWeight = FontWeight.SemiBold,
+            TextTrimming = TextTrimming.None,
+            TextWrapping = TextWrapping.NoWrap
+        };
         Grid.SetColumn(text, hasIcon ? 1 : 0);
         panel.Children.Add(text);
 

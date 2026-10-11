@@ -5,8 +5,12 @@
              xmlns:icons="using:Decor.AvaloniaUI.Icons"
              x:Class="Decor.AvaloniaUI.Views.PartnersView"
              x:DataType="vm:PartnersViewModel">
-  <Grid RowDefinitions="Auto,*" Margin="16">
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <StackPanel Spacing="4" Margin="0,0,0,16">
+      <TextBlock Text="Parceiros" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta de parceiros e relacionamento comercial" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
       <controls:DecorSearchField x:Name="SearchTextBox" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Pesquisar parceiros"
                                 SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -30,12 +34,13 @@
         </Button>
       </StackPanel>
     </Grid>
-    <Panel Grid.Row="1">
+    <Panel Grid.Row="2">
       <controls:DecorDataGridControl x:Name="PartnersGrid" PaginationSource="{Binding}" DefaultSortMemberPath="Name"
                                     ItemsSource="{Binding Partners}" SelectedItem="{Binding SelectedPartner, Mode=TwoWay}"
                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsVisible="{Binding !IsEditing}"/>
       <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsEditing}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="0,0,20,0" IsEnabled="{Binding !IsBusy}">
             <TextBlock Text="Informações do Parceiro" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,12"/>
             <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,8">

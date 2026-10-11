@@ -16,6 +16,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Controls.GridStyling;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.Core.DTOs;
 
 namespace Decor.AvaloniaUI.Controls;
 
@@ -578,11 +579,16 @@ public partial class DecorDataGridControl : UserControl
     private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)
     {
         var foreground = _styler.GetColumnForeground(propertyInfo);
-        var alignment = _styler.GetColumnAlignment(propertyInfo);
+        var alignment = propertyInfo.Name switch
+        {
+            nameof(ProductDTO.ProductID) => TextAlignment.Center,
+            nameof(ProductDTO.StockStatus) => TextAlignment.Center,
+            _ => _styler.GetColumnAlignment(propertyInfo)
+        };
 
         return new DataGridTemplateColumn
         {
-            CellTemplate = new FuncDataTemplate<object?>((_, _) =>
+            CellTemplate = new FuncDataTemplate<object?>((item, _) =>
             {
                 var cellContent = new Border
                 {
@@ -595,6 +601,9 @@ public partial class DecorDataGridControl : UserControl
                     TextAlignment = alignment,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                 };
+                if (propertyInfo.Name == "StockStatus")
+                    textBlock.Foreground = _styler.Theme.GetStockStatusBrush(propertyInfo.GetValue(item)?.ToString());
+                textBlock.Classes.Add($"grid-column-{propertyInfo.Name}");
 
                 textBlock.Bind(TextBlock.TextProperty, new Binding(propertyInfo.Name));
                 cellContent.Child = textBlock;

@@ -30,10 +30,11 @@
                 <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush">#DFE5ED</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridGridLinesBrush">#E4E7EB</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowHoveredBackgroundColor">#F3F6FA</SolidColorBrush>
-                <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#DFEDF9</SolidColorBrush>
-                <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#D5E7F6</SolidColorBrush>
-                <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush">#DFEDF9</SolidColorBrush>
-                <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush">#D5E7F6</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#FFF7D8</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#F7E7A8</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush">#FFF7D8</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush">#F7E7A8</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorGridSelectionBrush">#D8AF3E</SolidColorBrush>
                 <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
                 <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
                 <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>
@@ -68,6 +69,17 @@
                 <SolidColorBrush x:Key="ComboBoxBackgroundBorderBrushFocused">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextBrush">#E3E7EC</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorTextMutedBrush">#AAB4C0</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush">#30353B</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush">#E3E7EC</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush">#3A4148</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush">#444C54</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridGridLinesBrush">#3B4046</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowHoveredBackgroundColor">#303941</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#5A4722</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#6C542B</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush">#5A4722</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush">#6C542B</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorGridSelectionBrush">#E0BE63</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentBrush">#3D94D1</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#55A7E0</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
@@ -307,12 +319,21 @@
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
     </Style>
+    <Style Selector="DataGridRow">
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+    </Style>
+    <Style Selector="DataGridRow:selected">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorGridSelectionBrush}" />
+    </Style>
     <Style Selector="DataGridColumnHeader">
         <Setter Property="Padding" Value="8,0,0,0" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="DataGridColumnHeader /template/ ContentPresenter">
         <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextBlock.FontWeight" Value="SemiBold" />
     </Style>
     <!-- DecorGridHeader draws the sort indicator on the right; the native glyph and its reserved width are disabled. -->
     <Style Selector="DataGridColumnHeader /template/ Path#SortIcon">

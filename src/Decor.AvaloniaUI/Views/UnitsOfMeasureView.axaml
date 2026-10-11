@@ -5,8 +5,12 @@
              xmlns:icons="using:Decor.AvaloniaUI.Icons"
              x:Class="Decor.AvaloniaUI.Views.UnitsOfMeasureView"
              x:DataType="vm:UnitsOfMeasureViewModel">
-  <Grid RowDefinitions="Auto,*" Margin="16">
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+    <StackPanel Spacing="4" Margin="0,0,0,16">
+      <TextBlock Text="Unidades de medida" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Consulta de unidades e regras de conversão" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,12" IsVisible="{Binding !IsEditing}">
       <controls:DecorSearchField x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
                                  PlaceholderText="Pesquisar por código ou descrição" SearchCommand="{Binding SearchCommand}"
                                  ClearCommand="{Binding ClearSearchCommand}"/>
@@ -25,12 +29,13 @@
         </Button>
       </StackPanel>
     </Grid>
-    <Panel Grid.Row="1">
+    <Panel Grid.Row="2">
       <controls:DecorDataGridControl x:Name="UnitsGrid" PaginationSource="{Binding}" DefaultSortMemberPath="Code"
                                      ItemsSource="{Binding Units}" SelectedItem="{Binding SelectedUnit, Mode=TwoWay}"
                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsVisible="{Binding !IsEditing}"/>
       <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsEditing}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
+                VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="0,0,20,0" IsEnabled="{Binding !IsBusy}">
             <TextBlock Text="Informações da Unidade de Medida" FontSize="{DynamicResource DecorFontSizeTitle}"
                        FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,12"/>

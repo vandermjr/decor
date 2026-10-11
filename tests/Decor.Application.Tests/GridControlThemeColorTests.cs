@@ -56,6 +56,22 @@ public sealed class GridControlThemeColorTests
         Assert.Equal(Color.Parse(boolean), BrushColor(theme.DataType_Boolean));
     }
 
+    [Theory]
+    [InlineData(false, "Normal", "#1E5E50")]
+    [InlineData(false, "Atenção", "#7A4B00")]
+    [InlineData(false, "Negativo", "#9F3027")]
+    [InlineData(false, "Sob Demanda", "#0057A8")]
+    [InlineData(true, "Normal", "#6DDB87")]
+    [InlineData(true, "Repor", "#FFC266")]
+    [InlineData(true, "Negativo", "#FF7272")]
+    [InlineData(true, "Sob Demanda", "#71B7FF")]
+    public void Stock_status_uses_semantic_color_for_each_theme(bool isDark, string status, string expected)
+    {
+        var theme = GridControlThemeColors.Create(isDark);
+
+        Assert.Equal(Color.Parse(expected), BrushColor(theme.GetStockStatusBrush(status)));
+    }
+
     [Fact]
     public void Applying_themes_at_runtime_replaces_the_stylers_type_brushes()
     {
@@ -79,7 +95,8 @@ public sealed class GridControlThemeColorTests
         var foregrounds = new[]
         {
             theme.DataType_Int, theme.DataType_Text, theme.DataType_DateTime,
-            theme.DataType_Decimal_Positive, theme.DataType_Decimal_Negative, theme.DataType_Boolean
+            theme.DataType_Decimal_Positive, theme.DataType_Decimal_Negative, theme.DataType_Boolean,
+            theme.StockStatusNormal, theme.StockStatusAttention, theme.StockStatusNegative, theme.StockStatusMadeToOrder
         };
         var backgrounds = new[] { theme.CellBackground, theme.ValueMatchBackground, theme.FocusedCellBackground }
             .Concat(LightSelectionBackgrounds());
@@ -103,8 +120,8 @@ public sealed class GridControlThemeColorTests
         var theme = GridControlThemeColors.Create(false);
 
         Assert.Equal(Color.Parse("#FFFFFF"), BrushColor(theme.CellBackground));
-        Assert.Equal(Color.Parse("#FFFFB4"), BrushColor(theme.ValueMatchBackground));
-        Assert.Equal(Color.Parse("#C9DEF5"), BrushColor(theme.FocusedCellBackground));
+        Assert.Equal(Color.Parse("#D9EFFA"), BrushColor(theme.ValueMatchBackground));
+        Assert.Equal(Color.Parse("#D6EEF8"), BrushColor(theme.FocusedCellBackground));
         Assert.Equal(Color.Parse("#30363E"), BrushColor(theme.CellText));
         Assert.Equal(Color.Parse("#30363E"), BrushColor(theme.DataType_Boolean));
     }

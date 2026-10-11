@@ -5,6 +5,21 @@
              xmlns:icons="using:Decor.AvaloniaUI.Icons"
              x:Class="Decor.AvaloniaUI.Views.UserFormView"
              x:DataType="vm:UserFormViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.field-action">
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="Width" Value="36"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </UserControl.Styles>
   <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
     <StackPanel Spacing="12">
       <TextBlock Text="{Binding FormTitle}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
@@ -84,16 +99,16 @@
     <Border Grid.Row="2" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <ProgressBar Width="100" Height="3" HorizontalAlignment="Left" IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
-        <Button Grid.Column="1" Command="{Binding DismissCommand}" Classes="decor-action">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding DismissButtonText}" VerticalAlignment="Center"/>
-          </StackPanel>
-        </Button>
-        <Button Grid.Column="2" Command="{Binding SaveCommand}" IsVisible="{Binding !IsCompleted}" Classes="decor-action">
+        <Button Grid.Column="1" Command="{Binding SaveCommand}" IsVisible="{Binding !IsCompleted}" Classes="decor-action">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Save}" Fill="{DynamicResource DecorAccentBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
             <TextBlock Text="Salvar" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="2" Command="{Binding DismissCommand}" Classes="decor-action">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Cancel}" Fill="{DynamicResource DecorDangerBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding DismissButtonText}" VerticalAlignment="Center"/>
           </StackPanel>
         </Button>
       </Grid>
