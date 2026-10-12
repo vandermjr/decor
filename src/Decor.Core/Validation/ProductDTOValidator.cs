@@ -25,10 +25,14 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
         if (dto.SubgroupID is <= 0)
             errors.Add("O ID do Subgrupo deve ser maior que zero.");
 
-        // StockUnitID nulo é permitido na estrutura do DTO; a obrigatoriedade
-        // condicionada ao ProductType é validada em ProductService.
-        if (dto.StockUnitID is <= 0)
-            errors.Add("O ID da Unidade de Medida deve ser maior que zero.");
+        if (dto.ProductType == (int)Decor.Core.Entities.ProductType.Good)
+        {
+            if (dto.ProductID == 0 && dto.StockUnitID is null or <= 0)
+                errors.Add("A Unidade de Medida é obrigatória quando o Tipo de Produto é Bem (Good).");
+
+            if (dto.ProductID > 0 && dto.StockUnitID.HasValue && dto.StockUnitID <= 0)
+                errors.Add("A Unidade de Medida é obrigatória quando o Tipo de Produto é Bem (Good).");
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.Barcode))
         {

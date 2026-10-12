@@ -111,6 +111,7 @@
               <ComboBox TabIndex="5" ItemsSource="{Binding StockUnits}" SelectedItem="{Binding SelectedStockUnit}" Width="240" HorizontalAlignment="Left" controls:DecorRequiredField.IsRequired="True">
                 <ComboBox.ItemTemplate><DataTemplate x:DataType="dto:UnitOfMeasureDTO"><TextBlock Text="{Binding Code}"/></DataTemplate></ComboBox.ItemTemplate>
               </ComboBox>
+              <TextBlock Text="{Binding StockUnitError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockUnitError}"/>
             </StackPanel>
 
             <StackPanel Spacing="4" HorizontalAlignment="Left">

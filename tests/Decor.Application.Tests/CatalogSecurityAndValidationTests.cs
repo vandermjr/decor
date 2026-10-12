@@ -46,6 +46,14 @@ public sealed class CatalogSecurityAndValidationTests
     }
 
     [Fact]
+    public void ProductDTOValidator_RequiresStockUnitForNewGood()
+    {
+        var errors = new ProductDTOValidator().Validate(CreateProduct(productId: 0, stockUnitId: null, productType: ProductType.Good, subgroupId: 1)).ToArray();
+
+        errors.Should().Contain(error => error.Contains("Unidade de Medida", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task ProductService_GoodWithoutSubgroup_ThrowsValidationException()
     {
         var repository = new TrackingProductRepository();

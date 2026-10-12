@@ -350,6 +350,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public string DescriptionError => GetFieldError("Description");
     public string StockQuantityError => GetFieldError("StockQuantity");
     public string MinimumStockError => GetFieldError("MinimumStock");
+    public string StockUnitError => GetFieldError("StockUnit");
     public string ManufacturerRefError => GetFieldError("ManufacturerRef");
     public string AuxiliarRefError => GetFieldError("AuxiliarRef");
     public string DimensionsError => GetFieldError("Dimensions");
@@ -361,6 +362,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool HasDescriptionError => HasFieldError("Description");
     public bool HasStockQuantityError => HasFieldError("StockQuantity");
     public bool HasMinimumStockError => HasFieldError("MinimumStock");
+    public bool HasStockUnitError => HasFieldError("StockUnit");
     public bool HasManufacturerRefError => HasFieldError("ManufacturerRef");
     public bool HasAuxiliarRefError => HasFieldError("AuxiliarRef");
     public bool HasDimensionsError => HasFieldError("Dimensions");
@@ -779,6 +781,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         OnPropertyChanged(nameof(DescriptionError));
         OnPropertyChanged(nameof(StockQuantityError));
         OnPropertyChanged(nameof(MinimumStockError));
+        OnPropertyChanged(nameof(StockUnitError));
         OnPropertyChanged(nameof(ManufacturerRefError));
         OnPropertyChanged(nameof(AuxiliarRefError));
         OnPropertyChanged(nameof(DimensionsError));
@@ -788,6 +791,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         OnPropertyChanged(nameof(HasDescriptionError));
         OnPropertyChanged(nameof(HasStockQuantityError));
         OnPropertyChanged(nameof(HasMinimumStockError));
+        OnPropertyChanged(nameof(HasStockUnitError));
         OnPropertyChanged(nameof(HasManufacturerRefError));
         OnPropertyChanged(nameof(HasAuxiliarRefError));
         OnPropertyChanged(nameof(HasDimensionsError));
@@ -807,6 +811,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             return "StockQuantity";
         if (errorMessage.Contains("Estoque Mínimo", StringComparison.OrdinalIgnoreCase))
             return "MinimumStock";
+        if (errorMessage.Contains("Unidade de Medida", StringComparison.OrdinalIgnoreCase)
+            || errorMessage.Contains("Unidade", StringComparison.OrdinalIgnoreCase))
+            return "StockUnit";
         if (errorMessage.Contains("Marca", StringComparison.OrdinalIgnoreCase))
             return "Brand";
         if (errorMessage.Contains("Fabricante", StringComparison.OrdinalIgnoreCase))
