@@ -123,7 +123,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         SearchCustomersCommand = new RelayCommand(async () => await SearchCustomersAsync());
         SearchEmployeesCommand = new RelayCommand(async () => await SearchEmployeesAsync());
         SearchPartnersCommand = new RelayCommand(async () => await SearchPartnersAsync());
-        SearchProductsCommand = new RelayCommand(async () => await SearchProductsAsync(), () => IsEditing && !IsCatalogBusy);
+        SearchProductsCommand = new RelayCommand(async () => await SearchProductsAsync(), () => IsEditing);
         ClearProductsCommand = new RelayCommand(ClearCatalog, () => !IsBusy);
         CatalogPreviousCommand = new RelayCommand(async () => await SearchCatalogPageAsync(_catalogPage - 1), () => IsEditing && !IsCatalogBusy && HasCatalogPrevious);
         CatalogNextCommand = new RelayCommand(async () => await SearchCatalogPageAsync(_catalogPage + 1), () => IsEditing && !IsCatalogBusy && HasCatalogNext);
@@ -282,9 +282,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         get => _productSearchText;
         set
         {
-            if (!SetField(ref _productSearchText, value)) return;
-            if (string.IsNullOrWhiteSpace(value)) ResetCatalogResults();
-            else _ = DebounceCatalogAsync();
+            SetField(ref _productSearchText, value);
         }
     }
     public string QuantityInput
@@ -597,22 +595,6 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         return _catalogCancellation;
     }
 
-    private async Task DebounceCatalogAsync()
-    {
-        var cancellation = StartCatalogRequest();
-        var token = cancellation.Token;
-        var generation = _catalogGeneration;
-        IsCatalogBusy = false;
-        if (!IsEditing) return;
-        try
-        {
-            await Task.Delay(300, token);
-            if (token.IsCancellationRequested || generation != _catalogGeneration || !IsEditing) return;
-            await SearchProductsAsync();
-        }
-        catch (OperationCanceledException) { }
-    }
-
     private void ClearCatalog()
     {
         ProductSearchText = string.Empty;
@@ -647,7 +629,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
         var text = ProductSearchText.Trim();
         var tab = CatalogTabIndex;
         var pageSize = CatalogPagination.SelectedPageSize;
-        if (!IsEditing || string.IsNullOrWhiteSpace(text))
+        if (!IsEditing)
         {
             ResetCatalogResults();
             return;

@@ -31,7 +31,7 @@ public record ProductDTO(
     [property: Display(Name = "Preço de Venda"), Browsable(true)] decimal? SalePrice,
     [property: Display(Name = "Comissão do Funcionário"), Browsable(false)] decimal? EmployeeCommissionValue,
     [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? DefaultInstallationServiceID,
-    [property: KeyProperty, Display(Name = "ID da Unidade de Estoque"), Browsable(false)] int? StockUnitID,
+    [property: KeyProperty, Display(Name = "ID da Unidade de Medida"), Browsable(false)] int? StockUnitID,
     [property: Display(Name = "Unidade"), Browsable(true)] string? StockUnitCode = null,
     [property: Display(Name = "Estoque Físico"), Browsable(true)] decimal CurrentStockQuantity = 0,
     [property: Display(Name = "Reservado"), Browsable(true)] decimal ReservedStockQuantity = 0,

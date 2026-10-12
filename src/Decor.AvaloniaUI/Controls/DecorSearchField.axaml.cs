@@ -23,6 +23,8 @@ public partial class DecorSearchField : UserControl
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(HasClearCommand));
     public static readonly StyledProperty<bool> HasSearchHelpProperty =
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(HasSearchHelp), true);
+    public static readonly StyledProperty<bool> SearchOnTextChangedProperty =
+        AvaloniaProperty.Register<DecorSearchField, bool>(nameof(SearchOnTextChanged), true);
 
     public const string GenericSearchHelp = "Digite palavras para combinar termos (todos precisam corresponder). Use aspas para buscar uma frase exata, como \"piso vinílico\". Um número localiza pelo código. Apague o texto para limpar; use Pesquisar com o campo vazio para listar tudo.";
     public const string ProductSearchHelp = "Pesquise por código, descrição, marca ou referência. Combine palavras: piso arquitech (todos os termos precisam corresponder). Use aspas para uma frase: \"piso vinílico\". Estoque: com estoque; sem estoque; estoque negativo; estoque > 5; estoque < 10; estoque = 0; estoque acima de 5,5; estoque abaixo de 10. Combine, por exemplo: piso com estoque. Use Pesquisar com o campo vazio para listar todos os produtos.";
@@ -53,6 +55,7 @@ public partial class DecorSearchField : UserControl
     public string? SearchHelp { get => GetValue(SearchHelpProperty); set => SetValue(SearchHelpProperty, value); }
     public bool HasClearCommand { get => GetValue(HasClearCommandProperty); private set => SetValue(HasClearCommandProperty, value); }
     public bool HasSearchHelp { get => GetValue(HasSearchHelpProperty); private set => SetValue(HasSearchHelpProperty, value); }
+    public bool SearchOnTextChanged { get => GetValue(SearchOnTextChangedProperty); set => SetValue(SearchOnTextChangedProperty, value); }
     public ICommand SearchActionCommand => _searchActionCommand;
     public ICommand ClearActionCommand => _clearActionCommand;
 
@@ -61,9 +64,13 @@ public partial class DecorSearchField : UserControl
     public void ExecuteSearch()
     {
         _searchTimer.Stop();
-        _waitingForSearch = false;
         if (SearchCommand?.CanExecute(null) == true)
+        {
+            _waitingForSearch = false;
             SearchCommand.Execute(null);
+        }
+        else
+            _waitingForSearch = SearchCommand is not null;
     }
 
     private void ExecuteClear()
@@ -155,7 +162,7 @@ public partial class DecorSearchField : UserControl
             else
             {
                 _waitingForClear = false;
-                if (_commandsAttached) _searchTimer.Start();
+                if (_commandsAttached && SearchOnTextChanged) _searchTimer.Start();
             }
         }
         else if (change.Property == SearchCommandProperty)

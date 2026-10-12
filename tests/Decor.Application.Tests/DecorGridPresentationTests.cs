@@ -54,6 +54,32 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
+    public void Value_match_highlight_includes_the_focused_item_and_tracks_recycled_cells()
+    {
+        var control = new DecorDataGridControl();
+        var property = typeof(ProductDTO).GetProperty(nameof(ProductDTO.Description))!;
+        var focusedItem = ProductStockGridTests.CreateProduct(0, 0, 0);
+        var otherMatchingItem = ProductStockGridTests.CreateProduct(0, 0, 0) with { ProductID = 2 };
+        typeof(DecorDataGridControl).GetField("_highlightedProperty", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, property);
+        typeof(DecorDataGridControl).GetField("_highlightedValue", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, focusedItem.Description);
+        typeof(DecorDataGridControl).GetField("_focusedCellItem", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, focusedItem);
+
+        var recycledCell = new Border { Tag = property, DataContext = otherMatchingItem };
+        var applyHighlight = typeof(DecorDataGridControl).GetMethod("ApplyHighlight", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        applyHighlight.Invoke(control, [recycledCell]);
+
+        Assert.Same(control.Styler.Theme.ValueMatchBackground, recycledCell.Background);
+        recycledCell.DataContext = focusedItem;
+        applyHighlight.Invoke(control, [recycledCell]);
+        Assert.Same(control.Styler.Theme.FocusedCellBackground, recycledCell.Background);
+        Assert.Equal(0, recycledCell.BorderThickness.Left);
+        Assert.Equal(0, recycledCell.BorderThickness.Right);
+    }
+
+    [Fact]
     public void Shared_search_actions_follow_search_clear_filter_information_order()
     {
         var document = ReadXaml("Controls", "DecorSearchField.axaml");
@@ -154,6 +180,26 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
+    public void Quote_catalog_columns_auto_size_after_search_results_change()
+    {
+        var control = new DecorDataGridControl();
+        var innerGrid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, innerGrid);
+        var codeColumn = new DataGridTextColumn { SortMemberPath = nameof(QuoteProductOption.Code), Width = new DataGridLength(56) };
+        var descriptionColumn = new DataGridTextColumn { SortMemberPath = nameof(QuoteProductOption.Description), Width = new DataGridLength(1, DataGridLengthUnitType.Star) };
+        innerGrid.Columns.Add(codeColumn);
+        innerGrid.Columns.Add(descriptionColumn);
+        control.AutoSizeColumnsOnItemsChanged = true;
+
+        typeof(DecorDataGridControl).GetMethod("OnItemsSourceCollectionChanged", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .Invoke(control, [control, new System.Collections.Specialized.NotifyCollectionChangedEventArgs(System.Collections.Specialized.NotifyCollectionChangedAction.Reset)]);
+
+        Assert.Equal(DataGridLengthUnitType.Auto, codeColumn.Width.UnitType);
+        Assert.Equal(DataGridLengthUnitType.Auto, descriptionColumn.Width.UnitType);
+    }
+
+    [Fact]
     public void Generated_state_column_is_always_last()
     {
         var control = new DecorDataGridControl();
@@ -227,7 +273,7 @@ public sealed partial class DecorGridPresentationTests
 
         Assert.Equal(TextAlignment.Center, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.ProductID))!));
         Assert.Equal(TextAlignment.Center, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.StockStatus))!));
-        Assert.Equal(TextAlignment.Left, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.StockUnitCode))!));
+        Assert.Equal(TextAlignment.Center, styler.GetColumnAlignment(typeof(ProductDTO).GetProperty(nameof(ProductDTO.StockUnitCode))!));
     }
 
     [Fact]
@@ -293,7 +339,8 @@ public sealed partial class DecorGridPresentationTests
 
         var cell = statusColumn.CellTemplate!.Build(ProductStockGridTests.CreateProduct(5m, 0m, 1m));
 
-        Assert.IsType<Border>(cell);
+        var cellContent = Assert.IsType<Border>(cell);
+        Assert.Equal(Avalonia.Layout.VerticalAlignment.Stretch, cellContent.VerticalAlignment);
     }
 
     [Fact]
@@ -873,7 +920,7 @@ public sealed partial class DecorGridPresentationTests
     private static XElement AssertSearchField(XDocument document, string text, string searchCommand, string clearCommand)
     {
         var field = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
-            && (string?)element.Attribute("Text") == $"{{Binding {text}, Mode=TwoWay}}");
+            && ((string?)element.Attribute("Text"))?.StartsWith($"{{Binding {text}, Mode=TwoWay", StringComparison.Ordinal) == true);
         Assert.Equal($"{{Binding {searchCommand}}}", (string?)field.Attribute("SearchCommand"));
         Assert.Equal($"{{Binding {clearCommand}}}", (string?)field.Attribute("ClearCommand"));
         Assert.False(string.IsNullOrWhiteSpace((string?)field.Attribute("PlaceholderText")));
@@ -888,7 +935,7 @@ public sealed partial class DecorGridPresentationTests
         var document = ReadXaml("Controls", "DecorSearchField.axaml");
         var name = XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml");
         var input = Assert.Single(document.Descendants(), element => (string?)element.Attribute(name) == "SearchInput");
-        Assert.Equal("{Binding Text, ElementName=Root, Mode=TwoWay}", (string?)input.Attribute("Text"));
+        Assert.Equal("{Binding Text, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}", (string?)input.Attribute("Text"));
         Assert.Equal("0", (string?)input.Attribute("BorderThickness"));
         var border = input.Parent!.Parent!;
         Assert.Equal("FieldBorder", (string?)border.Attribute(name));

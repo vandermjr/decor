@@ -91,9 +91,18 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
         {
             if (!SetField(ref _selectionMode, value)) return;
             if (value && IsEditing) CancelEdit();
+            OnPropertyChanged(nameof(ViewTitle));
+            OnPropertyChanged(nameof(ViewDescription));
+            OnPropertyChanged(nameof(SearchPlaceholder));
             RefreshCommands();
         }
     }
+    public bool FilterSelectionByUserId { get; set; } = true;
+    public string ViewTitle => SelectionMode ? "Selecionar vendedor" : "Funcionários";
+    public string ViewDescription => SelectionMode
+        ? "Pesquise e selecione o vendedor deste orçamento."
+        : "Consulta de funcionários e cadastro de perfil";
+    public string SearchPlaceholder => SelectionMode ? "Pesquisar vendedores" : "Pesquisar funcionários";
     public int? EmployeeSelectionUserId
     {
         get => _employeeSelectionUserId;
@@ -283,7 +292,7 @@ public sealed class EmployeesViewModel : IStatusBarSource, IWorkspaceDocumentSta
             } while (employees.Count == pageSize);
             if (SelectionMode)
                 all = all.Where(employee => employee.IsActive
-                    && (employee.UserID is null || employee.UserID == EmployeeSelectionUserId)).ToList();
+                    && (!FilterSelectionByUserId || employee.UserID is null || employee.UserID == EmployeeSelectionUserId)).ToList();
             Listing.Load(all);
             OnPropertyChanged(nameof(EmployeeCodeDisplay));
 

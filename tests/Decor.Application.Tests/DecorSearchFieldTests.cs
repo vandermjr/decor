@@ -5,6 +5,23 @@ namespace Decor.Application.Tests;
 public sealed class DecorSearchFieldTests
 {
     [Fact]
+    public void Search_can_be_explicit_and_updates_binding_immediately()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln")))
+            root = root.Parent;
+        Assert.NotNull(root);
+
+        var markup = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Controls", "DecorSearchField.axaml"));
+        var implementation = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Controls", "DecorSearchField.axaml.cs"));
+        var quoteMarkup = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "QuotesView.axaml"));
+
+        Assert.Contains("UpdateSourceTrigger=PropertyChanged", markup);
+        Assert.Contains("DispatcherTimer", implementation);
+        Assert.DoesNotContain("SearchOnTextChanged=\"False\"", quoteMarkup);
+    }
+
+    [Fact]
     public void Single_border_and_local_template_styles_leave_focus_brush_overridable()
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);

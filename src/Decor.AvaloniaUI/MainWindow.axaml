@@ -293,30 +293,30 @@
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Configuracoes}"/>
-              <TextBlock Text="Configurações" VerticalAlignment="Center"/>
+              <TextBlock Text="Ferramentas" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Ícones" Command="{Binding ShowSystemSettingsCommand}" IsVisible="{Binding CanViewSystemSettings}">
-                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}"/></MenuItem.Icon>
-                </MenuItem>
                 <MenuItem Header="Acessos" IsVisible="{Binding CanViewAccess}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}"/></MenuItem.Icon>
-                <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}">
-                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Users}"/></MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Grupos" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}">
-                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}"/></MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Permissões" Command="{Binding ShowPermissionsCommand}" IsVisible="{Binding CanViewPermissions}">
-                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Permissions}"/></MenuItem.Icon>
-                </MenuItem>
+                  <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}">
+                    <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Users}"/></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Grupos" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}">
+                    <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}"/></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Permissões" Command="{Binding ShowPermissionsCommand}" IsVisible="{Binding CanViewPermissions}">
+                    <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Permissions}"/></MenuItem.Icon>
+                  </MenuItem>
                 </MenuItem>
                 <MenuItem Header="Manutenção do banco de dados" IsVisible="{Binding CanViewDatabaseMaintenance}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.DatabaseMaintenance}"/></MenuItem.Icon>
                   <MenuItem Header="Backup e restauração" Command="{Binding ShowDatabaseMaintenanceCommand}">
                     <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.DatabaseMaintenance}"/></MenuItem.Icon>
                   </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Opções" Command="{Binding ShowSystemSettingsCommand}" IsVisible="{Binding CanViewSystemSettings}">
+                  <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}"/></MenuItem.Icon>
                 </MenuItem>
               </MenuFlyout>
             </Button.Flyout>

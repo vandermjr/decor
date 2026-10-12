@@ -17,7 +17,7 @@ INSERT INTO unit_of_measures (Code, Description, AllowsFraction, IsActive) VALUE
     ('KG', 'Quilograma', 1, 1),
     ('LT', 'Lata', 0, 1),
     ('BD', 'Balde', 0, 1),
-    ('BRR', 'Barra', 0, 1),
+    ('BR', 'Barra', 0, 1),
     ('CX', 'Caixa', 0, 1),
     ('RL', 'Rolo', 0, 1),
     ('GL', 'Galão', 0, 1),

@@ -43,10 +43,11 @@ public partial class DecorDataGridControl : UserControl
     private IGridControlStyler _styler;
     private Dictionary<string, PropertyInfo> _propertyCache = [];
     private bool _isUpdatingEmptyState;
+    private bool _columnRefreshPending;
     private INotifyCollectionChanged? _observedItemsSource;
     private PropertyInfo? _highlightedProperty;
     private object? _highlightedValue;
-    private Border? _focusedCellContent;
+    private object? _focusedCellItem;
     private Control? _rowsPresenter;
     private ScrollBar? _verticalScrollBar;
     private ScrollBar? _horizontalScrollBar;
@@ -95,11 +96,19 @@ public partial class DecorDataGridControl : UserControl
     /// <summary>Column the query orders by; defaults to the code column.</summary>
     public static readonly StyledProperty<string?> DefaultSortMemberPathProperty =
         AvaloniaProperty.Register<DecorDataGridControl, string?>(nameof(DefaultSortMemberPath));
+    public static readonly StyledProperty<bool> AutoSizeColumnsOnItemsChangedProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, bool>(nameof(AutoSizeColumnsOnItemsChanged));
 
     public string? DefaultSortMemberPath
     {
         get => GetValue(DefaultSortMemberPathProperty);
         set => SetValue(DefaultSortMemberPathProperty, value);
+    }
+
+    public bool AutoSizeColumnsOnItemsChanged
+    {
+        get => GetValue(AutoSizeColumnsOnItemsChangedProperty);
+        set => SetValue(AutoSizeColumnsOnItemsChangedProperty, value);
     }
 
     public event EventHandler<ValueMatchChangedEventArgs>? ValueMatchChanged;
@@ -593,6 +602,7 @@ public partial class DecorDataGridControl : UserControl
                 var cellContent = new Border
                 {
                     Padding = new Thickness(4, 0),
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
                     Tag = propertyInfo
                 };
                 var textBlock = new TextBlock
@@ -641,7 +651,7 @@ public partial class DecorDataGridControl : UserControl
 
         _highlightedProperty = propertyInfo;
         _highlightedValue = propertyInfo.GetValue(cell.DataContext);
-        _focusedCellContent = cellContent;
+        _focusedCellItem = cell.DataContext;
         UpdateCellHighlights();
         var displayName = propertyInfo.Name == "IsActive" ? "Estado" : DecorGridHeader.NormalizeLabel(
             _configuredGetDisplayName?.Invoke(propertyInfo.Name)
@@ -672,7 +682,7 @@ public partial class DecorDataGridControl : UserControl
         if (!Equals(value, _highlightedValue))
             return;
 
-        cellContent.Background = ReferenceEquals(cellContent, _focusedCellContent)
+        cellContent.Background = ReferenceEquals(cellContent.DataContext, _focusedCellItem)
             ? _styler.Theme.FocusedCellBackground
             : _styler.Theme.ValueMatchBackground;
     }
@@ -715,6 +725,9 @@ public partial class DecorDataGridControl : UserControl
     /// </summary>
     private void OnItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        if (AutoSizeColumnsOnItemsChanged && _innerGrid is not null)
+            ScheduleColumnAutoSizeAndResetHorizontalScroll();
+
         if (e.Action == NotifyCollectionChangedAction.Move)
             _automaticPagination?.View.Refresh();
 
@@ -722,12 +735,37 @@ public partial class DecorDataGridControl : UserControl
         {
             _highlightedProperty = null;
             _highlightedValue = null;
-            _focusedCellContent = null;
+            _focusedCellItem = null;
             ValueMatchChanged?.Invoke(this, new ValueMatchChangedEventArgs(string.Empty, 0));
         }
 
         UpdateEmptyMessageVisibility();
         UpdateCellHighlights();
+    }
+
+    private void ScheduleColumnAutoSizeAndResetHorizontalScroll()
+    {
+        if (_columnRefreshPending)
+            return;
+
+        _columnRefreshPending = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _columnRefreshPending = false;
+            if (_innerGrid is null)
+                return;
+
+            foreach (var column in _innerGrid.Columns)
+                column.Width = DataGridLength.Auto;
+            _innerGrid.InvalidateMeasure();
+
+            if (_horizontalScrollBar is not null)
+                _horizontalScrollBar.Value = _horizontalScrollBar.Minimum;
+
+            var scrollViewer = _innerGrid.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+            if (scrollViewer is not null)
+                scrollViewer.Offset = new Vector(0, scrollViewer.Offset.Y);
+        }, DispatcherPriority.Background);
     }
 
     /// <summary>

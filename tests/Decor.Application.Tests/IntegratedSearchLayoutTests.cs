@@ -21,7 +21,9 @@ public sealed class IntegratedSearchLayoutTests
     {
         var document = ReadView(view);
         var field = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
-            && (string?)element.Attribute("Text") == "{Binding SearchText, Mode=TwoWay}");
+            && ((string?)element.Attribute("Text"))?.StartsWith("{Binding SearchText, Mode=TwoWay", StringComparison.Ordinal) == true);
+        if (view == "EmployeesView.axaml")
+            Assert.Equal("{Binding SearchPlaceholder}", (string?)field.Attribute("PlaceholderText"));
         Assert.Equal("{Binding SearchCommand}", (string?)field.Attribute("SearchCommand"));
         Assert.Equal(hasClear ? "{Binding ClearSearchCommand}" : null, (string?)field.Attribute("ClearCommand"));
         Assert.NotNull(field.Attribute("PlaceholderText"));
@@ -67,7 +69,8 @@ public sealed class IntegratedSearchLayoutTests
     {
         var document = ReadView("QuotesView.axaml");
         var catalog = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
-            && (string?)element.Attribute("Text") == "{Binding ProductSearchText, Mode=TwoWay}");
+            && ((string?)element.Attribute("Text"))?.StartsWith("{Binding ProductSearchText, Mode=TwoWay", StringComparison.Ordinal) == true);
+        Assert.Null(catalog.Attribute("SearchOnTextChanged"));
         Assert.Equal("{Binding SearchProductsCommand}", (string?)catalog.Attribute("SearchCommand"));
         Assert.Equal("{Binding ClearProductsCommand}", (string?)catalog.Attribute("ClearCommand"));
         foreach (var binding in new[] { "CustomerSummary", "EmployeeSummary", "CurrentQuoteId" })

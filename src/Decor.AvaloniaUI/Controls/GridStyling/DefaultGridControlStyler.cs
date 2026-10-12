@@ -50,8 +50,12 @@ public class DefaultGridControlStyler : IGridControlStyler
             return TextAlignment.Center;
         }
 
-        if (name == nameof(ProductDTO.StockUnitCode)
-            || name.EndsWith("Code", StringComparison.OrdinalIgnoreCase)
+        if (name == nameof(ProductDTO.StockUnitCode))
+        {
+            return TextAlignment.Center;
+        }
+
+        if (name.EndsWith("Code", StringComparison.OrdinalIgnoreCase)
             && !name.EndsWith("Status", StringComparison.OrdinalIgnoreCase)
             && !name.EndsWith("ID", StringComparison.OrdinalIgnoreCase))
         {

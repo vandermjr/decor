@@ -45,6 +45,7 @@ public partial class ProductsView : UserControl
             [
                 nameof(ProductDTO.ProductID),
                 nameof(ProductDTO.Description),
+                nameof(ProductDTO.BrandName),
                 nameof(ProductDTO.StockUnitCode),
                 nameof(ProductDTO.CurrentStockQuantity),
                 nameof(ProductDTO.ReservedStockQuantity),
@@ -61,6 +62,7 @@ public partial class ProductsView : UserControl
                  {
                      nameof(ProductDTO.ProductID),
                      nameof(ProductDTO.Description),
+                     nameof(ProductDTO.BrandName),
                      nameof(ProductDTO.StockUnitCode),
                      nameof(ProductDTO.CurrentStockQuantity),
                      nameof(ProductDTO.ReservedStockQuantity),

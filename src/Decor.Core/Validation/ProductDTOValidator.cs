@@ -28,7 +28,7 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
         // StockUnitID nulo é permitido na estrutura do DTO; a obrigatoriedade
         // condicionada ao ProductType é validada em ProductService.
         if (dto.StockUnitID is <= 0)
-            errors.Add("O ID da Unidade de Estoque deve ser maior que zero.");
+            errors.Add("O ID da Unidade de Medida deve ser maior que zero.");
 
         if (!string.IsNullOrWhiteSpace(dto.Barcode))
         {

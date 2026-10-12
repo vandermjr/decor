@@ -230,7 +230,7 @@ public sealed class QuotesViewModelTests
     }
 
     [Fact]
-    public async Task ProductSearchText_DebouncesLatestTypedQuery()
+    public async Task ProductSearchText_ExplicitSearchSubmitsLatestTypedQuery()
     {
         var fixture = new Fixture();
         var requested = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -244,6 +244,7 @@ public sealed class QuotesViewModelTests
         fixture.ViewModel.ProductSearchText = "first";
         fixture.ViewModel.ProductSearchText = "final marca:Acme";
 
+        fixture.ViewModel.SearchProductsCommand.Execute(null);
         Assert.Equal("final marca:Acme tipo:produto", await requested.Task.WaitAsync(TimeSpan.FromSeconds(5)));
         await WaitUntilAsync(() => fixture.ViewModel.CatalogProducts.Count == 1 && !fixture.ViewModel.IsCatalogBusy);
 
@@ -436,32 +437,33 @@ public sealed class QuotesViewModelTests
     }
 
     [Fact]
-    public async Task BlankSearch_CancelsPendingResultWithoutRequestAndPreservesSelection()
+    public async Task BlankSearch_CancelsPendingResultAndListsAllProductsWhenSubmitted()
     {
         var fixture = new Fixture();
         var pending = new TaskCompletionSource<IEnumerable<ProductDTO>>(TaskCreationOptions.RunContinuationsAsynchronously);
         CancellationToken requestToken = default;
         fixture.Products.Setup(service => service.SearchProductsAsync("pending tipo:produto", 1, 25, It.IsAny<CancellationToken>()))
             .Returns((string query, int page, int size, CancellationToken token) => { requestToken = token; return pending.Task; });
+        fixture.Products.Setup(service => service.SearchProductsAsync(" tipo:produto", 1, 25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { Product(9, ProductType.Good) });
         await fixture.ViewModel.BeginNewAsync();
         await SearchAsync(fixture.ViewModel, "Product");
         fixture.ViewModel.SelectedProduct = Assert.Single(fixture.ViewModel.CatalogProducts);
         fixture.ViewModel.ProductSearchText = "pending";
         var search = InvokeAsync(fixture.ViewModel, "SearchProductsAsync");
 
-        fixture.ViewModel.ProductSearchText = "  ";
+        fixture.ViewModel.ClearProductsCommand.Execute(null);
         pending.SetResult([Product(9, ProductType.Good)]);
         await search;
-        await InvokeAsync(fixture.ViewModel, "SearchProductsAsync");
+        fixture.ViewModel.SearchProductsCommand.Execute(null);
+        await WaitUntilAsync(() => fixture.ViewModel.CatalogProducts.Count == 1 && !fixture.ViewModel.IsCatalogBusy);
 
         Assert.True(requestToken.IsCancellationRequested);
-        Assert.Empty(fixture.ViewModel.Products);
-        Assert.Empty(fixture.ViewModel.CatalogProducts);
+        Assert.Equal(9, Assert.Single(fixture.ViewModel.CatalogProducts).ProductID);
         Assert.Empty(fixture.ViewModel.CatalogServices);
-        Assert.Equal(7, fixture.ViewModel.SelectedProduct?.ProductID);
         Assert.False(fixture.ViewModel.IsCatalogBusy);
         Assert.False(fixture.ViewModel.HasCatalogNext);
-        fixture.Products.Verify(service => service.SearchProductsAsync(It.IsAny<string>(), 1, 25, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        fixture.Products.Verify(service => service.SearchProductsAsync(" tipo:produto", 1, 25, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -327,7 +327,7 @@ public sealed class AdministrativeLayoutTests
     {
         var document = ReadXaml("Views/QuotesView.axaml");
         var search = Assert.Single(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
-            && (string?)element.Attribute("Text") == "{Binding ProductSearchText, Mode=TwoWay}");
+            && ((string?)element.Attribute("Text"))?.StartsWith("{Binding ProductSearchText, Mode=TwoWay", StringComparison.Ordinal) == true);
         Assert.Equal("{Binding SearchProductsCommand}", (string?)search.Attribute("SearchCommand"));
         Assert.Equal("{Binding ClearProductsCommand}", (string?)search.Attribute("ClearCommand"));
         Assert.Equal("Pesquisar produtos e serviços", (string?)search.Attribute("PlaceholderText"));

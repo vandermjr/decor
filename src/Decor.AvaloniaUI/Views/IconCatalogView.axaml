@@ -16,33 +16,51 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="230,*" ColumnSpacing="16" Margin="18">
+  <Grid ColumnDefinitions="230,*" ColumnSpacing="16" Margin="{DynamicResource DecorPageMargin}">
     <StackPanel Grid.Column="0" Spacing="12">
-      <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" TextWrapping="Wrap"/>
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Text="Todas as opções" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+        <Border Grid.Column="1" Height="1" Background="{DynamicResource DecorBorderBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+      </Grid>
       <TreeView x:Name="SettingsTree" SelectionChanged="SettingsTree_SelectionChanged">
-        <TreeViewItem Header="Geral" IsExpanded="True">
-          <TreeViewItem Header="Aparência dos ícones" Tag="Icons"/>
+        <TreeViewItem Header="Aparência" IsExpanded="True">
+          <TreeViewItem Header="Tema" Tag="Theme" IsSelected="True"/>
+          <TreeViewItem Header="Ícones" Tag="Icons"/>
         </TreeViewItem>
         <TreeViewItem Header="Estoque" IsExpanded="True">
-          <TreeViewItem Header="Movimentações" Tag="StockMovements" IsSelected="True"/>
+          <TreeViewItem Header="Movimentações" Tag="StockMovements"/>
         </TreeViewItem>
       </TreeView>
     </StackPanel>
 
     <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-      <StackPanel Spacing="18">
-        <StackPanel Spacing="4">
-          <TextBlock Text="Configurações do Sistema" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-          <TextBlock Text="Preferências gerais e regras dos módulos." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+      <Border Padding="0,0,16,0" HorizontalAlignment="Stretch">
+      <StackPanel Spacing="18" HorizontalAlignment="Stretch">
+        <StackPanel IsVisible="{Binding IsThemeSettingsSelected}" Spacing="18">
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <StackPanel Spacing="14">
+              <TextBlock Text="Tema" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Escolha a aparência visual do sistema para todos os módulos do aplicativo." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+              <ListBox ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" MaxHeight="120"/>
+              <StackPanel HorizontalAlignment="Right" Margin="0,4,0,0">
+                <Button Command="{Binding ApplyThemeCommand}" Classes="decor-action">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="M788-658v426q0 26-17 43t-43 17H232q-26 0-43-17t-17-43v-496q0-26 17-43t43-17h426l130 130Zm-28 12L646-760H232q-14 0-23 9t-9 23v496q0 14 9 23t23 9h496q14 0 23-9t9-23v-414ZM528-336q20-20 20-48t-20-48q-20-20-48-20t-48 20q-20 20-20 48t20 48q20 20 48 20t48-20ZM280-572h278v-108H280v108Zm-80-74v446-560 114Z"/>
+                    <TextBlock Text="Aplicar" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Border>
         </StackPanel>
 
         <StackPanel IsVisible="{Binding IsStockMovementsSelected}" Spacing="12">
-          <TextBlock Text="Estoque / Movimentações" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
           <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
             <StackPanel Spacing="12">
+              <TextBlock Text="Estoque / Movimentações" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               <ToggleSwitch Content="Permitir venda com estoque negativo" IsChecked="{Binding AllowNegativeStock, Mode=TwoWay}"/>
               <TextBlock Text="Quando desativado, a venda é bloqueada se a quantidade exceder o saldo disponível. Quando ativado, a venda pode prosseguir após confirmação." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
                 <TextBlock Text="{Binding StockSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                 <Button Grid.Column="1" Command="{Binding SaveStockSettingsCommand}" Content="Salvar" Classes="decor-action"/>
               </Grid>
@@ -51,23 +69,24 @@
         </StackPanel>
 
         <StackPanel IsVisible="{Binding IsIconSettingsSelected}" Spacing="18">
-          <TextBlock Text="Aparência dos ícones" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
           <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
             <StackPanel Spacing="12">
+              <TextBlock Text="Aparência dos ícones" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                 <TextBlock Text="Peso do ícone" VerticalAlignment="Center"/>
                 <Slider Grid.Column="1" Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True" Value="{Binding IconWeight, Mode=TwoWay}"/>
                 <TextBlock Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
               </Grid>
-              <Button HorizontalAlignment="Right" Command="{Binding ApplyCommand}" Content="Salvar" Classes="decor-action"/>
+              <StackPanel HorizontalAlignment="Right" Margin="0,4,0,0">
+                <Button Command="{Binding ApplyCommand}" Content="Aplicar" Classes="decor-action"/>
+              </StackPanel>
             </StackPanel>
           </Border>
-          <ItemsControl ItemsSource="{Binding FamilyGroups}">
+          <ItemsControl ItemsSource="{Binding FamilyGroups}" HorizontalAlignment="Stretch">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:IconCatalogFamilyViewModel">
-                <StackPanel Spacing="10" Margin="0,0,0,18">
-                  <TextBlock Text="{Binding Name}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                  <ItemsControl ItemsSource="{Binding Items}">
+                <Expander Header="{Binding Name}" IsExpanded="True" Margin="0,0,0,18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                  <ItemsControl ItemsSource="{Binding Items}" Margin="0,12,0,0" HorizontalAlignment="Stretch">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:IconCatalogItemViewModel">
@@ -81,12 +100,13 @@
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                </StackPanel>
+                </Expander>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </StackPanel>
       </StackPanel>
+      </Border>
     </ScrollViewer>
   </Grid>
 </UserControl>

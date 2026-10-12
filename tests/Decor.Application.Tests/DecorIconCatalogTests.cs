@@ -1,7 +1,9 @@
 using Avalonia.Media;
 using Avalonia.Skia;
 using Decor.AvaloniaUI.Icons;
+using Decor.AvaloniaUI.ViewModels;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace Decor.Application.Tests;
 
@@ -114,6 +116,54 @@ public class DecorIconCatalogTests
         Assert.Equal(DecorIconCatalog.Ids.Count, groups.Sum(group => group.Ids.Count));
         Assert.All(groups, group => Assert.NotEmpty(group.Ids));
         Assert.All(DecorIconCatalog.Ids, id => Assert.Contains(id, groups.SelectMany(group => group.Ids)));
+    }
+
+    [Fact]
+    public void Icon_catalog_labels_are_localized()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        var family = new IconCatalogFamilyViewModel("Actions");
+        var names = DecorIconCatalog.Ids
+            .Select(id => new IconCatalogItemViewModel(id, 400))
+            .ToArray();
+
+        Assert.Equal("Ações", family.Name);
+        Assert.Equal("Início", Assert.Single(names, item => item.Id == DecorIconId.Application.Home).Name);
+        Assert.Equal("Pesquisar", Assert.Single(names, item => item.Id == DecorIconId.Actions.Search).Name);
+        Assert.Equal("Página anterior", Assert.Single(names, item => item.Id == DecorIconId.Navigation.PreviousPage).Name);
+        Assert.All(names, item => Assert.False(string.IsNullOrWhiteSpace(item.Name)));
+        var portugueseCognates = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Cadastros", "Compras", "Estoque", "Comercial", "Financeiro"
+        };
+        Assert.All(names, item =>
+        {
+            var semanticName = item.Id.Value[(item.Id.Value.LastIndexOf('.') + 1)..];
+            Assert.True(!string.Equals(semanticName, item.Name, StringComparison.Ordinal)
+                || portugueseCognates.Contains(item.Name));
+        });
+    }
+
+    [Fact]
+    public void Icon_catalog_content_reserves_scrollbar_space_and_stretches_each_family()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln")))
+            root = root.Parent;
+        Assert.NotNull(root);
+
+        var document = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "IconCatalogView.axaml"));
+        var inset = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("Padding") == "0,0,16,0");
+        Assert.Equal("Stretch", (string?)inset.Attribute("HorizontalAlignment"));
+        var familyItems = Assert.Single(document.Descendants(), element => element.Name.LocalName == "ItemsControl"
+            && (string?)element.Attribute("ItemsSource") == "{Binding FamilyGroups}");
+        Assert.Equal("Stretch", (string?)familyItems.Attribute("HorizontalAlignment"));
+        var expander = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Expander");
+        Assert.Equal("Stretch", (string?)expander.Attribute("HorizontalAlignment"));
+        Assert.Equal("Stretch", (string?)expander.Attribute("HorizontalContentAlignment"));
+        Assert.Equal("0,0,0,18", (string?)expander.Attribute("Margin"));
     }
 
     [Fact]

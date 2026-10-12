@@ -39,12 +39,16 @@ public sealed class ProductStockGridTests
         var app = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "App.axaml"));
         var resources = app.Descendants().Single(element => element.Name.LocalName == "ResourceDictionary"
             && (string?)element.Attribute(xaml + "Key") == "Light");
+        var darkResources = app.Descendants().Single(element => element.Name.LocalName == "ResourceDictionary"
+            && (string?)element.Attribute(xaml + "Key") == "Dark");
         var selected = resources.Elements().Single(element => (string?)element.Attribute(xaml + "Key") == "DataGridRowSelectedBackgroundBrush");
         var selectionAccent = resources.Elements().Single(element => (string?)element.Attribute(xaml + "Key") == "DecorGridSelectionBrush");
         var rowStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
             && (string?)element.Attribute("Selector") == "DataGridRow");
         var selectedRowStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
             && (string?)element.Attribute("Selector") == "DataGridRow:selected");
+        var cellStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "DataGridCell");
         var gridColors = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Controls", "GridStyling", "GridControlThemeColors.cs"));
 
         Assert.Equal(Color.Parse("#FFF7D8"), Color.Parse(selected.Value));
@@ -57,8 +61,43 @@ public sealed class ProductStockGridTests
             (string?)setter.Attribute("Property") == "BorderThickness");
         Assert.Contains(selectedRowStyle.Elements(), setter => (string?)setter.Attribute("Property") == "BorderBrush"
             && (string?)setter.Attribute("Value") == "{DynamicResource DecorGridSelectionBrush}");
+        Assert.Contains(cellStyle.Elements(), setter => (string?)setter.Attribute("Property") == "VerticalContentAlignment"
+            && (string?)setter.Attribute("Value") == "Stretch");
+        foreach (var theme in new[] { resources, darkResources })
+        {
+            Assert.Equal("Transparent", (string?)theme.Elements().Single(element => (string?)element.Attribute(xaml + "Key")
+                == "DataGridCellFocusVisualPrimaryBrush").Value);
+            Assert.Equal("Transparent", (string?)theme.Elements().Single(element => (string?)element.Attribute(xaml + "Key")
+                == "DataGridCellFocusVisualSecondaryBrush").Value);
+        }
         Assert.Contains("#D9EFFA", gridColors);
         Assert.Contains("#174A63", gridColors);
+    }
+
+    [Fact]
+    public void Product_grid_includes_brand_and_measure_unit_columns()
+    {
+        var root = FindWorkspaceRoot();
+        var source = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "ProductsView.axaml.cs"));
+
+        Assert.Contains("nameof(ProductDTO.BrandName)", source);
+        Assert.Contains("nameof(ProductDTO.StockUnitCode)", source);
+    }
+
+    [Fact]
+    public void Product_stock_inputs_use_responsive_columns_without_spinner_buttons()
+    {
+        var root = FindWorkspaceRoot();
+        var document = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "ProductsView.axaml"));
+        var minimum = Assert.Single(document.Descendants(), element => (string?)element.Attribute("Text") == "Estoque Mínimo");
+        var minimumInput = Assert.Single(minimum.Parent!.Elements().SelectMany(element => element.DescendantsAndSelf()),
+            element => element.Name.LocalName == "NumericUpDown");
+        var stockGrid = minimum.Parent!.Parent!;
+
+        Assert.Equal("*,*", (string?)stockGrid.Attribute("ColumnDefinitions"));
+        Assert.Equal("420", (string?)stockGrid.Attribute("MaxWidth"));
+        Assert.Equal("False", (string?)minimumInput.Attribute("ShowButtonSpinner"));
+        Assert.Equal("False", (string?)minimumInput.Attribute("AllowSpin"));
     }
 
     internal static ProductDTO CreateProduct(decimal physical, decimal reserved, decimal minimum) => new(

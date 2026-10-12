@@ -111,6 +111,29 @@ public sealed class EmployeesViewModelStatusTests
         viewModel.StatusMessage.Should().Be("1 funcion\u00e1rio.");
     }
 
+    [Fact]
+    public async Task SellerSelection_IncludesActiveEmployeesWithUserAccounts()
+    {
+        var employees = new EmployeeService
+        {
+            Search = () => Task.FromResult<IEnumerable<EmployeeDTO>>(
+            [
+                Employee(1) with { UserID = 10 },
+                Employee(2) with { UserID = null },
+                Employee(3) with { IsActive = false, UserID = 11 }
+            ])
+        };
+        var viewModel = Create(employees);
+        viewModel.SelectionMode = true;
+        viewModel.FilterSelectionByUserId = false;
+
+        await viewModel.InitializeAsync();
+
+        viewModel.ViewTitle.Should().Be("Selecionar vendedor");
+        viewModel.SearchPlaceholder.Should().Be("Pesquisar vendedores");
+        viewModel.Employees.Select(employee => employee.EmployeeID).Should().Equal(1, 2);
+    }
+
     private sealed class EmployeeService : IEmployeeService
     {
         public Func<Task<IEnumerable<EmployeeDTO>>> Search { get; set; } = () => Task.FromResult<IEnumerable<EmployeeDTO>>([]);

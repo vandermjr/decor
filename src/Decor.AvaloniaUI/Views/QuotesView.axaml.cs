@@ -50,6 +50,7 @@ public partial class QuotesView : UserControl
             if (DataContext is QuotesViewModel viewModel) viewModel.SetValueMatch(args.ColumnName, args.MatchCount);
         };
         foreach (var catalogGrid in new[] { ProductsCatalogGrid, ServicesCatalogGrid })
+        {
             catalogGrid.InitializeColumns(typeof(QuoteProductOption), propertyName => propertyName switch
             {
                 nameof(QuoteProductOption.Code) => "Código",
@@ -66,6 +67,7 @@ public partial class QuotesView : UserControl
                 _ => new DataGridLength(120)
             }, [nameof(QuoteProductOption.Code), nameof(QuoteProductOption.Description),
                 nameof(QuoteProductOption.Unit), nameof(QuoteProductOption.Price)]);
+        }
         QuoteItemsGrid.InitializeColumns(typeof(QuoteLineOption), propertyName => propertyName switch
         {
             nameof(QuoteLineOption.Item) => "Item",
@@ -192,7 +194,7 @@ public partial class QuotesView : UserControl
         var title = context switch
         {
             LookupSearchContext.Customer => "Selecionar cliente",
-            LookupSearchContext.Employee => "Selecionar funcionário",
+            LookupSearchContext.Employee => "Selecionar vendedor",
             LookupSearchContext.Partner => "Selecionar parceiro",
             LookupSearchContext.Product => "Selecionar produto",
             _ => "Selecionar serviço"
@@ -215,10 +217,12 @@ public partial class QuotesView : UserControl
             {
                 var viewModel = _services.GetRequiredService<EmployeesViewModel>();
                 viewModel.SelectionMode = true;
+                viewModel.FilterSelectionByUserId = false;
                 lookupView = new EmployeesView(viewModel);
                 lookupViewModel = viewModel;
                 getSelected = () => viewModel.SelectedEmployee is { IsActive: true } employee ? employee : null;
                 selectionProperty = nameof(viewModel.SelectedEmployee);
+                viewModel.SearchCommand.Execute(null);
                 break;
             }
             case LookupSearchContext.Partner:

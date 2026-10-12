@@ -10,6 +10,7 @@
     <ResourceDictionary>
         <controls:DecorGridHeader x:Key="DecorGridHeaderTemplate" />
         <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
+        <Thickness x:Key="DecorPageMargin">16</Thickness>
         <ResourceDictionary.ThemeDictionaries>
             <ResourceDictionary x:Key="Light">
                 <SolidColorBrush x:Key="DecorScrollTrackBrush">#E2E5E9</SolidColorBrush>
@@ -29,6 +30,8 @@
                 <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush">#E8ECF1</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush">#DFE5ED</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridGridLinesBrush">#E4E7EB</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridCellFocusVisualPrimaryBrush">Transparent</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridCellFocusVisualSecondaryBrush">Transparent</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowHoveredBackgroundColor">#F3F6FA</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#FFF7D8</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#F7E7A8</SolidColorBrush>
@@ -74,6 +77,8 @@
                 <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush">#3A4148</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush">#444C54</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridGridLinesBrush">#3B4046</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridCellFocusVisualPrimaryBrush">Transparent</SolidColorBrush>
+                <SolidColorBrush x:Key="DataGridCellFocusVisualSecondaryBrush">Transparent</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowHoveredBackgroundColor">#303941</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush">#5A4722</SolidColorBrush>
                 <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush">#6C542B</SolidColorBrush>
@@ -318,6 +323,9 @@
         <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}" />
+    </Style>
+    <Style Selector="DataGridCell">
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
     </Style>
     <Style Selector="DataGridRow">
         <Setter Property="BorderBrush" Value="Transparent" />

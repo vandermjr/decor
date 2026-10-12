@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Avalonia.Media;
 using Decor.AvaloniaUI.Icons;
+using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 using System.Windows.Input;
 
@@ -12,13 +13,16 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class IconCatalogViewModel : INotifyPropertyChanged
 {
     private readonly IIconAppearanceService _iconAppearanceService;
+    private readonly IThemeService _themeService;
     private readonly IStockSettingsService? _stockSettingsService;
     private int _iconWeight;
     private bool _allowNegativeStock;
-    private string _selectedSettingsSection = "StockMovements";
+    private string _selectedSettingsSection = "Theme";
+    private string _selectedThemeOption = string.Empty;
     private string _stockSettingsStatus = string.Empty;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
+    public ObservableCollection<string> ThemeOptions { get; } = ["Claro", "Escuro"];
 
     public int IconWeight
     {
@@ -36,8 +40,18 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public string IconWeightDisplay => IconWeight.ToString(CultureInfo.InvariantCulture);
     public ICommand ApplyCommand { get; }
     public ICommand SaveStockSettingsCommand { get; }
+    public ICommand ApplyThemeCommand { get; }
+    public ICommand UseLightThemeCommand { get; }
+    public ICommand UseDarkThemeCommand { get; }
+    public bool IsThemeSettingsSelected => _selectedSettingsSection == "Theme";
     public bool IsIconSettingsSelected => _selectedSettingsSection == "Icons";
     public bool IsStockMovementsSelected => _selectedSettingsSection == "StockMovements";
+    public string CurrentThemeName => _themeService.CurrentTheme == DecorThemeStyle.Light ? "Claro" : "Escuro";
+    public string SelectedThemeOption
+    {
+        get => _selectedThemeOption;
+        set => SetField(ref _selectedThemeOption, value);
+    }
     public string StockSettingsStatus
     {
         get => _stockSettingsStatus;
@@ -50,6 +64,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         set
         {
             if (!SetField(ref _selectedSettingsSection, value)) return;
+            OnPropertyChanged(nameof(IsThemeSettingsSelected));
             OnPropertyChanged(nameof(IsIconSettingsSelected));
             OnPropertyChanged(nameof(IsStockMovementsSelected));
         }
@@ -61,13 +76,18 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         set => SetField(ref _allowNegativeStock, value);
     }
 
-    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IStockSettingsService? stockSettingsService = null)
+    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IThemeService themeService, IStockSettingsService? stockSettingsService = null)
     {
         _iconAppearanceService = iconAppearanceService;
+        _themeService = themeService;
         _stockSettingsService = stockSettingsService;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
         ApplyCommand = new RelayCommand(async () => await ApplyAsync());
         SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
+        ApplyThemeCommand = new RelayCommand(async () => await ApplyThemeSelectionAsync());
+        UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
+        UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
+        _selectedThemeOption = CurrentThemeName;
         foreach (var family in DecorIconCatalog.GetFamilyGroups())
         {
             var group = new IconCatalogFamilyViewModel(family.Name);
@@ -108,6 +128,29 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         }
     }
 
+    private async Task SetThemeAsync(DecorThemeStyle theme)
+    {
+        if (_themeService.CurrentTheme == theme)
+            return;
+
+        await _themeService.SetThemeAsync(theme);
+        _selectedThemeOption = theme == DecorThemeStyle.Light ? "Claro" : "Escuro";
+        if (global::Avalonia.Application.Current is not null)
+        {
+            global::Avalonia.Application.Current.RequestedThemeVariant = theme == DecorThemeStyle.Dark
+                ? global::Avalonia.Styling.ThemeVariant.Dark
+                : global::Avalonia.Styling.ThemeVariant.Light;
+        }
+        OnPropertyChanged(nameof(CurrentThemeName));
+        OnPropertyChanged(nameof(SelectedThemeOption));
+    }
+
+    private async Task ApplyThemeSelectionAsync()
+    {
+        var desiredTheme = SelectedThemeOption == "Claro" ? DecorThemeStyle.Light : DecorThemeStyle.Dark;
+        await SetThemeAsync(desiredTheme);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
@@ -126,12 +169,83 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
 public sealed class IconCatalogFamilyViewModel(string name)
 {
-    public string Name { get; } = name;
+    public string Name { get; } = name switch
+    {
+        "Application" => "Aplicativo",
+        "Modules" => "Módulos",
+        "Forms" => "Formulários",
+        "Actions" => "Ações",
+        "User" => "Usuário",
+        "Common" => "Geral",
+        "Navigation" => "Navegação",
+        _ => name
+    };
     public ObservableCollection<IconCatalogItemViewModel> Items { get; } = [];
 }
 
 public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
 {
+    private static readonly IReadOnlyDictionary<string, string> DisplayNames = new Dictionary<string, string>
+    {
+        ["Application.Home"] = "Início",
+        ["Application.Settings"] = "Configurações",
+        ["Application.Help"] = "Ajuda",
+        ["Application.Info"] = "Informações",
+        ["Application.ThemeToggle"] = "Alternar tema",
+        ["Modules.Cadastros"] = "Cadastros",
+        ["Modules.Compras"] = "Compras",
+        ["Modules.Estoque"] = "Estoque",
+        ["Modules.Comercial"] = "Comercial",
+        ["Modules.Servicos"] = "Serviços",
+        ["Modules.Financeiro"] = "Financeiro",
+        ["Modules.Configuracoes"] = "Configurações",
+        ["Forms.Products"] = "Produtos",
+        ["Forms.Brands"] = "Marcas",
+        ["Forms.Classifications"] = "Classificações",
+        ["Forms.TermDelivery"] = "Entrega",
+        ["Forms.Users"] = "Usuários",
+        ["Forms.PermissionGroups"] = "Grupos de permissões",
+        ["Forms.Permissions"] = "Permissões",
+        ["Forms.DatabaseMaintenance"] = "Manutenção do banco de dados",
+        ["Actions.Search"] = "Pesquisar",
+        ["Actions.View"] = "Visualizar",
+        ["Actions.Create"] = "Adicionar",
+        ["Actions.Edit"] = "Editar",
+        ["Actions.Delete"] = "Excluir",
+        ["Actions.Save"] = "Salvar",
+        ["Actions.Cancel"] = "Cancelar",
+        ["Actions.Add"] = "Adicionar",
+        ["Actions.Remove"] = "Remover",
+        ["Actions.Report"] = "Relatório",
+        ["Actions.Close"] = "Fechar",
+        ["Actions.Clear"] = "Limpar",
+        ["Actions.Filter"] = "Filtrar",
+        ["Actions.Copy"] = "Copiar",
+        ["Actions.Cart"] = "Carrinho",
+        ["User.Profile"] = "Perfil",
+        ["User.Preferences"] = "Preferências",
+        ["User.ChangePassword"] = "Alterar senha",
+        ["User.Notifications"] = "Notificações",
+        ["User.SignIn"] = "Entrar",
+        ["User.SignOut"] = "Sair",
+        ["Common.Calendar"] = "Calendário",
+        ["Common.Clock"] = "Relógio",
+        ["Common.Folder"] = "Pasta",
+        ["Common.Database"] = "Banco de dados",
+        ["Common.Backup"] = "Cópia de segurança",
+        ["Common.Code"] = "Código",
+        ["Common.Barcode"] = "Código de barras",
+        ["Common.Status"] = "Bloqueado",
+        ["Common.Unlocked"] = "Desbloqueado",
+        ["Navigation.FirstPage"] = "Primeira página",
+        ["Navigation.PreviousPage"] = "Página anterior",
+        ["Navigation.NextPage"] = "Próxima página",
+        ["Navigation.LastPage"] = "Última página",
+        ["Navigation.Dropdown"] = "Abrir opções",
+        ["Navigation.SortAscending"] = "Ordenar crescente",
+        ["Navigation.SortDescending"] = "Ordenar decrescente"
+    };
+
     private Geometry _geometry;
 
     public IconCatalogItemViewModel(DecorIconId id, int iconWeight)
@@ -141,7 +255,7 @@ public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
     }
 
     public DecorIconId Id { get; }
-    public string Name => GetShortName(Id.Value);
+    public string Name => DisplayNames.GetValueOrDefault(Id.Value, GetShortName(Id.Value));
     public string FullId => Id.Value;
     public Geometry Geometry => _geometry;
 

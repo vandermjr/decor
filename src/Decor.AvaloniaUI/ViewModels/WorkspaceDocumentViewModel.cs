@@ -50,6 +50,7 @@ public sealed class WorkspaceDocumentViewModel : INotifyPropertyChanged
         "about" => DecorIconId.Application.Info,
         "database-maintenance" => DecorIconId.Forms.DatabaseMaintenance,
         "system-icons" => DecorIconId.Application.Settings,
+        "system-options" => DecorIconId.Application.Settings,
         "user-options" => DecorIconId.User.Preferences,
         _ => DecorIconId.Common.Folder
     };

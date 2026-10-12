@@ -84,7 +84,7 @@ public class ProductService(
                 errors.Add("O Subgrupo é obrigatório quando o Tipo de Produto é Bem (Good).");
 
             if ((product.ProductID == 0 || product.StockUnitID.HasValue) && product.StockUnitID is null or <= 0)
-                errors.Add("A Unidade de Estoque é obrigatória quando o Tipo de Produto é Bem (Good).");
+                errors.Add("A Unidade de Medida é obrigatória quando o Tipo de Produto é Bem (Good).");
 
             if (product.EmployeeCommissionValue is not null)
                 errors.Add("O valor de Comissão do Funcionário só pode ser preenchido quando o Tipo de Produto é Serviço (Service).");

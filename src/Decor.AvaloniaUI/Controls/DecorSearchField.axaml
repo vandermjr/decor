@@ -55,7 +55,7 @@
       <TextBox x:Name="SearchInput" Classes="search-input" MinWidth="0" MinHeight="0" Height="34"
                BorderThickness="0" Background="Transparent" CornerRadius="0" Padding="10,0"
                VerticalContentAlignment="Center" FocusAdorner="{x:Null}"
-               Text="{Binding Text, ElementName=Root, Mode=TwoWay}"
+               Text="{Binding Text, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                PlaceholderText="{Binding PlaceholderText, ElementName=Root}"
                AutomationProperties.Name="{Binding PlaceholderText, ElementName=Root}"/>
       <Button x:Name="SearchButton" Grid.Column="1" Classes="search-action" Command="{Binding SearchActionCommand, ElementName=Root}"
