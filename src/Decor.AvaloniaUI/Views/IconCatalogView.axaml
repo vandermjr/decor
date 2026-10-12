@@ -101,13 +101,13 @@
                             <Button Grid.Row="1" Grid.Column="1" Width="30" Height="30" CornerRadius="15" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}" Background="{Binding ColorPreviewBrush}" ToolTip.Tip="Escolher cor do ícone" Click="IconColorChoiceButton_Click">
                               <Button.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
-                                  <StackPanel Orientation="Horizontal" Spacing="8">
+                                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#ef4444" Tag="#ef4444" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#f59e0b" Tag="#f59e0b" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#10b981" Tag="#10b981" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#3b82f6" Tag="#3b82f6" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#8b5cf6" Tag="#8b5cf6" Click="IconColorChoice_Click"/>
-                                    <Button Width="22" Height="22" CornerRadius="11" Background="#000000" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" ToolTip.Tip="Restaurar a cor padrão deste ícone" Tag="" Click="IconColorReset_Click"/>
+                                    <Button Content="Restaurar padrão" Classes="decor-action" Tag="" Click="IconColorReset_Click"/>
                                   </StackPanel>
                                 </Flyout>
                               </Button.Flyout>
@@ -127,8 +127,9 @@
     </ScrollViewer>
 
     <Border Grid.Column="1" Grid.Row="1" Padding="16,12,16,12" Margin="0,12,0,0" Background="Transparent">
-      <StackPanel Spacing="12">
+      <StackPanel Spacing="8">
         <Border Height="1" Background="{DynamicResource DecorBorderBrush}"/>
+        <TextBlock Text="{Binding IconColorStatus}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding IconColorStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
         <Button Command="{Binding ResetIconColorsCommand}" Classes="decor-action" Content="Restaurar para o padrão" HorizontalAlignment="Right"/>
       </StackPanel>
     </Border>

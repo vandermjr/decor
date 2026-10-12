@@ -3,6 +3,9 @@ using Avalonia.Skia;
 using Avalonia.Styling;
 using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.Core.Configuration;
+using Decor.Core.Interfaces.Services;
+using Moq;
 using System.Reflection;
 using System.Xml.Linq;
 
@@ -154,6 +157,27 @@ public class DecorIconCatalogTests
         var item = new IconCatalogItemViewModel(DecorIconId.Actions.Save, 400);
 
         Assert.Equal(DecorIconColors.GetDefaultColor(item.Id), ((SolidColorBrush)item.ColorPreviewBrush).Color);
+    }
+
+    [Fact]
+    public async Task Updating_icon_color_does_not_block_while_persistence_is_pending()
+    {
+        _ = AvaloniaInitialized.Value;
+        var pendingSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var appearanceService = new Mock<IIconAppearanceService>();
+        appearanceService.SetupGet(service => service.CurrentAppearance).Returns(IconAppearance.Default);
+        appearanceService.Setup(service => service.SetIconColorOverrideAsync(
+                DecorIconId.Actions.Save.Value,
+                "#ef4444",
+                It.IsAny<CancellationToken>()))
+            .Returns(pendingSave.Task);
+        var item = new IconCatalogItemViewModel(DecorIconId.Actions.Save, 400, appearanceService.Object);
+
+        var update = item.SetColorAsync("#ef4444");
+
+        Assert.False(update.IsCompleted);
+        pendingSave.SetResult();
+        await update;
     }
 
     [Fact]

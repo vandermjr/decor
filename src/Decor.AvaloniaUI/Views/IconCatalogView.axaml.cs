@@ -6,6 +6,8 @@ namespace Decor.AvaloniaUI.Views;
 
 public partial class IconCatalogView : UserControl
 {
+    private Button? _activeIconColorButton;
+
     public IconCatalogView()
     {
         InitializeComponent();
@@ -30,24 +32,63 @@ public partial class IconCatalogView : UserControl
     private void IconColorChoiceButton_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is Button button)
+        {
+            _activeIconColorButton = button;
             button.Flyout?.ShowAt(button);
-    }
-
-    private void IconColorChoice_Click(object? sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.DataContext is IconCatalogItemViewModel item)
-        {
-            item.SetColor(button.Tag as string);
-            button.Flyout?.Hide();
         }
     }
 
-    private void IconColorReset_Click(object? sender, RoutedEventArgs e)
+    private async void IconColorChoice_Click(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.DataContext is IconCatalogItemViewModel item)
+        if (sender is not Button button || button.DataContext is not IconCatalogItemViewModel item)
+            return;
+
+        button.IsEnabled = false;
+        try
         {
-            item.SetColor(null);
-            button.Flyout?.Hide();
+            await item.SetColorAsync(button.Tag as string);
+            if (DataContext is IconCatalogViewModel viewModel)
+                viewModel.ClearIconColorStatus();
+            CloseIconColorPalette();
         }
+        catch
+        {
+            if (DataContext is IconCatalogViewModel viewModel)
+                viewModel.ReportIconColorSaveFailure();
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private async void IconColorReset_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.DataContext is not IconCatalogItemViewModel item)
+            return;
+
+        button.IsEnabled = false;
+        try
+        {
+            await item.SetColorAsync(null);
+            if (DataContext is IconCatalogViewModel viewModel)
+                viewModel.ClearIconColorStatus();
+            CloseIconColorPalette();
+        }
+        catch
+        {
+            if (DataContext is IconCatalogViewModel viewModel)
+                viewModel.ReportIconColorSaveFailure();
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private void CloseIconColorPalette()
+    {
+        _activeIconColorButton?.Flyout?.Hide();
+        _activeIconColorButton = null;
     }
 }

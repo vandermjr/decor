@@ -22,6 +22,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     private string _selectedSettingsSection = "Theme";
     private string _selectedThemeOption = string.Empty;
     private string _stockSettingsStatus = string.Empty;
+    private string _iconColorStatus = string.Empty;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
     public ObservableCollection<string> ThemeOptions { get; } = ["Claro", "Escuro"];
@@ -60,6 +61,15 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         get => _stockSettingsStatus;
         private set => SetField(ref _stockSettingsStatus, value);
     }
+    public string IconColorStatus
+    {
+        get => _iconColorStatus;
+        private set => SetField(ref _iconColorStatus, value);
+    }
+
+    public void ReportIconColorSaveFailure() => IconColorStatus = "Não foi possível salvar a cor do ícone.";
+
+    public void ClearIconColorStatus() => IconColorStatus = string.Empty;
 
     public string SelectedSettingsSection
     {
@@ -300,9 +310,9 @@ public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ColorPreviewBrush));
     }
 
-    public void SetColor(string? colorHex)
+    public async Task SetColorAsync(string? colorHex)
     {
-        _iconAppearanceService.SetIconColorOverrideAsync(Id.Value, colorHex).GetAwaiter().GetResult();
+        await _iconAppearanceService.SetIconColorOverrideAsync(Id.Value, colorHex);
         RefreshColor();
     }
 
