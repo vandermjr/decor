@@ -68,22 +68,26 @@ public sealed class DecorGridHeader : IDataTemplate
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            FontWeight = FontWeight.SemiBold,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
             TextTrimming = TextTrimming.None,
             TextWrapping = TextWrapping.NoWrap
         };
+        text.Bind(TextBlock.ForegroundProperty,
+            new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(DataGridColumnHeader) } });
         Grid.SetColumn(text, hasIcon ? 1 : 0);
         panel.Children.Add(text);
 
         var sortIcon = new PathIcon
         {
-            Width = 12,
+            Width = 0,
             Height = 12,
-            Margin = new Avalonia.Thickness(0, 0, 8, 0),
+            Margin = new Avalonia.Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
-            Opacity = 0
+            Opacity = 0,
+            IsVisible = false
         };
         BindHeaderForeground(sortIcon);
         Grid.SetColumn(sortIcon, hasIcon ? 2 : 1);
@@ -115,7 +119,11 @@ public sealed class DecorGridHeader : IDataTemplate
                 ascending = sort?.Direction == ListSortDirection.Ascending;
                 descending = sort?.Direction == ListSortDirection.Descending;
             }
-            icon.Opacity = ascending || descending ? 1 : 0;
+            var isSorted = ascending || descending;
+            icon.IsVisible = isSorted;
+            icon.Width = isSorted ? 12 : 0;
+            icon.Margin = isSorted ? new Avalonia.Thickness(0, 0, 8, 0) : new Avalonia.Thickness(0);
+            icon.Opacity = isSorted ? 1 : 0;
             DecorIcon.SetId(icon, ascending ? DecorIconId.Navigation.SortAscending
                 : descending ? DecorIconId.Navigation.SortDescending : default);
         }

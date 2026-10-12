@@ -166,6 +166,70 @@ public sealed class ActionSortRenderingTests
         finally { window.Close(); }
     }
 
+    [AvaloniaFact]
+    public async Task Catalog_icon_color_override_updates_matching_icons_in_open_views()
+    {
+        var appearanceService = ((App)global::Avalonia.Application.Current!).Services.GetRequiredService<IIconAppearanceService>();
+        var viewModel = new BrandsViewModel(new BrandService());
+        var view = new BrandsView { DataContext = viewModel };
+        var window = new Window { Width = 900, Height = 500, Content = view };
+        window.Show();
+        try
+        {
+            Settle(window);
+            var expectedColor = Color.Parse("#ff5722");
+            await appearanceService.SetIconColorOverrideAsync(DecorIconId.Actions.Create.Value, "#ff5722");
+            Settle(window);
+
+            var createButton = ButtonFor(view, viewModel.NewCommand);
+            var createIcon = Assert.Single(createButton.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>());
+            Assert.Equal(expectedColor, Assert.IsAssignableFrom<ISolidColorBrush>(createIcon.Fill).Color);
+
+            var catalogItem = new IconCatalogItemViewModel(DecorIconId.Actions.Create, 400, appearanceService);
+            Assert.Equal(expectedColor, Assert.IsAssignableFrom<ISolidColorBrush>(catalogItem.ColorPreviewBrush).Color);
+        }
+        finally
+        {
+            await appearanceService.SetIconColorOverrideAsync(DecorIconId.Actions.Create.Value, null);
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Changing_application_theme_recolors_registered_icons_and_catalog_swatches()
+    {
+        var application = (App)global::Avalonia.Application.Current!;
+        var previousTheme = application.RequestedThemeVariant;
+        var appearanceService = application.Services.GetRequiredService<IIconAppearanceService>();
+        var themeService = new Mock<IThemeService>();
+        themeService.SetupGet(service => service.CurrentTheme).Returns(DecorThemeStyle.Light);
+        var catalogViewModel = new IconCatalogViewModel(appearanceService, themeService.Object);
+        var icon = new Avalonia.Controls.Shapes.Path { Width = 24, Height = 24 };
+        DecorIcon.SetId(icon, DecorIconId.Application.Home);
+        var window = new Window { Width = 100, Height = 100, Content = icon };
+        window.Show();
+        try
+        {
+            application.RequestedThemeVariant = ThemeVariant.Light;
+            Settle(window);
+            Assert.Equal(Colors.Black, Assert.IsAssignableFrom<ISolidColorBrush>(icon.Fill).Color);
+            var catalogItem = catalogViewModel.FamilyGroups.SelectMany(group => group.Items)
+                .Single(item => item.Id == DecorIconId.Application.Home);
+            Assert.Equal(Colors.Black, Assert.IsAssignableFrom<ISolidColorBrush>(catalogItem.ColorPreviewBrush).Color);
+
+            application.RequestedThemeVariant = ThemeVariant.Dark;
+            themeService.Raise(service => service.ThemeChanged += null, DecorThemeStyle.Dark);
+            Settle(window);
+            Assert.Equal(Colors.White, Assert.IsAssignableFrom<ISolidColorBrush>(icon.Fill).Color);
+            Assert.Equal(Colors.White, Assert.IsAssignableFrom<ISolidColorBrush>(catalogItem.ColorPreviewBrush).Color);
+        }
+        finally
+        {
+            application.RequestedThemeVariant = previousTheme;
+            window.Close();
+        }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
@@ -231,7 +295,9 @@ public sealed class ActionSortRenderingTests
     {
         var icon = Assert.Single(button.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Path>());
         Assert.True(button.TryFindResource(resource, button.ActualThemeVariant, out var brush));
-        Assert.Equal(brush, icon.Fill);
+        var expectedBrush = Assert.IsAssignableFrom<ISolidColorBrush>(brush);
+        var actualBrush = Assert.IsAssignableFrom<ISolidColorBrush>(icon.Fill);
+        Assert.Equal(expectedBrush.Color, actualBrush.Color);
         Assert.NotNull(icon.Data);
         Assert.True(icon.Bounds.Width > 0);
         Assert.True(icon.Bounds.Height > 0);
@@ -240,7 +306,7 @@ public sealed class ActionSortRenderingTests
         Assert.NotNull(frame);
         using var pixels = frame.Lock();
         Assert.True(pixels.Format == PixelFormat.Bgra8888 || pixels.Format == PixelFormat.Rgba8888);
-        var expected = Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        var expected = expectedBrush.Color;
         var origin = icon.TranslatePoint(default, window)!.Value;
         var redOffset = pixels.Format == PixelFormat.Bgra8888 ? 2 : 0;
         var blueOffset = pixels.Format == PixelFormat.Bgra8888 ? 0 : 2;

@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.PurchaseOrdersView"
+             x:DataType="vm:PurchaseOrdersViewModel">
+  <UserControl.Styles>
+    <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector="DataGrid.stock-catalog DataGridRow">
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Pedidos de Compra" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Controle dos pedidos abertos, recebidos e cancelados." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+      <Button Content="Novo pedido" Command="{Binding NewCommand}" Classes="decor-action"/>
+      <Button Content="Salvar" Command="{Binding SaveCommand}" Classes="decor-action"/>
+      <Button Content="Excluir" Command="{Binding DeleteCommand}" Classes="decor-action"/>
+    </StackPanel>
+
+    <Border Grid.Row="2" Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="8" Padding="16" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}">
+      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Pedido ID"/>
+          <NumericUpDown Value="{Binding PurchaseOrderId}" Minimum="0" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Fornecedor ID"/>
+          <NumericUpDown Value="{Binding SupplierId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="Data"/>
+          <DatePicker SelectedDate="{Binding OrderDate}"/>
+        </StackPanel>
+        <StackPanel Grid.Column="3">
+          <TextBlock Text="Status"/>
+          <ComboBox SelectedItem="{Binding StatusText}">
+            <x:String>Aberto</x:String>
+            <x:String>ParcialmenteRecebido</x:String>
+            <x:String>Recebido</x:String>
+            <x:String>Cancelado</x:String>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4">
+          <TextBlock Text="Observações"/>
+          <TextBox Text="{Binding Notes}" PlaceholderText="Descreva as observações do pedido"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <TextBlock Grid.Row="2" Margin="0,120,0,0" Text="{Binding StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+    <TextBlock Grid.Row="2" Margin="0,145,0,0" Text="{Binding ErrorMessage}" Foreground="#E57373" IsVisible="{Binding HasError}"/>
+
+    <Border Grid.Row="3" Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="8" Padding="16" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}">
+      <Grid RowDefinitions="Auto,*" RowSpacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="Registro de recebimento" FontWeight="Bold"/>
+          <TextBlock Text="(item do pedido)" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="12" RowDefinitions="Auto" RowSpacing="12">
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="Item do pedido ID"/>
+            <NumericUpDown Value="{Binding PurchaseOrderItemId}" Minimum="1" Increment="1"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1">
+            <TextBlock Text="Quantidade"/>
+            <NumericUpDown Value="{Binding QuantityReceived}" Minimum="0" Increment="1"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Text="Recebedor"/>
+            <NumericUpDown Value="{Binding ReceivedByEmployeeId}" Minimum="1" Increment="1"/>
+          </StackPanel>
+          <StackPanel Grid.Column="3">
+            <TextBlock Text="Divergência"/>
+            <CheckBox IsChecked="{Binding HasDivergence}" Content="Possui divergência"/>
+          </StackPanel>
+          <StackPanel Grid.ColumnSpan="4" Grid.Column="0" Grid.Row="1">
+            <TextBlock Text="Observações da divergência"/>
+            <TextBox Text="{Binding DivergenceNotes}" PlaceholderText="Se necessário, informe a divergência"/>
+          </StackPanel>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Button Grid.Row="3" Margin="0,0,0,0" HorizontalAlignment="Left" Content="Registrar recebimento" Command="{Binding RegisterReceiptCommand}" Classes="decor-action"/>
+
+    <DataGrid Grid.Row="3" Margin="0,110,0,0"
+              Classes="stock-catalog"
+              ItemsSource="{Binding Items}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              HeadersVisibility="All">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="Pedido" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding PurchaseOrderID}" Width="110"/>
+        <DataGridTextColumn Header="Fornecedor" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding SupplierID}" Width="130"/>
+        <DataGridTextColumn Header="Data" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding OrderDate, StringFormat={}{0:dd/MM/yyyy}}" Width="140"/>
+        <DataGridTextColumn Header="Status" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Status}" Width="180"/>
+        <DataGridTextColumn Header="Observações" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Notes}" Width="2*"/>
+      </DataGrid.Columns>
+    </DataGrid>
+  </Grid>
+</UserControl>

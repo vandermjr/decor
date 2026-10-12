@@ -342,8 +342,16 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public UnitOfMeasureDTO? SelectedStockUnit
     {
         get => _selectedStockUnit;
-        set => SetField(ref _selectedStockUnit, value);
+        set
+        {
+            if (!SetField(ref _selectedStockUnit, value))
+                return;
+
+            OnPropertyChanged(nameof(SelectedStockUnitCode));
+        }
     }
+
+    public string SelectedStockUnitCode => SelectedStockUnit?.Code ?? string.Empty;
 
     // Propriedades de erro para cada campo
     public string BarcodeError => GetFieldError("Barcode");

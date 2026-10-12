@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.GoodsReceiptsView"
+             x:DataType="vm:GoodsReceiptsViewModel">
+  <UserControl.Styles>
+    <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector="DataGrid.stock-catalog DataGridRow">
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Recebimentos" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Conferência e divergências dos itens recebidos." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <Border Grid.Row="1" Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="8" Padding="16" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}">
+      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Item do pedido ID"/>
+          <NumericUpDown Value="{Binding PurchaseOrderItemId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Quantidade"/>
+          <NumericUpDown Value="{Binding QuantityReceived}" Minimum="0" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="Recebedor"/>
+          <NumericUpDown Value="{Binding ReceivedByEmployeeId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="3">
+          <TextBlock Text="Divergência"/>
+          <CheckBox IsChecked="{Binding HasDivergence}" Content="Possui divergência"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4">
+          <TextBlock Text="Observações da divergência"/>
+          <TextBox Text="{Binding DivergenceNotes}" PlaceholderText="Descreva a divergência, se houver"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Button Grid.Row="2" HorizontalAlignment="Left" Content="Registrar recebimento" Command="{Binding RegisterReceiptCommand}" Classes="decor-action"/>
+    <TextBlock Grid.Row="2" Margin="0,42,0,0" Text="{Binding StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+    <TextBlock Grid.Row="2" Margin="0,62,0,0" Text="{Binding ErrorMessage}" Foreground="#E57373" IsVisible="{Binding HasError}"/>
+
+    <DataGrid Grid.Row="3"
+              Classes="stock-catalog"
+              ItemsSource="{Binding Items}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              HeadersVisibility="All">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="Recebimento" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding GoodsReceiptID}" Width="140"/>
+        <DataGridTextColumn Header="Item" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding PurchaseOrderItemID}" Width="110"/>
+        <DataGridTextColumn Header="Data" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding ReceiptDate, StringFormat={}{0:dd/MM/yyyy}}" Width="140"/>
+        <DataGridTextColumn Header="Quantidade" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding QuantityReceived}" Width="140"/>
+        <DataGridTextColumn Header="Recebedor" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding ReceivedByEmployeeID}" Width="130"/>
+        <DataGridTextColumn Header="Status" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Status}" Width="180"/>
+        <DataGridTextColumn Header="Observações" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Notes}" Width="2*"/>
+      </DataGrid.Columns>
+    </DataGrid>
+  </Grid>
+</UserControl>

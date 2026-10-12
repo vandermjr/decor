@@ -336,12 +336,14 @@
     </Style>
     <Style Selector="DataGridColumnHeader">
         <Setter Property="Padding" Value="8,0,0,0" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource DataGridColumnHeaderForegroundBrush}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="DataGridColumnHeader /template/ ContentPresenter">
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="TextBlock.FontWeight" Value="SemiBold" />
+        <Setter Property="TextBlock.FontWeight" Value="Bold" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource DataGridColumnHeaderForegroundBrush}" />
     </Style>
     <!-- DecorGridHeader draws the sort indicator on the right; the native glyph and its reserved width are disabled. -->
     <Style Selector="DataGridColumnHeader /template/ Path#SortIcon">

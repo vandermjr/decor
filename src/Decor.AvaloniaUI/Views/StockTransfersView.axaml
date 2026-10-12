@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
+             x:Class="Decor.AvaloniaUI.Views.StockTransfersView"
+             x:DataType="vm:StockTransfersViewModel">
+  <UserControl.Styles>
+    <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector="DataGrid.stock-catalog DataGridRow">
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="Transferências" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Movimentações entre depósitos e pontos de venda." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <Border Grid.Row="1" Background="{DynamicResource DecorSurfaceRaisedBrush}" CornerRadius="8" Padding="16" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}">
+      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="12">
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Produto ID"/>
+          <NumericUpDown Value="{Binding ProductId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Origem"/>
+          <NumericUpDown Value="{Binding SourceLocationId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Text="Destino"/>
+          <NumericUpDown Value="{Binding DestinationLocationId}" Minimum="1" Increment="1"/>
+        </StackPanel>
+        <StackPanel Grid.Column="3" Spacing="4">
+          <TextBlock Text="Quantidade"/>
+          <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+            <Grid ColumnDefinitions="*,36">
+              <NumericUpDown Value="{Binding Quantity}" Minimum="0" Increment="1" BorderThickness="0" HorizontalContentAlignment="Right"/>
+              <TextBlock Grid.Column="1" Text="{Binding QuantityUnitCode}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4">
+          <TextBlock Text="Observações"/>
+          <TextBox Text="{Binding Notes}" PlaceholderText="Descreva a transferência"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Button Grid.Row="2" HorizontalAlignment="Left" Content="Registrar transferência" Command="{Binding RegisterTransferCommand}" Classes="decor-action"/>
+    <TextBlock Grid.Row="2" Margin="0,44,0,0" Text="{Binding StatusMessage}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+    <TextBlock Grid.Row="2" Margin="0,64,0,0" Text="{Binding ErrorMessage}" Foreground="#E57373" IsVisible="{Binding HasError}"/>
+
+    <DataGrid Grid.Row="3"
+              Classes="stock-catalog"
+              ItemsSource="{Binding Items}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              HeadersVisibility="All">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="Código" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding TransferCode}" Width="150"/>
+        <DataGridTextColumn Header="Rota" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Route}" Width="2*"/>
+        <DataGridTextColumn Header="Produto" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Product}" Width="1.8*"/>
+        <DataGridTextColumn Header="Quantidade" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Quantity}" Width="120"/>
+        <DataGridTextColumn Header="Unidade" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding UnitCode}" Width="90"/>
+        <DataGridTextColumn Header="Status" HeaderTemplate="{StaticResource DecorGridHeaderTemplate}" Binding="{Binding Status}" Width="150"/>
+      </DataGrid.Columns>
+    </DataGrid>
+  </Grid>
+</UserControl>

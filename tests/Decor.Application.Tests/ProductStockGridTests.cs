@@ -100,6 +100,53 @@ public sealed class ProductStockGridTests
         Assert.Equal("False", (string?)minimumInput.Attribute("AllowSpin"));
     }
 
+    [Fact]
+    public void Product_stock_quantity_fields_show_the_selected_measure_unit()
+    {
+        var root = FindWorkspaceRoot();
+        var document = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "ProductsView.axaml"));
+        foreach (var label in new[] { "Estoque Inicial", "Estoque Mínimo" })
+        {
+            var field = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+                && (string?)element.Attribute("Text") == label).Parent!;
+            var fieldGrid = Assert.Single(field.Elements().Where(element => element.Name.LocalName == "Border")
+                .SelectMany(element => element.Elements().Where(child => child.Name.LocalName == "Grid")));
+            Assert.Equal("*,36", (string?)fieldGrid.Attribute("ColumnDefinitions"));
+            Assert.Contains(fieldGrid.Elements(), element => element.Name.LocalName == "TextBlock"
+                && (string?)element.Attribute("Text") == "{Binding SelectedStockUnitCode}");
+        }
+    }
+
+    [Theory]
+    [InlineData("StockView.axaml", "Quantidade", "QuantityUnitCode", "UnitCode")]
+    [InlineData("StockTransfersView.axaml", "Quantidade", "QuantityUnitCode", "UnitCode")]
+    [InlineData("StockAdjustmentsView.axaml", "Delta", "QuantityUnitCode", "UnitCode")]
+    public void Stock_movement_quantity_fields_and_history_show_product_unit(string fileName, string label, string unitBinding, string historyBinding)
+    {
+        var root = FindWorkspaceRoot();
+        var document = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", fileName));
+        var field = Assert.Single(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == label).Parent!;
+        var suffix = Assert.Single(field.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == $"{{Binding {unitBinding}}}");
+        Assert.Equal("*,36", (string?)suffix.Parent?.Attribute("ColumnDefinitions"));
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "DataGridTextColumn"
+            && (string?)element.Attribute("Header") == "Unidade"
+            && (string?)element.Attribute("Binding") == $"{{Binding {historyBinding}}}");
+    }
+
+    [Fact]
+    public void Product_edit_window_selects_unit_and_shows_it_on_stock_fields()
+    {
+        var root = FindWorkspaceRoot();
+        var document = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "ProductEditWindow.axaml"));
+
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "ComboBox"
+            && (string?)element.Attribute("SelectedItem") == "{Binding SelectedStockUnit}");
+        Assert.Equal(2, document.Descendants().Count(element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "{Binding SelectedStockUnitCode}"));
+    }
+
     internal static ProductDTO CreateProduct(decimal physical, decimal reserved, decimal minimum) => new(
         ProductID: 1,
         Barcode: null,

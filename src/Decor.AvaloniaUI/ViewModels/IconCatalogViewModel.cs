@@ -7,6 +7,8 @@ using Decor.AvaloniaUI.Icons;
 using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 using System.Windows.Input;
+using Decor.Core.Configuration;
+using Avalonia.Styling;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
@@ -39,6 +41,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
     public string IconWeightDisplay => IconWeight.ToString(CultureInfo.InvariantCulture);
     public ICommand ApplyCommand { get; }
+    public ICommand ResetIconColorsCommand { get; }
     public ICommand SaveStockSettingsCommand { get; }
     public ICommand ApplyThemeCommand { get; }
     public ICommand UseLightThemeCommand { get; }
@@ -82,7 +85,9 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         _themeService = themeService;
         _stockSettingsService = stockSettingsService;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
+        _themeService.ThemeChanged += OnThemeChanged;
         ApplyCommand = new RelayCommand(async () => await ApplyAsync());
+        ResetIconColorsCommand = new RelayCommand(async () => await ResetIconColorsAsync());
         SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
         ApplyThemeCommand = new RelayCommand(async () => await ApplyThemeSelectionAsync());
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
@@ -92,7 +97,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         {
             var group = new IconCatalogFamilyViewModel(family.Name);
             foreach (var iconId in family.Ids)
-                group.Items.Add(new IconCatalogItemViewModel(iconId, IconWeight));
+                group.Items.Add(new IconCatalogItemViewModel(iconId, IconWeight, _iconAppearanceService, ThemeVariantFor(_themeService.CurrentTheme)));
 
             FamilyGroups.Add(group);
         }
@@ -108,6 +113,23 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     {
         await _iconAppearanceService.SetAppearanceAsync(IconWeight, _iconAppearanceService.CurrentAppearance.StrokeThickness);
     }
+
+    private async Task ResetIconColorsAsync()
+    {
+        await _iconAppearanceService.ResetIconColorsAsync();
+        foreach (var item in FamilyGroups.SelectMany(group => group.Items))
+            item.RefreshColor();
+    }
+
+    private void OnThemeChanged(DecorThemeStyle theme)
+    {
+        var themeVariant = ThemeVariantFor(theme);
+        foreach (var item in FamilyGroups.SelectMany(group => group.Items))
+            item.RefreshColor(themeVariant);
+    }
+
+    private static ThemeVariant ThemeVariantFor(DecorThemeStyle theme) =>
+        theme == DecorThemeStyle.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
 
     private async Task SaveStockSettingsAsync()
     {
@@ -247,22 +269,62 @@ public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
     };
 
     private Geometry _geometry;
+    private readonly IIconAppearanceService _iconAppearanceService;
+    private ThemeVariant? _themeVariant;
 
-    public IconCatalogItemViewModel(DecorIconId id, int iconWeight)
+    public IconCatalogItemViewModel(DecorIconId id, int iconWeight, IIconAppearanceService iconAppearanceService, ThemeVariant? themeVariant = null)
     {
         Id = id;
+        _iconAppearanceService = iconAppearanceService;
+        _themeVariant = themeVariant;
         _geometry = DecorIconCatalog.Get(id, iconWeight);
+    }
+
+    public IconCatalogItemViewModel(DecorIconId id, int iconWeight)
+        : this(id, iconWeight, new StubIconAppearanceService())
+    {
     }
 
     public DecorIconId Id { get; }
     public string Name => DisplayNames.GetValueOrDefault(Id.Value, GetShortName(Id.Value));
     public string FullId => Id.Value;
     public Geometry Geometry => _geometry;
+    public string? CurrentColor => _iconAppearanceService.CurrentAppearance.GetColor(Id.Value);
+    public IBrush ColorPreviewBrush => DecorIconColors.GetBrush(Id, _iconAppearanceService.CurrentAppearance, _themeVariant);
+
+    public void RefreshColor(ThemeVariant? themeVariant = null)
+    {
+        if (themeVariant is not null)
+            _themeVariant = themeVariant;
+        OnPropertyChanged(nameof(CurrentColor));
+        OnPropertyChanged(nameof(ColorPreviewBrush));
+    }
+
+    public void SetColor(string? colorHex)
+    {
+        _iconAppearanceService.SetIconColorOverrideAsync(Id.Value, colorHex).GetAwaiter().GetResult();
+        RefreshColor();
+    }
 
     public void UpdateGeometry(int weight)
     {
         _geometry = DecorIconCatalog.Get(Id, weight);
         OnPropertyChanged(nameof(Geometry));
+    }
+
+    private sealed class StubIconAppearanceService : IIconAppearanceService
+    {
+        public IconAppearance CurrentAppearance { get; } = IconAppearance.Default;
+        public event Action<IconAppearance>? AppearanceChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SetAppearanceAsync(int materialSymbolWeight, double strokeThickness, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SetIconColorOverrideAsync(string iconId, string? colorHex, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ResetIconColorsAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

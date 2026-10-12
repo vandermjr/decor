@@ -45,6 +45,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowCustomersCommand = new RelayCommand(() => OpenSingletonDocument("customers", "Clientes", () => CreateView<CustomersView>()), () => authorizationService.HasPermission(DecorPermissions.CustomersView));
         ShowSuppliersCommand = new RelayCommand(() => OpenSingletonDocument("suppliers", "Fornecedores", () => CreateView<SuppliersView>()), () => authorizationService.HasPermission(DecorPermissions.SuppliersView));
         ShowPartnersCommand = new RelayCommand(() => OpenSingletonDocument("partners", "Parceiros", () => CreateView<PartnersView>()), () => authorizationService.HasPermission(DecorPermissions.PartnersView));
+        ShowStockCommand = new RelayCommand(() => OpenSingletonDocument("stock", "Estoque", () => CreateView<StockView>()), () => authorizationService.HasPermission(DecorPermissions.StockMovementsView));
+        ShowStockTransfersCommand = new RelayCommand(() => OpenSingletonDocument("stock-transfers", "Transferências", () => CreateView<StockTransfersView>()), () => authorizationService.HasPermission(DecorPermissions.StockMovementsTransfer));
+        ShowStockAdjustmentsCommand = new RelayCommand(() => OpenSingletonDocument("stock-adjustments", "Ajustes", () => CreateView<StockAdjustmentsView>()), () => authorizationService.HasPermission(DecorPermissions.StockMovementsAdjust));
+        ShowPurchaseOrdersCommand = new RelayCommand(() => OpenSingletonDocument("purchase-orders", "Pedidos de Compra", () => CreateView<PurchaseOrdersView>()), () => authorizationService.HasPermission(DecorPermissions.PurchaseOrdersView));
+        ShowGoodsReceiptsCommand = new RelayCommand(() => OpenSingletonDocument("goods-receipts", "Recebimentos", () => CreateView<GoodsReceiptsView>()), () => authorizationService.HasPermission(DecorPermissions.GoodsReceiptsView));
         ShowQuotesCommand = new RelayCommand(() => OpenSingletonDocument("quotes", "Orçamentos", () => CreateView<QuotesView>()), () => authorizationService.HasPermission(DecorPermissions.QuotesView));
         ShowSalesCommand = new RelayCommand(() => OpenSingletonDocument("sales", "Vendas", () => CreateView<SalesView>()), () => authorizationService.HasPermission(DecorPermissions.OrdersView));
         ShowEmployeesCommand = new RelayCommand(() => OpenSingletonDocument("employees", "Funcionários", () => CreateView<EmployeesView>()), () => authorizationService.HasPermission(DecorPermissions.EmployeesView));
@@ -131,6 +136,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ShowCustomersCommand { get; }
     public ICommand ShowSuppliersCommand { get; }
     public ICommand ShowPartnersCommand { get; }
+    public ICommand ShowStockCommand { get; }
+    public ICommand ShowStockTransfersCommand { get; }
+    public ICommand ShowStockAdjustmentsCommand { get; }
+    public ICommand ShowPurchaseOrdersCommand { get; }
+    public ICommand ShowGoodsReceiptsCommand { get; }
     public ICommand ShowQuotesCommand { get; }
     public ICommand ShowSalesCommand { get; }
     public ICommand ShowEmployeesCommand { get; }
@@ -161,6 +171,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool CanViewCustomers => ((RelayCommand)ShowCustomersCommand).CanExecute(null);
     public bool CanViewSuppliers => ((RelayCommand)ShowSuppliersCommand).CanExecute(null);
     public bool CanViewPartners => ((RelayCommand)ShowPartnersCommand).CanExecute(null);
+    public bool CanViewStock => ((RelayCommand)ShowStockCommand).CanExecute(null);
+    public bool CanViewStockTransfers => ((RelayCommand)ShowStockTransfersCommand).CanExecute(null);
+    public bool CanViewStockAdjustments => ((RelayCommand)ShowStockAdjustmentsCommand).CanExecute(null);
+    public bool CanViewPurchaseOrders => ((RelayCommand)ShowPurchaseOrdersCommand).CanExecute(null);
+    public bool CanViewGoodsReceipts => ((RelayCommand)ShowGoodsReceiptsCommand).CanExecute(null);
     public bool CanViewQuotes => ((RelayCommand)ShowQuotesCommand).CanExecute(null);
     public bool CanViewSales => ((RelayCommand)ShowSalesCommand).CanExecute(null);
     public bool CanViewRoles => ((RelayCommand)ShowRolesCommand).CanExecute(null);

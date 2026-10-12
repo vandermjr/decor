@@ -49,15 +49,35 @@
           <TextBlock Text="{Binding DescriptionError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
         </StackPanel>
 
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Unidade de Medida" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>
+        <StackPanel Grid.Row="4" Grid.Column="1" Spacing="3">
+          <ComboBox TabIndex="2" ItemsSource="{Binding StockUnits}" SelectedItem="{Binding SelectedStockUnit}" controls:DecorRequiredField.IsRequired="True">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="dto:UnitOfMeasureDTO"><TextBlock Text="{Binding Code}"/></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Text="{Binding StockUnitError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockUnitError}"/>
+        </StackPanel>
+
         <TextBlock Grid.Row="5" Grid.Column="0" Text="Estoque" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="5" Grid.Column="1" Spacing="3">
-          <NumericUpDown TabIndex="3" Value="{Binding StockQuantity}" Minimum="0"/>
+          <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+            <Grid ColumnDefinitions="*,36">
+              <NumericUpDown TabIndex="3" Value="{Binding StockQuantity}" Minimum="0" BorderThickness="0" HorizontalContentAlignment="Right"/>
+              <TextBlock Grid.Column="1" Text="{Binding SelectedStockUnitCode}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
           <TextBlock Text="{Binding StockQuantityError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasStockQuantityError}"/>
         </StackPanel>
 
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Estoque Mínimo" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="6" Grid.Column="1" Spacing="3">
-          <NumericUpDown TabIndex="4" Value="{Binding MinimumStock}" Minimum="0"/>
+          <Border Height="36" ClipToBounds="True" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+            <Grid ColumnDefinitions="*,36">
+              <NumericUpDown TabIndex="4" Value="{Binding MinimumStock}" Minimum="0" BorderThickness="0" HorizontalContentAlignment="Right"/>
+              <TextBlock Grid.Column="1" Text="{Binding SelectedStockUnitCode}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
           <TextBlock Text="{Binding MinimumStockError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasMinimumStockError}"/>
         </StackPanel>
 

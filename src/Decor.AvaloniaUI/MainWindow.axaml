@@ -230,10 +230,10 @@
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Pedidos de Compra" IsEnabled="False">
+                <MenuItem Header="Pedidos de Compra" Command="{Binding ShowPurchaseOrdersCommand}" IsVisible="{Binding CanViewPurchaseOrders}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Recebimentos" IsEnabled="False">
+                <MenuItem Header="Recebimentos" Command="{Binding ShowGoodsReceiptsCommand}" IsVisible="{Binding CanViewGoodsReceipts}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.TermDelivery}"/></MenuItem.Icon>
                 </MenuItem>
               </MenuFlyout>
@@ -246,13 +246,13 @@
             </StackPanel>
             <Button.Flyout>
               <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Estoque" IsEnabled="False">
+                <MenuItem Header="Estoque" Command="{Binding ShowStockCommand}" IsVisible="{Binding CanViewStock}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Estoque}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Transferências" IsEnabled="False">
+                <MenuItem Header="Transferências" Command="{Binding ShowStockTransfersCommand}" IsVisible="{Binding CanViewStockTransfers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.TermDelivery}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Ajustes" IsEnabled="False">
+                <MenuItem Header="Ajustes" Command="{Binding ShowStockAdjustmentsCommand}" IsVisible="{Binding CanViewStockAdjustments}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Preferences}"/></MenuItem.Icon>
                 </MenuItem>
               </MenuFlyout>

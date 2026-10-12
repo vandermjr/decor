@@ -51,9 +51,32 @@ public sealed class IconAppearanceServiceTests
         settings.SavedSettings.Should().BeEquivalentTo(new Dictionary<string, string>
         {
             ["IconWeight"] = "600",
-            ["IconStrokeThickness"] = "1.3"
+            ["IconStrokeThickness"] = "1.3",
+            ["IconColors"] = ""
         });
         notifiedAppearance.Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task SetIconColorOverrideAsync_persists_and_allows_reset()
+    {
+        var settings = new StubSystemSettingsRepository();
+        var service = new IconAppearanceService(settings);
+        IconAppearance? notifiedAppearance = null;
+        service.AppearanceChanged += appearance => notifiedAppearance = appearance;
+
+        await service.SetIconColorOverrideAsync("Actions.Save", "#ff5722");
+        await service.SetIconColorOverrideAsync("Actions.Search", "#3b82f6");
+        await service.SetIconColorOverrideAsync("Actions.Save", null);
+
+        service.CurrentAppearance.GetColor("Actions.Save").Should().BeNull();
+        service.CurrentAppearance.GetColor("Actions.Search").Should().Be("#3b82f6");
+        settings.SavedSettings.Should().ContainKey("IconColors");
+        notifiedAppearance.Should().NotBeNull();
+
+        await service.ResetIconColorsAsync();
+
+        service.CurrentAppearance.GetColor("Actions.Search").Should().BeNull();
     }
 
     [Fact]

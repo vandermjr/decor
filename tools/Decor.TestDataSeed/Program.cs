@@ -18,6 +18,14 @@ internal static class Program
     private static readonly string[] People = ["Ana Ficticia", "Bruno Ficticio", "Carla Ficticia", "Diego Ficticio", "Elisa Ficticia"];
     private static readonly string[] Customers = ["Casa Aurora", "Casa Horizonte", "Casa Primavera", "Casa Jardim", "Casa Estrela"];
     private static readonly string[] Suppliers = ["Tecidos Aurora", "Trilhos Horizonte", "Persianas Primavera", "Acessorios Jardim", "Ferragens Estrela"];
+    private static readonly (string Name, string Document, string Phone, int PartnerType)[] Partners =
+    [
+        ("Fabrica Aurora", "12.345.678/0001-90", "(11) 3000-1001", 1),
+        ("Instaladora Norte", "98.765.432/0001-11", "(11) 3200-2202", 2),
+        ("Matriz Verde", "11.223.344/0001-55", "(21) 3300-4403", 1),
+        ("Serviços Horizonte", "22.334.455/0001-66", "(31) 3400-5504", 2),
+        ("Parceria Sol", "33.445.566/0001-77", "(41) 3500-6605", 1)
+    ];
     private sealed record TaskRole(string Task, string[] Permissions)
     {
         public string Name => "Teste DSEED1 " + Task;
@@ -56,7 +64,7 @@ internal static class Program
             builder.Pooling = false;
             await using var connection = new MySqlConnection(builder.ConnectionString);
             await connection.OpenAsync();
-            var tables = new[] { "customers", "suppliers", "employees", "users", "roles", "permissions", "user_roles", "role_permissions" };
+            var tables = new[] { "customers", "suppliers", "employees", "partners", "users", "roles", "permissions", "user_roles", "role_permissions" };
             var engines = (await connection.QueryAsync<string>("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN @tables", new { tables })).ToArray();
             Require(engines.Length == tables.Length && engines.All(engine => engine.Equals("InnoDB", StringComparison.OrdinalIgnoreCase)), "Required transactional schema is missing or not InnoDB. No migrations will run.");
             var locked = await connection.ExecuteScalarAsync<int?>("SELECT GET_LOCK('Decor.TestDataSeed.v1', 0)");
@@ -183,7 +191,7 @@ internal static class Program
             Console.WriteLine($"OMITTED: {permission} from Comercial; optional newly separated module absent from catalog. No permission created and no migration run.");
         var requiredMissing = missing.Where(permission => permission != "Services.View").ToArray();
         Require(requiredMissing.Length == 0, "Missing catalog permissions: " + string.Join(", ", requiredMissing) + ". No migrations will run.");
-        var created = new Dictionary<string, int> { ["roles"] = 0, ["users"] = 0, ["employees"] = 0, ["customers"] = 0, ["suppliers"] = 0, ["role_permissions"] = 0, ["user_roles"] = 0 };
+        var created = new Dictionary<string, int> { ["roles"] = 0, ["users"] = 0, ["employees"] = 0, ["customers"] = 0, ["suppliers"] = 0, ["partners"] = 0, ["role_permissions"] = 0, ["user_roles"] = 0 };
         var existing = new Dictionary<string, int>(created);
         for (var index = 0; index < Roles.Length; index++)
         {
@@ -237,10 +245,26 @@ internal static class Program
             await Master("customers", "CustomerID", "Name", Identity(Customers[index]), Document("C", index), null);
             await Master("suppliers", "SupplierID", "CorporateName", Identity(Suppliers[index]), Document("S", index), null);
         }
+
+        foreach (var partner in Partners)
+        {
+            var rows = (await connection.QueryAsync<(int PartnerID, string Name, string? Document, int PartnerType)>("SELECT PartnerID, Name, Document, PartnerType FROM partners WHERE Document=@document OR Name=@name FOR UPDATE", new { document = partner.Document, name = partner.Name }, transaction)).ToArray();
+            Require(rows.Length <= 1 && rows.All(row => row.Name == partner.Name && row.Document == partner.Document && row.PartnerType == partner.PartnerType), "Partner identity collision: " + partner.Name);
+            if (rows.Length == 0)
+            {
+                created["partners"]++;
+                if (apply)
+                    await connection.ExecuteAsync("INSERT INTO partners (Name, Document, Phone, PartnerType, IsActive) VALUES (@Name, @Document, @Phone, @PartnerType, 1)", new { partner.Name, partner.Document, partner.Phone, partner.PartnerType }, transaction);
+            }
+            else existing["partners"]++;
+            Console.WriteLine($"IDENTITY partners: {partner.Name}; {(rows.Length == 1 ? "existing-preserved" : apply ? "new-pending-commit" : "planned")}");
+        }
+
         if (apply)
         {
             foreach (var table in new[] { "employees", "customers", "suppliers" })
                 Require(await connection.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM {table} WHERE Document IN @documents", new { documents = Enumerable.Range(0, 5).Select(index => Document(table == "employees" ? "E" : table == "customers" ? "C" : "S", index)).ToArray() }, transaction) == 5, "Final count mismatch: " + table);
+            Require(await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM partners WHERE Document IN @documents", new { documents = Partners.Select(partner => partner.Document).ToArray() }, transaction) == 5, "Final partner count mismatch.");
             Require(await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM users WHERE Username IN @names", new { names = Roles.Select(role => role.Username).ToArray() }, transaction) == 5, "Final user count mismatch.");
         }
         foreach (var table in created.Keys) Console.WriteLine($"COUNT {table}: existing={existing[table]}, {(apply ? "inserted-pending-commit" : "planned")}={created[table]}, total={existing[table] + created[table]}");

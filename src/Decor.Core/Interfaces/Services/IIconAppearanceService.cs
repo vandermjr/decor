@@ -9,4 +9,6 @@ public interface IIconAppearanceService
 
     Task InitializeAsync(CancellationToken cancellationToken = default);
     Task SetAppearanceAsync(int materialSymbolWeight, double strokeThickness, CancellationToken cancellationToken = default);
+    Task SetIconColorOverrideAsync(string iconId, string? colorHex, CancellationToken cancellationToken = default);
+    Task ResetIconColorsAsync(CancellationToken cancellationToken = default);
 }

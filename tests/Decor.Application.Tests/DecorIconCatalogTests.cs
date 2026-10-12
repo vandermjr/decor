@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using Avalonia.Skia;
+using Avalonia.Styling;
 using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.ViewModels;
 using System.Reflection;
@@ -143,6 +144,23 @@ public class DecorIconCatalogTests
             Assert.True(!string.Equals(semanticName, item.Name, StringComparison.Ordinal)
                 || portugueseCognates.Contains(item.Name));
         });
+    }
+
+    [Fact]
+    public void Icon_catalog_uses_the_global_semantic_default_color()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        var item = new IconCatalogItemViewModel(DecorIconId.Actions.Save, 400);
+
+        Assert.Equal(DecorIconColors.GetDefaultColor(item.Id), ((SolidColorBrush)item.ColorPreviewBrush).Color);
+    }
+
+    [Fact]
+    public void Unmapped_icon_default_contrasts_with_the_active_theme()
+    {
+        Assert.Equal(Colors.Black, DecorIconColors.GetDefaultColor(DecorIconId.Application.Home, ThemeVariant.Light));
+        Assert.Equal(Colors.White, DecorIconColors.GetDefaultColor(DecorIconId.Application.Home, ThemeVariant.Dark));
     }
 
     [Fact]
