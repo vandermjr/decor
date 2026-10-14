@@ -16,9 +16,16 @@ internal static class Program
     public static void Main(string[] args)
     {
         using var host = BuildHost(args);
-
-        BuildAvaloniaApp(host.Services)
-            .StartWithClassicDesktopLifetime(args);
+        host.Start();
+        try
+        {
+            BuildAvaloniaApp(host.Services)
+                .StartWithClassicDesktopLifetime(args);
+        }
+        finally
+        {
+            host.StopAsync().GetAwaiter().GetResult();
+        }
     }
 
     private static IHost BuildHost(string[] args) =>
@@ -54,6 +61,10 @@ internal static class Program
                 services.AddTransient<EditUserViewModel>();
                 services.AddTransient<EditUserRolesViewModel>();
                 services.AddTransient<DatabaseMaintenanceViewModel>();
+                services.AddSingleton<IDatabaseBackupScheduleStore, DatabaseBackupScheduleStore>();
+                services.AddSingleton<IBackupNotificationSettingsStore, BackupNotificationSettingsStore>();
+                services.AddSingleton<INotificationCenter, NotificationCenter>();
+                services.AddHostedService<DatabaseBackupScheduleWorker>();
                 services.AddTransient<IconCatalogViewModel>();
                 services.AddTransient<ProductsView>();
                 services.AddTransient<BrandsView>();

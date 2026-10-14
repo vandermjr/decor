@@ -4,6 +4,7 @@ using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
+using Decor.Infrastructure.Services;
 using System.Reflection;
 
 namespace Decor.Application.Tests;
@@ -16,12 +17,13 @@ public sealed class DatabaseMaintenanceAuthorizationTests
         DecorPermissions.DatabaseMaintenanceView.Should().Be("DatabaseMaintenance.View");
     }
 
-    [Theory]
-    [InlineData(SystemRoleDefaults.Administrators)]
-    [InlineData(SystemRoleDefaults.Supervisors)]
-    public void DatabaseMaintenanceView_IsGrantedByDefaultToSystemRole(string roleName)
+    [Fact]
+    public void DatabaseMaintenanceView_IsGrantedByDefaultOnlyToAdministrators()
     {
-        SystemRoleDefaults.Permissions[roleName].Should().Contain(DecorPermissions.DatabaseMaintenanceView);
+        SystemRoleDefaults.Permissions[SystemRoleDefaults.Administrators].Should().Contain(DecorPermissions.DatabaseMaintenanceView);
+        SystemRoleDefaults.Permissions[SystemRoleDefaults.Administrators].Should().Contain(DecorPermissions.DatabaseMaintenanceRestore);
+        SystemRoleDefaults.Permissions[SystemRoleDefaults.Supervisors].Should().NotContain(DecorPermissions.DatabaseMaintenanceView);
+        SystemRoleDefaults.Permissions[SystemRoleDefaults.Supervisors].Should().NotContain(DecorPermissions.DatabaseMaintenanceRestore);
     }
 
     [Fact]
@@ -30,18 +32,34 @@ public sealed class DatabaseMaintenanceAuthorizationTests
         SystemRoleDefaults.Permissions.Should().NotContainKey("Operador");
     }
 
+    [Fact]
+    public async Task RestoreService_RejectsNonAdministratorEvenWhenPermissionIsGranted()
+    {
+        var userContext = new StubAuthenticatedUserContext(new ApplicationUser
+        {
+            Username = "operator",
+            Roles = [SystemRoleDefaults.Supervisors]
+        });
+        var service = new DatabaseRestoreService(null!, null!, userContext, new RestoreAuthorizationService());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RestoreBackupAsync("unused.zip"));
+    }
+
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void ShowDatabaseMaintenanceCommand_ReflectsAuthorization(bool hasPermission)
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void ShowDatabaseMaintenanceCommand_RequiresAdministratorAndPermission(bool hasPermission, bool isAdministrator)
     {
         var viewModel = new MainViewModel(
             new StubNavigationService(),
             new StubThemeService(),
             new StubAuthorizationService(hasPermission),
-            new StubAuthenticatedUserContext());
+            new StubAuthenticatedUserContext(isAdministrator
+                ? new ApplicationUser { Roles = [SystemRoleDefaults.Administrators] }
+                : new ApplicationUser { Username = "test" }));
 
-        viewModel.ShowDatabaseMaintenanceCommand.CanExecute(null).Should().Be(hasPermission);
+        viewModel.ShowDatabaseMaintenanceCommand.CanExecute(null).Should().Be(hasPermission && isAdministrator);
     }
 
     [Fact]
@@ -159,6 +177,15 @@ public sealed class DatabaseMaintenanceAuthorizationTests
     private sealed class StubAuthorizationService(bool hasPermission) : IAuthorizationService
     {
         public bool HasPermission(string permissionCode) => hasPermission && permissionCode == DecorPermissions.DatabaseMaintenanceView;
+        public bool CanView(string resource) => false;
+        public bool CanCreate(string resource) => false;
+        public bool CanEdit(string resource) => false;
+        public bool CanDelete(string resource) => false;
+    }
+
+    private sealed class RestoreAuthorizationService : IAuthorizationService
+    {
+        public bool HasPermission(string permissionCode) => permissionCode == DecorPermissions.DatabaseMaintenanceRestore;
         public bool CanView(string resource) => false;
         public bool CanCreate(string resource) => false;
         public bool CanEdit(string resource) => false;

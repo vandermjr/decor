@@ -14,7 +14,8 @@ public sealed class RemainingActionPermissionTests
     {
         var backup = new Mock<IDatabaseBackupService>(MockBehavior.Strict);
         var authorization = new Mock<IAuthorizationService>();
-        var viewModel = new DatabaseMaintenanceViewModel(backup.Object, authorization: authorization.Object);
+        var viewModel = new DatabaseMaintenanceViewModel(backup.Object, authorization: authorization.Object,
+            userContext: new TestAuthenticatedUserContext());
         var originalStatus = viewModel.StatusMessage;
 
         Assert.False(viewModel.NewScheduleCommand.CanExecute(null));
@@ -28,10 +29,20 @@ public sealed class RemainingActionPermissionTests
         Assert.Empty(viewModel.Schedules);
         Assert.Equal(originalStatus, viewModel.StatusMessage);
         Assert.Empty(backup.Invocations);
-        var compatible = new DatabaseMaintenanceViewModel(backup.Object);
+        var compatible = new DatabaseMaintenanceViewModel(backup.Object,
+            userContext: new TestAuthenticatedUserContext(new ApplicationUser { Roles = [SystemRoleDefaults.Administrators] }));
         Assert.True(compatible.NewScheduleCommand.CanExecute(null));
         Assert.True(compatible.SaveScheduleCommand.CanExecute(null));
         Assert.True(compatible.StartImmediateBackupCommand.CanExecute(null));
+    }
+
+    private sealed class TestAuthenticatedUserContext(ApplicationUser? user = null) : IAuthenticatedUserContext
+    {
+        public event EventHandler? SignedOut { add { } remove { } }
+        public bool IsAuthenticated => true;
+        public ApplicationUser User { get; } = user ?? new ApplicationUser { Username = "operator" };
+        public void SignIn(ApplicationUser signedInUser) { }
+        public void SignOut() { }
     }
 
     [Fact]

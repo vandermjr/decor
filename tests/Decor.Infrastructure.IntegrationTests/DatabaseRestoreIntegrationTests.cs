@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using Dapper;
+using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
@@ -364,9 +365,17 @@ public sealed class DatabaseRestoreIntegrationTests(MariaDbFixture fixture) : IC
     {
         public event EventHandler? SignedOut { add { } remove { } }
         public bool IsAuthenticated { get; set; } = true;
-        public ApplicationUser? User => null;
+        public ApplicationUser? User { get; private set; } = new()
+        {
+            Username = "restore-test",
+            Roles = [SystemRoleDefaults.Administrators]
+        };
         public void SignIn(ApplicationUser user) { }
-        public void SignOut() => IsAuthenticated = false;
+        public void SignOut()
+        {
+            IsAuthenticated = false;
+            User = null;
+        }
     }
 
     private static DatabaseRestoreService CreateService(IDatabaseConnection database, IDatabaseBackupService backup) =>

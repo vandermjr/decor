@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Avalonia.Media;
 using Decor.AvaloniaUI.Icons;
+using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 using System.Windows.Input;
@@ -14,15 +15,21 @@ namespace Decor.AvaloniaUI.ViewModels;
 
 public sealed class IconCatalogViewModel : INotifyPropertyChanged
 {
+    private const int MaximumTimePickerDurationMinutes = 23 * 60 + 59;
     private readonly IIconAppearanceService _iconAppearanceService;
     private readonly IThemeService _themeService;
     private readonly IStockSettingsService? _stockSettingsService;
+    private readonly IBackupNotificationSettingsStore? _backupNotificationSettingsStore;
+    private readonly IDatabaseBackupScheduleStore? _backupScheduleStore;
     private int _iconWeight;
     private bool _allowNegativeStock;
     private string _selectedSettingsSection = "Theme";
     private string _selectedThemeOption = string.Empty;
     private string _stockSettingsStatus = string.Empty;
     private string _iconColorStatus = string.Empty;
+    private bool _notifyBeforeScheduledBackup = true;
+    private int _backupNotificationLeadTimeMinutes = 15;
+    private string _backupNotificationSettingsStatus = string.Empty;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
     public ObservableCollection<string> ThemeOptions { get; } = ["Claro", "Escuro"];
@@ -44,12 +51,14 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public ICommand ApplyCommand { get; }
     public ICommand ResetIconColorsCommand { get; }
     public ICommand SaveStockSettingsCommand { get; }
+    public ICommand SaveBackupNotificationSettingsCommand { get; }
     public ICommand ApplyThemeCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
     public bool IsThemeSettingsSelected => _selectedSettingsSection == "Theme";
     public bool IsIconSettingsSelected => _selectedSettingsSection == "Icons";
     public bool IsStockMovementsSelected => _selectedSettingsSection == "StockMovements";
+    public bool IsBackupNotificationsSelected => _selectedSettingsSection == "BackupNotifications";
     public string CurrentThemeName => _themeService.CurrentTheme == DecorThemeStyle.Light ? "Claro" : "Escuro";
     public string SelectedThemeOption
     {
@@ -80,6 +89,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsThemeSettingsSelected));
             OnPropertyChanged(nameof(IsIconSettingsSelected));
             OnPropertyChanged(nameof(IsStockMovementsSelected));
+            OnPropertyChanged(nameof(IsBackupNotificationsSelected));
         }
     }
 
@@ -89,16 +99,66 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         set => SetField(ref _allowNegativeStock, value);
     }
 
-    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IThemeService themeService, IStockSettingsService? stockSettingsService = null)
+    public bool NotifyBeforeScheduledBackup
+    {
+        get => _notifyBeforeScheduledBackup;
+        set => SetField(ref _notifyBeforeScheduledBackup, value);
+    }
+
+    public int BackupNotificationLeadTimeMinutes
+    {
+        get => _backupNotificationLeadTimeMinutes;
+        set
+        {
+            var minutes = Math.Clamp(value, 1, Math.Min(MaximumBackupNotificationLeadTimeMinutes, MaximumTimePickerDurationMinutes));
+            if (!SetField(ref _backupNotificationLeadTimeMinutes, minutes))
+                return;
+            OnPropertyChanged(nameof(BackupNotificationLeadTime));
+            OnPropertyChanged(nameof(BackupNotificationLeadTimeDisplay));
+            OnPropertyChanged(nameof(NextBackupNotificationPreview));
+        }
+    }
+
+    public TimeSpan? BackupNotificationLeadTime
+    {
+        get => TimeSpan.FromMinutes(_backupNotificationLeadTimeMinutes);
+        set
+        {
+            if (value is null)
+                return;
+            BackupNotificationLeadTimeMinutes = (int)Math.Round(value.Value.TotalMinutes, MidpointRounding.AwayFromZero);
+        }
+    }
+
+    public string BackupNotificationLeadTimeDisplay => TimeSpan.FromMinutes(_backupNotificationLeadTimeMinutes).ToString(@"hh\:mm");
+    public int MaximumBackupNotificationLeadTimeMinutes => GetMaximumBackupNotificationLeadTimeMinutes();
+    public string BackupNotificationLeadTimeLabel => $"Avisar antes do backup (máximo atual: {MaximumBackupNotificationLeadTimeMinutes} min)";
+    public string NextBackupNotificationPreview => CreateNextBackupNotificationPreview();
+
+    public string BackupNotificationSettingsStatus
+    {
+        get => _backupNotificationSettingsStatus;
+        private set => SetField(ref _backupNotificationSettingsStatus, value);
+    }
+
+    public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IThemeService themeService,
+        IStockSettingsService? stockSettingsService = null,
+        IBackupNotificationSettingsStore? backupNotificationSettingsStore = null,
+        IDatabaseBackupScheduleStore? backupScheduleStore = null)
     {
         _iconAppearanceService = iconAppearanceService;
         _themeService = themeService;
         _stockSettingsService = stockSettingsService;
+        _backupNotificationSettingsStore = backupNotificationSettingsStore;
+        _backupScheduleStore = backupScheduleStore;
+        if (_backupScheduleStore is not null)
+            _backupScheduleStore.SchedulesChanged += OnBackupSchedulesChanged;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
         _themeService.ThemeChanged += OnThemeChanged;
         ApplyCommand = new RelayCommand(async () => await ApplyAsync());
         ResetIconColorsCommand = new RelayCommand(async () => await ResetIconColorsAsync());
         SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
+        SaveBackupNotificationSettingsCommand = new RelayCommand(SaveBackupNotificationSettings);
         ApplyThemeCommand = new RelayCommand(async () => await ApplyThemeSelectionAsync());
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
@@ -115,8 +175,16 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
     public async Task InitializeAsync()
     {
-        if (_stockSettingsService is null) return;
-        AllowNegativeStock = await _stockSettingsService.GetAllowNegativeStockAsync();
+        if (_stockSettingsService is not null)
+            AllowNegativeStock = await _stockSettingsService.GetAllowNegativeStockAsync();
+        if (_backupNotificationSettingsStore is not null)
+        {
+            var settings = _backupNotificationSettingsStore.Load();
+            NotifyBeforeScheduledBackup = settings.IsEnabled;
+            _backupNotificationLeadTimeMinutes = Math.Clamp(settings.LeadTimeMinutes, 1, 1440);
+            OnPropertyChanged(nameof(BackupNotificationLeadTimeMinutes));
+            RefreshBackupNotificationPreview();
+        }
     }
 
     private async Task ApplyAsync()
@@ -158,6 +226,92 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         {
             StockSettingsStatus = "Não foi possível salvar a configuração de estoque.";
         }
+    }
+
+    private void SaveBackupNotificationSettings()
+    {
+        if (_backupNotificationSettingsStore is null)
+        {
+            BackupNotificationSettingsStatus = "As opções de notificação de backup não estão disponíveis.";
+            return;
+        }
+
+        try
+        {
+            _backupNotificationSettingsStore.Save(new BackupNotificationSettings(
+                NotifyBeforeScheduledBackup, BackupNotificationLeadTimeMinutes));
+            BackupNotificationSettingsStatus = "Opções de notificação salvas.";
+        }
+        catch (Exception)
+        {
+            BackupNotificationSettingsStatus = "Não foi possível salvar as opções de notificação.";
+        }
+    }
+
+    private int GetMaximumBackupNotificationLeadTimeMinutes()
+    {
+        var nextSchedule = GetNextPendingBackupSchedule();
+        if (nextSchedule is null)
+            return MaximumTimePickerDurationMinutes;
+
+        var minutesAvailable = (int)Math.Floor((nextSchedule.NextExecutionAt - DateTime.Now).TotalMinutes);
+        return Math.Clamp(minutesAvailable, 1, MaximumTimePickerDurationMinutes);
+    }
+
+    private string CreateNextBackupNotificationPreview()
+    {
+        if (!NotifyBeforeScheduledBackup)
+            return "O aviso de antecedência está desativado.";
+
+        var nextSchedule = GetNextPendingBackupSchedule();
+        if (nextSchedule is null)
+        {
+            var alreadyNotified = _backupScheduleStore?.Load()
+                .Where(schedule => schedule.IsEnabled && schedule.NotifiedForExecutionAt == schedule.NextExecutionAt)
+                .OrderBy(schedule => schedule.NextExecutionAt)
+                .FirstOrDefault();
+            if (alreadyNotified is not null)
+                return $"O aviso já foi enviado. Próximo backup: {alreadyNotified.NextExecutionAt:dd/MM/yyyy HH:mm}.";
+            return "Sem backups ativos. Esta antecedência será aplicada aos próximos agendamentos.";
+        }
+
+        var notificationAt = nextSchedule.NextExecutionAt.AddMinutes(-BackupNotificationLeadTimeMinutes);
+        return notificationAt <= DateTime.Now
+            ? $"Próximo backup: {nextSchedule.NextExecutionAt:dd/MM/yyyy HH:mm}. O horário do aviso já chegou; ele será exibido imediatamente."
+            : $"Próximo backup: {nextSchedule.NextExecutionAt:dd/MM/yyyy HH:mm}. Aviso previsto para {notificationAt:dd/MM/yyyy HH:mm}.";
+    }
+
+    private DatabaseBackupSchedule? GetNextPendingBackupSchedule() => _backupScheduleStore?.Load()
+        .Where(schedule => schedule.IsEnabled && schedule.NotifiedForExecutionAt != schedule.NextExecutionAt)
+        .OrderBy(schedule => schedule.NextExecutionAt)
+        .FirstOrDefault();
+
+    private void OnBackupSchedulesChanged(object? sender, EventArgs eventArgs) =>
+        Avalonia.Threading.Dispatcher.UIThread.Post(RefreshBackupNotificationPreview);
+
+    private void RefreshBackupNotificationPreview()
+    {
+        var maximum = MaximumBackupNotificationLeadTimeMinutes;
+        if (_backupNotificationLeadTimeMinutes > maximum)
+        {
+            BackupNotificationLeadTimeMinutes = maximum;
+            if (_backupNotificationSettingsStore is not null)
+            {
+                try
+                {
+                    _backupNotificationSettingsStore.Save(new BackupNotificationSettings(
+                        NotifyBeforeScheduledBackup, maximum));
+                    BackupNotificationSettingsStatus = $"Antecedência ajustada para {maximum} min por causa do próximo backup.";
+                }
+                catch (Exception)
+                {
+                    BackupNotificationSettingsStatus = "Não foi possível ajustar a antecedência ao próximo backup.";
+                }
+            }
+        }
+        OnPropertyChanged(nameof(MaximumBackupNotificationLeadTimeMinutes));
+        OnPropertyChanged(nameof(BackupNotificationLeadTimeLabel));
+        OnPropertyChanged(nameof(NextBackupNotificationPreview));
     }
 
     private async Task SetThemeAsync(DecorThemeStyle theme)

@@ -420,7 +420,11 @@ public sealed class DatabaseMaintenanceRestoreViewModelTests : IDisposable
     private sealed class FakeAuthenticatedUserContext : IAuthenticatedUserContext
     {
         public event EventHandler? SignedOut;
-        public ApplicationUser? User { get; private set; } = new() { Username = "restore-test" };
+        public ApplicationUser? User { get; private set; } = new()
+        {
+            Username = "restore-test",
+            Roles = [SystemRoleDefaults.Administrators]
+        };
         public bool IsAuthenticated => User is not null;
         public int SignOutCount { get; private set; }
         public void SignIn(ApplicationUser user) => User = user;

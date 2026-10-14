@@ -10,12 +10,27 @@
         x:DataType="vm:MainViewModel">
   <Window.Resources>
     <Flyout x:Key="NotificationsFlyout" Placement="BottomEdgeAlignedRight" ShowMode="Transient">
-      <Border Padding="14" MinWidth="260" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+      <Border Padding="14" MinWidth="320" MaxWidth="420" Background="{DynamicResource DecorSurfaceRaisedBrush}">
         <StackPanel Spacing="8">
-          <TextBlock Text="Notificações" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-          <Border Padding="10" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
-            <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-          </Border>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Notificações" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Limpar" Command="{Binding ClearNotificationsCommand}" IsVisible="{Binding HasNotifications}" Classes="decor-action"/>
+          </Grid>
+          <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}" IsVisible="{Binding !HasNotifications}"/>
+          <ScrollViewer MaxHeight="360" IsVisible="{Binding HasNotifications}">
+            <ItemsControl ItemsSource="{Binding Notifications}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Margin="0,0,0,6" Padding="10" Background="{DynamicResource DecorControlBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding Title}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                      <TextBlock Text="{Binding Message}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
         </StackPanel>
       </Border>
     </Flyout>
@@ -349,11 +364,18 @@
                   Cursor="Hand"
                   ToolTip.Tip="Notificações"
                   Click="NotificationsButton_Click">
-            <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Notifications}"
-                  Fill="{DynamicResource DecorTextBrush}"
-                  Width="16"
-                  Height="18"
-                  Stretch="Uniform"/>
+            <Grid Width="24" Height="24">
+              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Notifications}"
+                    Fill="{DynamicResource DecorTextBrush}"
+                    Width="16"
+                    Height="18"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Stretch="Uniform"/>
+              <Border HorizontalAlignment="Right" VerticalAlignment="Top" MinWidth="14" Height="14" Padding="2,0" CornerRadius="7" Background="{DynamicResource DecorDangerBrush}" IsVisible="{Binding HasNotifications}">
+                <TextBlock Text="{Binding NotificationCountText}" FontSize="9" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+            </Grid>
           </Button>
           <Button Classes="user-profile-button"
                   Cursor="Hand"

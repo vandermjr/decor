@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:icons="using:Decor.AvaloniaUI.Icons"
              xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
              x:Class="Decor.AvaloniaUI.Views.IconCatalogView"
              x:DataType="vm:IconCatalogViewModel">
@@ -29,6 +30,9 @@
         </TreeViewItem>
         <TreeViewItem Header="Estoque" IsExpanded="True">
           <TreeViewItem Header="Movimentações" Tag="StockMovements"/>
+        </TreeViewItem>
+        <TreeViewItem Header="Notificações" IsExpanded="True">
+          <TreeViewItem Header="Backup" Tag="BackupNotifications" IsSelected="True"/>
         </TreeViewItem>
       </TreeView>
     </StackPanel>
@@ -63,6 +67,38 @@
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
                 <TextBlock Text="{Binding StockSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                 <Button Grid.Column="1" Command="{Binding SaveStockSettingsCommand}" Content="Salvar" Classes="decor-action"/>
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsBackupNotificationsSelected}" Spacing="12">
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Backup agendado" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <ToggleSwitch Content="Notificar antes do backup agendado" IsChecked="{Binding NotifyBeforeScheduledBackup, Mode=TwoWay}"/>
+              <Grid ColumnDefinitions="*,260" ColumnSpacing="12" IsEnabled="{Binding NotifyBeforeScheduledBackup}">
+                <TextBlock Text="Avisar antes do backup (horas:minutos)" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <Border Grid.Column="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" CornerRadius="4" Height="36" ClipToBounds="True">
+                  <Grid ColumnDefinitions="*,36">
+                    <TextBlock Text="{Binding BackupNotificationLeadTimeDisplay}" Margin="10,0" VerticalAlignment="Center"/>
+                    <Button x:Name="ChooseBackupNotificationLeadTimeButton" Classes="field-action decor-action" Grid.Column="1" Click="ChooseBackupNotificationLeadTimeButton_Click" ToolTip.Tip="Selecionar antecedência">
+                      <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                          <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                            <TimePickerPresenter x:Name="BackupNotificationLeadTimePicker" Time="{Binding BackupNotificationLeadTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupNotificationLeadTimePicker_Confirmed" Dismissed="BackupNotificationLeadTimePicker_Dismissed"/>
+                          </Border>
+                        </Flyout>
+                      </Button.Flyout>
+                      <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Clock}"/>
+                    </Button>
+                  </Grid>
+                </Border>
+              </Grid>
+              <TextBlock Text="{Binding NextBackupNotificationPreview}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
+                <TextBlock Text="{Binding BackupNotificationSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <Button Grid.Column="1" Command="{Binding SaveBackupNotificationSettingsCommand}" Content="Salvar" Classes="decor-action"/>
               </Grid>
             </StackPanel>
           </Border>

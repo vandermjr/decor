@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Decor.Core.Interfaces.Services;
 using Decor.Core.Common;
 using Decor.Core.DTOs;
+using Decor.AvaloniaUI.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
@@ -16,6 +17,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
     private readonly IDatabaseRestoreService? _restoreService;
     private readonly IAuthorizationService? _authorization;
     private readonly IAuthenticatedUserContext? _userContext;
+    private readonly IDatabaseBackupScheduleStore? _scheduleStore;
     private bool _isRestoring;
     private bool _showRestoreConfirmation;
     private bool _restoreCompleted;
@@ -51,12 +53,13 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     public DatabaseMaintenanceViewModel(IDatabaseBackupService databaseBackupService,
         IDatabaseRestoreService? restoreService = null, IAuthorizationService? authorization = null,
-        IAuthenticatedUserContext? userContext = null)
+        IAuthenticatedUserContext? userContext = null, IDatabaseBackupScheduleStore? scheduleStore = null)
     {
         _databaseBackupService = databaseBackupService;
         _restoreService = restoreService;
         _authorization = authorization;
         _userContext = userContext;
+        _scheduleStore = scheduleStore;
         RequestRestoreCommand = new RelayCommand(RequestRestore, () => CanRestore && !string.IsNullOrWhiteSpace(RestoreFile));
         ConfirmRestoreCommand = new RelayCommand(async () => await RestoreAsync(), () => CanRestore && ShowRestoreConfirmation && RestoreConfirmation == "RESTAURAR BANCO");
         CancelRestoreCommand = new RelayCommand(() => { ShowRestoreConfirmation = false; RestoreConfirmation = string.Empty; }, () => !IsRestoring);
@@ -68,6 +71,9 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => OnBackupPreviewChanged();
         _clockTimer.Start();
+        if (_scheduleStore is not null)
+            _scheduleStore.SchedulesChanged += OnSchedulesChanged;
+        LoadSchedules();
     }
 
     public DateTimeOffset? BackupDate
@@ -322,9 +328,11 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
     public ICommand CancelRestoreCommand { get; }
     public ICommand FinishRestoreCommand { get; }
     public bool CanRestore => _restoreService is not null && _userContext?.IsAuthenticated == true
+        && IsAdministrator()
         && _authorization?.HasPermission(DecorPermissions.DatabaseMaintenanceRestore) == true
         && !IsRestoring && !IsBackupRunning && !RestoreCompleted;
     public bool CanUseBackup => !IsRestoring && !RestoreCompleted
+        && IsAdministrator()
         && (_authorization?.HasPermission(DecorPermissions.DatabaseMaintenanceView) ?? true);
     public bool IsRestoring { get => _isRestoring; private set { if (Set(ref _isRestoring, value)) RefreshRestoreCommands(); } }
     public bool ShowRestoreConfirmation { get => _showRestoreConfirmation; private set { if (Set(ref _showRestoreConfirmation, value)) RefreshRestoreCommands(); } }
@@ -439,7 +447,7 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
             SpecificFolderPath.Trim(),
             UseExternalDrive,
             ExternalDrivePath.Trim(),
-            destinations,
+            destinations.Select(path => Path.GetDirectoryName(path) ?? path).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
             BackupFileName);
 
         if (_editingScheduleId is null)
@@ -456,6 +464,9 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
                 Schedules[index] = schedule;
             }
         }
+
+        schedule.PropertyChanged += OnSchedulePropertyChanged;
+        PersistSchedule(schedule);
 
         SelectedSchedule = schedule;
         _editingScheduleId = null;
@@ -543,6 +554,8 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
         var removedSchedule = SelectedSchedule;
         Schedules.Remove(removedSchedule);
+        removedSchedule.PropertyChanged -= OnSchedulePropertyChanged;
+        _scheduleStore?.Delete(removedSchedule.Id);
         SelectedSchedule = null;
         if (_editingScheduleId == removedSchedule.Id)
         {
@@ -798,4 +811,104 @@ public sealed class DatabaseMaintenanceViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private bool IsAdministrator()
+    {
+        var user = _userContext?.User;
+        return SystemAccountDefaults.IsAdministrator(user?.Username)
+            || (user?.Roles ?? []).Contains(SystemRoleDefaults.Administrators, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void LoadSchedules()
+    {
+        if (_scheduleStore is null)
+            return;
+
+        foreach (var saved in _scheduleStore.Load())
+        {
+            var schedule = new BackupScheduleItemViewModel(
+                saved.Id, saved.StartAt, saved.NextExecutionAt, saved.Recurrence, saved.WeekDays,
+                saved.UseSpecificFolder, saved.SpecificFolderPath, saved.UseExternalDrive,
+                saved.ExternalDrivePath, saved.Destinations,
+                $"decor_backup_{saved.Id}_{saved.NextExecutionAt:yyyyMMdd_HHmm}.zip", saved.NotifiedForExecutionAt)
+            {
+                IsEnabled = saved.IsEnabled
+            };
+            schedule.PropertyChanged += OnSchedulePropertyChanged;
+            Schedules.Add(schedule);
+            _nextScheduleId = Math.Max(_nextScheduleId, saved.Id + 1);
+        }
+
+        OnPropertyChanged(nameof(HasSchedules));
+    }
+
+    private void OnSchedulesChanged(object? sender, EventArgs eventArgs) =>
+        Dispatcher.UIThread.Post(SynchronizeSchedules);
+
+    private void SynchronizeSchedules()
+    {
+        if (_scheduleStore is null)
+            return;
+
+        var savedSchedules = _scheduleStore.Load();
+        var savedById = savedSchedules.ToDictionary(schedule => schedule.Id);
+        foreach (var existing in Schedules.ToArray())
+        {
+            if (!savedById.TryGetValue(existing.Id, out var saved))
+            {
+                existing.PropertyChanged -= OnSchedulePropertyChanged;
+                Schedules.Remove(existing);
+                continue;
+            }
+
+            existing.SynchronizeExecutionState(saved);
+            savedById.Remove(existing.Id);
+        }
+
+        foreach (var saved in savedById.Values)
+        {
+            var schedule = CreateScheduleViewModel(saved);
+            schedule.PropertyChanged += OnSchedulePropertyChanged;
+            Schedules.Add(schedule);
+            _nextScheduleId = Math.Max(_nextScheduleId, saved.Id + 1);
+        }
+
+        OnPropertyChanged(nameof(HasSchedules));
+        if (SelectedSchedule is not null && !Schedules.Contains(SelectedSchedule))
+            SelectedSchedule = null;
+    }
+
+    private static BackupScheduleItemViewModel CreateScheduleViewModel(DatabaseBackupSchedule saved) => new(
+        saved.Id, saved.StartAt, saved.NextExecutionAt, saved.Recurrence, saved.WeekDays,
+        saved.UseSpecificFolder, saved.SpecificFolderPath, saved.UseExternalDrive,
+        saved.ExternalDrivePath, saved.Destinations,
+        $"decor_backup_{saved.Id}_{saved.NextExecutionAt:yyyyMMdd_HHmm}.zip", saved.NotifiedForExecutionAt)
+    {
+        IsEnabled = saved.IsEnabled
+    };
+
+    private void OnSchedulePropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(BackupScheduleItemViewModel.IsEnabled) && sender is BackupScheduleItemViewModel schedule)
+            PersistSchedule(schedule);
+    }
+
+    private void PersistSchedule(BackupScheduleItemViewModel schedule)
+    {
+        if (_scheduleStore is null)
+            return;
+
+        try
+        {
+            _scheduleStore.Upsert(new DatabaseBackupSchedule(
+                schedule.Id, schedule.StartAt, schedule.NextExecutionAt, schedule.Recurrence,
+                schedule.WeekDays, schedule.UseSpecificFolder, schedule.SpecificFolderPath,
+                schedule.UseExternalDrive, schedule.ExternalDrivePath, schedule.Destinations,
+                schedule.IsEnabled, schedule.NotifiedForExecutionAt));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            StatusMessage = $"Não foi possível salvar o agendamento: {exception.Message}";
+        }
+    }
 }

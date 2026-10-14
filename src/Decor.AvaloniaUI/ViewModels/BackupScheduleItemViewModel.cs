@@ -1,19 +1,15 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Decor.AvaloniaUI.Services;
 
 namespace Decor.AvaloniaUI.ViewModels;
-
-public enum BackupRecurrence
-{
-    Once,
-    Daily,
-    Weekdays,
-    Custom
-}
 
 public sealed class BackupScheduleItemViewModel : INotifyPropertyChanged
 {
     private bool _isEnabled = true;
+    private DateTime _nextExecutionAt;
+    private DateTime? _notifiedForExecutionAt;
+    private string _fileName;
 
     public BackupScheduleItemViewModel(
         int id,
@@ -26,11 +22,12 @@ public sealed class BackupScheduleItemViewModel : INotifyPropertyChanged
         bool useExternalDrive,
         string externalDrivePath,
         IReadOnlyList<string> destinations,
-        string fileName)
+        string fileName,
+        DateTime? notifiedForExecutionAt = null)
     {
         Id = id;
         StartAt = startAt;
-        NextExecutionAt = nextExecutionAt;
+        _nextExecutionAt = nextExecutionAt;
         Recurrence = recurrence;
         WeekDays = weekDays;
         UseSpecificFolder = useSpecificFolder;
@@ -38,12 +35,13 @@ public sealed class BackupScheduleItemViewModel : INotifyPropertyChanged
         UseExternalDrive = useExternalDrive;
         ExternalDrivePath = externalDrivePath;
         Destinations = destinations;
-        FileName = fileName;
+        _fileName = fileName;
+        _notifiedForExecutionAt = notifiedForExecutionAt;
     }
 
     public int Id { get; }
     public DateTime StartAt { get; }
-    public DateTime NextExecutionAt { get; }
+    public DateTime NextExecutionAt => _nextExecutionAt;
     public BackupRecurrence Recurrence { get; }
     public IReadOnlyList<string> WeekDays { get; }
     public bool UseSpecificFolder { get; }
@@ -51,7 +49,8 @@ public sealed class BackupScheduleItemViewModel : INotifyPropertyChanged
     public bool UseExternalDrive { get; }
     public string ExternalDrivePath { get; }
     public IReadOnlyList<string> Destinations { get; }
-    public string FileName { get; }
+    public string FileName => _fileName;
+    public DateTime? NotifiedForExecutionAt => _notifiedForExecutionAt;
 
     public bool IsEnabled
     {
@@ -73,6 +72,29 @@ public sealed class BackupScheduleItemViewModel : INotifyPropertyChanged
     public string DestinationsDisplay => string.Join(" | ", Destinations);
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void SynchronizeExecutionState(DatabaseBackupSchedule schedule)
+    {
+        IsEnabled = schedule.IsEnabled;
+        if (_nextExecutionAt != schedule.NextExecutionAt)
+        {
+            _nextExecutionAt = schedule.NextExecutionAt;
+            OnPropertyChanged(nameof(NextExecutionAt));
+            OnPropertyChanged(nameof(NextExecutionDisplay));
+            OnPropertyChanged(nameof(PeriodDisplay));
+        }
+        if (_notifiedForExecutionAt != schedule.NotifiedForExecutionAt)
+        {
+            _notifiedForExecutionAt = schedule.NotifiedForExecutionAt;
+            OnPropertyChanged(nameof(NotifiedForExecutionAt));
+        }
+        var fileName = $"decor_backup_{Id}_{schedule.NextExecutionAt:yyyyMMdd_HHmm}.zip";
+        if (_fileName != fileName)
+        {
+            _fileName = fileName;
+            OnPropertyChanged(nameof(FileName));
+        }
+    }
 
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

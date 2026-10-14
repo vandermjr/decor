@@ -103,7 +103,11 @@ public sealed class DatabaseRestoreService(
 
     private void EnsureAuthorized()
     {
-        if (!authenticatedUserContext.IsAuthenticated || !authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceRestore))
+        var user = authenticatedUserContext.User;
+        var isAdministrator = SystemAccountDefaults.IsAdministrator(user?.Username)
+            || (user?.Roles ?? []).Contains(SystemRoleDefaults.Administrators, StringComparer.OrdinalIgnoreCase);
+        if (!authenticatedUserContext.IsAuthenticated || !isAdministrator
+            || !authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceRestore))
             throw new UnauthorizedAccessException("A restauracao exige autenticacao e permissao explicita.");
     }
 

@@ -7,6 +7,7 @@ namespace Decor.AvaloniaUI.Views;
 public partial class IconCatalogView : UserControl
 {
     private Button? _activeIconColorButton;
+    private TimeSpan? _backupNotificationLeadTimeBeforeSelection;
 
     public IconCatalogView()
     {
@@ -27,6 +28,22 @@ public partial class IconCatalogView : UserControl
 
         if (treeView.SelectedItem is TreeViewItem { Tag: string section })
             viewModel.SelectedSettingsSection = section;
+    }
+
+    private void ChooseBackupNotificationLeadTimeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is IconCatalogViewModel viewModel)
+            _backupNotificationLeadTimeBeforeSelection = viewModel.BackupNotificationLeadTime;
+    }
+
+    private void BackupNotificationLeadTimePicker_Confirmed(object? sender, EventArgs e) =>
+        ChooseBackupNotificationLeadTimeButton.Flyout?.Hide();
+
+    private void BackupNotificationLeadTimePicker_Dismissed(object? sender, EventArgs e)
+    {
+        if (DataContext is IconCatalogViewModel viewModel)
+            viewModel.BackupNotificationLeadTime = _backupNotificationLeadTimeBeforeSelection;
+        ChooseBackupNotificationLeadTimeButton.Flyout?.Hide();
     }
 
     private void IconColorChoiceButton_Click(object? sender, RoutedEventArgs e)

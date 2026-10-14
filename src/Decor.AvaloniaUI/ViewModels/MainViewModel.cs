@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Avalonia;
@@ -16,6 +17,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly INavigationService _navigationService;
     private readonly IThemeService _themeService;
     private readonly IAuthenticatedUserContext _authenticatedUserContext;
+    private readonly INotificationCenter? _notificationCenter;
     private WorkspaceDocumentViewModel? _activeDocument;
     private IStatusBarSource? _statusSource;
     private string _themeToolTip = string.Empty;
@@ -24,11 +26,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         INavigationService navigationService,
         IThemeService themeService,
         IAuthorizationService authorizationService,
-        IAuthenticatedUserContext authenticatedUserContext)
+        IAuthenticatedUserContext authenticatedUserContext,
+        INotificationCenter? notificationCenter = null)
     {
         _navigationService = navigationService;
         _themeService = themeService;
         _authenticatedUserContext = authenticatedUserContext;
+        _notificationCenter = notificationCenter;
 
         ShowProductsCommand = new RelayCommand(() => OpenSingletonDocument("products", "Produtos", () => CreateView<ProductsView>()));
         ShowServicesCommand = new RelayCommand(() =>
@@ -59,7 +63,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ShowUsersCommand = new RelayCommand(() => OpenSingletonDocument("users", "Usuários", () => CreateView<UsersView>()), () => authorizationService.HasPermission(DecorPermissions.UsersView));
         ShowRolesCommand = new RelayCommand(() => OpenSingletonDocument("roles", "Grupos", () => CreateView<GroupsView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
         ShowPermissionsCommand = new RelayCommand(() => OpenSingletonDocument("permissions", "Permissões", () => CreateView<PermissionsView>()), () => authorizationService.HasPermission(DecorPermissions.RolesView));
-        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Backup e restauração", () => CreateView<DatabaseMaintenanceView>()), () => authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
+        ShowDatabaseMaintenanceCommand = new RelayCommand(() => OpenSingletonDocument("database-maintenance", "Backup e restauração", () => CreateView<DatabaseMaintenanceView>()), () => IsAdministrator() && authorizationService.HasPermission(DecorPermissions.DatabaseMaintenanceView));
         ShowSystemSettingsCommand = new RelayCommand(() => OpenSingletonDocument("system-options", "Opções", () => CreateView<IconCatalogView>()), () => IsAdministrator());
         ShowUserOptionsCommand = new RelayCommand(() => OpenSingletonDocument("user-options", "Preferências", () => CreateView<UserOptionsView>()));
         ShowAboutCommand = new RelayCommand(() => AboutRequested?.Invoke(this, EventArgs.Empty));
@@ -67,6 +71,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
         ToggleThemeCommand = new RelayCommand(async () => await SetThemeAsync(_themeService.CurrentTheme == DecorThemeStyle.Dark ? DecorThemeStyle.Light : DecorThemeStyle.Dark));
         SignOutCommand = new RelayCommand(_authenticatedUserContext.SignOut);
+        ClearNotificationsCommand = new RelayCommand(() => _notificationCenter?.Clear());
 
         var user = authenticatedUserContext.User;
         var username = user?.Username ?? string.Empty;
@@ -77,6 +82,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         UserInitials = InitialsOf(UserPresentationName);
 
         OpenDocuments.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasOpenDocuments));
+        if (_notificationCenter is not null)
+            _notificationCenter.Notifications.CollectionChanged += OnNotificationsChanged;
         ApplyCurrentTheme();
     }
 
@@ -158,6 +165,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand UseDarkThemeCommand { get; }
     public ICommand ToggleThemeCommand { get; }
     public ICommand SignOutCommand { get; }
+    public ICommand ClearNotificationsCommand { get; }
+    public ObservableCollection<AppNotification> Notifications => _notificationCenter?.Notifications ?? _emptyNotifications;
+    public bool HasNotifications => Notifications.Count > 0;
+    public string NotificationCountText => Notifications.Count > 99 ? "99+" : Notifications.Count.ToString();
     public string UserPresentationName { get; }
     public string UserUsername { get; }
     public string ThemeToolTip => string.IsNullOrEmpty(_themeToolTip)
@@ -188,6 +199,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public event EventHandler? AboutRequested;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private static readonly ObservableCollection<AppNotification> _emptyNotifications = [];
+
+    private void OnNotificationsChanged(object? sender, NotifyCollectionChangedEventArgs eventArgs)
+    {
+        OnPropertyChanged(nameof(HasNotifications));
+        OnPropertyChanged(nameof(NotificationCountText));
+    }
 
     private void OpenSingletonDocument(string key, string title, Func<Control> createContent)
     {
