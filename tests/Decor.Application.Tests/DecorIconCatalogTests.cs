@@ -2,7 +2,9 @@ using Avalonia.Media;
 using Avalonia.Skia;
 using Avalonia.Styling;
 using Decor.AvaloniaUI.Icons;
+using Decor.AvaloniaUI.Services;
 using Decor.AvaloniaUI.ViewModels;
+using Decor.Core.Common;
 using Decor.Core.Configuration;
 using Decor.Core.Interfaces.Services;
 using Moq;
@@ -185,6 +187,49 @@ public class DecorIconCatalogTests
     {
         Assert.Equal(Colors.Black, DecorIconColors.GetDefaultColor(DecorIconId.Application.Home, ThemeVariant.Light));
         Assert.Equal(Colors.White, DecorIconColors.GetDefaultColor(DecorIconId.Application.Home, ThemeVariant.Dark));
+    }
+
+    [Fact]
+    public void Login_logo_directional_commands_step_through_three_positions_and_disable_at_edges()
+    {
+        _ = AvaloniaInitialized.Value;
+        var appearance = new Mock<IIconAppearanceService>();
+        appearance.SetupGet(service => service.CurrentAppearance).Returns(IconAppearance.Default);
+        var theme = new Mock<IThemeService>();
+        theme.SetupGet(service => service.CurrentTheme).Returns(DecorThemeStyle.Light);
+        var branding = new Mock<ILoginBrandingSettingsStore>();
+        branding.SetupGet(store => store.LogoPath).Returns("missing-logo.png");
+        branding.SetupGet(store => store.LogoFileName).Returns("Logo padrão do Decor");
+        branding.SetupGet(store => store.LogoSizePercent).Returns(90);
+        branding.SetupGet(store => store.LogoHorizontalPosition).Returns("Centro");
+        branding.SetupGet(store => store.LogoVerticalPosition).Returns("Centro");
+
+        var viewModel = new IconCatalogViewModel(appearance.Object, theme.Object, loginBrandingSettingsStore: branding.Object);
+
+        viewModel.MoveLoginLogoRightCommand.CanExecute(null).Should().BeTrue();
+        viewModel.MoveLoginLogoRightCommand.Execute(null);
+        viewModel.LoginLogoHorizontalPosition.Should().Be("Direita");
+        viewModel.LoginLogoHorizontalAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Right);
+        viewModel.MoveLoginLogoRightCommand.CanExecute(null).Should().BeFalse();
+        viewModel.MoveLoginLogoLeftCommand.Execute(null);
+        viewModel.LoginLogoHorizontalPosition.Should().Be("Centro");
+        viewModel.MoveLoginLogoLeftCommand.Execute(null);
+        viewModel.LoginLogoHorizontalPosition.Should().Be("Esquerda");
+        viewModel.LoginLogoHorizontalAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Left);
+        viewModel.MoveLoginLogoLeftCommand.CanExecute(null).Should().BeFalse();
+
+        viewModel.MoveLoginLogoUpCommand.Execute(null);
+        viewModel.LoginLogoVerticalPosition.Should().Be("Topo");
+        viewModel.LoginLogoVerticalAlignment.Should().Be(Avalonia.Layout.VerticalAlignment.Top);
+        viewModel.MoveLoginLogoUpCommand.CanExecute(null).Should().BeFalse();
+        viewModel.MoveLoginLogoDownCommand.Execute(null);
+        viewModel.LoginLogoVerticalPosition.Should().Be("Centro");
+        viewModel.MoveLoginLogoDownCommand.Execute(null);
+        viewModel.LoginLogoVerticalPosition.Should().Be("Base");
+        viewModel.LoginLogoVerticalAlignment.Should().Be(Avalonia.Layout.VerticalAlignment.Bottom);
+        viewModel.MoveLoginLogoDownCommand.CanExecute(null).Should().BeFalse();
+
+        branding.Verify(store => store.SaveLayout(90, It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(6));
     }
 
     [Fact]

@@ -5,6 +5,18 @@
              x:Class="Decor.AvaloniaUI.Views.IconCatalogView"
              x:DataType="vm:IconCatalogViewModel">
   <UserControl.Styles>
+    <Style Selector="Button.logo-position-button">
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="Height" Value="30"/>
+      <Setter Property="Padding" Value="7"/>
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.logo-position-button:disabled">
+      <Setter Property="Opacity" Value="0.38"/>
+    </Style>
     <Style Selector="Border.icon-card">
       <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
@@ -27,6 +39,7 @@
         <TreeViewItem Header="Aparência" IsExpanded="True">
           <TreeViewItem Header="Tema" Tag="Theme" IsSelected="True"/>
           <TreeViewItem Header="Ícones" Tag="Icons"/>
+          <TreeViewItem Header="Logo da empresa" Tag="LoginBranding"/>
         </TreeViewItem>
         <TreeViewItem Header="Estoque" IsExpanded="True">
           <TreeViewItem Header="Movimentações" Tag="StockMovements"/>
@@ -40,6 +53,105 @@
     <ScrollViewer Grid.Column="1" Grid.Row="0" VerticalScrollBarVisibility="Auto">
       <Border Padding="0,0,16,0" HorizontalAlignment="Stretch">
       <StackPanel Spacing="18" HorizontalAlignment="Stretch">
+        <StackPanel IsVisible="{Binding IsLoginBrandingSelected}" Spacing="12">
+          <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+              <StackPanel Spacing="14">
+                <TextBlock Text="Logo da empresa" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <TextBlock Text="{Binding LoginLogoFileName}" Foreground="{DynamicResource DecorTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="Recomendado: 1200 × 760 px. Formatos aceitos: PNG (com transparência) ou JPEG, até 10 MB. Outras dimensões também são aceitas." Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextWrapping="Wrap"/>
+                <CheckBox Content="Inverter cores da logo no tema claro" IsChecked="{Binding InvertLoginLogoInLightTheme, Mode=TwoWay}"/>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                  <TextBlock Text="Tamanho" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Minimum="25" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                          Value="{Binding LoginLogoSizePercent, Mode=TwoWay}" AutomationProperties.Name="Tamanho da logo da empresa"/>
+                  <TextBlock Grid.Column="2" Text="{Binding LoginLogoSizeDisplay}" VerticalAlignment="Center" MinWidth="44" TextAlignment="Right"/>
+                </Grid>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Posição da imagem"/>
+                  <TextBlock Text="Use as setas para ajustar a posição da imagem." Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"/>
+                  <Grid Width="112" Height="104" RowDefinitions="32,32,32" ColumnDefinitions="32,32,32" HorizontalAlignment="Left">
+                    <Button Grid.Row="0" Grid.Column="1" Command="{Binding MoveLoginLogoUpCommand}" IsEnabled="{Binding CanMoveLoginLogoUp}" Classes="logo-position-button" ToolTip.Tip="Mover imagem para cima">
+                      <Path Data="M12,3 L4,11 H9 V21 H15 V11 H20 Z" Fill="{DynamicResource DecorTextBrush}" Stretch="Uniform"/>
+                    </Button>
+                    <Button Grid.Row="1" Grid.Column="0" Command="{Binding MoveLoginLogoLeftCommand}" IsEnabled="{Binding CanMoveLoginLogoLeft}" Classes="logo-position-button" ToolTip.Tip="Mover imagem para a esquerda">
+                      <Path Data="M3,12 L11,4 V9 H21 V15 H11 V20 Z" Fill="{DynamicResource DecorTextBrush}" Stretch="Uniform"/>
+                    </Button>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="+" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DecorTextMutedBrush}" ToolTip.Tip="Centro das posições"/>
+                    <Button Grid.Row="1" Grid.Column="2" Command="{Binding MoveLoginLogoRightCommand}" IsEnabled="{Binding CanMoveLoginLogoRight}" Classes="logo-position-button" ToolTip.Tip="Mover imagem para a direita">
+                      <Path Data="M21,12 L13,4 V9 H3 V15 H13 V20 Z" Fill="{DynamicResource DecorTextBrush}" Stretch="Uniform"/>
+                    </Button>
+                    <Button Grid.Row="2" Grid.Column="1" Command="{Binding MoveLoginLogoDownCommand}" IsEnabled="{Binding CanMoveLoginLogoDown}" Classes="logo-position-button" ToolTip.Tip="Mover imagem para baixo">
+                      <Path Data="M12,21 L4,13 H9 V3 H15 V13 H20 Z" Fill="{DynamicResource DecorTextBrush}" Stretch="Uniform"/>
+                    </Button>
+                  </Grid>
+                  <TextBlock Text="{Binding LoginLogoPositionDisplay}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                </StackPanel>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
+                <TextBlock Text="Prévia" HorizontalAlignment="Left" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                <Border Width="320" Height="193" ClipToBounds="True" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4">
+                  <Grid ColumnDefinitions="124,*" FlowDirection="LeftToRight">
+                    <Border Grid.ColumnSpan="2" Background="{DynamicResource LoginBrandingBackgroundBrush}"/>
+                    <Border Grid.Column="1" Background="{DynamicResource LoginImageColumnBrush}"/>
+                    <Image Grid.Column="1" Source="{Binding LoginLogoPreview}" Stretch="Uniform"
+                           Width="{Binding LoginLogoPreviewWidth}" MaxHeight="124" Margin="11"
+                           HorizontalAlignment="{Binding LoginLogoHorizontalAlignment}" VerticalAlignment="{Binding LoginLogoVerticalAlignment}"
+                           AutomationProperties.Name="Prévia da logo da empresa"/>
+                    <Border Grid.Column="0" Background="{DynamicResource LoginGlassPanelBrush}" Padding="8,10">
+                      <Grid RowDefinitions="*,Auto">
+                        <Grid Grid.Row="0" MaxWidth="76" HorizontalAlignment="Center" VerticalAlignment="Center"
+                              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="5.5">
+                          <TextBlock Text="Bem-vindo!" Foreground="{DynamicResource LoginGlassTextBrush}"
+                                     FontSize="11" FontWeight="{DynamicResource DecorFontWeightHeading}"
+                                     Margin="0,0,0,8" HorizontalAlignment="Center" TextAlignment="Center"/>
+                          <Border Grid.Row="1" Height="13" Background="{DynamicResource LoginGlassFieldBrush}"
+                                  BorderBrush="{DynamicResource LoginGlassBorderBrush}" BorderThickness="0.35" CornerRadius="5">
+                            <TextBlock Text="Código do usuário" FontSize="4.5" Foreground="{DynamicResource LoginGlassFieldTextBrush}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                          </Border>
+                          <Border Grid.Row="2" Height="13" Background="{DynamicResource LoginGlassFieldBrush}"
+                                  BorderBrush="{DynamicResource LoginGlassBorderBrush}" BorderThickness="0.35" CornerRadius="5">
+                            <TextBlock Text="Senha" FontSize="4.5" Foreground="{DynamicResource LoginGlassFieldTextBrush}"
+                                       VerticalAlignment="Center" Margin="4,0"/>
+                          </Border>
+                          <Border Grid.Row="5" BoxShadow="0 1 3 0 #80000000" CornerRadius="8">
+                            <Border Background="#FF9B76" CornerRadius="8" Height="16">
+                              <StackPanel Orientation="Horizontal" Spacing="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Width="6" Height="6" Stretch="Uniform" Fill="#34231D" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignIn}"/>
+                                <TextBlock Text="Entrar" FontSize="5" FontWeight="SemiBold" Foreground="#34231D" VerticalAlignment="Center"/>
+                              </StackPanel>
+                            </Border>
+                          </Border>
+                        </Grid>
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0.35,0,0" Padding="0,4,0,0">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                            <TextBlock Text="Versão 1.0.0.0" Foreground="{DynamicResource LoginGlassMutedTextBrush}" FontSize="4" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                              <PathIcon Width="6" Height="6" Foreground="{DynamicResource LoginGlassMutedTextBrush}"
+                                        icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Database}"/>
+                              <TextBlock Text="Online" Foreground="{DynamicResource LoginGlassMutedTextBrush}" FontSize="4"/>
+                            </StackPanel>
+                          </Grid>
+                        </Border>
+                      </Grid>
+                    </Border>
+                  </Grid>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Left">
+                  <Button Width="28" Height="28" Padding="6" Click="ChooseLoginLogoButton_Click" Classes="decor-action" ToolTip.Tip="Alterar imagem da empresa" AutomationProperties.Name="Alterar imagem da empresa">
+                    <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}"/>
+                  </Button>
+                  <Button Width="28" Height="28" Padding="6" Command="{Binding RemoveLoginLogoCommand}" Classes="decor-action" ToolTip.Tip="Remover imagem da empresa" AutomationProperties.Name="Remover imagem da empresa">
+                    <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorDangerBrush}" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Delete}"/>
+                  </Button>
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <TextBlock Text="{Binding LoginBrandingStatus}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+        </StackPanel>
+
         <StackPanel IsVisible="{Binding IsThemeSettingsSelected}" Spacing="18">
           <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
             <StackPanel Spacing="14">
@@ -166,7 +278,7 @@
       <StackPanel Spacing="8">
         <Border Height="1" Background="{DynamicResource DecorBorderBrush}"/>
         <TextBlock Text="{Binding IconColorStatus}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding IconColorStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-        <Button Command="{Binding ResetIconColorsCommand}" Classes="decor-action" Content="Restaurar para o padrão" HorizontalAlignment="Right"/>
+        <Button Command="{Binding ResetSelectedSettingsCommand}" Classes="decor-action" Content="{Binding ResetSelectedSettingsText}" HorizontalAlignment="Right"/>
       </StackPanel>
     </Border>
   </Grid>

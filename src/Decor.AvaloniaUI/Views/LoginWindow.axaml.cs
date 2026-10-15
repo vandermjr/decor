@@ -31,7 +31,11 @@ public partial class LoginWindow : Window
         };
         Closed += (_, _) =>
         {
-            if (DataContext is LoginViewModel viewModel) viewModel.StopThemePreview();
+            if (DataContext is LoginViewModel viewModel)
+            {
+                viewModel.StopThemePreview();
+                viewModel.DisposeLoginLogo();
+            }
         };
     }
 
@@ -49,6 +53,7 @@ public partial class LoginWindow : Window
         : this()
     {
         DataContext = viewModel;
+        viewModel.SetPreviewTheme(GetCurrentTheme());
         viewModel.ThemePreviewChanged += ApplyThemePreview;
         _navigationService = navigationService;
         _themeService = themeService;
@@ -59,10 +64,26 @@ public partial class LoginWindow : Window
         viewModel.PasswordChangeRequired += OnPasswordChangeRequired;
     }
 
-    private static void ApplyThemePreview(DecorThemeStyle theme)
+    private static DecorThemeStyle GetCurrentTheme()
+    {
+        var application = global::Avalonia.Application.Current;
+        var themeVariant = application?.RequestedThemeVariant;
+        if (themeVariant is null || themeVariant == ThemeVariant.Default)
+            themeVariant = application?.ActualThemeVariant;
+
+        return themeVariant == ThemeVariant.Light
+            ? DecorThemeStyle.Light
+            : themeVariant == ThemeVariant.Dark
+                ? DecorThemeStyle.Dark
+                : DecorDefaults.Theme;
+    }
+
+    private void ApplyThemePreview(DecorThemeStyle theme)
     {
         if (global::Avalonia.Application.Current is { } application)
             application.RequestedThemeVariant = theme == DecorThemeStyle.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
+        if (DataContext is LoginViewModel viewModel)
+            viewModel.SetPreviewTheme(theme);
     }
 
     private async Task OnLoginSucceededAsync()

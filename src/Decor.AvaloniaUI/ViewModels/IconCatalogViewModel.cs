@@ -2,7 +2,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
@@ -16,11 +19,14 @@ namespace Decor.AvaloniaUI.ViewModels;
 public sealed class IconCatalogViewModel : INotifyPropertyChanged
 {
     private const int MaximumTimePickerDurationMinutes = 23 * 60 + 59;
+    private static readonly string[] HorizontalLogoPositions = ["Esquerda", "Centro", "Direita"];
+    private static readonly string[] VerticalLogoPositions = ["Topo", "Centro", "Base"];
     private readonly IIconAppearanceService _iconAppearanceService;
     private readonly IThemeService _themeService;
     private readonly IStockSettingsService? _stockSettingsService;
     private readonly IBackupNotificationSettingsStore? _backupNotificationSettingsStore;
     private readonly IDatabaseBackupScheduleStore? _backupScheduleStore;
+    private readonly ILoginBrandingSettingsStore? _loginBrandingSettingsStore;
     private int _iconWeight;
     private bool _allowNegativeStock;
     private string _selectedSettingsSection = "Theme";
@@ -30,6 +36,13 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     private bool _notifyBeforeScheduledBackup = true;
     private int _backupNotificationLeadTimeMinutes = 15;
     private string _backupNotificationSettingsStatus = string.Empty;
+    private string _loginBrandingStatus = string.Empty;
+    private string _loginLogoFileName = "Logo padrão do Decor";
+    private Bitmap? _loginLogoPreview;
+    private double _loginLogoSizePercent = 90;
+    private string _loginLogoHorizontalPosition = "Centro";
+    private string _loginLogoVerticalPosition = "Centro";
+    private bool _invertLoginLogoInLightTheme;
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
     public ObservableCollection<string> ThemeOptions { get; } = ["Claro", "Escuro"];
@@ -52,6 +65,12 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public ICommand ResetIconColorsCommand { get; }
     public ICommand SaveStockSettingsCommand { get; }
     public ICommand SaveBackupNotificationSettingsCommand { get; }
+    public ICommand RemoveLoginLogoCommand { get; }
+    public ICommand MoveLoginLogoUpCommand { get; }
+    public ICommand MoveLoginLogoDownCommand { get; }
+    public ICommand MoveLoginLogoLeftCommand { get; }
+    public ICommand MoveLoginLogoRightCommand { get; }
+    public ICommand ResetSelectedSettingsCommand { get; }
     public ICommand ApplyThemeCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
@@ -59,6 +78,12 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public bool IsIconSettingsSelected => _selectedSettingsSection == "Icons";
     public bool IsStockMovementsSelected => _selectedSettingsSection == "StockMovements";
     public bool IsBackupNotificationsSelected => _selectedSettingsSection == "BackupNotifications";
+    public bool IsLoginBrandingSelected => _selectedSettingsSection == "LoginBranding";
+    public string ResetSelectedSettingsText => IsLoginBrandingSelected ? "Restaurar padrão" : "Restaurar cores";
+    public bool CanMoveLoginLogoUp => _loginLogoVerticalPosition != "Topo";
+    public bool CanMoveLoginLogoDown => _loginLogoVerticalPosition != "Base";
+    public bool CanMoveLoginLogoLeft => _loginLogoHorizontalPosition != "Esquerda";
+    public bool CanMoveLoginLogoRight => _loginLogoHorizontalPosition != "Direita";
     public string CurrentThemeName => _themeService.CurrentTheme == DecorThemeStyle.Light ? "Claro" : "Escuro";
     public string SelectedThemeOption
     {
@@ -90,6 +115,8 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsIconSettingsSelected));
             OnPropertyChanged(nameof(IsStockMovementsSelected));
             OnPropertyChanged(nameof(IsBackupNotificationsSelected));
+            OnPropertyChanged(nameof(IsLoginBrandingSelected));
+            OnPropertyChanged(nameof(ResetSelectedSettingsText));
         }
     }
 
@@ -141,16 +168,131 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         private set => SetField(ref _backupNotificationSettingsStatus, value);
     }
 
+    public string LoginBrandingStatus
+    {
+        get => _loginBrandingStatus;
+        private set => SetField(ref _loginBrandingStatus, value);
+    }
+
+    public string LoginLogoFileName
+    {
+        get => _loginLogoFileName;
+        private set => SetField(ref _loginLogoFileName, value);
+    }
+
+    public Bitmap? LoginLogoPreview
+    {
+        get => _loginLogoPreview;
+        private set
+        {
+            if (!SetField(ref _loginLogoPreview, value))
+                return;
+            OnPropertyChanged(nameof(HasLoginLogoPreview));
+        }
+    }
+
+    public bool HasLoginLogoPreview => LoginLogoPreview is not null;
+
+    public bool InvertLoginLogoInLightTheme
+    {
+        get => _invertLoginLogoInLightTheme;
+        set
+        {
+            if (!SetField(ref _invertLoginLogoInLightTheme, value))
+                return;
+            try
+            {
+                _loginBrandingSettingsStore?.SaveInvertLogoInLightTheme(value);
+                LoadLoginLogoPreview();
+                LoginBrandingStatus = "Inversão de cores salva.";
+            }
+            catch (Exception)
+            {
+                LoginBrandingStatus = "Não foi possível salvar a inversão de cores.";
+            }
+        }
+    }
+
+    public double LoginLogoSizePercent
+    {
+        get => _loginLogoSizePercent;
+        set
+        {
+            var size = Math.Clamp(Math.Round(value / 5) * 5, 25, 100);
+            if (!SetField(ref _loginLogoSizePercent, size))
+                return;
+            OnPropertyChanged(nameof(LoginLogoSizeDisplay));
+            OnPropertyChanged(nameof(LoginLogoWidth));
+            OnPropertyChanged(nameof(LoginLogoPreviewWidth));
+            SaveLoginLogoLayout();
+        }
+    }
+
+    public string LoginLogoSizeDisplay => $"{LoginLogoSizePercent:0}%";
+    public double LoginLogoWidth => LoginLogoSizePercent * 5.1;
+    public double LoginLogoPreviewWidth => LoginLogoSizePercent * 5.1 * 320 / 930;
+
+    public string LoginLogoHorizontalPosition
+    {
+        get => _loginLogoHorizontalPosition;
+        set
+        {
+            if (!HorizontalLogoPositions.Contains(value) || !SetField(ref _loginLogoHorizontalPosition, value))
+                return;
+            OnPropertyChanged(nameof(LoginLogoHorizontalAlignment));
+            OnPropertyChanged(nameof(CanMoveLoginLogoLeft));
+            OnPropertyChanged(nameof(CanMoveLoginLogoRight));
+            OnPropertyChanged(nameof(LoginLogoPositionDisplay));
+            RaiseLogoPositionCommands();
+            SaveLoginLogoLayout();
+        }
+    }
+
+    public string LoginLogoVerticalPosition
+    {
+        get => _loginLogoVerticalPosition;
+        set
+        {
+            if (!VerticalLogoPositions.Contains(value) || !SetField(ref _loginLogoVerticalPosition, value))
+                return;
+            OnPropertyChanged(nameof(LoginLogoVerticalAlignment));
+            OnPropertyChanged(nameof(CanMoveLoginLogoUp));
+            OnPropertyChanged(nameof(CanMoveLoginLogoDown));
+            OnPropertyChanged(nameof(LoginLogoPositionDisplay));
+            RaiseLogoPositionCommands();
+            SaveLoginLogoLayout();
+        }
+    }
+
+    public HorizontalAlignment LoginLogoHorizontalAlignment => LoginLogoHorizontalPosition switch
+    {
+        "Esquerda" => HorizontalAlignment.Left,
+        "Direita" => HorizontalAlignment.Right,
+        _ => HorizontalAlignment.Center
+    };
+
+    public VerticalAlignment LoginLogoVerticalAlignment => LoginLogoVerticalPosition switch
+    {
+        "Topo" => VerticalAlignment.Top,
+        "Base" => VerticalAlignment.Bottom,
+        _ => VerticalAlignment.Center
+    };
+
+    public string LoginLogoPositionDisplay => $"{LoginLogoVerticalPosition} · {LoginLogoHorizontalPosition}";
+
     public IconCatalogViewModel(IIconAppearanceService iconAppearanceService, IThemeService themeService,
         IStockSettingsService? stockSettingsService = null,
         IBackupNotificationSettingsStore? backupNotificationSettingsStore = null,
-        IDatabaseBackupScheduleStore? backupScheduleStore = null)
+        IDatabaseBackupScheduleStore? backupScheduleStore = null,
+        ILoginBrandingSettingsStore? loginBrandingSettingsStore = null)
     {
         _iconAppearanceService = iconAppearanceService;
         _themeService = themeService;
         _stockSettingsService = stockSettingsService;
         _backupNotificationSettingsStore = backupNotificationSettingsStore;
         _backupScheduleStore = backupScheduleStore;
+        _loginBrandingSettingsStore = loginBrandingSettingsStore;
+        LoadLoginBrandingSettings();
         if (_backupScheduleStore is not null)
             _backupScheduleStore.SchedulesChanged += OnBackupSchedulesChanged;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
@@ -159,6 +301,18 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         ResetIconColorsCommand = new RelayCommand(async () => await ResetIconColorsAsync());
         SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
         SaveBackupNotificationSettingsCommand = new RelayCommand(SaveBackupNotificationSettings);
+        RemoveLoginLogoCommand = new RelayCommand(RemoveLoginLogo);
+        MoveLoginLogoUpCommand = new RelayCommand(() => StepLoginLogoVertical(-1), () => CanMoveLoginLogoUp);
+        MoveLoginLogoDownCommand = new RelayCommand(() => StepLoginLogoVertical(1), () => CanMoveLoginLogoDown);
+        MoveLoginLogoLeftCommand = new RelayCommand(() => StepLoginLogoHorizontal(-1), () => CanMoveLoginLogoLeft);
+        MoveLoginLogoRightCommand = new RelayCommand(() => StepLoginLogoHorizontal(1), () => CanMoveLoginLogoRight);
+        ResetSelectedSettingsCommand = new RelayCommand(async () =>
+        {
+            if (IsLoginBrandingSelected)
+                ResetLoginLogo();
+            else
+                await ResetIconColorsAsync();
+        });
         ApplyThemeCommand = new RelayCommand(async () => await ApplyThemeSelectionAsync());
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
@@ -185,6 +339,169 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(BackupNotificationLeadTimeMinutes));
             RefreshBackupNotificationPreview();
         }
+        if (_loginBrandingSettingsStore is not null)
+            LoadLoginBrandingSettings();
+    }
+
+    public void SaveLoginLogo(string sourcePath)
+    {
+        if (_loginBrandingSettingsStore is null)
+        {
+            LoginBrandingStatus = "As configurações do logo não estão disponíveis.";
+            return;
+        }
+
+        try
+        {
+            _loginBrandingSettingsStore.SaveLogo(sourcePath);
+            LoginLogoFileName = _loginBrandingSettingsStore.LogoFileName;
+            LoadLoginLogoPreview();
+            LoginBrandingStatus = "Logo atualizado e prévia sincronizada.";
+        }
+        catch (Exception)
+        {
+            LoginBrandingStatus = "Não foi possível salvar essa imagem. Use um PNG ou JPEG de até 10 MB.";
+        }
+    }
+
+    private void ResetLoginLogo()
+    {
+        if (_loginBrandingSettingsStore is null)
+        {
+            LoginBrandingStatus = "As configurações do logo não estão disponíveis.";
+            return;
+        }
+
+        try
+        {
+            _loginBrandingSettingsStore.ResetLogo();
+            LoadLoginBrandingSettings();
+            LoginBrandingStatus = "Logo e apresentação padrão restaurados.";
+        }
+        catch (Exception)
+        {
+            LoginBrandingStatus = "Não foi possível restaurar o logo padrão.";
+        }
+    }
+
+    private void RemoveLoginLogo()
+    {
+        if (_loginBrandingSettingsStore is null)
+        {
+            LoginBrandingStatus = "As configurações da logo não estão disponíveis.";
+            return;
+        }
+
+        try
+        {
+            _loginBrandingSettingsStore.RemoveLogo();
+            LoginLogoFileName = _loginBrandingSettingsStore.LogoFileName;
+            LoadLoginLogoPreview();
+            LoginBrandingStatus = "Imagem removida; logo padrão do Decor aplicada.";
+        }
+        catch (Exception)
+        {
+            LoginBrandingStatus = "Não foi possível remover essa imagem.";
+        }
+    }
+
+    private void StepLoginLogoHorizontal(int step)
+    {
+        LoginLogoHorizontalPosition = LoginLogoHorizontalPosition switch
+        {
+            "Esquerda" when step > 0 => "Centro",
+            "Centro" when step < 0 => "Esquerda",
+            "Centro" when step > 0 => "Direita",
+            "Direita" when step < 0 => "Centro",
+            _ => LoginLogoHorizontalPosition
+        };
+    }
+
+    private void StepLoginLogoVertical(int step)
+    {
+        LoginLogoVerticalPosition = LoginLogoVerticalPosition switch
+        {
+            "Topo" when step > 0 => "Centro",
+            "Centro" when step < 0 => "Topo",
+            "Centro" when step > 0 => "Base",
+            "Base" when step < 0 => "Centro",
+            _ => LoginLogoVerticalPosition
+        };
+    }
+
+    private void RaiseLogoPositionCommands()
+    {
+        ((RelayCommand)MoveLoginLogoUpCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)MoveLoginLogoDownCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)MoveLoginLogoLeftCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)MoveLoginLogoRightCommand).RaiseCanExecuteChanged();
+    }
+
+    private void LoadLoginBrandingSettings()
+    {
+        if (_loginBrandingSettingsStore is null)
+            return;
+
+        _loginLogoSizePercent = _loginBrandingSettingsStore.LogoSizePercent;
+        _loginLogoHorizontalPosition = _loginBrandingSettingsStore.LogoHorizontalPosition;
+        _loginLogoVerticalPosition = _loginBrandingSettingsStore.LogoVerticalPosition;
+        _invertLoginLogoInLightTheme = _loginBrandingSettingsStore.InvertLogoInLightTheme;
+        OnPropertyChanged(nameof(LoginLogoSizePercent));
+        OnPropertyChanged(nameof(LoginLogoSizeDisplay));
+        OnPropertyChanged(nameof(LoginLogoWidth));
+        OnPropertyChanged(nameof(LoginLogoPreviewWidth));
+        OnPropertyChanged(nameof(LoginLogoHorizontalPosition));
+        OnPropertyChanged(nameof(LoginLogoHorizontalAlignment));
+        OnPropertyChanged(nameof(CanMoveLoginLogoLeft));
+        OnPropertyChanged(nameof(CanMoveLoginLogoRight));
+        OnPropertyChanged(nameof(LoginLogoVerticalPosition));
+        OnPropertyChanged(nameof(InvertLoginLogoInLightTheme));
+        OnPropertyChanged(nameof(LoginLogoVerticalAlignment));
+        OnPropertyChanged(nameof(CanMoveLoginLogoUp));
+        OnPropertyChanged(nameof(CanMoveLoginLogoDown));
+        OnPropertyChanged(nameof(LoginLogoPositionDisplay));
+        if (MoveLoginLogoUpCommand is RelayCommand moveUp)
+            moveUp.RaiseCanExecuteChanged();
+        if (MoveLoginLogoDownCommand is RelayCommand moveDown)
+            moveDown.RaiseCanExecuteChanged();
+        if (MoveLoginLogoLeftCommand is RelayCommand moveLeft)
+            moveLeft.RaiseCanExecuteChanged();
+        if (MoveLoginLogoRightCommand is RelayCommand moveRight)
+            moveRight.RaiseCanExecuteChanged();
+        LoginLogoFileName = _loginBrandingSettingsStore.LogoFileName;
+        LoadLoginLogoPreview();
+    }
+
+    private void LoadLoginLogoPreview()
+    {
+        var path = _loginBrandingSettingsStore?.LogoPath;
+        var bitmap = path is null
+            ? null
+            : LoginLogoImageLoader.Load(path,
+                InvertLoginLogoInLightTheme && _themeService.CurrentTheme == DecorThemeStyle.Light);
+
+        var previousBitmap = _loginLogoPreview;
+        LoginLogoPreview = bitmap;
+        previousBitmap?.Dispose();
+    }
+
+    private void SaveLoginLogoLayout()
+    {
+        if (_loginBrandingSettingsStore is null)
+            return;
+
+        try
+        {
+            _loginBrandingSettingsStore.SaveLayout(
+                (int)LoginLogoSizePercent,
+                LoginLogoHorizontalPosition,
+                LoginLogoVerticalPosition);
+            LoginBrandingStatus = "Prévia atualizada; ajustes salvos.";
+        }
+        catch (Exception)
+        {
+            LoginBrandingStatus = "Não foi possível salvar os ajustes do logo.";
+        }
     }
 
     private async Task ApplyAsync()
@@ -204,6 +521,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         var themeVariant = ThemeVariantFor(theme);
         foreach (var item in FamilyGroups.SelectMany(group => group.Items))
             item.RefreshColor(themeVariant);
+        LoadLoginLogoPreview();
     }
 
     private static ThemeVariant ThemeVariantFor(DecorThemeStyle theme) =>

@@ -2,6 +2,9 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Avalonia.Media.Imaging;
+using Avalonia.Layout;
+using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 
@@ -19,13 +22,20 @@ public sealed class LoginViewModel : INotifyPropertyChanged
     private bool _canCopyError;
     private bool _isBusy;
     private bool _isDatabaseOnline;
+    private readonly ILoginBrandingSettingsStore? _loginBrandingSettingsStore;
+    private DecorThemeStyle _previewTheme = DecorDefaults.Theme;
 
     public LoginViewModel(IAuthenticationService authenticationService, IUserSettingsService? userSettingsService = null,
-        IDatabaseHealthService? databaseHealthService = null)
+        IDatabaseHealthService? databaseHealthService = null,
+        ILoginBrandingSettingsStore? loginBrandingSettingsStore = null)
     {
         _authenticationService = authenticationService;
         _userSettingsService = userSettingsService;
         _databaseHealthService = databaseHealthService;
+        _loginBrandingSettingsStore = loginBrandingSettingsStore;
+        LoginLogo = loginBrandingSettingsStore is null ? null : LoginLogoImageLoader.Load(
+            loginBrandingSettingsStore.LogoPath,
+            loginBrandingSettingsStore.InvertLogoInLightTheme && _previewTheme == DecorThemeStyle.Light);
         LoginCommand = new RelayCommand(async () => await LoginAsync(), () => !IsBusy);
     }
 
@@ -35,6 +45,20 @@ public sealed class LoginViewModel : INotifyPropertyChanged
     public event Action<DecorThemeStyle>? ThemePreviewChanged;
 
     public ICommand LoginCommand { get; }
+    public Bitmap? LoginLogo { get; private set; }
+    public double LoginLogoWidth => (_loginBrandingSettingsStore?.LogoSizePercent ?? 90) * 5.1;
+    public HorizontalAlignment LoginLogoHorizontalAlignment => _loginBrandingSettingsStore?.LogoHorizontalPosition switch
+    {
+        "Esquerda" => HorizontalAlignment.Left,
+        "Direita" => HorizontalAlignment.Right,
+        _ => HorizontalAlignment.Center
+    };
+    public VerticalAlignment LoginLogoVerticalAlignment => _loginBrandingSettingsStore?.LogoVerticalPosition switch
+    {
+        "Topo" => VerticalAlignment.Top,
+        "Base" => VerticalAlignment.Bottom,
+        _ => VerticalAlignment.Center
+    };
     public string SystemVersion => typeof(LoginViewModel).Assembly.GetName().Version?.ToString() ?? "Não informada";
     public bool IsDatabaseOnline { get => _isDatabaseOnline; private set => SetField(ref _isDatabaseOnline, value); }
     public string DatabaseStatusText => IsDatabaseOnline ? "Online" : "Offline";
@@ -143,6 +167,30 @@ public sealed class LoginViewModel : INotifyPropertyChanged
     }
 
     public void StopThemePreview() => Interlocked.Exchange(ref _themePreviewCancellation, null)?.Cancel();
+
+    public void DisposeLoginLogo() => LoginLogo?.Dispose();
+
+    public void SetPreviewTheme(DecorThemeStyle theme)
+    {
+        if (_previewTheme == theme)
+            return;
+
+        _previewTheme = theme;
+        RefreshLoginLogo();
+    }
+
+    private void RefreshLoginLogo()
+    {
+        if (_loginBrandingSettingsStore is null)
+            return;
+
+        var previousLogo = LoginLogo;
+        LoginLogo = LoginLogoImageLoader.Load(
+            _loginBrandingSettingsStore.LogoPath,
+            _loginBrandingSettingsStore.InvertLogoInLightTheme && _previewTheme == DecorThemeStyle.Light);
+        OnPropertyChanged(nameof(LoginLogo));
+        previousLogo?.Dispose();
+    }
 
     private void QueueThemePreview(string input)
     {

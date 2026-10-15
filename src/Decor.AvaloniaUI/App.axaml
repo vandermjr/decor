@@ -16,6 +16,18 @@
                 <SolidColorBrush x:Key="DecorScrollTrackBrush">#E2E5E9</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorScrollThumbBrush">#A5ADB8</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#E8EBEF</SolidColorBrush>
+                <LinearGradientBrush x:Key="LoginBrandingBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0" Color="#67575A" />
+                    <GradientStop Offset="0.48" Color="#394B5D" />
+                    <GradientStop Offset="1" Color="#1B3042" />
+                </LinearGradientBrush>
+                <SolidColorBrush x:Key="LoginImageColumnBrush">#FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassPanelBrush">#99000000</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassBorderBrush">#55FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassTextBrush">#FFFFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassMutedTextBrush">#CCFFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassFieldBrush">#FFFFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassFieldTextBrush">#252A30</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceBrush">#F5F6F8</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#FFFFFF</SolidColorBrush>
@@ -63,6 +75,18 @@
                 <SolidColorBrush x:Key="DecorScrollTrackBrush">#272B30</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorScrollThumbBrush">#68727E</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorWindowBackgroundBrush">#191B1E</SolidColorBrush>
+                <LinearGradientBrush x:Key="LoginBrandingBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0" Color="#27292C" />
+                    <GradientStop Offset="0.48" Color="#1D2831" />
+                    <GradientStop Offset="1" Color="#141C23" />
+                </LinearGradientBrush>
+                <SolidColorBrush x:Key="LoginImageColumnBrush">#000000</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassPanelBrush">#99000000</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassBorderBrush">#55FFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassTextBrush">#FFFFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassMutedTextBrush">#CCFFFFFF</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassFieldBrush">#33383E</SolidColorBrush>
+                <SolidColorBrush x:Key="LoginGlassFieldTextBrush">#FFFFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceBrush">#222529</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#2C3035</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#272B30</SolidColorBrush>

@@ -1,7 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
-        xmlns:controls="using:Decor.AvaloniaUI.Controls"
         xmlns:icons="using:Decor.AvaloniaUI.Icons"
         x:Class="Decor.AvaloniaUI.Views.LoginWindow"
         x:DataType="vm:LoginViewModel"
@@ -10,24 +9,83 @@
         Height="560"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
-  <Grid Margin="40" RowDefinitions="*,Auto">
-    <Grid Grid.Row="0" ColumnDefinitions="*,2*" ColumnSpacing="48">
-    <Grid Grid.Column="0" MaxWidth="340" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+  <Window.Styles>
+    <Style Selector="TextBox.login-field">
+      <Setter Property="Width" Value="220"/>
+      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="MaxWidth" Value="220"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="Background" Value="{DynamicResource LoginGlassFieldBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource LoginGlassFieldTextBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource LoginGlassBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Padding" Value="12,8"/>
+    </Style>
+    <Style Selector="TextBox.login-field:focus:not(:error) /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource LoginGlassTextBrush}"/>
+    </Style>
+    <Style Selector="Button.login-primary">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+      <Setter Property="BorderBrush" Value="#FF9B76"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="22"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="MinHeight" Value="44"/>
+    </Style>
+    <Style Selector="Button.login-primary:pointerover, Button.login-primary:pressed">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+      <Setter Property="BorderBrush" Value="#FF9B76"/>
+    </Style>
+    <Style Selector="Button.login-primary:focus">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+      <Setter Property="BorderBrush" Value="#603B2D"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.login-primary:pointerover /template/ ContentPresenter, Button.login-primary:pressed /template/ ContentPresenter, Button.login-primary:focus /template/ ContentPresenter">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+      <Setter Property="BorderBrush" Value="#603B2D"/>
+    </Style>
+    <Style Selector="Button.login-primary:disabled">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+      <Setter Property="Opacity" Value="0.72"/>
+    </Style>
+    <Style Selector="Button.login-primary:disabled /template/ ContentPresenter">
+      <Setter Property="Background" Value="#FF9B76"/>
+      <Setter Property="Foreground" Value="#34231D"/>
+    </Style>
+    <Style Selector="Button.login-primary:focus /template/ ContentPresenter">
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="BorderBrush" Value="#603B2D"/>
+    </Style>
+  </Window.Styles>
+  <Grid ColumnDefinitions="360,*" FlowDirection="LeftToRight">
+    <Border Grid.ColumnSpan="2" Background="{DynamicResource LoginBrandingBackgroundBrush}"/>
+    <Border Grid.Column="1" Background="{DynamicResource LoginImageColumnBrush}"/>
+    <Image Grid.Column="1" Source="{Binding LoginLogo}" Stretch="Uniform"
+          Width="{Binding LoginLogoWidth}" MaxHeight="360" Margin="32"
+          HorizontalAlignment="{Binding LoginLogoHorizontalAlignment}" VerticalAlignment="{Binding LoginLogoVerticalAlignment}"
+          AutomationProperties.Name="Logo da empresa"/>
+
+    <Border Grid.Column="0" Background="{DynamicResource LoginGlassPanelBrush}" Padding="24,28">
+      <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" MaxWidth="220" HorizontalAlignment="Center" VerticalAlignment="Center"
           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="16">
-      <TextBlock Text="Bem-vindo!" Foreground="{DynamicResource DecorTextBrush}"
+      <TextBlock Text="Bem-vindo!" Foreground="{DynamicResource LoginGlassTextBrush}"
              FontSize="32"
                  FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,0,0,24"
-                 HorizontalAlignment="Center" TextAlignment="Center">
-        <TextBlock.RenderTransform>
-          <TranslateTransform Y="-20"/>
-        </TextBlock.RenderTransform>
-      </TextBlock>
+                 HorizontalAlignment="Center" TextAlignment="Center"/>
 
       <TextBox x:Name="UserIdTextBox" Grid.Row="1" TabIndex="0" Focusable="True"
-               Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
+           Classes="login-field" Text="{Binding UserIdInput}" TextAlignment="Center" PlaceholderText="Código do usuário" IsEnabled="{Binding !IsBusy}" />
 
-      <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton"
-               PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" controls:DecorRequiredField.IsRequired="True" />
+      <TextBox Grid.Row="2" TabIndex="1" Text="{Binding Password}" PasswordChar="●" Classes="login-field revealPasswordButton"
+           PlaceholderText="Senha" IsEnabled="{Binding !IsBusy}" />
 
       <Border Grid.Row="3" Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}"
               BorderBrush="{DynamicResource DecorDangerBrush}" BorderThickness="1" CornerRadius="4"
@@ -45,9 +103,10 @@
 
       <ProgressBar Grid.Row="4" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
 
-      <Button Grid.Row="5" TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
-              HorizontalAlignment="Stretch" MinHeight="42" Padding="12,9"
-              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Classes="decor-action">
+      <Border Grid.Row="5" BoxShadow="0 2 8 0 #80000000" CornerRadius="24">
+      <Button TabIndex="2" Command="{Binding LoginCommand}" IsDefault="True"
+              HorizontalAlignment="Stretch" Height="46" Padding="12,9"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Classes="login-primary">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.SignIn}"
                 Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -55,21 +114,16 @@
           <TextBlock Text="Entrar" VerticalAlignment="Center"/>
         </StackPanel>
       </Button>
-    </Grid>
-
-    <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-      <TextBlock Text="Logo do cliente" Foreground="{DynamicResource DecorTextMutedBrush}"
-                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </Grid>
+      </Border>
     </Grid>
     <Border Grid.Row="1" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <TextBlock Text="{Binding SystemVersion, StringFormat='Versão {0}'}"
-                   Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"
+             Foreground="{DynamicResource LoginGlassMutedTextBrush}" FontSize="{DynamicResource DecorFontSizeCaption}"
                    VerticalAlignment="Center"/>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
           <Grid Width="18" Height="18" ToolTip.Tip="{Binding DatabaseConnectionDescription}">
-            <PathIcon Width="16" Height="16" Foreground="{DynamicResource DecorTextMutedBrush}"
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource LoginGlassMutedTextBrush}"
                       icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Database}"
                       AutomationProperties.Name="Banco de dados"/>
             <Border Width="7" Height="7" CornerRadius="4" Background="#218647"
@@ -80,10 +134,12 @@
                       HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding !IsDatabaseOnline}"/>
           </Grid>
           <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-            <TextBlock Text="{Binding DatabaseStatusText}" Foreground="{DynamicResource DecorTextMutedBrush}"
+            <TextBlock Text="{Binding DatabaseStatusText}" Foreground="{DynamicResource LoginGlassMutedTextBrush}"
                        FontSize="{DynamicResource DecorFontSizeCaption}"/>
           </StackPanel>
         </StackPanel>
+      </Grid>
+    </Border>
       </Grid>
     </Border>
   </Grid>

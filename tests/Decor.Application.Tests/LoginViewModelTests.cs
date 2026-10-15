@@ -1,8 +1,10 @@
 using Decor.AvaloniaUI.ViewModels;
+using Decor.AvaloniaUI.Services;
 using Decor.Core.Common;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
 using Moq;
+using Avalonia.Skia;
 
 namespace Decor.Application.Tests;
 
@@ -110,6 +112,54 @@ public sealed class LoginViewModelTests
 
         viewModel.IsDatabaseOnline.Should().BeFalse();
         viewModel.DatabaseStatusText.Should().Be("Offline");
+    }
+
+    [Fact]
+    public void LoginBrandingSettings_AreAppliedToLogoSizeAndAlignment()
+    {
+        var branding = new Mock<ILoginBrandingSettingsStore>(MockBehavior.Strict);
+        branding.SetupGet(store => store.LogoPath).Returns("missing-login-logo.png");
+        branding.SetupGet(store => store.LogoSizePercent).Returns(75);
+        branding.SetupGet(store => store.LogoHorizontalPosition).Returns("Esquerda");
+        branding.SetupGet(store => store.LogoVerticalPosition).Returns("Base");
+        branding.SetupGet(store => store.InvertLogoInLightTheme).Returns(true);
+
+        var viewModel = new LoginViewModel(new SuccessfulAuthenticationService(), loginBrandingSettingsStore: branding.Object);
+
+        viewModel.LoginLogoWidth.Should().Be(382.5);
+        viewModel.LoginLogoHorizontalAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Left);
+        viewModel.LoginLogoVerticalAlignment.Should().Be(Avalonia.Layout.VerticalAlignment.Bottom);
+    }
+
+    [Fact]
+    public void LoginLogo_is_reloaded_with_inverted_colors_only_for_light_theme_when_enabled()
+    {
+        SkiaPlatform.Initialize();
+        var branding = new Mock<ILoginBrandingSettingsStore>(MockBehavior.Strict);
+        branding.SetupGet(store => store.LogoPath).Returns(FindBrandingLogoPath());
+        branding.SetupGet(store => store.LogoSizePercent).Returns(90);
+        branding.SetupGet(store => store.LogoHorizontalPosition).Returns("Centro");
+        branding.SetupGet(store => store.LogoVerticalPosition).Returns("Centro");
+        branding.SetupGet(store => store.InvertLogoInLightTheme).Returns(true);
+        var viewModel = new LoginViewModel(new SuccessfulAuthenticationService(), loginBrandingSettingsStore: branding.Object);
+        var darkLogo = viewModel.LoginLogo;
+
+        viewModel.SetPreviewTheme(DecorThemeStyle.Light);
+        var lightLogo = viewModel.LoginLogo;
+        viewModel.SetPreviewTheme(DecorThemeStyle.Dark);
+
+        lightLogo.Should().NotBeNull().And.NotBeSameAs(darkLogo);
+        viewModel.LoginLogo.Should().NotBeNull().And.NotBeSameAs(lightLogo);
+        viewModel.DisposeLoginLogo();
+    }
+
+    private static string FindBrandingLogoPath()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Decor.sln")))
+            root = root.Parent;
+        return Path.Combine(root?.FullName ?? throw new InvalidOperationException("Decor.sln not found."),
+            "src", "Decor.AvaloniaUI", "Assets", "login-logo-default.png");
     }
 
     private sealed class SuccessfulAuthenticationService : IAuthenticationService

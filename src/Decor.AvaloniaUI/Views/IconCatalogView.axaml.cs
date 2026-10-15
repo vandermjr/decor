@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Decor.AvaloniaUI.ViewModels;
 
 namespace Decor.AvaloniaUI.Views;
@@ -28,6 +29,21 @@ public partial class IconCatalogView : UserControl
 
         if (treeView.SelectedItem is TreeViewItem { Tag: string section })
             viewModel.SelectedSettingsSection = section;
+    }
+
+    private async void ChooseLoginLogoButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not IconCatalogViewModel viewModel || TopLevel.GetTopLevel(this) is not { } topLevel)
+            return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Selecionar logo da empresa",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Imagens PNG ou JPEG") { Patterns = ["*.png", "*.jpg", "*.jpeg"] }]
+        });
+        if (files.FirstOrDefault()?.TryGetLocalPath() is { } path)
+            viewModel.SaveLoginLogo(path);
     }
 
     private void ChooseBackupNotificationLeadTimeButton_Click(object? sender, RoutedEventArgs e)

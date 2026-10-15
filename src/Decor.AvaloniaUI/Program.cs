@@ -63,6 +63,7 @@ internal static class Program
                 services.AddTransient<DatabaseMaintenanceViewModel>();
                 services.AddSingleton<IDatabaseBackupScheduleStore, DatabaseBackupScheduleStore>();
                 services.AddSingleton<IBackupNotificationSettingsStore, BackupNotificationSettingsStore>();
+                services.AddSingleton<ILoginBrandingSettingsStore, LoginBrandingSettingsStore>();
                 services.AddSingleton<INotificationCenter, NotificationCenter>();
                 services.AddHostedService<DatabaseBackupScheduleWorker>();
                 services.AddTransient<IconCatalogViewModel>();
