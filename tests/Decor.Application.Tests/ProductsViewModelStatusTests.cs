@@ -30,6 +30,82 @@ public sealed class ProductsViewModelStatusTests
     }
 
     [Fact]
+    public void Selected_product_details_update_without_retaining_previous_values()
+    {
+        var viewModel = Create();
+        viewModel.SelectedProduct = Product() with
+        {
+            SalePrice = 1234.56m,
+            CostPrice = 500m,
+            CurrentStockQuantity = 10m,
+            ReservedStockQuantity = 5m,
+            MinimumStock = 10m
+        };
+
+        viewModel.HasSelectedProduct.Should().BeTrue();
+        viewModel.SelectedSalePriceDisplay.Should().Contain("1.234,56");
+        viewModel.SelectedAvailableStockDisplay.Should().Contain("5,00");
+        viewModel.SelectedStockLevelValue.Should().Be(50d);
+        viewModel.HasSelectedCostPrice.Should().BeTrue();
+        viewModel.IsSelectedStockWarning.Should().BeTrue();
+
+        viewModel.SelectedProduct = Product(7) with
+        {
+            SalePrice = null,
+            CostPrice = null,
+            CurrentStockQuantity = 10m
+        };
+
+        viewModel.SelectedProductCodeDisplay.Should().Be("000007");
+        viewModel.SelectedSalePriceDisplay.Should().Be("Não informado");
+        viewModel.HasSelectedCostPrice.Should().BeFalse();
+        viewModel.SelectedStockLevelValue.Should().Be(100d);
+        viewModel.IsSelectedStockPositive.Should().BeTrue();
+
+        viewModel.SelectedProduct = null;
+        viewModel.HasSelectedProduct.Should().BeFalse();
+        viewModel.SelectedProductCodeDisplay.Should().BeEmpty();
+        viewModel.SelectedAvailableStockDisplay.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Initialize_loads_global_catalog_summary_once()
+    {
+        var productService = new ProductService
+        {
+            Summary = () => Task.FromResult<ProductCatalogSummaryDTO?>(new(1250, 1180, 42, 18))
+        };
+        var viewModel = Create(productService);
+
+        await viewModel.InitializeAsync();
+
+        viewModel.CatalogSummary.Should().Be(new ProductCatalogSummaryDTO(1250, 1180, 42, 18));
+        viewModel.TotalProductsDisplay.Should().Be("1.250");
+        viewModel.ActiveProductsDisplay.Should().Be("1.180");
+        viewModel.OutOfStockProductsDisplay.Should().Be("42");
+        viewModel.LowStockProductsDisplay.Should().Be("18");
+    }
+
+    [Fact]
+    public async Task Initialize_loads_catalog_summary_while_classification_lookups_are_pending()
+    {
+        var pendingClasses = new TaskCompletionSource<IEnumerable<ClassDTO>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var classification = new ClassificationService { PendingClasses = pendingClasses };
+        var productService = new ProductService
+        {
+            Summary = () => Task.FromResult<ProductCatalogSummaryDTO?>(new(7, 6, 1, 2))
+        };
+        var viewModel = Create(productService, classification);
+
+        var initialization = viewModel.InitializeAsync();
+
+        viewModel.IsBusy.Should().BeTrue();
+        viewModel.CatalogSummary.Should().Be(new ProductCatalogSummaryDTO(7, 6, 1, 2));
+        pendingClasses.SetResult([new ClassDTO(1, "Classe")]);
+        await initialization;
+    }
+
+    [Fact]
     public async Task Unpermitted_product_actions_are_unavailable()
     {
         var viewModel = Create(authorization: new DeniedAuthorization());
@@ -198,6 +274,8 @@ public sealed class ProductsViewModelStatusTests
     {
         public Func<Task<IEnumerable<ProductDTO>>> Search { get; set; } = () => Task.FromResult<IEnumerable<ProductDTO>>([]);
         public Func<Task> Save { get; set; } = () => Task.CompletedTask;
+        public Func<Task<ProductCatalogSummaryDTO?>> Summary { get; set; } = () => Task.FromResult<ProductCatalogSummaryDTO?>(null);
+        public Task<ProductCatalogSummaryDTO?> GetCatalogSummaryAsync(CancellationToken cancellationToken = default) => Summary();
         public Task<ProductDTO> GetProductByIdAsync(int productId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<ProductDTO>>([]);
         public Task<IEnumerable<ProductDTO>> SearchProductsAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Search();
@@ -208,7 +286,8 @@ public sealed class ProductsViewModelStatusTests
     {
         public int FailureLevel { get; init; } = -1;
         public bool MissingClasses { get; init; }
-        public Task<IEnumerable<ClassDTO>> GetAllAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<ClassDTO>>(MissingClasses ? [] : [new ClassDTO(1, "Classe")]);
+        public TaskCompletionSource<IEnumerable<ClassDTO>>? PendingClasses { get; init; }
+        public Task<IEnumerable<ClassDTO>> GetAllAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => PendingClasses?.Task ?? Task.FromResult<IEnumerable<ClassDTO>>(MissingClasses ? [] : [new ClassDTO(1, "Classe")]);
         public Task<IEnumerable<FamilyDTO>> GetByClassIdAsync(int classId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => FailureLevel == 0
             ? Task.FromException<IEnumerable<FamilyDTO>>(Failure(0)) : Task.FromResult<IEnumerable<FamilyDTO>>([new FamilyDTO(1, "Familia")]);
         public Task<IEnumerable<GroupDTO>> GetByFamilyIdAsync(int familyId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => FailureLevel == 1

@@ -506,6 +506,27 @@ public sealed partial class DecorGridPresentationTests
         Assert.Contains(style.Descendants().Attributes(), attribute => attribute.Value.Contains("Actions.Search", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Application_scrollbars_and_data_grid_share_the_scrollbar_theme()
+    {
+        var app = ReadXaml("", "App.axaml");
+        var appResource = Assert.Single(app.Descendants(), element => element.Name.LocalName == "ResourceInclude"
+            && (string?)element.Attribute("Source") == "avares://Decor.AvaloniaUI/Controls/DecorScrollBarTheme.axaml");
+        Assert.NotNull(appResource);
+
+        var globalStyle = Assert.Single(app.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "ScrollBar");
+        Assert.Contains(globalStyle.Elements(), element => (string?)element.Attribute("Property") == "Theme"
+            && (string?)element.Attribute("Value") == "{StaticResource DecorScrollBarTheme}");
+
+        var grid = ReadXaml("Controls", "DecorDataGridControl.axaml");
+        Assert.Contains(grid.Descendants(), element => element.Name.LocalName == "ResourceInclude"
+            && (string?)element.Attribute("Source") == "avares://Decor.AvaloniaUI/Controls/DecorScrollBarTheme.axaml");
+        var theme = ReadXaml("Controls", "DecorScrollBarTheme.axaml");
+        Assert.Contains(theme.Descendants(), element => element.Name.LocalName == "ControlTheme"
+            && (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml")) == "DecorScrollBarTheme");
+    }
+
     [Fact(Skip = "Legacy App.axaml style assertion for the old shared header and search CSS contract.")]
     public void Shared_styles_keep_accessibility_dimensions_and_native_sort_states()
     {

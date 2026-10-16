@@ -8,6 +8,9 @@
 
 <Application.Resources>
     <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceInclude Source="avares://Decor.AvaloniaUI/Controls/DecorScrollBarTheme.axaml" />
+        </ResourceDictionary.MergedDictionaries>
         <controls:DecorGridHeader x:Key="DecorGridHeaderTemplate" />
         <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
         <Thickness x:Key="DecorPageMargin">16</Thickness>
@@ -58,6 +61,11 @@
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#185F9A</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#B32D35</SolidColorBrush>
+                <LinearGradientBrush x:Key="DecorStockLevelBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Offset="0" Color="#B84040"/>
+                    <GradientStop Offset="0.55" Color="#A86C16"/>
+                    <GradientStop Offset="1" Color="#24744C"/>
+                </LinearGradientBrush>
                 <SolidColorBrush x:Key="DecorEditIndicatorBrush">#D99A00</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAddIndicatorBrush">#218739</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#66000000</SolidColorBrush>
@@ -113,6 +121,11 @@
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#55A7E0</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#E16B73</SolidColorBrush>
+                <LinearGradientBrush x:Key="DecorStockLevelBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Offset="0" Color="#F07878"/>
+                    <GradientStop Offset="0.55" Color="#E5B457"/>
+                    <GradientStop Offset="1" Color="#6BCB91"/>
+                </LinearGradientBrush>
                 <SolidColorBrush x:Key="DecorEditIndicatorBrush">#F3C969</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAddIndicatorBrush">#55B96B</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#99000000</SolidColorBrush>
@@ -153,6 +166,7 @@
     </Style>
     <Style Selector="ScrollBar">
         <Setter Property="AllowAutoHide" Value="False" />
+        <Setter Property="Theme" Value="{StaticResource DecorScrollBarTheme}" />
     </Style>
     <Style Selector="Menu">
         <Setter Property="Background" Value="{DynamicResource DecorSurfaceBrush}" />

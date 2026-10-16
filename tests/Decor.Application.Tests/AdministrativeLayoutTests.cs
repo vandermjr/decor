@@ -130,6 +130,15 @@ public sealed class AdministrativeLayoutTests
         Assert.Equal("1", (string?)right.Attribute("Grid.Column"));
         Assert.Equal("2", (string?)Assert.Single(document.Descendants(), element => element.Name.LocalName == "ScrollViewer"
             && (string?)element.Attribute("Name") == "DocumentTabsScroller").Attribute("Grid.Column"));
+        var tab = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("Height") == "37" && (string?)element.Attribute("MaxWidth") == "220");
+        Assert.Equal("4,4,0,0", (string?)tab.Attribute("CornerRadius"));
+        Assert.Equal("2,*", (string?)Assert.Single(tab.Elements(), element => element.Name.LocalName == "Grid")
+            .Attribute("RowDefinitions"));
+        var activeIndicator = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("Background") == "{DynamicResource DecorAccentBrush}"
+            && (string?)element.Attribute("IsVisible") == "{Binding IsActive}");
+        Assert.Equal("4,4,0,0", (string?)activeIndicator.Attribute("CornerRadius"));
         var scroller = Assert.Single(document.Descendants(), element => element.Name.LocalName == "ScrollViewer"
             && (string?)element.Attribute("Name") == "DocumentTabsScroller");
         var leftRule = Assert.Single(scroller.Elements(), element => element.Name.LocalName == "Border");

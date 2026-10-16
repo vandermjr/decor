@@ -16,6 +16,26 @@ public class ActionSortLayoutTests
         Assert.Equal(Decor.AvaloniaUI.Icons.DecorIconId.Application.Info, document.IconId);
     }
 
+    [Fact]
+    public void Main_menu_categories_have_no_icons_but_submenu_items_keep_them()
+    {
+        var document = Load("MainWindow.axaml");
+        var mainMenuButtons = document.Descendants().Where(element => element.Name.LocalName == "Button"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("main-menu-button") == true);
+
+        Assert.NotEmpty(mainMenuButtons);
+        Assert.All(mainMenuButtons, button =>
+        {
+            var content = button.Elements().Single(element => element.Name.LocalName == "StackPanel");
+            Assert.DoesNotContain(content.Descendants(), element => element.Name.LocalName == "PathIcon"
+                && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id"));
+        });
+
+        var submenuItems = document.Descendants().Where(element => element.Name.LocalName == "MenuItem");
+        Assert.Contains(submenuItems, item => item.Descendants().Any(element => element.Name.LocalName == "PathIcon"
+            && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id")));
+    }
+
     [Theory]
     [InlineData("Quotes")]
     [InlineData("Brands")]

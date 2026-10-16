@@ -6,39 +6,11 @@
     x:CompileBindings="False"
     x:Name="Root">
     <UserControl.Resources>
-        <ControlTheme x:Key="GridScrollBarTheme" TargetType="ScrollBar">
-            <Setter Property="MinWidth" Value="0"/>
-            <Setter Property="MinHeight" Value="0"/>
-            <Setter Property="Template">
-                <ControlTemplate>
-                    <Border Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5">
-                        <Track Name="PART_Track"
-                               Orientation="{TemplateBinding Orientation}"
-                               Minimum="{TemplateBinding Minimum}"
-                               Maximum="{TemplateBinding Maximum}"
-                               Value="{TemplateBinding Value, Mode=TwoWay}"
-                               ViewportSize="{TemplateBinding ViewportSize}">
-                            <Track.DecreaseButton>
-                                <RepeatButton Name="PART_PageUpButton" Focusable="False">
-                                    <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
-                                </RepeatButton>
-                            </Track.DecreaseButton>
-                            <Track.Thumb>
-                                <Thumb Name="PART_Thumb" MinWidth="8" MinHeight="8">
-                                    <Thumb.Template><ControlTemplate><Border Background="{DynamicResource DecorScrollThumbBrush}" CornerRadius="5" Margin="1"/></ControlTemplate></Thumb.Template>
-                                </Thumb>
-                            </Track.Thumb>
-                            <Track.IncreaseButton>
-                                <RepeatButton Name="PART_PageDownButton" Focusable="False">
-                                    <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
-                                </RepeatButton>
-                            </Track.IncreaseButton>
-                        </Track>
-                    </Border>
-                </ControlTemplate>
-            </Setter>
-            <Style Selector="^:vertical /template/ Track#PART_Track"><Setter Property="IsDirectionReversed" Value="True"/></Style>
-        </ControlTheme>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Decor.AvaloniaUI/Controls/DecorScrollBarTheme.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <UserControl.Styles>
         <Style Selector="PathIcon.previous-page">
@@ -46,9 +18,6 @@
         </Style>
         <Style Selector="PathIcon.next-page">
             <Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Navigation.NextPage}"/>
-        </Style>
-        <Style Selector="DataGrid /template/ ScrollBar">
-            <Setter Property="Theme" Value="{StaticResource GridScrollBarTheme}"/>
         </Style>
         <Style Selector="WrapPanel#PaginationControls > Control">
             <Setter Property="Margin" Value="2,0"/>

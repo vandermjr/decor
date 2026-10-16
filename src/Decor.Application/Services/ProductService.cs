@@ -38,6 +38,9 @@ public class ProductService(
             : product.ToDTO();
     }
 
+    public Task<ProductCatalogSummaryDTO?> GetCatalogSummaryAsync(CancellationToken cancellationToken = default) =>
+        _productRepository.GetCatalogSummaryAsync(cancellationToken);
+
     // MÉTODO NOVO
     public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
     {

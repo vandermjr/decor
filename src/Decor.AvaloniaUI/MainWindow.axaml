@@ -189,7 +189,6 @@
         <StackPanel Orientation="Horizontal">
           <Button x:Name="MainMenuRegistrationsButton" Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Cadastros}"/>
               <TextBlock Text="Cadastros" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -224,7 +223,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Comercial}"/>
               <TextBlock Text="Comercial" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -240,7 +238,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/>
               <TextBlock Text="Compras" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -256,7 +253,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Estoque}"/>
               <TextBlock Text="Estoque" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -275,7 +271,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Servicos}"/>
               <TextBlock Text="Serviços" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -291,7 +286,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Financeiro}"/>
               <TextBlock Text="Financeiro" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -307,7 +301,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Configuracoes}"/>
               <TextBlock Text="Ferramentas" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -338,7 +331,6 @@
           </Button>
           <Button Classes="main-menu-button">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Help}"/>
               <TextBlock Text="Ajuda" VerticalAlignment="Center"/>
             </StackPanel>
             <Button.Flyout>
@@ -459,14 +451,15 @@
                           Background="{DynamicResource DecorSurfaceBrush}"
                           BorderBrush="{DynamicResource DecorBorderBrush}"
                           BorderThickness="0,0,1,0"
+                          CornerRadius="4,4,0,0"
                           ClipToBounds="False"
                           Cursor="Hand"
                           ToolTip.Tip="{Binding Title}"
                           PointerEntered="DocumentTab_PointerEntered"
                           PointerExited="DocumentTab_PointerExited"
                           PointerPressed="DocumentTab_PointerPressed">
-                    <Grid RowDefinitions="1,*" ColumnDefinitions="Auto,28" ColumnSpacing="7">
-                      <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" IsVisible="{Binding IsActive}"/>
+                    <Grid RowDefinitions="2,*" ColumnDefinitions="Auto,28" ColumnSpacing="7">
+                      <Border Grid.ColumnSpan="2" Background="{DynamicResource DecorAccentBrush}" CornerRadius="4,4,0,0" IsVisible="{Binding IsActive}"/>
                       <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsHighlighted}" Margin="0,0,0,1"/>
                       <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource DecorWindowBackgroundBrush}" IsVisible="{Binding IsActive}" Margin="0,0,0,-1"/>
                       <Border Grid.Row="1" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource DecorBorderBrush}" VerticalAlignment="Bottom" IsVisible="{Binding !IsActive}"/>

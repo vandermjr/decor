@@ -205,7 +205,9 @@ public partial class DecorDataGridControl : UserControl
         foreach (var scrollBar in visualDescendants.OfType<ScrollBar>())
         {
             scrollBar.AllowAutoHide = false;
-            scrollBar.Theme = (ControlTheme)Resources["GridScrollBarTheme"]!;
+            if (Resources.TryGetResource("DecorScrollBarTheme", ActualThemeVariant, out var scrollBarTheme)
+                && scrollBarTheme is ControlTheme controlTheme)
+                scrollBar.Theme = controlTheme;
 
             if (scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical)
                 scrollBar.Width = 10;

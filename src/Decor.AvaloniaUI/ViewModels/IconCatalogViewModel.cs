@@ -771,7 +771,6 @@ public sealed class IconCatalogItemViewModel : INotifyPropertyChanged
         ["Actions.Delete"] = "Excluir",
         ["Actions.Save"] = "Salvar",
         ["Actions.Cancel"] = "Cancelar",
-        ["Actions.Add"] = "Adicionar",
         ["Actions.Remove"] = "Remover",
         ["Actions.Report"] = "Relatório",
         ["Actions.Close"] = "Fechar",

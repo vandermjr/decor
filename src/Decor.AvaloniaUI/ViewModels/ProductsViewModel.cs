@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
@@ -12,6 +13,7 @@ namespace Decor.AvaloniaUI.ViewModels;
 
 public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentState
 {
+    private static readonly CultureInfo BrazilianCulture = CultureInfo.GetCultureInfo("pt-BR");
     private readonly IProductService _productService;
     private readonly IBrandService _brandService;
     private readonly IClassService _classService;
@@ -42,6 +44,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private readonly Dictionary<string, string> _fieldErrors = [];
     private Task? _lookupsLoadTask;
     private int _recordCount;
+    private ProductCatalogSummaryDTO? _catalogSummary;
 
     public ProductsViewModel(
         IProductService productService,
@@ -160,6 +163,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         private set => SetField(ref _statusMessage, value);
     }
 
+    public void ReportProductsExported() => StatusMessage = "Produtos exportados com sucesso.";
+    public void ReportProductsExportFailure() => StatusMessage = "Não foi possível exportar os produtos.";
+
     public string? StatusPrimary => null;
     public string? StatusSecondary => Listing.StatusSecondary;
     public bool HasStatusPrimary => false;
@@ -190,6 +196,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         SearchText = string.Empty;
         SelectedProduct = null;
         Listing.Clear();
+        OnPropertyChanged(nameof(CanExport));
         StatusMessage = "Pesquisa limpa.";
     }
 
@@ -200,10 +207,91 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             if (SetField(ref _selectedProduct, value))
             {
+                OnPropertyChanged(nameof(SelectedBarcodeDisplay));
+                OnPropertyChanged(nameof(SelectedAcquisitionModeDisplay));
+                OnPropertyChanged(nameof(SelectedObservationsDisplay));
+                OnPropertyChanged(nameof(SelectedDimensionsDisplay));
+                OnPropertyChanged(nameof(SelectedStockUnitDisplay));
+                OnPropertyChanged(nameof(SelectedManufacturerReferenceDisplay));
+                OnPropertyChanged(nameof(SelectedAuxiliaryReferenceDisplay));
+                OnPropertyChanged(nameof(HasSelectedProduct));
+                OnPropertyChanged(nameof(SelectedProductCodeDisplay));
+                OnPropertyChanged(nameof(SelectedProductCategoryDisplay));
+                OnPropertyChanged(nameof(SelectedProductStateDisplay));
+                OnPropertyChanged(nameof(IsSelectedProductActive));
+                OnPropertyChanged(nameof(IsSelectedProductInactive));
+                OnPropertyChanged(nameof(SelectedSalePriceDisplay));
+                OnPropertyChanged(nameof(SelectedCostPriceDisplay));
+                OnPropertyChanged(nameof(HasSelectedCostPrice));
+                OnPropertyChanged(nameof(SelectedAvailableStockDisplay));
+                OnPropertyChanged(nameof(SelectedStockStatusDisplay));
+                OnPropertyChanged(nameof(SelectedStockLevelValue));
+                OnPropertyChanged(nameof(HasSelectedStockMinimum));
+                OnPropertyChanged(nameof(SelectedStockLevelDescription));
+                OnPropertyChanged(nameof(IsSelectedStockWarning));
+                OnPropertyChanged(nameof(IsSelectedStockNegative));
+                OnPropertyChanged(nameof(IsSelectedStockPositive));
+                OnPropertyChanged(nameof(IsSelectedStockMadeToOrder));
                 RaiseCommandStates();
             }
         }
     }
+
+    public bool HasSelectedProduct => SelectedProduct is not null;
+    public string SelectedProductCodeDisplay => SelectedProduct is null
+        ? string.Empty
+        : SelectedProduct.ProductID.ToString("D6", BrazilianCulture);
+    public string SelectedProductCategoryDisplay
+    {
+        get
+        {
+            if (SelectedProduct is null) return string.Empty;
+            var category = new[]
+            {
+                SelectedProduct.ClassName,
+                SelectedProduct.FamilyName,
+                SelectedProduct.GroupName,
+                SelectedProduct.SubgroupName
+            }.Where(value => !string.IsNullOrWhiteSpace(value));
+            return string.Join(" / ", category);
+        }
+    }
+    public string SelectedProductStateDisplay => SelectedProduct?.IsActive == true ? "Ativo" : "Inativo";
+    public bool IsSelectedProductActive => SelectedProduct?.IsActive == true;
+    public bool IsSelectedProductInactive => SelectedProduct is { IsActive: false };
+    public string SelectedBarcodeDisplay => DisplayOptional(SelectedProduct?.Barcode);
+    public string SelectedAcquisitionModeDisplay => SelectedProduct?.AcquisitionMode == ProductAcquisitionMode.SobEncomenda
+        ? "Sob encomenda"
+        : SelectedProduct is null ? string.Empty : "Estocado";
+    public string SelectedObservationsDisplay => DisplayOptional(SelectedProduct?.Observations);
+    public string SelectedDimensionsDisplay => DisplayOptional(SelectedProduct?.Dimensions);
+    public string SelectedStockUnitDisplay => DisplayOptional(SelectedProduct?.StockUnitCode);
+    public string SelectedManufacturerReferenceDisplay => DisplayOptional(SelectedProduct?.ManufacturerRef);
+    public string SelectedAuxiliaryReferenceDisplay => DisplayOptional(SelectedProduct?.AuxiliarRef);
+    public string SelectedSalePriceDisplay => SelectedProduct?.SalePrice?.ToString("C", BrazilianCulture) ?? "Não informado";
+    public string SelectedCostPriceDisplay => SelectedProduct?.CostPrice?.ToString("C", BrazilianCulture) ?? "Não informado";
+    public bool HasSelectedCostPrice => SelectedProduct?.CostPrice.HasValue == true;
+    public string SelectedAvailableStockDisplay => SelectedProduct is null
+        ? string.Empty
+        : $"{SelectedProduct.AvailableStockQuantity.ToString("N2", BrazilianCulture)} {SelectedProduct.StockUnitCode}".TrimEnd();
+    public string SelectedStockStatusDisplay => SelectedProduct?.StockStatus ?? string.Empty;
+    public double SelectedStockLevelValue => SelectedProduct is not { MinimumStock: > 0 } product
+        ? 0
+        : (double)Math.Clamp(product.AvailableStockQuantity / product.MinimumStock * 100m, 0m, 100m);
+    public bool HasSelectedStockMinimum => SelectedProduct?.MinimumStock > 0;
+    public string SelectedStockLevelDescription => SelectedProduct is not { } product
+        ? string.Empty
+        : HasSelectedStockMinimum
+            ? $"Mínimo: {product.MinimumStock.ToString("N2", BrazilianCulture)} {product.StockUnitCode}".TrimEnd()
+            : "Sem estoque mínimo cadastrado.";
+    public bool IsSelectedStockWarning => SelectedProduct?.StockStatus is "Atenção" or "Repor";
+    public bool IsSelectedStockNegative => SelectedProduct?.StockStatus == "Negativo";
+    public bool IsSelectedStockPositive => SelectedProduct?.StockStatus == "Positivo";
+    public bool IsSelectedStockMadeToOrder => SelectedProduct?.StockStatus == "Sob Demanda";
+    public bool CanExport => Products.Count > 0;
+
+    private static string DisplayOptional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Não cadastrado" : value;
 
     public int ProductId
     {
@@ -381,8 +469,49 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     {
         // A tela abre apenas com os cabeçalhos do grid.
         // Os produtos são carregados somente após uma pesquisa explícita.
-        await EnsureLookupsAsync();
+        await Task.WhenAll(EnsureLookupsAsync(), LoadCatalogSummaryAsync());
     }
+
+    public ProductCatalogSummaryDTO? CatalogSummary
+    {
+        get => _catalogSummary;
+        private set
+        {
+            if (!SetField(ref _catalogSummary, value)) return;
+            OnPropertyChanged(nameof(HasCatalogSummary));
+            OnPropertyChanged(nameof(TotalProductsDisplay));
+            OnPropertyChanged(nameof(ActiveProductsDisplay));
+            OnPropertyChanged(nameof(OutOfStockProductsDisplay));
+            OnPropertyChanged(nameof(LowStockProductsDisplay));
+        }
+    }
+
+    public bool HasCatalogSummary => CatalogSummary is not null;
+    public string TotalProductsDisplay => FormatCatalogCount(CatalogSummary?.TotalProducts);
+    public string ActiveProductsDisplay => FormatCatalogCount(CatalogSummary?.ActiveProducts);
+    public string OutOfStockProductsDisplay => FormatCatalogCount(CatalogSummary?.OutOfStockProducts);
+    public string LowStockProductsDisplay => FormatCatalogCount(CatalogSummary?.LowStockProducts);
+
+    private async Task LoadCatalogSummaryAsync()
+    {
+        if (_authorizationService?.CanView("Products") == false)
+        {
+            CatalogSummary = null;
+            return;
+        }
+
+        try
+        {
+            CatalogSummary = await _productService.GetCatalogSummaryAsync();
+        }
+        catch
+        {
+            CatalogSummary = null;
+        }
+    }
+
+    private static string FormatCatalogCount(int? count) =>
+        count?.ToString("N0", CultureInfo.GetCultureInfo("pt-BR")) ?? "—";
 
     public async Task BeginNewAsync()
     {
@@ -538,7 +667,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IsBusy = true;
         try
         {
+            SelectedProduct = null;
             Listing.Load(await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue));
+            OnPropertyChanged(nameof(CanExport));
             OnPropertyChanged(nameof(ProductCodeDisplay));
             if (!IsEditing)
                 StatusMessage = "Pesquisa concluída.";
@@ -700,6 +831,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             IsEditing = false;
             _isNew = false;
             await LoadProductsAsync();
+            await LoadCatalogSummaryAsync();
         }
         catch (System.ComponentModel.DataAnnotations.ValidationException vex)
         {

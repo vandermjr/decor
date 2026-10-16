@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ControlTheme x:Key="DecorScrollBarTheme" TargetType="ScrollBar">
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5">
+                    <Track Name="PART_Track"
+                           Orientation="{TemplateBinding Orientation}"
+                           Minimum="{TemplateBinding Minimum}"
+                           Maximum="{TemplateBinding Maximum}"
+                           Value="{TemplateBinding Value, Mode=TwoWay}"
+                           ViewportSize="{TemplateBinding ViewportSize}">
+                        <Track.DecreaseButton>
+                            <RepeatButton Name="PART_PageUpButton" Focusable="False">
+                                <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
+                            </RepeatButton>
+                        </Track.DecreaseButton>
+                        <Track.Thumb>
+                            <Thumb Name="PART_Thumb" MinWidth="8" MinHeight="8">
+                                <Thumb.Template><ControlTemplate><Border Background="{DynamicResource DecorScrollThumbBrush}" CornerRadius="5" Margin="1"/></ControlTemplate></Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                        <Track.IncreaseButton>
+                            <RepeatButton Name="PART_PageDownButton" Focusable="False">
+                                <RepeatButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template>
+                            </RepeatButton>
+                        </Track.IncreaseButton>
+                    </Track>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:vertical /template/ Track#PART_Track">
+            <Setter Property="IsDirectionReversed" Value="True"/>
+        </Style>
+    </ControlTheme>
+</ResourceDictionary>

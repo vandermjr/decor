@@ -43,7 +43,6 @@ public readonly record struct DecorIconId(string Value)
         public static DecorIconId Delete { get; } = new("Actions.Delete");
         public static DecorIconId Save { get; } = new("Actions.Save");
         public static DecorIconId Cancel { get; } = new("Actions.Cancel");
-        public static DecorIconId Add { get; } = new("Actions.Add");
         public static DecorIconId Remove { get; } = new("Actions.Remove");
         public static DecorIconId Report { get; } = new("Actions.Report");
         public static DecorIconId Close { get; } = new("Actions.Close");

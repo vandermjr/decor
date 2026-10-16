@@ -21,9 +21,9 @@ public static class DecorIconColors
         var isDark = (themeVariant ?? global::Avalonia.Application.Current?.RequestedThemeVariant) == ThemeVariant.Dark;
         var resourceKey = id.Value switch
         {
-            "Actions.Create" or "Actions.Add" or "Actions.Cart" => "DecorAddIndicatorBrush",
+            "Actions.Create" or "Actions.Cart" => "DecorAddIndicatorBrush",
             "Actions.Edit" => "DecorEditIndicatorBrush",
-            "Actions.Delete" or "Actions.Cancel" or "Actions.Close" or "Navigation.PreviousPage" => "DecorDangerBrush",
+            "Actions.Delete" or "Actions.Cancel" or "Actions.Close" => "DecorDangerBrush",
             "Actions.Save" => "DecorAccentBrush",
             "User.Profile" or "User.Preferences" or "User.ChangePassword" or "User.SignOut"
                 or "Common.Calendar" or "Common.Clock" or "Common.Database"

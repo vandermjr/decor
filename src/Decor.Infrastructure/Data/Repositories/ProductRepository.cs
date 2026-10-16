@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Decor.Core.Common;
+using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Data;
 using Decor.Core.Interfaces.Repositories;
@@ -85,6 +86,49 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
         var products = result.AsList();
         await LoadStockSummaryAsync(connection, products, cancellationToken);
         return products;
+    }
+
+    public async Task<ProductCatalogSummaryDTO?> GetCatalogSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT COUNT(*) AS TotalProducts,
+                   COALESCE(SUM(CASE WHEN p.IsActive = 1 THEN 1 ELSE 0 END), 0) AS ActiveProducts,
+                   COALESCE(SUM(CASE
+                       WHEN p.AcquisitionMode = @StockedMode
+                           AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) = 0 THEN 1
+                       ELSE 0
+                   END), 0) AS OutOfStockProducts,
+                   COALESCE(SUM(CASE
+                       WHEN p.AcquisitionMode = @StockedMode
+                           AND COALESCE(balance.CurrentQuantity, 0) >= 0
+                           AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) > 0
+                           AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) < p.MinimumStock THEN 1
+                       ELSE 0
+                   END), 0) AS LowStockProducts
+            FROM products p
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS CurrentQuantity
+                FROM stock_balances
+                GROUP BY ProductID
+            ) balance ON balance.ProductID = p.ProductID
+            LEFT JOIN (
+                SELECT ProductID, SUM(Quantity) AS ReservedQuantity
+                FROM stock_reservations
+                WHERE Status = @ActiveStatus
+                GROUP BY ProductID
+            ) reservation ON reservation.ProductID = p.ProductID
+            WHERE p.ProductType = @ProductType
+            """;
+
+        using var connection = _dbConnection.CreateConnection();
+        return await connection.QuerySingleAsync<ProductCatalogSummaryDTO>(new CommandDefinition(sql,
+            new
+            {
+                ActiveStatus = StockReservationStatus.Active,
+                ProductType = ProductType.Good,
+                StockedMode = ProductAcquisitionMode.Estocado
+            },
+            cancellationToken: cancellationToken));
     }
 
     private static void LoadStockSummary(System.Data.IDbConnection connection, IReadOnlyCollection<Product> products)

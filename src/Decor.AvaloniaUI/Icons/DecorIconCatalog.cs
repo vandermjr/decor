@@ -408,7 +408,6 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Delete] = "delete",
             [DecorIconId.Actions.Save] = "save",
             [DecorIconId.Actions.Cancel] = "cancel",
-            [DecorIconId.Actions.Add] = "add",
             [DecorIconId.Actions.Remove] = "remove",
             [DecorIconId.Actions.Report] = "description",
             [DecorIconId.Actions.Close] = "close",
