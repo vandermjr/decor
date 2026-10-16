@@ -3,6 +3,7 @@ using Decor.Application.CrossCutting.IoC;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
 using Decor.AvaloniaUI.Services;
+using Decor.AvaloniaUI.Controls.GridStyling;
 using Decor.Infrastructure.CrossCutting.IoC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +65,7 @@ internal static class Program
                 services.AddSingleton<IDatabaseBackupScheduleStore, DatabaseBackupScheduleStore>();
                 services.AddSingleton<IBackupNotificationSettingsStore, BackupNotificationSettingsStore>();
                 services.AddSingleton<ILoginBrandingSettingsStore, LoginBrandingSettingsStore>();
+                services.AddSingleton<GridAppearanceSettingsService>();
                 services.AddSingleton<INotificationCenter, NotificationCenter>();
                 services.AddHostedService<DatabaseBackupScheduleWorker>();
                 services.AddTransient<IconCatalogViewModel>();

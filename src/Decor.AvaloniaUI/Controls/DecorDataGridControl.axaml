@@ -58,7 +58,7 @@
         <Border x:Name="GridFrame"
             BorderBrush="{DynamicResource DecorBorderBrush}"
             BorderThickness="1">
-        <Grid ColumnDefinitions="*" RowDefinitions="*,Auto">
+        <Grid x:Name="GridContent" ColumnDefinitions="*" RowDefinitions="*,Auto">
         <!-- Main DataGrid -->
         <DataGrid x:Name="InnerDataGrid"
                   ItemsSource="{Binding ItemsSource, ElementName=Root}"
@@ -91,6 +91,8 @@
                        HorizontalAlignment="Center"
                        TextAlignment="Center"/>
         </Panel>
+                <Border x:Name="HeaderGutter" Grid.Row="0" Width="3" IsHitTestVisible="False"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" IsVisible="False" />
         <Border x:Name="PaginationFooter" Grid.Row="1" Background="{DynamicResource DecorSurfaceBrush}"
                 BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,1,0,0" IsVisible="False">
             <Grid x:Name="PaginationLayout" ColumnDefinitions="*,*" RowDefinitions="Auto" Margin="4,3">

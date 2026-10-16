@@ -353,7 +353,7 @@
     </Style>
     <Style Selector="DataGridRow">
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="DataGridRow:selected">
         <Setter Property="BorderBrush" Value="{DynamicResource DecorGridSelectionBrush}" />

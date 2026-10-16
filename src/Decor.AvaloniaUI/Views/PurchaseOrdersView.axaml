@@ -5,7 +5,6 @@
              x:DataType="vm:PurchaseOrdersViewModel">
   <UserControl.Styles>
     <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
-      <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="Height" Value="38"/>
     </Style>
     <Style Selector="DataGrid.stock-catalog DataGridRow">

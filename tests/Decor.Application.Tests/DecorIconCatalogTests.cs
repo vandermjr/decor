@@ -233,6 +233,63 @@ public class DecorIconCatalogTests
     }
 
     [Fact]
+    public void Changing_system_options_persists_them_immediately()
+    {
+        _ = AvaloniaInitialized.Value;
+        var appearance = new Mock<IIconAppearanceService>();
+        appearance.SetupGet(service => service.CurrentAppearance).Returns(IconAppearance.Default);
+        var theme = new Mock<IThemeService>();
+        var currentTheme = DecorThemeStyle.Light;
+        theme.SetupGet(service => service.CurrentTheme).Returns(() => currentTheme);
+        theme.Setup(service => service.SetThemeAsync(It.IsAny<DecorThemeStyle>()))
+            .Returns((DecorThemeStyle selected) =>
+            {
+                currentTheme = selected;
+                return Task.CompletedTask;
+            });
+        var stock = new Mock<IStockSettingsService>();
+        stock.Setup(service => service.SetAllowNegativeStockAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var backupSettings = new Mock<IBackupNotificationSettingsStore>();
+        backupSettings.Setup(store => store.Save(It.IsAny<BackupNotificationSettings>()));
+
+        var viewModel = new IconCatalogViewModel(appearance.Object, theme.Object, stock.Object, backupSettings.Object);
+
+        viewModel.SelectedThemeOption = "Escuro";
+        viewModel.IconWeight = 500;
+        viewModel.AllowNegativeStock = true;
+        viewModel.NotifyBeforeScheduledBackup = false;
+
+        theme.Verify(service => service.SetThemeAsync(DecorThemeStyle.Dark), Times.Once);
+        appearance.Verify(service => service.SetAppearanceAsync(500, It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Once);
+        stock.Verify(service => service.SetAllowNegativeStockAsync(true, It.IsAny<CancellationToken>()), Times.Once);
+        backupSettings.Verify(store => store.Save(It.Is<BackupNotificationSettings>(settings => !settings.IsEnabled)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Initializing_system_options_does_not_resave_loaded_settings()
+    {
+        _ = AvaloniaInitialized.Value;
+        var appearance = new Mock<IIconAppearanceService>();
+        appearance.SetupGet(service => service.CurrentAppearance).Returns(IconAppearance.Default);
+        var theme = new Mock<IThemeService>();
+        theme.SetupGet(service => service.CurrentTheme).Returns(DecorThemeStyle.Light);
+        var stock = new Mock<IStockSettingsService>();
+        stock.Setup(service => service.GetAllowNegativeStockAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var backupSettings = new Mock<IBackupNotificationSettingsStore>();
+        backupSettings.Setup(store => store.Load()).Returns(new BackupNotificationSettings(false, 30));
+
+        var viewModel = new IconCatalogViewModel(appearance.Object, theme.Object, stock.Object, backupSettings.Object);
+
+        await viewModel.InitializeAsync();
+
+        viewModel.AllowNegativeStock.Should().BeTrue();
+        viewModel.NotifyBeforeScheduledBackup.Should().BeFalse();
+        viewModel.BackupNotificationLeadTimeMinutes.Should().Be(30);
+        stock.Verify(service => service.SetAllowNegativeStockAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        backupSettings.Verify(store => store.Save(It.IsAny<BackupNotificationSettings>()), Times.Never);
+    }
+
+    [Fact]
     public void Icon_catalog_content_reserves_scrollbar_space_and_stretches_each_family()
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);

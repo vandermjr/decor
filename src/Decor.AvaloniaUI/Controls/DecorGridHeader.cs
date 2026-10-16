@@ -16,6 +16,18 @@ namespace Decor.AvaloniaUI.Controls;
 
 public sealed class DecorGridHeader : IDataTemplate
 {
+    public DecorGridHeader()
+        : this(TextAlignment.Center)
+    {
+    }
+
+    public DecorGridHeader(TextAlignment textAlignment = TextAlignment.Center)
+    {
+        TextAlignment = textAlignment;
+    }
+
+    public TextAlignment TextAlignment { get; }
+
     public static string NormalizeLabel(string label) =>
         label.Equals("Código de barras", StringComparison.OrdinalIgnoreCase) ? "EAN" :
         Regex.Replace(label, @"\bID\b", "Código", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -45,6 +57,7 @@ public sealed class DecorGridHeader : IDataTemplate
         {
             ColumnDefinitions = new ColumnDefinitions(hasIcon ? "Auto,*,Auto" : "*,Auto"),
             ColumnSpacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center,
             MinHeight = 20
         };
@@ -67,12 +80,15 @@ public sealed class DecorGridHeader : IDataTemplate
             Text = label.ToUpperInvariant(),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            TextAlignment = TextAlignment.Center,
-            FontWeight = FontWeight.Bold,
+            TextAlignment = TextAlignment,
             Foreground = Brushes.White,
             TextTrimming = TextTrimming.None,
             TextWrapping = TextWrapping.NoWrap
         };
+        text.Bind(TextBlock.HorizontalAlignmentProperty,
+            new Binding("HorizontalContentAlignment") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(DataGridColumnHeader) } });
+        text.Bind(TextBlock.FontWeightProperty,
+            new Binding("FontWeight") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(DataGridColumnHeader) } });
         text.Bind(TextBlock.ForegroundProperty,
             new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor) { AncestorType = typeof(DataGridColumnHeader) } });
         Grid.SetColumn(text, hasIcon ? 1 : 0);

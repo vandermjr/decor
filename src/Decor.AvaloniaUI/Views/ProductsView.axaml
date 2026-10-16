@@ -12,7 +12,6 @@
   </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridColumnHeader">
-      <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Height" Value="38"/>
     </Style>
     <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridRow">

@@ -22,5 +22,15 @@ public sealed class BackupNotificationOptionsLayoutTests
             && (string?)element.Attribute("Time") == "{Binding BackupNotificationLeadTime, Mode=TwoWay}");
         Assert.DoesNotContain(view.Descendants(), element => element.Name.LocalName == "NumericUpDown"
             && ((string?)element.Attribute("Value"))?.Contains("BackupNotificationLeadTime", StringComparison.Ordinal) == true);
+
+        var layout = Assert.Single(view.Descendants(), element => element.Name.LocalName == "Grid"
+            && (string?)element.Attribute("ColumnDefinitions") == "230,Auto,*");
+        Assert.Contains(layout.Elements(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute("Grid.Column") == "1"
+            && (string?)element.Attribute("Grid.RowSpan") == "2");
+        Assert.DoesNotContain(view.Descendants(), element => element.Name.LocalName == "Button"
+            && ((string?)element.Attribute("Command"))?.Contains("ApplyCommand", StringComparison.Ordinal) == true);
+        Assert.DoesNotContain(view.Descendants(), element => element.Name.LocalName == "Button"
+            && ((string?)element.Attribute("Command"))?.Contains("Save", StringComparison.Ordinal) == true);
     }
 }

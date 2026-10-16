@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -280,6 +281,107 @@ public sealed class ActionSortRenderingTests
             AssertIndicator(control, DecorIconId.Navigation.SortAscending);
         }
         finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
+    public void Shared_grid_scrolls_the_first_column_indicator_with_its_cells()
+    {
+        var control = new DecorDataGridControl
+        {
+            ItemsSource = new ObservableCollection<BrandDTO>
+                (from index in Enumerable.Range(1, 40)
+                 select new BrandDTO(index, new string((char)('A' + index % 26), 80))).ToArray()
+        };
+        control.InitializeColumns(typeof(BrandDTO));
+        var grid = control.FindControl<DataGrid>("InnerDataGrid")!;
+        grid.RowHeight = 20;
+        grid.FontSize = 13;
+        grid.Columns[0].Width = new DataGridLength(100);
+        grid.Columns[1].Width = new DataGridLength(185);
+        var window = new Window { Width = 300, Height = 240, Content = control };
+        window.Show();
+        try
+        {
+            Settle(window);
+            var firstColumn = grid.Columns[0];
+            var horizontal = Assert.Single(control.GetVisualDescendants().OfType<ScrollBar>(),
+                scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Horizontal);
+            Assert.True(horizontal.Maximum > horizontal.Minimum);
+            var headersPresenter = Assert.Single(grid.GetVisualDescendants().OfType<Control>(),
+                presenter => presenter.GetType().Name == "DataGridColumnHeadersPresenter");
+            var rowsPresenter = Assert.Single(control.GetVisualDescendants().OfType<Control>(),
+                presenter => presenter.Name == "PART_RowsPresenter");
+            Assert.True(Assert.Single(control.GetVisualDescendants().OfType<ScrollBar>(),
+                scrollBar => scrollBar.Orientation == Avalonia.Layout.Orientation.Vertical).IsVisible);
+            Assert.Equal(rowsPresenter.Margin.Right, headersPresenter.Margin.Right);
+            var firstRow = grid.GetVisualDescendants().OfType<DataGridRow>().First();
+            var cellsPresenter = Assert.Single(firstRow.GetVisualDescendants().OfType<DataGridCellsPresenter>());
+            var firstCell = cellsPresenter.GetVisualDescendants().OfType<DataGridCell>().First(cell =>
+                cell.GetVisualDescendants().OfType<TextBlock>().Any(textBlock =>
+                    textBlock.Classes.Contains($"grid-column-{grid.Columns[0].SortMemberPath}")));
+            Assert.Equal(0, firstRow.BorderThickness.Left);
+            Assert.Equal(3, cellsPresenter.Margin.Left);
+            Assert.InRange(firstCell.Bounds.Height, 0, firstRow.Bounds.Height);
+            var leadingIndicator = Assert.Single(firstCell.GetVisualDescendants().OfType<Border>(), border =>
+                border.BorderThickness.Left == 3);
+            double GetBoundaryOffset(DataGridColumn column)
+            {
+                var header = Assert.Single(control.GetVisualDescendants().OfType<DataGridColumnHeader>(),
+                    candidate => Equals(candidate.Content, column.Header));
+                var cell = control.GetVisualDescendants().OfType<DataGridCell>().First(candidate =>
+                    candidate.GetVisualDescendants().OfType<TextBlock>().Any(textBlock =>
+                        textBlock.Classes.Contains($"grid-column-{column.SortMemberPath}")));
+                var headerOrigin = header.TranslatePoint(default, window)!.Value;
+                var cellOrigin = cell.TranslatePoint(default, window)!.Value;
+                return cellOrigin.X + cell.Bounds.Width - headerOrigin.X - header.Bounds.Width;
+            }
+
+            Assert.InRange(Math.Abs(GetBoundaryOffset(firstColumn)), 0, 0.5);
+            Assert.InRange(Math.Abs(GetBoundaryOffset(grid.Columns[1])), 0, 0.5);
+            var headerGutter = control.FindControl<Border>("HeaderGutter")!;
+            Assert.Equal(3, headerGutter.Width);
+            Assert.True(headerGutter.IsVisible);
+            Assert.Same(control.Styler.Theme.HeaderBackground, headerGutter.Background);
+            var firstCellOriginX = firstCell.TranslatePoint(default, window)!.Value.X;
+            var indicatorOriginX = leadingIndicator.TranslatePoint(default, window)!.Value.X;
+
+            var horizontalThumb = Assert.Single(horizontal.GetVisualDescendants().OfType<Thumb>());
+            var thumbCenter = horizontalThumb.TranslatePoint(
+                new Point(horizontalThumb.Bounds.Width / 2, horizontalThumb.Bounds.Height / 2), window)!.Value;
+            var draggedThumb = thumbCenter + new Vector(32, 0);
+            window.MouseDown(thumbCenter, MouseButton.Left);
+            window.MouseMove(draggedThumb, RawInputModifiers.LeftMouseButton);
+            window.MouseUp(draggedThumb, MouseButton.Left);
+            Settle(window);
+            Assert.True(horizontal.Value > horizontal.Minimum);
+            var scrolledCellOriginX = firstCell.TranslatePoint(default, window)!.Value.X;
+            var scrolledIndicatorOriginX = leadingIndicator.TranslatePoint(default, window)!.Value.X;
+            Assert.True(scrolledCellOriginX < firstCellOriginX);
+            Assert.Equal(firstCellOriginX - scrolledCellOriginX, indicatorOriginX - scrolledIndicatorOriginX, 1);
+            Assert.InRange(firstCell.Bounds.Height, 0, firstRow.Bounds.Height);
+            Assert.Equal(3, cellsPresenter.Margin.Left);
+            Assert.InRange(Math.Abs(GetBoundaryOffset(firstColumn)), 0, 0.5);
+            Assert.InRange(Math.Abs(GetBoundaryOffset(grid.Columns[1])), 0, 0.5);
+
+            Assert.Equal(3, Assert.IsType<TranslateTransform>(headersPresenter.RenderTransform).X);
+            var textCells = control.GetVisualDescendants().OfType<DataGridCell>()
+                .Where(cell => cell.GetVisualDescendants().OfType<TextBlock>().Any()).ToArray();
+            Assert.NotEmpty(textCells);
+            Assert.True(rowsPresenter.ClipToBounds);
+            var viewportOrigin = rowsPresenter.TranslatePoint(default, window)!.Value;
+            var viewportRight = viewportOrigin.X + rowsPresenter.Bounds.Width;
+            Assert.Contains(textCells, cell =>
+            {
+                var cellOrigin = cell.TranslatePoint(default, window)!.Value;
+                var cellRight = cellOrigin.X + cell.Bounds.Width;
+                return cellOrigin.X < viewportRight && cellRight > viewportOrigin.X
+                    && (cellOrigin.X < viewportOrigin.X || cellRight > viewportRight);
+            });
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     private static void AssertIndicator(Control control, DecorIconId expected)

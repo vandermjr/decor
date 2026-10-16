@@ -11,6 +11,13 @@ public class GridControlThemeColors
     public static GridControlThemeColors Create(bool isDarkTheme) => isDarkTheme
         ? new GridControlThemeColors
         {
+            GridBackground = new SolidColorBrush(Color.Parse("#222529")),
+            GridLines = new SolidColorBrush(Color.Parse("#3B4046")),
+            EmptyGridMessageColor = new SolidColorBrush(Color.Parse("#AAB4C0")),
+            HeaderBackground = new SolidColorBrush(Color.Parse("#30353B")),
+            HeaderText = new SolidColorBrush(Color.Parse("#E3E7EC")),
+            CellBackground = new SolidColorBrush(Color.Parse("#2C3035")),
+            CellText = new SolidColorBrush(Color.Parse("#E3E7EC")),
             ValueMatchBackground = new SolidColorBrush(Color.Parse("#174A63")),
             FocusedCellBackground = new SolidColorBrush(Color.Parse("#246D8F")),
             DataType_Int = new SolidColorBrush(Color.Parse("#71B7FF")),
@@ -26,6 +33,9 @@ public class GridControlThemeColors
         }
         : new GridControlThemeColors
         {
+            GridBackground = new SolidColorBrush(Color.Parse("#FFFFFF")),
+            EmptyGridMessageColor = new SolidColorBrush(Color.Parse("#68717D")),
+            CellBackground = new SolidColorBrush(Color.Parse("#FFFFFF")),
             ValueMatchBackground = new SolidColorBrush(Color.Parse("#D9EFFA")),
             FocusedCellBackground = new SolidColorBrush(Color.Parse("#D6EEF8")),
             GridLines = new SolidColorBrush(Color.Parse("#E4E7EB")),
@@ -159,5 +169,33 @@ public class GridControlThemeColors
             return DataType_Boolean;
 
         return CellText;
+    }
+
+    public IBrush GetBrushForValue(Type? propertyType, object? value)
+    {
+        if (value is null)
+            return GetBrushForType(propertyType);
+
+        var underlyingType = propertyType is null ? null : Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+        if (underlyingType == typeof(decimal) || underlyingType == typeof(double) || underlyingType == typeof(float))
+        {
+            var amount = Convert.ToDecimal(value, System.Globalization.CultureInfo.InvariantCulture);
+            return amount < 0 ? DataType_Decimal_Negative : DataType_Decimal_Positive;
+        }
+
+        return GetBrushForType(propertyType);
+    }
+
+    public IBrush GetBrushForColumn(string propertyName, Type? propertyType, object? value)
+    {
+        if (propertyType is not null && (Nullable.GetUnderlyingType(propertyType) ?? propertyType) == typeof(bool))
+            return DataType_Boolean;
+
+        if (propertyName.Equals("StockStatus", StringComparison.OrdinalIgnoreCase)
+            || propertyName.EndsWith("Status", StringComparison.OrdinalIgnoreCase)
+            || propertyName.Equals("State", StringComparison.OrdinalIgnoreCase))
+            return GetStockStatusBrush(value?.ToString());
+
+        return GetBrushForValue(propertyType, value);
     }
 }

@@ -1,9 +1,19 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:icons="using:Decor.AvaloniaUI.Icons"
+             xmlns:controls="using:Decor.AvaloniaUI.Controls"
              xmlns:vm="using:Decor.AvaloniaUI.ViewModels"
              x:Class="Decor.AvaloniaUI.Views.IconCatalogView"
              x:DataType="vm:IconCatalogViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="GridAppearanceColorOptionTemplate" x:DataType="vm:GridAppearanceColorOption">
+      <Grid Width="270" ColumnDefinitions="*,100,24" ColumnSpacing="8" Margin="0,0,12,8">
+        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}"/>
+        <TextBox Grid.Column="1" Text="{Binding ColorHex, Mode=TwoWay}" MaxLength="9" ToolTip.Tip="Cor hexadecimal"/>
+        <Border Grid.Column="2" Width="22" Height="22" CornerRadius="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{Binding PreviewBrush}" VerticalAlignment="Center"/>
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="Button.logo-position-button">
       <Setter Property="Width" Value="30"/>
@@ -29,7 +39,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="*,Auto" ColumnDefinitions="230,*" ColumnSpacing="16" Margin="{DynamicResource DecorPageMargin}">
+  <Grid RowDefinitions="*,Auto,Auto" ColumnDefinitions="230,Auto,*" ColumnSpacing="16" Margin="{DynamicResource DecorPageMargin}">
     <StackPanel Grid.Column="0" Grid.Row="0" Spacing="12">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <TextBlock Text="Todas as opções" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
@@ -40,6 +50,7 @@
           <TreeViewItem Header="Tema" Tag="Theme" IsSelected="True"/>
           <TreeViewItem Header="Ícones" Tag="Icons"/>
           <TreeViewItem Header="Logo da empresa" Tag="LoginBranding"/>
+          <TreeViewItem Header="Grades" Tag="GridAppearance"/>
         </TreeViewItem>
         <TreeViewItem Header="Estoque" IsExpanded="True">
           <TreeViewItem Header="Movimentações" Tag="StockMovements"/>
@@ -50,7 +61,9 @@
       </TreeView>
     </StackPanel>
 
-    <ScrollViewer Grid.Column="1" Grid.Row="0" VerticalScrollBarVisibility="Auto">
+    <Border Grid.Column="1" Grid.RowSpan="3" Width="1" Background="{DynamicResource DecorBorderBrush}" HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+
+    <ScrollViewer Grid.Column="2" Grid.Row="0" VerticalScrollBarVisibility="Auto">
       <Border Padding="0,0,16,0" HorizontalAlignment="Stretch">
       <StackPanel Spacing="18" HorizontalAlignment="Stretch">
         <StackPanel IsVisible="{Binding IsLoginBrandingSelected}" Spacing="12">
@@ -152,20 +165,78 @@
           <TextBlock Text="{Binding LoginBrandingStatus}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
         </StackPanel>
 
+        <StackPanel IsVisible="{Binding IsGridAppearanceSelected}" Spacing="10" HorizontalAlignment="Stretch">
+          <TextBlock Text="Aparência das grades" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+          <Expander Header="Aparência geral" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <StackPanel Spacing="12" Margin="8,10,8,8">
+              <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+                <TextBlock Text="Paleta" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding GridAppearance.PaletteOptions}" SelectedItem="{Binding GridAppearance.SelectedPalette, Mode=TwoWay}"/>
+                <TextBlock Grid.Row="1" Text="Família da fonte" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding GridAppearance.FontFamilies}" SelectedItem="{Binding GridAppearance.FontFamily, Mode=TwoWay}"/>
+                <TextBlock Grid.Row="2" Text="Tamanho do texto" VerticalAlignment="Center"/>
+                <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,52" ColumnSpacing="10">
+                  <Slider Minimum="9" Maximum="{Binding GridAppearance.MaximumFontSize}" TickFrequency="0.1" Value="{Binding GridAppearance.FontSize, Mode=TwoWay}"/>
+                  <TextBlock Grid.Column="1" Text="{Binding GridAppearance.FontSize, StringFormat='{}{0:0.0}'}" VerticalAlignment="Center" TextAlignment="Right"/>
+                </Grid>
+                <TextBlock Grid.Row="3" Text="Peso dos cabeçalhos" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding GridAppearance.FontWeights}" SelectedItem="{Binding GridAppearance.HeaderFontWeight, Mode=TwoWay}"/>
+                <TextBlock Grid.Row="4" Text="Peso das células" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding GridAppearance.FontWeights}" SelectedItem="{Binding GridAppearance.CellFontWeight, Mode=TwoWay}"/>
+                <TextBlock Grid.Row="5" Text="Altura das linhas" VerticalAlignment="Center"/>
+                <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,52" ColumnSpacing="10">
+                  <Slider Minimum="20" Maximum="80" TickFrequency="2" Value="{Binding GridAppearance.RowHeight, Mode=TwoWay}"/>
+                  <TextBlock Grid.Column="1" Text="{Binding GridAppearance.RowHeight, StringFormat='{}{0:0} px'}" VerticalAlignment="Center" TextAlignment="Right"/>
+                </Grid>
+                <TextBlock Grid.Row="6" Text="Alinhamento dos cabeçalhos" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding GridAppearance.HeaderAlignmentOptions}" SelectedItem="{Binding GridAppearance.HeaderAlignment, Mode=TwoWay}"/>
+                <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Text="Alinhamento das linhas por tipo" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,4,0,0"/>
+                <ItemsControl Grid.Row="8" Grid.ColumnSpan="2" ItemsSource="{Binding GridAppearance.RowAlignments}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GridAppearanceAlignmentOption">
+                      <Grid Width="250" ColumnDefinitions="*,120" ColumnSpacing="8" Margin="0,0,12,8">
+                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding AlignmentOptions}" SelectedItem="{Binding SelectedAlignment, Mode=TwoWay}"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+              <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                <TextBlock Text="Peso das descrições" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding GridAppearance.FontWeights}" SelectedItem="{Binding GridAppearance.DescriptionFontWeight, Mode=TwoWay}"/>
+              </Grid>
+              <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                <TextBlock Text="Divisórias" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding GridAppearance.GridLinesOptions}" SelectedItem="{Binding GridAppearance.GridLinesOption, Mode=TwoWay}"/>
+              </Grid>
+              <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                <TextBlock Text="Cabeçalhos visíveis" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding GridAppearance.HeadersVisibilityOptions}" SelectedItem="{Binding GridAppearance.HeadersVisibilityOption, Mode=TwoWay}"/>
+              </Grid>
+            </StackPanel>
+          </Expander>
+          <Expander Header="Superfícies e seleção" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <ItemsControl ItemsSource="{Binding GridAppearance.SurfaceColors}" Margin="8,10,8,8" ItemTemplate="{StaticResource GridAppearanceColorOptionTemplate}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </Expander>
+          <Expander Header="Cores semânticas" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <ItemsControl ItemsSource="{Binding GridAppearance.SemanticColors}" Margin="8,10,8,8" ItemTemplate="{StaticResource GridAppearanceColorOptionTemplate}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </Expander>
+          <TextBlock Text="{Binding GridAppearance.Status}" Foreground="{DynamicResource DecorDangerBrush}" TextWrapping="Wrap"/>
+        </StackPanel>
+
         <StackPanel IsVisible="{Binding IsThemeSettingsSelected}" Spacing="18">
           <Border Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="14">
             <StackPanel Spacing="14">
               <TextBlock Text="Tema" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               <TextBlock Text="Escolha a aparência visual do sistema para todos os módulos do aplicativo." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
               <ListBox ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{DynamicResource DecorControlBrush}" MaxHeight="120"/>
-              <StackPanel HorizontalAlignment="Right" Margin="0,4,0,0">
-                <Button Command="{Binding ApplyThemeCommand}" Classes="decor-action">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Path Width="16" Height="16" Stretch="Uniform" Fill="{DynamicResource DecorTextBrush}" Data="M788-658v426q0 26-17 43t-43 17H232q-26 0-43-17t-17-43v-496q0-26 17-43t43-17h426l130 130Zm-28 12L646-760H232q-14 0-23 9t-9 23v496q0 14 9 23t23 9h496q14 0 23-9t9-23v-414ZM528-336q20-20 20-48t-20-48q-20-20-48-20t-48 20q-20 20-20 48t20 48q20 20 48 20t48-20ZM280-572h278v-108H280v108Zm-80-74v446-560 114Z"/>
-                    <TextBlock Text="Aplicar" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </Button>
-              </StackPanel>
+              <TextBlock Text="{Binding ThemeSettingsStatus}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -176,10 +247,7 @@
               <TextBlock Text="Estoque / Movimentações" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
               <ToggleSwitch Content="Permitir venda com estoque negativo" IsChecked="{Binding AllowNegativeStock, Mode=TwoWay}"/>
               <TextBlock Text="Quando desativado, a venda é bloqueada se a quantidade exceder o saldo disponível. Quando ativado, a venda pode prosseguir após confirmação." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
-                <TextBlock Text="{Binding StockSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                <Button Grid.Column="1" Command="{Binding SaveStockSettingsCommand}" Content="Salvar" Classes="decor-action"/>
-              </Grid>
+              <TextBlock Text="{Binding StockSettingsStatus}" Margin="0,4,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -208,10 +276,7 @@
                 </Border>
               </Grid>
               <TextBlock Text="{Binding NextBackupNotificationPreview}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
-                <TextBlock Text="{Binding BackupNotificationSettingsStatus}" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                <Button Grid.Column="1" Command="{Binding SaveBackupNotificationSettingsCommand}" Content="Salvar" Classes="decor-action"/>
-              </Grid>
+              <TextBlock Text="{Binding BackupNotificationSettingsStatus}" Margin="0,4,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </StackPanel>
@@ -225,9 +290,7 @@
                 <Slider Grid.Column="1" Minimum="100" Maximum="700" TickFrequency="100" IsSnapToTickEnabled="True" Value="{Binding IconWeight, Mode=TwoWay}"/>
                 <TextBlock Grid.Column="2" Text="{Binding IconWeightDisplay}" VerticalAlignment="Center"/>
               </Grid>
-              <StackPanel HorizontalAlignment="Right" Margin="0,4,0,0">
-                <Button Command="{Binding ApplyCommand}" Content="Aplicar" Classes="decor-action"/>
-              </StackPanel>
+              <TextBlock Text="{Binding IconAppearanceStatus}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
           <ItemsControl ItemsSource="{Binding FamilyGroups}" HorizontalAlignment="Stretch">
@@ -274,10 +337,17 @@
       </Border>
     </ScrollViewer>
 
-    <Border Grid.Column="1" Grid.Row="1" Padding="16,12,16,12" Margin="0,12,0,0" Background="Transparent">
+    <StackPanel Grid.Column="2" Grid.Row="1" IsVisible="{Binding IsGridAppearanceSelected}" Margin="0,8,16,0" Spacing="6">
+      <Border Height="1" Background="{DynamicResource DecorBorderBrush}"/>
+      <TextBlock Text="Prévia" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <controls:DecorDataGridControl x:Name="GridAppearancePreview" ItemsSource="{Binding GridAppearance.PreviewRows}" AppearanceThemeOverride="{Binding GridAppearance.PreviewIsDark}" HorizontalAlignment="Stretch" Height="150"/>
+    </StackPanel>
+
+    <Border Grid.Column="2" Grid.Row="2" Padding="16,12,16,12" Margin="0,12,0,0" Background="Transparent">
       <StackPanel Spacing="8">
         <Border Height="1" Background="{DynamicResource DecorBorderBrush}"/>
         <TextBlock Text="{Binding IconColorStatus}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding IconColorStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        <TextBlock Text="{Binding GridAppearance.Status}" Foreground="{DynamicResource DecorDangerBrush}" IsVisible="{Binding IsGridAppearanceSelected}"/>
         <Button Command="{Binding ResetSelectedSettingsCommand}" Classes="decor-action" Content="{Binding ResetSelectedSettingsText}" HorizontalAlignment="Right"/>
       </StackPanel>
     </Border>

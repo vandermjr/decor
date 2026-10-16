@@ -13,6 +13,7 @@ public partial class IconCatalogView : UserControl
     public IconCatalogView()
     {
         InitializeComponent();
+        GridAppearancePreview.InitializeColumns(typeof(GridAppearancePreviewRow));
     }
 
     public IconCatalogView(IconCatalogViewModel viewModel)
@@ -52,8 +53,12 @@ public partial class IconCatalogView : UserControl
             _backupNotificationLeadTimeBeforeSelection = viewModel.BackupNotificationLeadTime;
     }
 
-    private void BackupNotificationLeadTimePicker_Confirmed(object? sender, EventArgs e) =>
+    private void BackupNotificationLeadTimePicker_Confirmed(object? sender, EventArgs e)
+    {
+        if (DataContext is IconCatalogViewModel viewModel)
+            viewModel.SaveBackupNotificationSettings();
         ChooseBackupNotificationLeadTimeButton.Flyout?.Hide();
+    }
 
     private void BackupNotificationLeadTimePicker_Dismissed(object? sender, EventArgs e)
     {

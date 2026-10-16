@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Decor.AvaloniaUI.Controls.GridStyling;
 
@@ -72,6 +73,22 @@ public sealed class GridControlThemeColorTests
         Assert.Equal(Color.Parse(expected), BrushColor(theme.GetStockStatusBrush(status)));
     }
 
+    [Theory]
+    [InlineData(typeof(decimal), -0.01, true)]
+    [InlineData(typeof(decimal?), -24.5, true)]
+    [InlineData(typeof(double), -1.0, true)]
+    [InlineData(typeof(float), -0.5, true)]
+    [InlineData(typeof(decimal), 0.0, false)]
+    [InlineData(typeof(decimal), 0.01, false)]
+    public void Numeric_cell_foreground_uses_sign_specific_decimal_color(Type valueType, double value, bool isNegative)
+    {
+        var theme = GridControlThemeColors.Create(isDarkTheme: false);
+
+        var brush = theme.GetBrushForValue(valueType, valueType == typeof(float) ? (object)(float)value : (decimal)value);
+
+        Assert.Same(isNegative ? theme.DataType_Decimal_Negative : theme.DataType_Decimal_Positive, brush);
+    }
+
     [Fact]
     public void Applying_themes_at_runtime_replaces_the_stylers_type_brushes()
     {
@@ -124,6 +141,83 @@ public sealed class GridControlThemeColorTests
         Assert.Equal(Color.Parse("#D6EEF8"), BrushColor(theme.FocusedCellBackground));
         Assert.Equal(Color.Parse("#30363E"), BrushColor(theme.CellText));
         Assert.Equal(Color.Parse("#30363E"), BrushColor(theme.DataType_Boolean));
+    }
+
+    [Fact]
+    public void Grid_appearance_settings_persist_colors_and_restore_defaults()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "decor-grid-appearance-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(directory, "settings.json");
+        try
+        {
+            var service = new GridAppearanceSettingsService(path);
+            service.SetColor(false, nameof(GridControlThemeColors.DataType_Text), "#FF123456");
+            service.SetTypography("Segoe UI", 15, 40, "Bold", "SemiBold",
+                "Normal", "Right", DataGridGridLinesVisibility.Horizontal, DataGridHeadersVisibility.All);
+            service.SetRowAlignment("Decimal", "Left");
+            service.SetRowAlignment("Text", "Right");
+
+            var restored = new GridAppearanceSettingsService(path);
+            Assert.Equal(Color.Parse("#FF123456"), BrushColor(restored.CreateTheme(false).DataType_Text));
+            Assert.Equal("Segoe UI", restored.FontFamily);
+            Assert.Equal(15, restored.FontSize);
+            Assert.Equal(40, restored.RowHeight);
+            Assert.Equal("Bold", restored.HeaderFontWeight);
+            Assert.Equal("SemiBold", restored.CellFontWeight);
+            Assert.Equal("Normal", restored.DescriptionFontWeight);
+            Assert.Equal("Right", restored.HeaderAlignment);
+            Assert.Equal("Left", restored.GetRowAlignment("Decimal"));
+            Assert.Equal("Right", restored.GetRowAlignment("Text"));
+            Assert.Equal("Auto", restored.GetRowAlignment("Boolean"));
+            Assert.Equal(DataGridGridLinesVisibility.Horizontal, restored.GridLinesVisibility);
+            Assert.Equal(DataGridHeadersVisibility.All, restored.HeadersVisibility);
+            restored.ResetToDefaults();
+            var defaults = new GridAppearanceSettingsService(path);
+            Assert.Equal(BrushColor(GridControlThemeColors.Create(false).DataType_Text),
+                BrushColor(defaults.CreateTheme(false).DataType_Text));
+            Assert.Equal(13, defaults.FontSize);
+            Assert.Equal("Noto Sans", defaults.FontFamily);
+            Assert.Equal(32, defaults.RowHeight);
+            Assert.Equal("SemiBold", defaults.HeaderFontWeight);
+            Assert.Equal("Normal", defaults.CellFontWeight);
+            Assert.Equal("SemiBold", defaults.DescriptionFontWeight);
+            Assert.Equal("Center", defaults.HeaderAlignment);
+            Assert.All(GridAppearanceSettingsService.RowAlignmentTypes,
+                type => Assert.Equal("Auto", defaults.GetRowAlignment(type)));
+            Assert.Equal(DataGridGridLinesVisibility.All, defaults.GridLinesVisibility);
+            Assert.Equal(DataGridHeadersVisibility.Column, defaults.HeadersVisibility);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Grid_appearance_service_exposes_every_semantic_color()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "decor-grid-colors-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var service = new GridAppearanceSettingsService(Path.Combine(directory, "settings.json"));
+            foreach (var isDark in new[] { false, true })
+            {
+                var expected = GridControlThemeColors.Create(isDark);
+                var actual = service.CreateTheme(isDark);
+                foreach (var propertyName in GridAppearanceSettingsService.AvailableColorProperties)
+                {
+                    var property = typeof(GridControlThemeColors).GetProperty(propertyName)!;
+                    Assert.Equal(BrushColor((IBrush)property.GetValue(expected)!),
+                        BrushColor((IBrush)property.GetValue(actual)!));
+                }
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
     }
 
     private static Color BrushColor(IBrush brush) => Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;

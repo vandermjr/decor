@@ -17,6 +17,7 @@ using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Controls.GridStyling;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.DTOs;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Decor.AvaloniaUI.Controls;
 
@@ -49,6 +50,7 @@ public partial class DecorDataGridControl : UserControl
     private object? _highlightedValue;
     private object? _focusedCellItem;
     private Control? _rowsPresenter;
+    private Control? _columnHeadersPresenter;
     private ScrollBar? _verticalScrollBar;
     private ScrollBar? _horizontalScrollBar;
     private Border? _paginationFooter;
@@ -58,6 +60,7 @@ public partial class DecorDataGridControl : UserControl
     private bool _ownsAutomaticPageSize;
     private int _automaticPageSize = 10;
     private bool _gridElementsInitialized;
+    private GridAppearanceSettingsService? _appearanceSettings;
 
     public static readonly StyledProperty<IStatusBarSource?> EffectivePaginationSourceProperty =
         AvaloniaProperty.Register<DecorDataGridControl, IStatusBarSource?>(nameof(EffectivePaginationSource));
@@ -85,6 +88,7 @@ public partial class DecorDataGridControl : UserControl
     private Func<string, string>? _configuredGetDisplayName;
     private Func<string, DataGridLength>? _configuredGetColumnWidth;
     private IReadOnlyList<string>? _configuredPropertyNames;
+    private PropertyInfo? _leadingColumnProperty;
     private readonly List<DataGridColumn> _additionalColumns = [];
 
     public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
@@ -92,6 +96,8 @@ public partial class DecorDataGridControl : UserControl
 
     public static readonly StyledProperty<object?> SelectedItemProperty =
         AvaloniaProperty.Register<DecorDataGridControl, object?>(nameof(SelectedItem));
+    public static readonly StyledProperty<bool?> AppearanceThemeOverrideProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, bool?>(nameof(AppearanceThemeOverride));
 
     /// <summary>Column the query orders by; defaults to the code column.</summary>
     public static readonly StyledProperty<string?> DefaultSortMemberPathProperty =
@@ -121,12 +127,16 @@ public partial class DecorDataGridControl : UserControl
         {
             _innerGrid.Columns.CollectionChanged += (_, _) => ConfigureColumnPresentation();
             _innerGrid.PropertyChanged += OnInnerGridPropertyChanged;
+            _innerGrid.LoadingRow += OnInnerGridLoadingRow;
         }
         _paginationFooter = this.FindControl<Border>("PaginationFooter");
         _paginationLayout = this.FindControl<Grid>("PaginationLayout");
         ConfigurePagination();
         _styler = new DefaultGridControlStyler();
-        _styler.ApplyTheme(CreateThemeColors());
+        _appearanceSettings = (global::Avalonia.Application.Current as App)?.Services.GetService<GridAppearanceSettingsService>();
+        if (_appearanceSettings is not null)
+            _appearanceSettings.SettingsChanged += OnGridAppearanceSettingsChanged;
+        ApplyGridAppearance();
         var application = global::Avalonia.Application.Current;
         if (application is not null)
             application.ActualThemeVariantChanged += (_, _) => RefreshTheme();
@@ -172,6 +182,10 @@ public partial class DecorDataGridControl : UserControl
         var visualDescendants = _innerGrid.GetVisualDescendants().ToArray();
         _rowsPresenter = visualDescendants.OfType<Control>()
             .FirstOrDefault(control => control.Name == "PART_RowsPresenter");
+        _columnHeadersPresenter = visualDescendants.OfType<Control>()
+            .FirstOrDefault(control => control.GetType().Name == "DataGridColumnHeadersPresenter");
+        if (_columnHeadersPresenter is not null)
+            _columnHeadersPresenter.RenderTransform = new TranslateTransform(3, 0);
         _verticalScrollBar = visualDescendants.OfType<ScrollBar>()
             .FirstOrDefault(scrollBar => scrollBar.Name == "PART_VerticalScrollbar");
         var horizontalScrollBar = visualDescendants.OfType<ScrollBar>()
@@ -214,6 +228,7 @@ public partial class DecorDataGridControl : UserControl
         AttachScrollBarVisibilityHandlers();
         UpdatePaginationLayout();
         UpdateRowsPresenterMargin();
+        Dispatcher.UIThread.Post(UpdateHeaderGutter);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -236,6 +251,8 @@ public partial class DecorDataGridControl : UserControl
         else if (change.Property == SelectedItemProperty && _innerGrid is not null
             && !ReferenceEquals(_innerGrid.SelectedItem, SelectedItem))
             _innerGrid.SetCurrentValue(DataGrid.SelectedItemProperty, SelectedItem);
+        else if (change.Property == AppearanceThemeOverrideProperty)
+            ApplyGridAppearance();
         else if (change.Property == DefaultSortMemberPathProperty)
             ConfigureColumnPresentation();
         else if (change.Property == BoundsProperty)
@@ -332,18 +349,42 @@ public partial class DecorDataGridControl : UserControl
             UpdatePaginationLayout();
             Dispatcher.UIThread.Post(UpdateRowsPresenterMargin);
         }
+        else if (eventArgs.Property == RangeBase.ValueProperty && sender == _horizontalScrollBar)
+            Dispatcher.UIThread.Post(ConfigureVisibleRowIndicators);
     }
 
     private void UpdateRowsPresenterMargin()
     {
-        if (_rowsPresenter is null)
+        var rightInset = _verticalScrollBar?.IsVisible == true ? 10 : 0;
+        var presenterMargin = new Thickness(0, 0, rightInset, 0);
+        if (_rowsPresenter is not null)
+        {
+            _rowsPresenter.Margin = presenterMargin;
+            _rowsPresenter.ClipToBounds = true;
+        }
+        if (_columnHeadersPresenter is not null)
+            _columnHeadersPresenter.Margin = presenterMargin;
+    }
+
+    private void OnInnerGridLoadingRow(object? sender, DataGridRowEventArgs eventArgs) =>
+        Dispatcher.UIThread.Post(() => ConfigureRowIndicator(eventArgs.Row));
+
+    private void ConfigureVisibleRowIndicators()
+    {
+        if (_innerGrid is null)
             return;
 
-        _rowsPresenter.Margin = new Thickness(
-            0,
-            0,
-            _verticalScrollBar?.IsVisible == true ? 10 : 0,
-            0);
+        foreach (var row in _innerGrid.GetVisualDescendants().OfType<DataGridRow>())
+            ConfigureRowIndicator(row);
+    }
+
+    private static void ConfigureRowIndicator(DataGridRow row)
+    {
+        var cellsPresenter = row.GetVisualDescendants().OfType<DataGridCellsPresenter>().FirstOrDefault();
+        if (cellsPresenter is null)
+            return;
+
+        cellsPresenter.Margin = new Thickness(3, 0, 0, 0);
     }
 
     /// <summary>
@@ -362,6 +403,12 @@ public partial class DecorDataGridControl : UserControl
     {
         get => GetValue(SelectedItemProperty);
         set => SetValue(SelectedItemProperty, value);
+    }
+
+    public bool? AppearanceThemeOverride
+    {
+        get => GetValue(AppearanceThemeOverrideProperty);
+        set => SetValue(AppearanceThemeOverrideProperty, value);
     }
 
     /// <summary>
@@ -500,6 +547,7 @@ public partial class DecorDataGridControl : UserControl
         }
 
         _innerGrid.Columns.Clear();
+        _leadingColumnProperty = null;
         CacheProperties(dtoType);
 
         var properties = (propertyNames is null
@@ -524,21 +572,18 @@ public partial class DecorDataGridControl : UserControl
             // Isso evita que uma largura fixa ou Star menor corte o texto do cabeçalho.
             width = DataGridLength.Auto;
 
+            var isLeadingColumn = _leadingColumnProperty is null;
+            _leadingColumnProperty ??= property;
             DataGridColumn column = property.PropertyType == typeof(bool) || property.PropertyType == typeof(bool?)
-                ? new DataGridCheckBoxColumn()
-                : CreateTextColumn(property);
+                ? CreateBooleanColumn(property, isLeadingColumn)
+                : CreateTextColumn(property, isLeadingColumn);
 
             column.Header = displayName;
-            column.HeaderTemplate = new DecorGridHeader();
+            column.HeaderTemplate = new DecorGridHeader(GetHeaderTextAlignment());
             column.Width = width;
             column.SortMemberPath = property.Name;
             if (!string.IsNullOrEmpty(DecorGridHeader.GetIconId(displayName).Value))
                 column.MinWidth = 130;
-
-            if (column is DataGridCheckBoxColumn checkColumn)
-            {
-                checkColumn.Binding = new Binding(property.Name);
-            }
 
             _innerGrid.Columns.Add(column);
         }
@@ -555,8 +600,8 @@ public partial class DecorDataGridControl : UserControl
 
         foreach (var column in _innerGrid.Columns)
         {
-            if (column.Header is string && column.HeaderTemplate is null)
-                column.HeaderTemplate = new DecorGridHeader();
+            if (column.Header is string)
+                column.HeaderTemplate = new DecorGridHeader(GetHeaderTextAlignment());
             if (string.IsNullOrEmpty(column.SortMemberPath)
                 && column is DataGridBoundColumn { Binding: Binding binding })
                 column.SortMemberPath = binding.Path;
@@ -585,10 +630,9 @@ public partial class DecorDataGridControl : UserControl
             _innerGrid.Columns.Insert(_innerGrid.Columns.IndexOf(stateColumn), column);
     }
 
-    private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)
+    private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo, bool isLeadingColumn)
     {
-        var foreground = _styler.GetColumnForeground(propertyInfo);
-        var alignment = propertyInfo.Name switch
+        var automaticAlignment = propertyInfo.Name switch
         {
             nameof(ProductDTO.ProductID) => TextAlignment.Center,
             nameof(ProductDTO.StockStatus) => TextAlignment.Center,
@@ -605,14 +649,31 @@ public partial class DecorDataGridControl : UserControl
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
                     Tag = propertyInfo
                 };
+                if (isLeadingColumn)
+                {
+                    cellContent.BorderThickness = new Thickness(3, 0, 0, 0);
+                    cellContent.Bind(Border.BorderBrushProperty,
+                        new Binding("BorderBrush")
+                        {
+                            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor)
+                            {
+                                AncestorType = typeof(DataGridRow)
+                            }
+                        });
+                }
                 var textBlock = new TextBlock
                 {
-                    Foreground = foreground,
-                    TextAlignment = alignment,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    Foreground = _styler.Theme.GetBrushForColumn(propertyInfo.Name, propertyInfo.PropertyType,
+                        propertyInfo.GetValue(item)),
+                    TextAlignment = ResolveAlignment(
+                        _appearanceSettings?.GetRowAlignment(GetAlignmentType(propertyInfo)), automaticAlignment),
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    FontFamily = new FontFamily(_appearanceSettings?.FontFamily ?? "Noto Sans"),
+                    FontSize = _appearanceSettings?.FontSize ?? 13,
+                    FontWeight = ResolveFontWeight(propertyInfo.Name == "Description"
+                        ? _appearanceSettings?.DescriptionFontWeight ?? "SemiBold"
+                        : _appearanceSettings?.CellFontWeight ?? "Normal")
                 };
-                if (propertyInfo.Name == "StockStatus")
-                    textBlock.Foreground = _styler.Theme.GetStockStatusBrush(propertyInfo.GetValue(item)?.ToString());
                 textBlock.Classes.Add($"grid-column-{propertyInfo.Name}");
 
                 textBlock.Bind(TextBlock.TextProperty, new Binding(propertyInfo.Name));
@@ -623,18 +684,207 @@ public partial class DecorDataGridControl : UserControl
         };
     }
 
-    private GridControlThemeColors CreateThemeColors() => GridControlThemeColors.Create(
-        global::Avalonia.Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
-
     private void RefreshTheme()
     {
-        _styler.ApplyTheme(CreateThemeColors());
+        ApplyGridAppearance();
 
         if (_configuredDtoType is not null)
             InitializeColumns(_configuredDtoType, _configuredGetDisplayName, _configuredGetColumnWidth, _configuredPropertyNames);
 
         UpdateCellHighlights();
     }
+
+    private void OnGridAppearanceSettingsChanged(object? sender, EventArgs eventArgs) =>
+        Dispatcher.UIThread.Post(ApplyGridAppearance);
+
+    private void ApplyGridAppearance()
+    {
+        var isDark = AppearanceThemeOverride
+            ?? (global::Avalonia.Application.Current?.ActualThemeVariant == ThemeVariant.Dark);
+        var theme = _appearanceSettings?.CreateTheme(isDark) ?? GridControlThemeColors.Create(isDark);
+        _styler.ApplyTheme(theme);
+        if (_innerGrid is null)
+            return;
+
+        _innerGrid.Background = theme.GridBackground;
+        _innerGrid.Foreground = theme.CellText;
+        _innerGrid.FontFamily = new FontFamily(_appearanceSettings?.FontFamily ?? "Noto Sans");
+        _innerGrid.FontSize = _appearanceSettings?.FontSize ?? 13;
+        _innerGrid.GridLinesVisibility = _appearanceSettings?.GridLinesVisibility ?? DataGridGridLinesVisibility.All;
+        _innerGrid.HeadersVisibility = _appearanceSettings?.HeadersVisibility ?? DataGridHeadersVisibility.Column;
+        _innerGrid.RowHeight = _appearanceSettings?.RowHeight ?? 32;
+        _innerGrid.HorizontalGridLinesBrush = theme.GridLines;
+        _innerGrid.VerticalGridLinesBrush = theme.GridLines;
+        var headerGutter = this.FindControl<Border>("HeaderGutter");
+        if (headerGutter is not null)
+            headerGutter.Background = theme.HeaderBackground;
+        _emptyMessageTextBlock ??= this.FindControl<TextBlock>("EmptyMessageTextBlock");
+        if (_emptyMessageTextBlock is not null)
+        {
+            _emptyMessageTextBlock.Foreground = theme.EmptyGridMessageColor;
+            _emptyMessageTextBlock.FontSize = _appearanceSettings?.FontSize ?? 13;
+        }
+
+        _innerGrid.Styles.Clear();
+        _innerGrid.Styles.Add(new Style(selector => selector.OfType<DataGridColumnHeader>())
+        {
+            Setters =
+            {
+                new Setter(TemplatedControl.BackgroundProperty, theme.HeaderBackground),
+                new Setter(TemplatedControl.ForegroundProperty, theme.HeaderText),
+                new Setter(TemplatedControl.FontSizeProperty, _appearanceSettings?.FontSize ?? 13),
+                new Setter(TemplatedControl.FontWeightProperty, ResolveFontWeight(_appearanceSettings?.HeaderFontWeight ?? "SemiBold")),
+                new Setter(ContentControl.HorizontalContentAlignmentProperty, GetHeaderHorizontalAlignment())
+            }
+        });
+        _innerGrid.Styles.Add(new Style(selector => selector.OfType<DataGridCell>())
+        {
+            Setters =
+            {
+                new Setter(TemplatedControl.BackgroundProperty, theme.CellBackground),
+                new Setter(TemplatedControl.ForegroundProperty, theme.CellText),
+                new Setter(TemplatedControl.FontSizeProperty, _appearanceSettings?.FontSize ?? 13),
+                new Setter(TemplatedControl.FontWeightProperty, ResolveFontWeight(_appearanceSettings?.CellFontWeight ?? "Normal")),
+                new Setter(Control.MinHeightProperty, 0d),
+                new Setter(ContentControl.PaddingProperty, new Thickness(0))
+            }
+        });
+        foreach (var column in _innerGrid.Columns.Where(column => column.Header is string))
+            column.HeaderTemplate = new DecorGridHeader(GetHeaderTextAlignment());
+
+        foreach (var textBlock in _innerGrid.GetVisualDescendants().OfType<TextBlock>())
+        {
+            var cell = textBlock.GetVisualAncestors().OfType<Border>()
+                .FirstOrDefault(border => border.Tag is PropertyInfo);
+            if (cell?.Tag is not PropertyInfo propertyInfo)
+                continue;
+
+            textBlock.Foreground = theme.GetBrushForColumn(propertyInfo.Name, propertyInfo.PropertyType,
+                propertyInfo.GetValue(textBlock.DataContext));
+            textBlock.FontFamily = new FontFamily(_appearanceSettings?.FontFamily ?? "Noto Sans");
+            textBlock.FontSize = _appearanceSettings?.FontSize ?? 13;
+            textBlock.FontWeight = ResolveFontWeight(propertyInfo.Name == "Description"
+                ? _appearanceSettings?.DescriptionFontWeight ?? "SemiBold"
+                : _appearanceSettings?.CellFontWeight ?? "Normal");
+            textBlock.TextAlignment = ResolveAlignment(
+                _appearanceSettings?.GetRowAlignment(GetAlignmentType(propertyInfo)),
+                propertyInfo.Name == nameof(ProductDTO.ProductID) || propertyInfo.Name == nameof(ProductDTO.StockStatus)
+                    ? TextAlignment.Center
+                    : _styler.GetColumnAlignment(propertyInfo));
+        }
+
+        foreach (var checkBox in _innerGrid.GetVisualDescendants().OfType<CheckBox>())
+        {
+            checkBox.Foreground = theme.DataType_Boolean;
+            checkBox.HorizontalAlignment = ResolveHorizontalAlignment(_appearanceSettings?.GetRowAlignment("Boolean"),
+                Avalonia.Layout.HorizontalAlignment.Center);
+        }
+    }
+
+    private void UpdateHeaderGutter()
+    {
+        var headerGutter = this.FindControl<Border>("HeaderGutter");
+        var gridContent = this.FindControl<Grid>("GridContent");
+        if (_columnHeadersPresenter is null || headerGutter is null || gridContent is null
+            || _columnHeadersPresenter.Bounds.Height <= 0)
+            return;
+
+        var origin = _columnHeadersPresenter.TranslatePoint(default, gridContent);
+        if (origin is null)
+            return;
+
+        headerGutter.Margin = new Thickness(origin.Value.X - 3, origin.Value.Y, 0, 0);
+        headerGutter.Height = _columnHeadersPresenter.Bounds.Height;
+        headerGutter.IsVisible = true;
+    }
+
+    private static FontWeight ResolveFontWeight(string weight) => weight switch
+    {
+        "Light" => FontWeight.Light,
+        "SemiBold" => FontWeight.SemiBold,
+        "Bold" => FontWeight.Bold,
+        _ => FontWeight.Normal
+    };
+
+    private DataGridTemplateColumn CreateBooleanColumn(PropertyInfo propertyInfo, bool isLeadingColumn) => new()
+    {
+        CellTemplate = new FuncDataTemplate<object?>((item, _) =>
+        {
+            var checkBox = new CheckBox
+            {
+                Foreground = _styler.Theme.DataType_Boolean,
+                HorizontalAlignment = ResolveHorizontalAlignment(_appearanceSettings?.GetRowAlignment("Boolean"),
+                    Avalonia.Layout.HorizontalAlignment.Center),
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                IsHitTestVisible = false,
+                Focusable = false
+            };
+            checkBox.Bind(CheckBox.IsCheckedProperty, new Binding(propertyInfo.Name));
+            if (!isLeadingColumn)
+                return checkBox;
+
+            var cellContent = new Border
+            {
+                BorderThickness = new Thickness(3, 0, 0, 0),
+                Padding = new Thickness(4, 0),
+                Child = checkBox
+            };
+            cellContent.Bind(Border.BorderBrushProperty,
+                new Binding("BorderBrush")
+                {
+                    RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor)
+                    {
+                        AncestorType = typeof(DataGridRow)
+                    }
+                });
+            return cellContent;
+        })
+    };
+
+    private TextAlignment GetHeaderTextAlignment() => _appearanceSettings?.HeaderAlignment switch
+    {
+        "Left" => TextAlignment.Left,
+        "Right" => TextAlignment.Right,
+        _ => TextAlignment.Center
+    };
+
+    private Avalonia.Layout.HorizontalAlignment GetHeaderHorizontalAlignment() => _appearanceSettings?.HeaderAlignment switch
+    {
+        "Left" => Avalonia.Layout.HorizontalAlignment.Left,
+        "Right" => Avalonia.Layout.HorizontalAlignment.Right,
+        _ => Avalonia.Layout.HorizontalAlignment.Center
+    };
+
+    private static TextAlignment ResolveAlignment(string? alignment, TextAlignment automatic) => alignment switch
+    {
+        "Left" => TextAlignment.Left,
+        "Center" => TextAlignment.Center,
+        "Right" => TextAlignment.Right,
+        _ => automatic
+    };
+
+    private static string GetAlignmentType(PropertyInfo propertyInfo)
+    {
+        if (propertyInfo.Name.Equals("StockStatus", StringComparison.OrdinalIgnoreCase)
+            || propertyInfo.Name.EndsWith("Status", StringComparison.OrdinalIgnoreCase))
+            return "Status";
+
+        var type = Nullable.GetUnderlyingType(propertyInfo.PropertyType) ?? propertyInfo.PropertyType;
+        if (type == typeof(bool)) return "Boolean";
+        if (type == typeof(DateTime) || type == typeof(DateTimeOffset)) return "DateTime";
+        if (type == typeof(decimal) || type == typeof(double) || type == typeof(float)) return "Decimal";
+        if (type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(byte)) return "Integer";
+        return "Text";
+    }
+
+    private static Avalonia.Layout.HorizontalAlignment ResolveHorizontalAlignment(string? alignment,
+        Avalonia.Layout.HorizontalAlignment automatic) => alignment switch
+    {
+        "Left" => Avalonia.Layout.HorizontalAlignment.Left,
+        "Center" => Avalonia.Layout.HorizontalAlignment.Center,
+        "Right" => Avalonia.Layout.HorizontalAlignment.Right,
+        _ => automatic
+    };
 
     private void OnGridPointerPressed(object? sender, PointerPressedEventArgs e)
     {

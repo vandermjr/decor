@@ -344,6 +344,82 @@ public sealed partial class DecorGridPresentationTests
     }
 
     [Fact]
+    public void Preview_grid_applies_conditional_colors_and_uses_replenishment_header()
+    {
+        var control = new DecorDataGridControl();
+        var grid = new DataGrid();
+        typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(control, grid);
+        control.InitializeColumns(typeof(GridAppearancePreviewRow));
+        var previewRow = new GridAppearancePreviewRow(1, "Cadeira", -12.5m, true, DateTime.Today, "Negativo");
+
+        var amountColumn = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns,
+            column => column.SortMemberPath == nameof(GridAppearancePreviewRow.Amount)));
+        var amountCell = Assert.IsType<Border>(amountColumn.CellTemplate!.Build(previewRow));
+        var amountText = Assert.IsType<TextBlock>(amountCell.Child);
+        Assert.Same(control.Styler.Theme.DataType_Decimal_Negative, amountText.Foreground);
+
+        var statusColumn = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns,
+            column => column.SortMemberPath == nameof(GridAppearancePreviewRow.StockStatus)));
+        Assert.Equal("Reposição", statusColumn.Header);
+        var statusCell = Assert.IsType<Border>(statusColumn.CellTemplate!.Build(previewRow));
+        var statusText = Assert.IsType<TextBlock>(statusCell.Child);
+        Assert.Same(control.Styler.Theme.StockStatusNegative, statusText.Foreground);
+
+        var activeColumn = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns,
+            column => column.SortMemberPath == nameof(GridAppearancePreviewRow.IsActive)));
+        var activeCheckBox = Assert.IsType<CheckBox>(activeColumn.CellTemplate!.Build(previewRow));
+        Assert.Same(control.Styler.Theme.DataType_Boolean, activeCheckBox.Foreground);
+        Assert.False(activeCheckBox.IsHitTestVisible);
+    }
+
+    [Fact]
+    public void Preview_grid_uses_independent_alignment_for_each_data_type()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "decor-grid-align-types-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var settings = new GridAppearanceSettingsService(Path.Combine(directory, "settings.json"));
+            settings.SetRowAlignment("Text", "Center");
+            settings.SetRowAlignment("Decimal", "Left");
+            settings.SetRowAlignment("Status", "Right");
+            settings.SetRowAlignment("Boolean", "Right");
+
+            var control = new DecorDataGridControl();
+            var grid = new DataGrid();
+            typeof(DecorDataGridControl).GetField("_innerGrid", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(control, grid);
+            typeof(DecorDataGridControl).GetField("_appearanceSettings", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(control, settings);
+            control.InitializeColumns(typeof(GridAppearancePreviewRow));
+            var row = new GridAppearancePreviewRow(1, "Cadeira", -12.5m, true, DateTime.Today, "Negativo");
+
+            TextBlock BuildText(string propertyName)
+            {
+                var column = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns,
+                    candidate => candidate.SortMemberPath == propertyName));
+                return Assert.IsType<TextBlock>(Assert.IsType<Border>(column.CellTemplate!.Build(row)).Child);
+            }
+
+            Assert.Equal(TextAlignment.Center, BuildText(nameof(GridAppearancePreviewRow.Description)).TextAlignment);
+            Assert.Equal(TextAlignment.Left, BuildText(nameof(GridAppearancePreviewRow.Amount)).TextAlignment);
+            Assert.Equal(TextAlignment.Right, BuildText(nameof(GridAppearancePreviewRow.StockStatus)).TextAlignment);
+
+            var booleanColumn = Assert.IsType<DataGridTemplateColumn>(Assert.Single(grid.Columns,
+                candidate => candidate.SortMemberPath == nameof(GridAppearancePreviewRow.IsActive)));
+            var checkBox = Assert.IsType<CheckBox>(booleanColumn.CellTemplate!.Build(row));
+            Assert.Equal(Avalonia.Layout.HorizontalAlignment.Right, checkBox.HorizontalAlignment);
+
+            Assert.Equal(TextAlignment.Center, Assert.IsType<DecorGridHeader>(grid.Columns[0].HeaderTemplate).TextAlignment);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Additional_action_column_remains_last_without_duplicates_after_reinitialization()
     {
         var control = new DecorDataGridControl();

@@ -8,6 +8,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.Services;
+using Decor.AvaloniaUI.Controls.GridStyling;
 using Decor.Core.Common;
 using Decor.Core.Interfaces.Services;
 using System.Windows.Input;
@@ -27,11 +28,14 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     private readonly IBackupNotificationSettingsStore? _backupNotificationSettingsStore;
     private readonly IDatabaseBackupScheduleStore? _backupScheduleStore;
     private readonly ILoginBrandingSettingsStore? _loginBrandingSettingsStore;
+        private readonly GridAppearanceEditorViewModel _gridAppearanceEditor;
     private int _iconWeight;
     private bool _allowNegativeStock;
     private string _selectedSettingsSection = "Theme";
     private string _selectedThemeOption = string.Empty;
     private string _stockSettingsStatus = string.Empty;
+    private string _themeSettingsStatus = string.Empty;
+    private string _iconAppearanceStatus = string.Empty;
     private string _iconColorStatus = string.Empty;
     private bool _notifyBeforeScheduledBackup = true;
     private int _backupNotificationLeadTimeMinutes = 15;
@@ -46,6 +50,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
     public ObservableCollection<IconCatalogFamilyViewModel> FamilyGroups { get; } = [];
     public ObservableCollection<string> ThemeOptions { get; } = ["Claro", "Escuro"];
+    public GridAppearanceEditorViewModel GridAppearance => _gridAppearanceEditor;
 
     public int IconWeight
     {
@@ -57,21 +62,18 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
             foreach (var item in FamilyGroups.SelectMany(group => group.Items))
                 item.UpdateGeometry(value);
+            _ = SaveIconAppearanceAsync(value);
         }
     }
 
     public string IconWeightDisplay => IconWeight.ToString(CultureInfo.InvariantCulture);
-    public ICommand ApplyCommand { get; }
     public ICommand ResetIconColorsCommand { get; }
-    public ICommand SaveStockSettingsCommand { get; }
-    public ICommand SaveBackupNotificationSettingsCommand { get; }
     public ICommand RemoveLoginLogoCommand { get; }
     public ICommand MoveLoginLogoUpCommand { get; }
     public ICommand MoveLoginLogoDownCommand { get; }
     public ICommand MoveLoginLogoLeftCommand { get; }
     public ICommand MoveLoginLogoRightCommand { get; }
     public ICommand ResetSelectedSettingsCommand { get; }
-    public ICommand ApplyThemeCommand { get; }
     public ICommand UseLightThemeCommand { get; }
     public ICommand UseDarkThemeCommand { get; }
     public bool IsThemeSettingsSelected => _selectedSettingsSection == "Theme";
@@ -79,7 +81,8 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public bool IsStockMovementsSelected => _selectedSettingsSection == "StockMovements";
     public bool IsBackupNotificationsSelected => _selectedSettingsSection == "BackupNotifications";
     public bool IsLoginBrandingSelected => _selectedSettingsSection == "LoginBranding";
-    public string ResetSelectedSettingsText => IsLoginBrandingSelected ? "Restaurar padrão" : "Restaurar cores";
+    public bool IsGridAppearanceSelected => _selectedSettingsSection == "GridAppearance";
+    public string ResetSelectedSettingsText => IsLoginBrandingSelected || IsGridAppearanceSelected ? "Restaurar padrão" : "Restaurar cores";
     public bool CanMoveLoginLogoUp => _loginLogoVerticalPosition != "Topo";
     public bool CanMoveLoginLogoDown => _loginLogoVerticalPosition != "Base";
     public bool CanMoveLoginLogoLeft => _loginLogoHorizontalPosition != "Esquerda";
@@ -88,7 +91,21 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public string SelectedThemeOption
     {
         get => _selectedThemeOption;
-        set => SetField(ref _selectedThemeOption, value);
+        set
+        {
+            if (SetField(ref _selectedThemeOption, value))
+                _ = ApplyThemeSelectionAsync();
+        }
+    }
+    public string ThemeSettingsStatus
+    {
+        get => _themeSettingsStatus;
+        private set => SetField(ref _themeSettingsStatus, value);
+    }
+    public string IconAppearanceStatus
+    {
+        get => _iconAppearanceStatus;
+        private set => SetField(ref _iconAppearanceStatus, value);
     }
     public string StockSettingsStatus
     {
@@ -116,6 +133,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsStockMovementsSelected));
             OnPropertyChanged(nameof(IsBackupNotificationsSelected));
             OnPropertyChanged(nameof(IsLoginBrandingSelected));
+            OnPropertyChanged(nameof(IsGridAppearanceSelected));
             OnPropertyChanged(nameof(ResetSelectedSettingsText));
         }
     }
@@ -123,13 +141,23 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public bool AllowNegativeStock
     {
         get => _allowNegativeStock;
-        set => SetField(ref _allowNegativeStock, value);
+        set
+        {
+            if (SetField(ref _allowNegativeStock, value))
+                _ = SaveStockSettingsAsync(value);
+        }
     }
 
     public bool NotifyBeforeScheduledBackup
     {
         get => _notifyBeforeScheduledBackup;
-        set => SetField(ref _notifyBeforeScheduledBackup, value);
+        set
+        {
+            if (!SetField(ref _notifyBeforeScheduledBackup, value))
+                return;
+            SaveBackupNotificationSettings();
+            OnPropertyChanged(nameof(NextBackupNotificationPreview));
+        }
     }
 
     public int BackupNotificationLeadTimeMinutes
@@ -284,7 +312,8 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         IStockSettingsService? stockSettingsService = null,
         IBackupNotificationSettingsStore? backupNotificationSettingsStore = null,
         IDatabaseBackupScheduleStore? backupScheduleStore = null,
-        ILoginBrandingSettingsStore? loginBrandingSettingsStore = null)
+        ILoginBrandingSettingsStore? loginBrandingSettingsStore = null,
+        GridAppearanceSettingsService? gridAppearanceSettingsService = null)
     {
         _iconAppearanceService = iconAppearanceService;
         _themeService = themeService;
@@ -292,15 +321,14 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         _backupNotificationSettingsStore = backupNotificationSettingsStore;
         _backupScheduleStore = backupScheduleStore;
         _loginBrandingSettingsStore = loginBrandingSettingsStore;
+        _gridAppearanceEditor = new GridAppearanceEditorViewModel(gridAppearanceSettingsService
+            ?? new GridAppearanceSettingsService(Path.Combine(Path.GetTempPath(), $"decor-grid-options-{Guid.NewGuid():N}.json")), _themeService);
         LoadLoginBrandingSettings();
         if (_backupScheduleStore is not null)
             _backupScheduleStore.SchedulesChanged += OnBackupSchedulesChanged;
         _iconWeight = iconAppearanceService.CurrentAppearance.MaterialSymbolWeight;
         _themeService.ThemeChanged += OnThemeChanged;
-        ApplyCommand = new RelayCommand(async () => await ApplyAsync());
         ResetIconColorsCommand = new RelayCommand(async () => await ResetIconColorsAsync());
-        SaveStockSettingsCommand = new RelayCommand(async () => await SaveStockSettingsAsync());
-        SaveBackupNotificationSettingsCommand = new RelayCommand(SaveBackupNotificationSettings);
         RemoveLoginLogoCommand = new RelayCommand(RemoveLoginLogo);
         MoveLoginLogoUpCommand = new RelayCommand(() => StepLoginLogoVertical(-1), () => CanMoveLoginLogoUp);
         MoveLoginLogoDownCommand = new RelayCommand(() => StepLoginLogoVertical(1), () => CanMoveLoginLogoDown);
@@ -310,10 +338,11 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         {
             if (IsLoginBrandingSelected)
                 ResetLoginLogo();
+            else if (IsGridAppearanceSelected)
+                GridAppearance.ResetToDefaults();
             else
                 await ResetIconColorsAsync();
         });
-        ApplyThemeCommand = new RelayCommand(async () => await ApplyThemeSelectionAsync());
         UseLightThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Light));
         UseDarkThemeCommand = new RelayCommand(async () => await SetThemeAsync(DecorThemeStyle.Dark));
         _selectedThemeOption = CurrentThemeName;
@@ -330,13 +359,19 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     public async Task InitializeAsync()
     {
         if (_stockSettingsService is not null)
-            AllowNegativeStock = await _stockSettingsService.GetAllowNegativeStockAsync();
+        {
+            _allowNegativeStock = await _stockSettingsService.GetAllowNegativeStockAsync();
+            OnPropertyChanged(nameof(AllowNegativeStock));
+        }
         if (_backupNotificationSettingsStore is not null)
         {
             var settings = _backupNotificationSettingsStore.Load();
-            NotifyBeforeScheduledBackup = settings.IsEnabled;
+            _notifyBeforeScheduledBackup = settings.IsEnabled;
+            OnPropertyChanged(nameof(NotifyBeforeScheduledBackup));
             _backupNotificationLeadTimeMinutes = Math.Clamp(settings.LeadTimeMinutes, 1, 1440);
             OnPropertyChanged(nameof(BackupNotificationLeadTimeMinutes));
+            OnPropertyChanged(nameof(BackupNotificationLeadTime));
+            OnPropertyChanged(nameof(BackupNotificationLeadTimeDisplay));
             RefreshBackupNotificationPreview();
         }
         if (_loginBrandingSettingsStore is not null)
@@ -504,9 +539,17 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task ApplyAsync()
+    private async Task SaveIconAppearanceAsync(int weight)
     {
-        await _iconAppearanceService.SetAppearanceAsync(IconWeight, _iconAppearanceService.CurrentAppearance.StrokeThickness);
+        try
+        {
+            await _iconAppearanceService.SetAppearanceAsync(weight, _iconAppearanceService.CurrentAppearance.StrokeThickness);
+            IconAppearanceStatus = "Peso dos ícones salvo.";
+        }
+        catch (Exception)
+        {
+            IconAppearanceStatus = "Não foi possível salvar o peso dos ícones.";
+        }
     }
 
     private async Task ResetIconColorsAsync()
@@ -527,7 +570,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
     private static ThemeVariant ThemeVariantFor(DecorThemeStyle theme) =>
         theme == DecorThemeStyle.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
 
-    private async Task SaveStockSettingsAsync()
+    private async Task SaveStockSettingsAsync(bool allowNegativeStock)
     {
         if (_stockSettingsService is null)
         {
@@ -537,7 +580,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
 
         try
         {
-            await _stockSettingsService.SetAllowNegativeStockAsync(AllowNegativeStock);
+            await _stockSettingsService.SetAllowNegativeStockAsync(allowNegativeStock);
             StockSettingsStatus = "Configuração de estoque salva.";
         }
         catch
@@ -546,7 +589,7 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         }
     }
 
-    private void SaveBackupNotificationSettings()
+    public void SaveBackupNotificationSettings()
     {
         if (_backupNotificationSettingsStore is null)
         {
@@ -637,16 +680,26 @@ public sealed class IconCatalogViewModel : INotifyPropertyChanged
         if (_themeService.CurrentTheme == theme)
             return;
 
-        await _themeService.SetThemeAsync(theme);
-        _selectedThemeOption = theme == DecorThemeStyle.Light ? "Claro" : "Escuro";
-        if (global::Avalonia.Application.Current is not null)
+        try
         {
-            global::Avalonia.Application.Current.RequestedThemeVariant = theme == DecorThemeStyle.Dark
-                ? global::Avalonia.Styling.ThemeVariant.Dark
-                : global::Avalonia.Styling.ThemeVariant.Light;
+            await _themeService.SetThemeAsync(theme);
+            _selectedThemeOption = theme == DecorThemeStyle.Light ? "Claro" : "Escuro";
+            if (global::Avalonia.Application.Current is not null)
+            {
+                global::Avalonia.Application.Current.RequestedThemeVariant = theme == DecorThemeStyle.Dark
+                    ? global::Avalonia.Styling.ThemeVariant.Dark
+                    : global::Avalonia.Styling.ThemeVariant.Light;
+            }
+            OnPropertyChanged(nameof(CurrentThemeName));
+            OnPropertyChanged(nameof(SelectedThemeOption));
+            ThemeSettingsStatus = "Tema atualizado e salvo.";
         }
-        OnPropertyChanged(nameof(CurrentThemeName));
-        OnPropertyChanged(nameof(SelectedThemeOption));
+        catch (Exception)
+        {
+            _selectedThemeOption = CurrentThemeName;
+            OnPropertyChanged(nameof(SelectedThemeOption));
+            ThemeSettingsStatus = "Não foi possível salvar o tema.";
+        }
     }
 
     private async Task ApplyThemeSelectionAsync()
