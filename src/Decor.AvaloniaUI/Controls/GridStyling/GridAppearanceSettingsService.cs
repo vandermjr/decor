@@ -48,6 +48,7 @@ public sealed class GridAppearanceSettingsService
 
     public double FontSize => _settings.FontSize;
     public double RowHeight => _settings.RowHeight;
+    public double HeaderHeight => _settings.HeaderHeight;
     public double MaximumFontSize => GetMaximumFontSize(RowHeight);
     public string FontFamily => _settings.FontFamily;
     public string HeaderFontWeight => _settings.HeaderFontWeight;
@@ -105,7 +106,7 @@ public sealed class GridAppearanceSettingsService
 
     public void SetTypography(string fontFamily, double fontSize, double rowHeight, string headerFontWeight, string cellFontWeight,
         string descriptionFontWeight, string headerAlignment, DataGridGridLinesVisibility gridLinesVisibility,
-        DataGridHeadersVisibility headersVisibility)
+        DataGridHeadersVisibility headersVisibility, double headerHeight = 38)
     {
         if (!AvailableFontFamilies.Contains(fontFamily, StringComparer.Ordinal))
             throw new ArgumentOutOfRangeException(nameof(fontFamily));
@@ -113,6 +114,8 @@ public sealed class GridAppearanceSettingsService
             throw new ArgumentOutOfRangeException(nameof(fontSize));
         if (rowHeight is < 20 or > 80)
             throw new ArgumentOutOfRangeException(nameof(rowHeight));
+        if (headerHeight is < 28 or > 64)
+            throw new ArgumentOutOfRangeException(nameof(headerHeight));
         if (!AvailableFontWeights.Contains(headerFontWeight, StringComparer.Ordinal)
             || !AvailableFontWeights.Contains(cellFontWeight, StringComparer.Ordinal)
             || !AvailableFontWeights.Contains(descriptionFontWeight, StringComparer.Ordinal))
@@ -125,6 +128,7 @@ public sealed class GridAppearanceSettingsService
             FontFamily = fontFamily,
             FontSize = Math.Min(fontSize, GetMaximumFontSize(rowHeight)),
             RowHeight = rowHeight,
+            HeaderHeight = headerHeight,
             HeaderFontWeight = headerFontWeight,
             CellFontWeight = cellFontWeight,
             DescriptionFontWeight = descriptionFontWeight,
@@ -168,6 +172,7 @@ public sealed class GridAppearanceSettingsService
             return settings with
             {
                 RowHeight = rowHeight,
+                HeaderHeight = Math.Clamp(settings.HeaderHeight, 28, 64),
                 FontSize = Math.Clamp(settings.FontSize, 9, GetMaximumFontSize(rowHeight))
             };
         }
@@ -195,6 +200,7 @@ public sealed class GridAppearanceSettingsService
         public string FontFamily { get; init; } = "Noto Sans";
         public double FontSize { get; init; } = 13;
         public double RowHeight { get; init; } = 32;
+        public double HeaderHeight { get; init; } = 38;
         public string HeaderFontWeight { get; init; } = "SemiBold";
         public string CellFontWeight { get; init; } = "Normal";
         public string DescriptionFontWeight { get; init; } = "SemiBold";

@@ -8,6 +8,7 @@ using Decor.Core.Common;
 using Decor.Core.DTOs;
 using Decor.Core.Entities;
 using Decor.Core.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Decor.AvaloniaUI.ViewModels;
 
@@ -22,6 +23,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private readonly ISubgroupService _subgroupService;
     private readonly IUnitOfMeasureService? _unitOfMeasureService;
     private readonly IAuthorizationService? _authorizationService;
+    private readonly ILogger<ProductsViewModel>? _logger;
 
     private ProductDTO? _selectedProduct;
     private string _searchText = string.Empty;
@@ -54,7 +56,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IGroupService groupService,
         ISubgroupService subgroupService,
         IAuthorizationService? authorizationService = null,
-        IUnitOfMeasureService? unitOfMeasureService = null)
+        IUnitOfMeasureService? unitOfMeasureService = null,
+        ILogger<ProductsViewModel>? logger = null)
     {
         _productService = productService;
         _brandService = brandService;
@@ -64,6 +67,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         _subgroupService = subgroupService;
         _unitOfMeasureService = unitOfMeasureService;
         _authorizationService = authorizationService;
+        _logger = logger;
 
         SearchCommand = new RelayCommand(async () => await SearchProductsAsync(), () => CanSearch);
         ClearSearchCommand = new RelayCommand(ClearSearch, () => CanSearch);
@@ -504,8 +508,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             CatalogSummary = await _productService.GetCatalogSummaryAsync();
         }
-        catch
+        catch (Exception exception)
         {
+            _logger?.LogWarning(exception, "Não foi possível carregar o resumo do catálogo de produtos.");
             CatalogSummary = null;
         }
     }

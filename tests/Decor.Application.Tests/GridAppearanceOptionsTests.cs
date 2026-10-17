@@ -36,6 +36,7 @@ public sealed class GridAppearanceOptionsTests
             editor.FontFamily = "Segoe UI";
             editor.FontSize = 15.5;
             editor.RowHeight = 42;
+            editor.HeaderHeight = 46;
             editor.DescriptionFontWeight.Should().Be("SemiBold");
             editor.HeaderAlignment = "Direita";
             editor.RowAlignments.Should().HaveCount(6);
@@ -45,6 +46,7 @@ public sealed class GridAppearanceOptionsTests
             Assert.Equal("Segoe UI", settings.FontFamily);
             Assert.Equal(15.5, settings.FontSize);
             Assert.Equal(42, settings.RowHeight);
+            Assert.Equal(46, settings.HeaderHeight);
             Assert.Equal("Right", settings.HeaderAlignment);
             Assert.Equal("Left", settings.GetRowAlignment("Decimal"));
             Assert.Equal("Auto", settings.GetRowAlignment("Text"));
@@ -58,6 +60,7 @@ public sealed class GridAppearanceOptionsTests
             Assert.Equal("Noto Sans", settings.FontFamily);
             Assert.Equal(13, settings.FontSize);
             Assert.Equal(32, settings.RowHeight);
+            Assert.Equal(38, settings.HeaderHeight);
             Assert.Equal("SemiBold", settings.HeaderFontWeight);
             Assert.All(editor.RowAlignments, option => Assert.Equal("Automático", option.SelectedAlignment));
             Assert.Equal(Color.Parse("#F0F2F5"), Assert.IsAssignableFrom<ISolidColorBrush>(settings.CreateTheme(false).HeaderBackground).Color);
@@ -97,6 +100,31 @@ public sealed class GridAppearanceOptionsTests
             editor.RowHeight = 20;
             Assert.Equal(13, editor.FontSize);
             Assert.Equal(13, settings.FontSize);
+
+            editor.HeaderHeight = 80;
+            Assert.Equal(64, editor.HeaderHeight);
+            Assert.Equal(64, settings.HeaderHeight);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Header_height_defaults_and_normalizes_old_persisted_settings()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "decor-grid-header-height-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(directory, "settings.json");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(path, "{\"FontFamily\":\"Noto Sans\",\"FontSize\":13,\"RowHeight\":32}");
+            Assert.Equal(38, new GridAppearanceSettingsService(path).HeaderHeight);
+
+            File.WriteAllText(path, "{\"HeaderHeight\":80}");
+            Assert.Equal(64, new GridAppearanceSettingsService(path).HeaderHeight);
         }
         finally
         {
@@ -139,6 +167,16 @@ public sealed class GridAppearanceOptionsTests
 
         var view = XDocument.Load(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Views", "IconCatalogView.axaml"));
         XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var colorTemplate = Assert.Single(view.Descendants(), element => element.Name.LocalName == "DataTemplate"
+            && (string?)element.Attribute(xaml + "Key") == "GridAppearanceColorOptionTemplate");
+        var colorDivider = Assert.Single(colorTemplate.Elements(), element => element.Name.LocalName == "Border");
+        Assert.Equal("{DynamicResource DecorBorderBrush}", (string?)colorDivider.Attribute("BorderBrush"));
+        Assert.Equal("0,0,1,0", (string?)colorDivider.Attribute("BorderThickness"));
+        Assert.Contains(colorDivider.Elements(), element => element.Name.LocalName == "Grid"
+            && element.Descendants().Any(child => child.Name.LocalName == "TextBlock"
+                && (string?)child.Attribute("Text") == "{Binding Label}")
+            && element.Descendants().Any(child => child.Name.LocalName == "TextBox"
+                && (string?)child.Attribute("Text") == "{Binding ColorHex, Mode=TwoWay}"));
         Assert.Contains(view.Descendants(), element => element.Name.LocalName == "TreeViewItem"
             && (string?)element.Attribute("Tag") == "GridAppearance"
             && (string?)element.Attribute("Header") == "Grades");
@@ -177,6 +215,10 @@ public sealed class GridAppearanceOptionsTests
             && (string?)element.Attribute("TickFrequency") == "0.1"
             && ((string?)element.Attribute("Maximum"))?.Contains("GridAppearance.MaximumFontSize", StringComparison.Ordinal) == true
             && ((string?)element.Attribute("Value"))?.Contains("GridAppearance.FontSize", StringComparison.Ordinal) == true);
+        Assert.Contains(view.Descendants(), element => element.Name.LocalName == "Slider"
+            && (string?)element.Attribute("Minimum") == "28"
+            && (string?)element.Attribute("Maximum") == "64"
+            && ((string?)element.Attribute("Value"))?.Contains("GridAppearance.HeaderHeight", StringComparison.Ordinal) == true);
         Assert.Contains(view.Descendants(), element => element.Name.LocalName == "TextBlock"
             && ((string?)element.Attribute("Text"))?.Contains("GridAppearance.FontSize", StringComparison.Ordinal) == true
             && ((string?)element.Attribute("Text"))?.Contains("0.0", StringComparison.Ordinal) == true);
@@ -246,5 +288,7 @@ public sealed class GridAppearanceOptionsTests
             && ((string?)element.Attribute("Selector"))?.Contains("DataGridColumnHeader", StringComparison.Ordinal) == true);
         Assert.All(headerStyles, style => Assert.DoesNotContain(style.Elements().Where(element => element.Name.LocalName == "Setter"),
             setter => (string?)setter.Attribute("Property") == "FontWeight"));
+        Assert.All(headerStyles, style => Assert.DoesNotContain(style.Elements().Where(element => element.Name.LocalName == "Setter"),
+            setter => (string?)setter.Attribute("Property") == "Height"));
     }
 }

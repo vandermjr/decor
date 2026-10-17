@@ -4,9 +4,6 @@
              x:Class="Decor.AvaloniaUI.Views.PurchaseOrdersView"
              x:DataType="vm:PurchaseOrdersViewModel">
   <UserControl.Styles>
-    <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
-      <Setter Property="Height" Value="38"/>
-    </Style>
     <Style Selector="DataGrid.stock-catalog DataGridRow">
       <Setter Property="MinHeight" Value="40"/>
     </Style>

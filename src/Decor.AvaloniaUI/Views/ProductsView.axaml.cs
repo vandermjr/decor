@@ -111,6 +111,7 @@ public partial class ProductsView : UserControl
         var layout = this.FindControl<Grid>("CatalogLayout");
         if (layout is null) return;
 
+        var searchToolsFrame = this.FindControl<Border>("SearchToolsFrame");
         var summaryLayout = this.FindControl<Grid>("CatalogSummaryLayout");
         var compactSummary = Bounds.Width < 760;
         if (summaryLayout is not null)
@@ -125,13 +126,28 @@ public partial class ProductsView : UserControl
             }
         }
 
-        var compact = Bounds.Width < 1120;
-        layout.ColumnDefinitions = compact ? new ColumnDefinitions("*") : new ColumnDefinitions("2*,360");
-        layout.RowDefinitions = compact ? new RowDefinitions("3*,2*") : new RowDefinitions("*");
-        Grid.SetColumn(ProductsGridFrame, 0);
-        Grid.SetColumn(ProductDetailsPanel, compact ? 0 : 1);
-        Grid.SetRow(ProductsGridFrame, 0);
-        Grid.SetRow(ProductDetailsPanel, compact ? 1 : 0);
+        ConfigureCatalogLayout(layout, searchToolsFrame, ProductsGridFrame, ProductDetailsPanel, Bounds.Width);
+    }
+
+    private static void ConfigureCatalogLayout(Grid layout, Border? searchToolsFrame, Border productsGridFrame, Border productDetailsPanel, double width)
+    {
+        var compact = width < 1120;
+        layout.ColumnDefinitions = compact ? new ColumnDefinitions("*") : new ColumnDefinitions("2*,420");
+        layout.RowDefinitions = compact
+            ? new RowDefinitions("Auto,3*,2*")
+            : new RowDefinitions("Auto,*");
+        if (searchToolsFrame is not null)
+        {
+            Grid.SetColumn(searchToolsFrame, 0);
+            Grid.SetRow(searchToolsFrame, 0);
+            Grid.SetRowSpan(searchToolsFrame, 1);
+        }
+        Grid.SetColumn(productsGridFrame, 0);
+        Grid.SetRow(productsGridFrame, 1);
+        Grid.SetRowSpan(productsGridFrame, 1);
+        Grid.SetColumn(productDetailsPanel, compact ? 0 : 1);
+        Grid.SetRow(productDetailsPanel, compact ? 2 : 0);
+        Grid.SetRowSpan(productDetailsPanel, compact ? 1 : 2);
     }
 
     private async void ExportProductsClicked(object? sender, RoutedEventArgs eventArgs)

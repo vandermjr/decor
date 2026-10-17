@@ -162,6 +162,7 @@ public sealed class GridControlThemeColorTests
             Assert.Equal("Segoe UI", restored.FontFamily);
             Assert.Equal(15, restored.FontSize);
             Assert.Equal(40, restored.RowHeight);
+            Assert.Equal(38, restored.HeaderHeight);
             Assert.Equal("Bold", restored.HeaderFontWeight);
             Assert.Equal("SemiBold", restored.CellFontWeight);
             Assert.Equal("Normal", restored.DescriptionFontWeight);
@@ -178,6 +179,7 @@ public sealed class GridControlThemeColorTests
             Assert.Equal(13, defaults.FontSize);
             Assert.Equal("Noto Sans", defaults.FontFamily);
             Assert.Equal(32, defaults.RowHeight);
+            Assert.Equal(38, defaults.HeaderHeight);
             Assert.Equal("SemiBold", defaults.HeaderFontWeight);
             Assert.Equal("Normal", defaults.CellFontWeight);
             Assert.Equal("SemiBold", defaults.DescriptionFontWeight);

@@ -736,6 +736,7 @@ public partial class DecorDataGridControl : UserControl
                 new Setter(TemplatedControl.ForegroundProperty, theme.HeaderText),
                 new Setter(TemplatedControl.FontSizeProperty, _appearanceSettings?.FontSize ?? 13),
                 new Setter(TemplatedControl.FontWeightProperty, ResolveFontWeight(_appearanceSettings?.HeaderFontWeight ?? "SemiBold")),
+                new Setter(Control.HeightProperty, _appearanceSettings?.HeaderHeight ?? 38),
                 new Setter(ContentControl.HorizontalContentAlignmentProperty, GetHeaderHorizontalAlignment())
             }
         });

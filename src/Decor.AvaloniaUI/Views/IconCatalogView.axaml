@@ -7,11 +7,13 @@
              x:DataType="vm:IconCatalogViewModel">
   <UserControl.Resources>
     <DataTemplate x:Key="GridAppearanceColorOptionTemplate" x:DataType="vm:GridAppearanceColorOption">
-      <Grid Width="270" ColumnDefinitions="*,100,24" ColumnSpacing="8" Margin="0,0,12,8">
-        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}"/>
-        <TextBox Grid.Column="1" Text="{Binding ColorHex, Mode=TwoWay}" MaxLength="9" ToolTip.Tip="Cor hexadecimal"/>
-        <Border Grid.Column="2" Width="22" Height="22" CornerRadius="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{Binding PreviewBrush}" VerticalAlignment="Center"/>
-      </Grid>
+      <Border Width="270" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0,1,0" Padding="0,0,8,0" Margin="0,0,12,8">
+        <Grid ColumnDefinitions="*,100,24" ColumnSpacing="8">
+          <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}"/>
+          <TextBox Grid.Column="1" Text="{Binding ColorHex, Mode=TwoWay}" MaxLength="9" ToolTip.Tip="Cor hexadecimal"/>
+          <Border Grid.Column="2" Width="22" Height="22" CornerRadius="3" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Background="{Binding PreviewBrush}" VerticalAlignment="Center"/>
+        </Grid>
+      </Border>
     </DataTemplate>
   </UserControl.Resources>
   <UserControl.Styles>
@@ -202,6 +204,11 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
+              </Grid>
+              <Grid ColumnDefinitions="160,*,52" ColumnSpacing="12">
+                <TextBlock Text="Altura dos cabeçalhos" VerticalAlignment="Center"/>
+                <Slider Grid.Column="1" Minimum="28" Maximum="64" TickFrequency="2" Value="{Binding GridAppearance.HeaderHeight, Mode=TwoWay}"/>
+                <TextBlock Grid.Column="2" Text="{Binding GridAppearance.HeaderHeight, StringFormat='{}{0:0} px'}" VerticalAlignment="Center" TextAlignment="Right"/>
               </Grid>
               <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
                 <TextBlock Text="Peso das descrições" VerticalAlignment="Center"/>

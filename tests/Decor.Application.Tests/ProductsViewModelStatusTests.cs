@@ -80,10 +80,82 @@ public sealed class ProductsViewModelStatusTests
         await viewModel.InitializeAsync();
 
         viewModel.CatalogSummary.Should().Be(new ProductCatalogSummaryDTO(1250, 1180, 42, 18));
+        viewModel.HasCatalogSummary.Should().BeTrue();
         viewModel.TotalProductsDisplay.Should().Be("1.250");
         viewModel.ActiveProductsDisplay.Should().Be("1.180");
         viewModel.OutOfStockProductsDisplay.Should().Be("42");
         viewModel.LowStockProductsDisplay.Should().Be("18");
+    }
+
+    [Fact]
+    public async Task Initialize_without_summary_result_hides_summary_cards()
+    {
+        var viewModel = Create(new ProductService { Summary = () => Task.FromResult<ProductCatalogSummaryDTO?>(null) });
+
+        await viewModel.InitializeAsync();
+
+        viewModel.CatalogSummary.Should().BeNull();
+        viewModel.HasCatalogSummary.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Initialize_when_summary_service_fails_hides_summary_cards()
+    {
+        var viewModel = Create(new ProductService
+        {
+            Summary = () => Task.FromException<ProductCatalogSummaryDTO?>(new InvalidOperationException("Database unavailable."))
+        });
+
+        await viewModel.InitializeAsync();
+
+        viewModel.CatalogSummary.Should().BeNull();
+        viewModel.HasCatalogSummary.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Initialize_without_product_view_permission_does_not_load_summary()
+    {
+        var summaryCalls = 0;
+        var viewModel = Create(new ProductService
+        {
+            Summary = () =>
+            {
+                summaryCalls++;
+                return Task.FromResult<ProductCatalogSummaryDTO?>(new(10, 8, 1, 2));
+            }
+        }, authorization: new DeniedAuthorization());
+
+        await viewModel.InitializeAsync();
+
+        summaryCalls.Should().Be(0);
+        viewModel.HasCatalogSummary.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Initialize_does_not_load_products_until_explicit_empty_search_and_clear_resets_listing()
+    {
+        var searchTerms = new List<string>();
+        var productService = new ProductService
+        {
+            Search = () => Task.FromResult<IEnumerable<ProductDTO>>([Product()]),
+            SearchRequested = searchTerms.Add
+        };
+        var viewModel = Create(productService);
+
+        await viewModel.InitializeAsync();
+        viewModel.Products.Should().BeEmpty();
+        searchTerms.Should().BeEmpty();
+
+        await ExecuteAsync(viewModel, viewModel.SearchCommand, () => viewModel.IsBusy);
+
+        searchTerms.Should().ContainSingle().Which.Should().BeEmpty();
+        viewModel.Products.Should().ContainSingle();
+
+        viewModel.SearchText = "produto";
+        viewModel.ClearSearchCommand.Execute(null);
+        viewModel.SearchText.Should().BeEmpty();
+        viewModel.Products.Should().BeEmpty();
+        viewModel.HasSelectedProduct.Should().BeFalse();
     }
 
     [Fact]
@@ -273,12 +345,17 @@ public sealed class ProductsViewModelStatusTests
     private sealed class ProductService : IProductService
     {
         public Func<Task<IEnumerable<ProductDTO>>> Search { get; set; } = () => Task.FromResult<IEnumerable<ProductDTO>>([]);
+        public Action<string>? SearchRequested { get; set; }
         public Func<Task> Save { get; set; } = () => Task.CompletedTask;
         public Func<Task<ProductCatalogSummaryDTO?>> Summary { get; set; } = () => Task.FromResult<ProductCatalogSummaryDTO?>(null);
         public Task<ProductCatalogSummaryDTO?> GetCatalogSummaryAsync(CancellationToken cancellationToken = default) => Summary();
         public Task<ProductDTO> GetProductByIdAsync(int productId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<ProductDTO>>([]);
-        public Task<IEnumerable<ProductDTO>> SearchProductsAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => Search();
+        public Task<IEnumerable<ProductDTO>> SearchProductsAsync(string searchTerm, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default)
+        {
+            SearchRequested?.Invoke(searchTerm);
+            return Search();
+        }
         public Task SaveProductAsync(ProductDTO product, CancellationToken cancellationToken = default) => Save();
     }
 

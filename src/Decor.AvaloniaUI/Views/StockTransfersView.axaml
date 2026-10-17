@@ -4,9 +4,6 @@
              x:Class="Decor.AvaloniaUI.Views.StockTransfersView"
              x:DataType="vm:StockTransfersViewModel">
   <UserControl.Styles>
-    <Style Selector="DataGrid.stock-catalog DataGridColumnHeader">
-      <Setter Property="Height" Value="38"/>
-    </Style>
     <Style Selector="DataGrid.stock-catalog DataGridRow">
       <Setter Property="MinHeight" Value="40"/>
     </Style>

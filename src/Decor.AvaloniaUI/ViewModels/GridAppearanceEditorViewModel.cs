@@ -40,6 +40,7 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
     private string _fontFamily;
     private double _fontSize;
     private double _rowHeight;
+    private double _headerHeight;
     private string _headerFontWeight;
     private string _cellFontWeight;
     private string _descriptionFontWeight;
@@ -74,6 +75,7 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
         _fontFamily = settings.FontFamily;
         _fontSize = settings.FontSize;
         _rowHeight = settings.RowHeight;
+        _headerHeight = settings.HeaderHeight;
         _headerFontWeight = settings.HeaderFontWeight;
         _cellFontWeight = settings.CellFontWeight;
         _descriptionFontWeight = settings.DescriptionFontWeight;
@@ -130,6 +132,15 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
             if (_fontSize > MaximumFontSize)
                 SetField(ref _fontSize, MaximumFontSize, nameof(FontSize));
             PersistTypography();
+        }
+    }
+
+    public double HeaderHeight
+    {
+        get => _headerHeight;
+        set
+        {
+            if (SetField(ref _headerHeight, Math.Clamp(value, 28, 64))) PersistTypography();
         }
     }
 
@@ -201,6 +212,7 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
         _fontFamily = _settings.FontFamily;
         _fontSize = _settings.FontSize;
         _rowHeight = _settings.RowHeight;
+        _headerHeight = _settings.HeaderHeight;
         _headerFontWeight = _settings.HeaderFontWeight;
         _cellFontWeight = _settings.CellFontWeight;
         _descriptionFontWeight = _settings.DescriptionFontWeight;
@@ -211,6 +223,7 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(FontSize));
         OnPropertyChanged(nameof(MaximumFontSize));
         OnPropertyChanged(nameof(RowHeight));
+        OnPropertyChanged(nameof(HeaderHeight));
         OnPropertyChanged(nameof(HeaderFontWeight));
         OnPropertyChanged(nameof(CellFontWeight));
         OnPropertyChanged(nameof(DescriptionFontWeight));
@@ -262,7 +275,7 @@ public sealed class GridAppearanceEditorViewModel : INotifyPropertyChanged
         {
             _settings.SetTypography(FontFamily, FontSize, RowHeight, HeaderFontWeight, CellFontWeight, DescriptionFontWeight,
                 ParseAlignmentOption(HeaderAlignment),
-                ParseGridLinesOption(GridLinesOption), ParseHeadersVisibilityOption(HeadersVisibilityOption));
+                ParseGridLinesOption(GridLinesOption), ParseHeadersVisibilityOption(HeadersVisibilityOption), HeaderHeight);
             Status = string.Empty;
         }
         catch (Exception)

@@ -1,7 +1,11 @@
 using System.Xml.Linq;
 using System.Reflection;
 using System.Text;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Decor.AvaloniaUI.Services;
+using Decor.AvaloniaUI.Views;
 using Decor.Core.DTOs;
 
 namespace Decor.Application.Tests;
@@ -23,10 +27,51 @@ public sealed class ProductsCatalogPanelTests
         Assert.Equal("{Binding SearchText, Mode=TwoWay}", (string?)search.Attribute("Text"));
         Assert.Equal("{Binding SearchCommand}", (string?)search.Attribute("SearchCommand"));
         Assert.Equal("{Binding ClearSearchCommand}", (string?)search.Attribute("ClearCommand"));
+        Assert.Contains(search.Ancestors(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "SearchToolsFrame");
         Assert.Equal("{Binding Products}", (string?)grid.Attribute("ItemsSource"));
         Assert.Equal("{Binding SelectedProduct, Mode=TwoWay}", (string?)grid.Attribute("SelectedItem"));
         Assert.Equal("True", (string?)innerGrid.Attribute("CanUserResizeColumns"));
         Assert.Equal("True", (string?)innerGrid.Attribute("CanUserSortColumns"));
+    }
+
+    [Theory]
+    [InlineData(1280, 2, 2, 0, 1, 0, 1, 2)]
+    [InlineData(900, 3, 1, 0, 1, 2, 0, 1)]
+    public void Product_catalog_layout_keeps_search_grid_and_details_in_distinct_responsive_cells(
+        double width, int rowCount, int columnCount, int searchRow, int gridRow, int detailsRow, int detailsColumn, int detailsRowSpan)
+    {
+        var layout = new Grid { ColumnSpacing = 12 };
+        var searchField = new Border { Height = 36 };
+        var searchFrame = new Border { Padding = new Thickness(10), Child = searchField };
+        var productsGrid = new Border();
+        var details = new Border();
+        layout.Children.Add(searchFrame);
+        layout.Children.Add(productsGrid);
+        layout.Children.Add(details);
+        typeof(ProductsView).GetMethod("ConfigureCatalogLayout", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [layout, searchFrame, productsGrid, details, width]);
+
+        Assert.Equal(rowCount, layout.RowDefinitions.Count);
+        Assert.Equal(columnCount, layout.ColumnDefinitions.Count);
+        Assert.Equal(searchRow, Grid.GetRow(searchFrame));
+        Assert.Equal(0, Grid.GetColumn(searchFrame));
+        Assert.Equal(gridRow, Grid.GetRow(productsGrid));
+        Assert.Equal(0, Grid.GetColumn(productsGrid));
+        Assert.Equal(detailsRow, Grid.GetRow(details));
+        Assert.Equal(detailsColumn, Grid.GetColumn(details));
+        Assert.Equal(detailsRowSpan, Grid.GetRowSpan(details));
+        Assert.Same(layout, searchFrame.Parent);
+        layout.Measure(new Size(width, 800));
+        layout.Arrange(new Rect(0, 0, width, 800));
+
+        Assert.True(searchFrame.Bounds.Height > 0);
+        Assert.True(searchField.Bounds.Height > 0);
+        Assert.True(productsGrid.Bounds.Height > 0);
+        Assert.True(details.Bounds.Height > 0);
+        Assert.True(searchFrame.Bounds.Bottom <= productsGrid.Bounds.Top);
+        if (width >= 1120)
+            Assert.Equal(12, details.Bounds.Left - productsGrid.Bounds.Right);
     }
 
     [Fact]
@@ -43,6 +88,11 @@ public sealed class ProductsCatalogPanelTests
             && (string?)element.Attribute("Text") == "{Binding SelectedProduct.Description}");
         Assert.Contains(details.Descendants(), element => element.Name.LocalName == "TextBlock"
             && (string?)element.Attribute("Text") == "{Binding SelectedSalePriceDisplay}");
+        Assert.Contains(details.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "{Binding SelectedProductCategoryDisplay}"
+            && (string?)element.Attribute("FontSize") == "{DynamicResource DecorFontSizeBase}");
+        Assert.All(details.Descendants().Where(element => element.Name.LocalName == "TabItem"), tab =>
+            Assert.Equal("{DynamicResource DecorFontSizeBase}", (string?)tab.Attribute("FontSize")));
         Assert.Contains(details.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Command") == "{Binding EditCommand}");
 
@@ -56,12 +106,31 @@ public sealed class ProductsCatalogPanelTests
     public void Product_listing_exposes_export_and_column_visibility_actions()
     {
         var document = ReadProductsView();
+        var summary = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Grid"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogSummaryLayout");
+        Assert.Equal("{Binding HasCatalogSummary}", (string?)summary.Attribute("IsVisible"));
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Click") == "ExportProductsClicked");
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Click") == "ConfigureColumnsClicked");
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Grid"
             && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogLayout");
+        var catalog = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Grid"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogLayout");
+        Assert.Equal("12", (string?)catalog.Attribute("ColumnSpacing"));
+        Assert.Equal("12", (string?)catalog.Attribute("RowSpacing"));
+        var columns = catalog.Elements().Single(element => element.Name.LocalName == "Grid.ColumnDefinitions").Elements().ToArray();
+        Assert.Equal("2*", (string?)columns[0].Attribute("Width"));
+        Assert.Equal("420", (string?)columns[1].Attribute("Width"));
+        var details = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ProductDetailsPanel");
+        Assert.Equal("380", (string?)details.Attribute("MinWidth"));
+        Assert.Equal("460", (string?)details.Attribute("MaxWidth"));
+        Assert.Equal("Stretch", (string?)details.Attribute("HorizontalAlignment"));
+        foreach (var buttonText in new[] { "Novo produto", "Editar produto" })
+            Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+                && (string?)element.Attribute("Text") == buttonText
+                && (string?)element.Attribute("FontWeight") == "SemiBold");
     }
 
     [Fact]

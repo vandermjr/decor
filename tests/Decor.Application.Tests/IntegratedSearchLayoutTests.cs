@@ -54,6 +54,22 @@ public sealed class IntegratedSearchLayoutTests
             Assert.Null(field.Attribute("Grid.Row"));
             Assert.Equal("0,0,0,12", (string?)field.Attribute("Margin"));
         }
+        else if (view == "ProductsView.axaml")
+        {
+            var searchFrame = Assert.Single(field.Ancestors(), element => element.Name.LocalName == "Border"
+                && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "SearchToolsFrame");
+            Assert.Equal("0", (string?)searchFrame.Attribute("Grid.Row"));
+            Assert.Equal("0", (string?)searchFrame.Attribute("Grid.Column"));
+            var layout = Assert.Single(searchFrame.Ancestors(), element => element.Name.LocalName == "Grid"
+                && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogLayout");
+            Assert.Equal("2", (string?)layout.Attribute("Grid.Row"));
+            Assert.Equal("{Binding !IsEditing}", (string?)layout.Attribute("IsVisible"));
+            var productsGrid = Assert.Single(layout.Elements(), element => (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ProductsGridFrame");
+            Assert.Equal("1", (string?)productsGrid.Attribute("Grid.Row"));
+            Assert.Equal("0", (string?)productsGrid.Attribute("Grid.Column"));
+            var layoutChildren = layout.Elements().ToList();
+            Assert.True(layoutChildren.IndexOf(searchFrame) < layoutChildren.IndexOf(productsGrid));
+        }
         else
         {
             var visibility = view is "ServicesView.axaml" or "QuotesView.axaml" ? field.Parent! : field;
