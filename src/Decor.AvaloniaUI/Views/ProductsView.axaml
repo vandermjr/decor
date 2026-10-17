@@ -9,6 +9,13 @@
     x:DataType="vm:ProductsViewModel">
   <UserControl.Resources>
     <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionBackgroundBrush">#F6AB58</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionForegroundBrush">#332611</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionBorderBrush">#D6A02E</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionHoverBrush">#E9AE31</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionPressedBrush">#D9991D</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionDisabledBackgroundBrush">#D8CCB4</SolidColorBrush>
+    <SolidColorBrush x:Key="CatalogActionDisabledForegroundBrush">#625842</SolidColorBrush>
   </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="PathIcon.catalog-total-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Common.Database}"/></Style>
@@ -48,13 +55,29 @@
       <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
     </Style>
-    <Style Selector="Button.product-primary-action">
+    <Style Selector="Button.catalog-accent-action">
       <Setter Property="Height" Value="38"/>
       <Setter Property="MinHeight" Value="36"/>
       <Setter Property="Padding" Value="14,6"/>
       <Setter Property="CornerRadius" Value="4"/>
-      <Setter Property="Background" Value="{DynamicResource DecorAccentBrush}"/>
-      <Setter Property="Foreground" Value="{DynamicResource DecorSelectionForegroundBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource CatalogActionBackgroundBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-accent-action:pointerover">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-accent-action:pressed">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionPressedBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-accent-action:disabled">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionDisabledBackgroundBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionDisabledForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionDisabledBackgroundBrush}"/>
     </Style>
     <Style Selector="Border.column-menu">
       <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
@@ -66,9 +89,9 @@
       <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}"/>
     </Style>
   </UserControl.Styles>
-  <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12" Margin="18">
+  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12" Margin="18">
     <StackPanel Grid.Row="0" Spacing="4" IsVisible="{Binding !IsEditing}">
-      <TextBlock Text="Produtos" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <TextBlock Text="Catálogo de produtos" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
       <TextBlock Text="Catálogo, preços e disponibilidade do estoque." FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
     </StackPanel>
     <Grid x:Name="CatalogSummaryLayout" Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="10" IsVisible="{Binding HasCatalogSummary}">
@@ -109,16 +132,21 @@
         </Grid>
       </Border>
     </Grid>
-    <Border Grid.Row="2" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10" IsVisible="{Binding !IsEditing}">
-      <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
-        <controls:DecorSearchField x:Name="SearchTextBox" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
+    <Grid x:Name="CatalogLayout" Grid.Row="2" RowDefinitions="Auto,*" ColumnSpacing="12" RowSpacing="12" IsVisible="{Binding !IsEditing}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1.75*" MinWidth="0"/>
+        <ColumnDefinition Width="*" MinWidth="350" MaxWidth="420"/>
+      </Grid.ColumnDefinitions>
+      <Border Grid.Row="0" Grid.Column="0" MinHeight="104" VerticalAlignment="Top" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
+        <StackPanel Spacing="8">
+        <controls:DecorSearchField x:Name="SearchTextBox" HorizontalAlignment="Stretch" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
                                    PlaceholderText="Pesquisar por código, descrição, marca ou referência" SearchHelp="{x:Static controls:DecorSearchField.ProductSearchHelp}"
                                    SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"/>
-        <WrapPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-          <Button Classes="product-secondary-action" TabIndex="1" Command="{Binding NewCommand}" IsVisible="{Binding CanNew}" Margin="2">
+        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button Classes="catalog-accent-action" TabIndex="1" Command="{Binding NewCommand}" IsVisible="{Binding CanNew}" Margin="2">
             <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAddIndicatorBrush}" Width="16" Height="16" Stretch="Uniform"/>
-              <TextBlock Text="Novo produto" VerticalAlignment="Center"/>
+              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource CatalogActionForegroundBrush}" Width="16" Height="16" Stretch="Uniform"/>
+              <TextBlock Text="Novo produto" Foreground="{DynamicResource CatalogActionForegroundBrush}" FontWeight="Normal" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
           <Button Classes="product-secondary-action" TabIndex="2" Click="ExportProductsClicked" IsEnabled="{Binding CanExport}" Margin="2" ToolTip.Tip="Exportar os produtos encontrados">
@@ -134,19 +162,17 @@
             </StackPanel>
           </Button>
         </WrapPanel>
-      </Grid>
+        </StackPanel>
     </Border>
 
     <!-- DataGrid ou Formulário (alternância) -->
-    <Panel Grid.Row="3">
-      <Grid x:Name="CatalogLayout" ColumnDefinitions="2*,360" ColumnSpacing="12" IsVisible="{Binding !IsEditing}">
-        <Border x:Name="ProductsGridFrame" Grid.Column="0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+        <Border x:Name="ProductsGridFrame" Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource DecorSurfaceRaisedBrush}">
           <controls:DecorDataGridControl x:Name="ProductsGrid" Classes="stock-catalog" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
                 SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"/>
         </Border>
-        <Border x:Name="ProductDetailsPanel" Grid.Column="1" MinWidth="300" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="14">
+        <Border x:Name="ProductDetailsPanel" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" MinWidth="350" MaxWidth="420" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource DecorSurfaceRaisedBrush}" Padding="14">
           <Grid>
             <StackPanel IsVisible="{Binding !HasSelectedProduct}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" MaxWidth="240">
               <PathIcon Classes="product-placeholder-icon" Width="38" Height="38" Foreground="{DynamicResource DecorTextMutedBrush}" HorizontalAlignment="Center"/>
@@ -154,9 +180,9 @@
               <TextBlock Text="Os dados do produto selecionado aparecem aqui." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
             </StackPanel>
             <ScrollViewer IsVisible="{Binding HasSelectedProduct}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-              <StackPanel Spacing="14">
-                <Grid ColumnDefinitions="88,*" ColumnSpacing="12">
-                  <Border Width="88" Height="88" CornerRadius="6" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="96,*" ColumnSpacing="12">
+                  <Border Width="96" Height="96" CornerRadius="6" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1">
                     <PathIcon Classes="product-placeholder-icon" Width="34" Height="34" Foreground="{DynamicResource DecorTextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                   </Border>
                   <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
@@ -172,11 +198,16 @@
                     </Border>
                   </StackPanel>
                 </Grid>
-                <StackPanel Spacing="3">
-                  <TextBlock Text="Preço de venda" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                  <TextBlock Text="{Binding SelectedSalePriceDisplay}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-                  <TextBlock Text="{Binding SelectedCostPriceDisplay, StringFormat='Custo: {0}'}" IsVisible="{Binding HasSelectedCostPrice}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                </StackPanel>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="Preço de venda" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                    <TextBlock Text="{Binding SelectedSalePriceDisplay}" FontSize="{DynamicResource DecorFontSizeTitle}" FontWeight="{DynamicResource DecorFontWeightHeading}" TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="3" IsVisible="{Binding HasSelectedCostPrice}" VerticalAlignment="Center">
+                    <TextBlock Text="Custo" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                    <TextBlock Text="{Binding SelectedCostPriceDisplay}" FontSize="{DynamicResource DecorFontSizeBase}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Grid>
                 <Border Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="5" Padding="10">
                   <StackPanel Spacing="7">
                     <Grid ColumnDefinitions="*,Auto">
@@ -201,8 +232,14 @@
                     <TextBlock Text="{Binding SelectedStockLevelDescription}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
                   </StackPanel>
                 </Border>
+                <Button Classes="catalog-accent-action" Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}" HorizontalAlignment="Stretch">
+                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource CatalogActionForegroundBrush}" Width="16" Height="16" Stretch="Uniform"/>
+                    <TextBlock Text="Editar produto" Foreground="{DynamicResource CatalogActionForegroundBrush}" FontWeight="Normal" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
                 <TabControl MinHeight="180">
-                  <TabItem Header="Resumo">
+                  <TabItem Header="Resumo" FontSize="{DynamicResource DecorFontSizeCaption}">
                     <StackPanel Spacing="10" Margin="8,12">
                       <StackPanel Spacing="3">
                         <TextBlock Text="Código de barras" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
@@ -218,7 +255,7 @@
                       </StackPanel>
                     </StackPanel>
                   </TabItem>
-                  <TabItem Header="Especificações">
+                  <TabItem Header="Especificações" FontSize="{DynamicResource DecorFontSizeCaption}">
                     <StackPanel Spacing="10" Margin="8,12">
                       <StackPanel Spacing="3"><TextBlock Text="Dimensões" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedDimensionsDisplay}" TextWrapping="Wrap"/></StackPanel>
                       <StackPanel Spacing="3"><TextBlock Text="Unidade de medida" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedStockUnitDisplay}" TextWrapping="Wrap"/></StackPanel>
@@ -227,16 +264,10 @@
                       <TextBlock Text="O modelo atual não armazena outros atributos técnicos por produto." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
                     </StackPanel>
                   </TabItem>
-                  <TabItem Header="Fornecedores">
+                  <TabItem Header="Fornecedores" FontSize="{DynamicResource DecorFontSizeCaption}">
                     <TextBlock Margin="8,12" Text="O cadastro atual não mantém fornecedores associados diretamente ao produto." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
                   </TabItem>
                 </TabControl>
-                <Button Classes="product-primary-action" Command="{Binding EditCommand}" IsVisible="{Binding CanEdit}" HorizontalAlignment="Stretch">
-                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Edit}" Fill="{DynamicResource DecorSelectionForegroundBrush}" Width="16" Height="16" Stretch="Uniform"/>
-                    <TextBlock Text="Editar" VerticalAlignment="Center"/>
-                  </StackPanel>
-                </Button>
               </StackPanel>
             </ScrollViewer>
           </Grid>
@@ -244,7 +275,7 @@
       </Grid>
 
       <!-- Formulário de Edição (substitui DataGrid) -->
-      <Border BorderThickness="0" Padding="0" CornerRadius="4" IsVisible="{Binding IsEditing}">
+      <Border Grid.Row="2" BorderThickness="0" Padding="0" CornerRadius="4" IsVisible="{Binding IsEditing}">
         <Grid RowDefinitions="*,Auto">
         <ScrollViewer x:Name="ProductFormScrollViewer" controls:DecorScrollViewerBehavior.ResetToHomeWhenVisible="True"
                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -425,7 +456,6 @@
         </Border>
         </Grid>
       </Border>
-    </Panel>
 
   </Grid>
 </UserControl>
