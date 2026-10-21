@@ -57,13 +57,13 @@ public sealed partial class DecorGridPresentationTests
     public void Value_match_highlight_includes_the_focused_item_and_tracks_recycled_cells()
     {
         var control = new DecorDataGridControl();
-        var property = typeof(ProductDTO).GetProperty(nameof(ProductDTO.Description))!;
+        var property = typeof(ProductDTO).GetProperty(nameof(ProductDTO.ProductName))!;
         var focusedItem = ProductStockGridTests.CreateProduct(0, 0, 0);
         var otherMatchingItem = ProductStockGridTests.CreateProduct(0, 0, 0) with { ProductID = 2 };
         typeof(DecorDataGridControl).GetField("_highlightedProperty", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(control, property);
         typeof(DecorDataGridControl).GetField("_highlightedValue", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(control, focusedItem.Description);
+            .SetValue(control, focusedItem.ProductName);
         typeof(DecorDataGridControl).GetField("_focusedCellItem", BindingFlags.NonPublic | BindingFlags.Instance)!
             .SetValue(control, focusedItem);
 
@@ -173,7 +173,7 @@ public sealed partial class DecorGridPresentationTests
         var method = typeof(ProductsView).GetMethod("GetColumnWidth", BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var productIdWidth = (DataGridLength)method.Invoke(null, [nameof(ProductDTO.ProductID)])!;
-        var descriptionWidth = (DataGridLength)method.Invoke(null, [nameof(ProductDTO.Description)])!;
+        var descriptionWidth = (DataGridLength)method.Invoke(null, [nameof(ProductDTO.ProductName)])!;
 
         Assert.Equal(DataGridLengthUnitType.Auto, productIdWidth.UnitType);
         Assert.Equal(DataGridLengthUnitType.Auto, descriptionWidth.UnitType);
@@ -257,7 +257,7 @@ public sealed partial class DecorGridPresentationTests
     [InlineData("ID", "Código")]
     [InlineData("ID da Marca", "Código da Marca")]
     [InlineData("Id do Usuário", "Código do Usuário")]
-    [InlineData("Descrição", "Descrição")]
+    [InlineData("Produto", "Produto")]
     [InlineData("Identity", "Identity")]
     [InlineData("Código de Barras", "EAN")]
     [InlineData("Código de barras", "EAN")]

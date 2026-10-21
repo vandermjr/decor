@@ -28,7 +28,7 @@ public sealed class StockReservationRepositoryIntegrationTests(MariaDbFixture fi
         var sectionId = await connection.QuerySingleAsync<int>(
             $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 1, 4, NOW()); SELECT LAST_INSERT_ID();");
         var productId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Tecido Linho Bege', 1, 1); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Tecido Linho Bege', 1, 1); SELECT LAST_INSERT_ID();");
         var quoteItemId = await connection.QuerySingleAsync<int>(
             $"INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES ({sectionId}, {productId}, 10, 80.00, 0); SELECT LAST_INSERT_ID();");
         var orderId = await connection.QuerySingleAsync<int>(
@@ -106,7 +106,7 @@ public sealed class StockReservationRepositoryIntegrationTests(MariaDbFixture fi
         var sectionId = await connection.QuerySingleAsync<int>(
             $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 1, 4, NOW()); SELECT LAST_INSERT_ID();");
         var productId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Tecido Seda', 1, 1); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Tecido Seda', 1, 1); SELECT LAST_INSERT_ID();");
         var quoteItemId = await connection.QuerySingleAsync<int>(
             $"INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES ({sectionId}, {productId}, 5, 120.00, 0); SELECT LAST_INSERT_ID();");
         var orderId = await connection.QuerySingleAsync<int>(
@@ -180,7 +180,7 @@ public sealed class StockReservationRepositoryIntegrationTests(MariaDbFixture fi
 
             CREATE TABLE IF NOT EXISTS products (
                 ProductID INT NOT NULL AUTO_INCREMENT,
-                Description VARCHAR(255) NULL,
+                Product VARCHAR(255) NULL,
                 IsActive TINYINT(1) NOT NULL DEFAULT 1,
                 ProductType TINYINT UNSIGNED NOT NULL DEFAULT 1,
                 PRIMARY KEY (ProductID)

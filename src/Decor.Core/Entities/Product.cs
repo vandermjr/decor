@@ -36,8 +36,8 @@ public class Product
     [Column("IsActive")] // Opcional
     public bool IsActive { get; set; }
 
-    [Column("Description")] // Opcional
-    public string? Description { get; set; }
+    [Column("Product")] // Opcional
+    public string? ProductName { get; set; }
 
     [Column("ManufacturerRef")] // Opcional
     public string? ManufacturerRef { get; set; }

@@ -33,7 +33,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private bool _selectionMode;
     private string _statusMessage = string.Empty;
     private int _productId;
-    private string? _barcode, _description, _manufacturerRef, _auxiliarRef, _dimensions, _observations;
+    private string? _barcode, _productName, _manufacturerRef, _auxiliarRef, _dimensions, _observations;
     private bool _isActive;
     private ProductAcquisitionMode _acquisitionMode = ProductAcquisitionMode.Estocado;
     private decimal _stockQuantity, _minimumStock;
@@ -167,7 +167,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         private set => SetField(ref _statusMessage, value);
     }
 
-    public void ReportProductsExported() => StatusMessage = "Produtos exportados com sucesso.";
+    public void ReportProductsExported(string filePath) => StatusMessage = $"Arquivo aberto para salvar como: {Path.GetFileName(filePath)}";
     public void ReportProductsExportFailure() => StatusMessage = "Não foi possível exportar os produtos.";
 
     public string? StatusPrimary => null;
@@ -292,7 +292,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool IsSelectedStockNegative => SelectedProduct?.StockStatus == "Negativo";
     public bool IsSelectedStockPositive => SelectedProduct?.StockStatus == "Positivo";
     public bool IsSelectedStockMadeToOrder => SelectedProduct?.StockStatus == "Sob Demanda";
-    public bool CanExport => Products.Count > 0;
+    public bool CanExport => Listing.TotalCount > 0;
 
     private static string DisplayOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? "Não cadastrado" : value;
@@ -335,10 +335,10 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         }
     }
 
-    public string? Description
+    public string? ProductName
     {
-        get => _description;
-        set => SetField(ref _description, value);
+        get => _productName;
+        set => SetField(ref _productName, value);
     }
 
     public decimal StockQuantity
@@ -447,7 +447,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
 
     // Propriedades de erro para cada campo
     public string BarcodeError => GetFieldError("Barcode");
-    public string DescriptionError => GetFieldError("Description");
+    public string ProductNameError => GetFieldError("ProductName");
     public string StockQuantityError => GetFieldError("StockQuantity");
     public string MinimumStockError => GetFieldError("MinimumStock");
     public string StockUnitError => GetFieldError("StockUnit");
@@ -459,7 +459,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
 
     // Propriedades booleanas para indicar se há erro
     public bool HasBarcodeError => HasFieldError("Barcode");
-    public bool HasDescriptionError => HasFieldError("Description");
+    public bool HasProductNameError => HasFieldError("ProductName");
     public bool HasStockQuantityError => HasFieldError("StockQuantity");
     public bool HasMinimumStockError => HasFieldError("MinimumStock");
     public bool HasStockUnitError => HasFieldError("StockUnit");
@@ -515,7 +515,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         }
     }
 
-    private static string FormatCatalogCount(int? count) =>
+    private static string FormatCatalogCount(long? count) =>
         count?.ToString("N0", CultureInfo.GetCultureInfo("pt-BR")) ?? "—";
 
     public async Task BeginNewAsync()
@@ -554,7 +554,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IsActive = true;
         _acquisitionMode = ProductAcquisitionMode.Estocado;
         OnPropertyChanged(nameof(IsMadeToOrder));
-        Description = null;
+        ProductName = null;
         StockQuantity = 0;
         MinimumStock = 0;
         SelectedStockUnit = null;
@@ -590,7 +590,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         IsActive = SelectedProduct.IsActive;
         _acquisitionMode = SelectedProduct.AcquisitionMode;
         OnPropertyChanged(nameof(IsMadeToOrder));
-        Description = SelectedProduct.Description;
+        ProductName = SelectedProduct.ProductName;
         StockQuantity = SelectedProduct.StockQuantity;
         MinimumStock = SelectedProduct.MinimumStock;
         SelectedStockUnit = StockUnits.FirstOrDefault(unit => unit.UnitOfMeasureID == SelectedProduct.StockUnitID);
@@ -805,7 +805,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 ProductId,
                 Barcode,
                 IsActive,
-                Description,
+                ProductName,
                 0,
                 SelectedBrand?.BrandID,
                 SelectedBrand?.BrandName,
@@ -923,7 +923,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private void NotifyErrorPropertiesChanged()
     {
         OnPropertyChanged(nameof(BarcodeError));
-        OnPropertyChanged(nameof(DescriptionError));
+        OnPropertyChanged(nameof(ProductNameError));
         OnPropertyChanged(nameof(StockQuantityError));
         OnPropertyChanged(nameof(MinimumStockError));
         OnPropertyChanged(nameof(StockUnitError));
@@ -933,7 +933,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         OnPropertyChanged(nameof(BrandError));
         OnPropertyChanged(nameof(ObservationsError));
         OnPropertyChanged(nameof(HasBarcodeError));
-        OnPropertyChanged(nameof(HasDescriptionError));
+        OnPropertyChanged(nameof(HasProductNameError));
         OnPropertyChanged(nameof(HasStockQuantityError));
         OnPropertyChanged(nameof(HasMinimumStockError));
         OnPropertyChanged(nameof(HasStockUnitError));
@@ -949,8 +949,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         // Map error message keywords to field names
         if (errorMessage.Contains("Código de Barras", StringComparison.OrdinalIgnoreCase))
             return "Barcode";
-        if (errorMessage.Contains("descrição", StringComparison.OrdinalIgnoreCase))
-            return "Description";
+        if (errorMessage.Contains("produto", StringComparison.OrdinalIgnoreCase))
+            return "ProductName";
         if (errorMessage.Contains("Estoque Inicial", StringComparison.OrdinalIgnoreCase)
             || errorMessage.Contains("Estoque Físico", StringComparison.OrdinalIgnoreCase))
             return "StockQuantity";

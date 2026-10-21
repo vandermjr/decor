@@ -151,7 +151,7 @@ public sealed class ProductStockGridTests
         ProductID: 1,
         Barcode: null,
         IsActive: true,
-        Description: "Produto de teste",
+        ProductName: "Produto de teste",
         StockQuantity: 0,
         BrandID: 1,
         BrandName: "Marca",

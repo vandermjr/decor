@@ -9,7 +9,7 @@ public record ProductDTO(
     [property: KeyProperty, Display(Name = "ID"), Browsable(true)] int ProductID,
     [property: Display(Name = "Código de Barras"), Browsable(true)] string? Barcode,
     [property: Display(Name = "Ativo"), Browsable(true)] bool IsActive,
-    [property: Display(Name = "Descrição"), Browsable(true)] string? Description,
+    [property: Display(Name = "Produto"), Browsable(true)] string? ProductName,
     [property: Display(Name = "Estoque Inicial"), Browsable(true)] decimal StockQuantity,
     [property: KeyProperty, Display(Name = "ID"), Browsable(false)] int? BrandID,
     [property: Display(Name = "Marca"), Browsable(true)] string? BrandName,    

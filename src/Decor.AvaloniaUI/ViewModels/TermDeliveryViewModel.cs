@@ -205,7 +205,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
                 Terms.Add(new Term
                 {
                     ProductID = product.ProductID,
-                    Description = product.Description,
+                    Description = product.ProductName,
                     Qtde = Quantity
                 });
             }
@@ -217,7 +217,7 @@ public sealed class TermDeliveryViewModel : INotifyPropertyChanged
             ProductIdText = string.Empty;
             Quantity = 0;
             ClearFieldErrors();
-            StatusMessage = $"Produto {product.Description} incluído no termo.";
+            StatusMessage = $"Produto {product.ProductName} incluído no termo.";
             RaiseCommandStates();
         }
         catch (Exception)

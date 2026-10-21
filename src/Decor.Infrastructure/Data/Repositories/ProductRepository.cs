@@ -91,20 +91,20 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
     public async Task<ProductCatalogSummaryDTO?> GetCatalogSummaryAsync(CancellationToken cancellationToken = default)
     {
         const string sql = """
-            SELECT COUNT(*) AS TotalProducts,
-                   COALESCE(SUM(CASE WHEN p.IsActive = 1 THEN 1 ELSE 0 END), 0) AS ActiveProducts,
-                   COALESCE(SUM(CASE
+            SELECT CAST(COUNT(*) AS SIGNED) AS TotalProducts,
+                   CAST(COALESCE(SUM(CASE WHEN p.IsActive = 1 THEN 1 ELSE 0 END), 0) AS SIGNED) AS ActiveProducts,
+                   CAST(COALESCE(SUM(CASE
                        WHEN p.AcquisitionMode = @StockedMode
                            AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) = 0 THEN 1
                        ELSE 0
-                   END), 0) AS OutOfStockProducts,
-                   COALESCE(SUM(CASE
+                   END), 0) AS SIGNED) AS OutOfStockProducts,
+                   CAST(COALESCE(SUM(CASE
                        WHEN p.AcquisitionMode = @StockedMode
                            AND COALESCE(balance.CurrentQuantity, 0) >= 0
                            AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) > 0
                            AND COALESCE(balance.CurrentQuantity, 0) - COALESCE(reservation.ReservedQuantity, 0) < p.MinimumStock THEN 1
                        ELSE 0
-                   END), 0) AS LowStockProducts
+                   END), 0) AS SIGNED) AS LowStockProducts
             FROM products p
             LEFT JOIN (
                 SELECT ProductID, SUM(Quantity) AS CurrentQuantity
@@ -245,7 +245,7 @@ public class ProductRepository(IDatabaseConnection dbConnection, Func<IQueryCont
                 {
                     w.Group(group =>
                     {
-                        group.Contains<Product>(p => p.Description, token)
+                        group.FullText<Product>(token, p => p.ProductName)
                             .Or().Contains<Brand>(b => b.BrandName, token)
                             .Or().Contains<Product>(p => p.Barcode, token)
                             .Or().Contains<Product>(p => p.ManufacturerRef, token);

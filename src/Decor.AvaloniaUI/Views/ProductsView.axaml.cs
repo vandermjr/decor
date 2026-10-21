@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
@@ -50,7 +51,7 @@ public partial class ProductsView : UserControl
             propertyNames:
             [
                 nameof(ProductDTO.ProductID),
-                nameof(ProductDTO.Description),
+                nameof(ProductDTO.ProductName),
                 nameof(ProductDTO.BrandName),
                 nameof(ProductDTO.StockUnitCode),
                 nameof(ProductDTO.CurrentStockQuantity),
@@ -67,7 +68,7 @@ public partial class ProductsView : UserControl
         foreach (var propertyName in new[]
                  {
                      nameof(ProductDTO.ProductID),
-                     nameof(ProductDTO.Description),
+                     nameof(ProductDTO.ProductName),
                      nameof(ProductDTO.BrandName),
                      nameof(ProductDTO.StockUnitCode),
                      nameof(ProductDTO.CurrentStockQuantity),
@@ -99,7 +100,7 @@ public partial class ProductsView : UserControl
         nameof(ProductDTO.StockStatus) => DataGridLength.Auto,
         nameof(ProductDTO.StockUnitCode) => DataGridLength.Auto,
         nameof(ProductDTO.Barcode) => DataGridLength.Auto,
-        nameof(ProductDTO.Description) => DataGridLength.Auto,
+        nameof(ProductDTO.ProductName) => DataGridLength.Auto,
         nameof(ProductDTO.BrandName) => DataGridLength.Auto,
         nameof(ProductDTO.ManufacturerRef) => DataGridLength.Auto,
         nameof(ProductDTO.Dimensions) => DataGridLength.Auto,
@@ -111,6 +112,7 @@ public partial class ProductsView : UserControl
         var layout = this.FindControl<Grid>("CatalogLayout");
         if (layout is null) return;
 
+        var summaryExpander = this.FindControl<Expander>("CatalogSummaryExpander");
         var searchToolsFrame = this.FindControl<Border>("SearchToolsFrame");
         var summaryLayout = this.FindControl<Grid>("CatalogSummaryLayout");
         var compactSummary = Bounds.Width < 760;
@@ -126,48 +128,66 @@ public partial class ProductsView : UserControl
             }
         }
 
-        ConfigureCatalogLayout(layout, searchToolsFrame, ProductsGridFrame, ProductDetailsPanel, Bounds.Width);
+        ConfigureCatalogLayout(layout, summaryExpander, searchToolsFrame, ProductsGridFrame, ProductDetailsPanel, Bounds.Width);
     }
 
-    private static void ConfigureCatalogLayout(Grid layout, Border? searchToolsFrame, Border productsGridFrame, Border productDetailsPanel, double width)
+    private static void ConfigureCatalogLayout(Grid layout, Expander? summaryExpander, Border? searchToolsFrame, Border productsGridFrame, Border productDetailsPanel, double width)
     {
         var compact = width < 1120;
         layout.ColumnDefinitions = compact ? new ColumnDefinitions("*") : new ColumnDefinitions("2*,420");
         layout.RowDefinitions = compact
-            ? new RowDefinitions("Auto,3*,2*")
-            : new RowDefinitions("Auto,*");
+            ? new RowDefinitions("Auto,Auto,3*,2*")
+            : new RowDefinitions("Auto,Auto,*");
+        if (summaryExpander is not null)
+        {
+            Grid.SetColumn(summaryExpander, 0);
+            Grid.SetRow(summaryExpander, 0);
+            Grid.SetRowSpan(summaryExpander, 1);
+        }
         if (searchToolsFrame is not null)
         {
             Grid.SetColumn(searchToolsFrame, 0);
-            Grid.SetRow(searchToolsFrame, 0);
+            Grid.SetRow(searchToolsFrame, 1);
             Grid.SetRowSpan(searchToolsFrame, 1);
         }
         Grid.SetColumn(productsGridFrame, 0);
-        Grid.SetRow(productsGridFrame, 1);
+        Grid.SetRow(productsGridFrame, 2);
         Grid.SetRowSpan(productsGridFrame, 1);
         Grid.SetColumn(productDetailsPanel, compact ? 0 : 1);
-        Grid.SetRow(productDetailsPanel, compact ? 2 : 0);
-        Grid.SetRowSpan(productDetailsPanel, compact ? 1 : 2);
+        Grid.SetRow(productDetailsPanel, compact ? 3 : 0);
+        Grid.SetRowSpan(productDetailsPanel, 1);
+        if (!compact)
+            Grid.SetRowSpan(productDetailsPanel, 3);
     }
 
-    private async void ExportProductsClicked(object? sender, RoutedEventArgs eventArgs)
+    private async void ExportProductsCsvClicked(object? sender, RoutedEventArgs eventArgs) =>
+        await ExportProductsAsync(ProductExportFormat.Csv);
+
+    private async void ExportProductsXlsClicked(object? sender, RoutedEventArgs eventArgs) =>
+        await ExportProductsAsync(ProductExportFormat.Xls);
+
+    private async void ExportProductsXlsxClicked(object? sender, RoutedEventArgs eventArgs) =>
+        await ExportProductsAsync(ProductExportFormat.Xlsx);
+
+    private async void ExportProductsOdtClicked(object? sender, RoutedEventArgs eventArgs) =>
+        await ExportProductsAsync(ProductExportFormat.Odt);
+
+    private async Task ExportProductsAsync(ProductExportFormat format)
     {
         if (DataContext is not ProductsViewModel viewModel || TopLevel.GetTopLevel(this) is not { } topLevel)
             return;
 
+        var (extension, description) = format switch
+        {
+            ProductExportFormat.Csv => ("csv", "Arquivo CSV"),
+            ProductExportFormat.Xls => ("xls", "Planilha Excel 97-2003"),
+            ProductExportFormat.Xlsx => ("xlsx", "Planilha Excel"),
+            ProductExportFormat.Odt => ("odt", "Planilha OpenDocument"),
+            _ => throw new ArgumentOutOfRangeException(nameof(format))
+        };
+
         try
         {
-            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = "Exportar produtos",
-                SuggestedFileName = $"produtos-{DateTime.Now:yyyyMMdd-HHmm}.csv",
-                FileTypeChoices =
-                [
-                    new FilePickerFileType("Arquivo CSV") { Patterns = ["*.csv"] }
-                ]
-            });
-            if (file is null) return;
-
             var columns = ProductsGrid.Columns
                 .Where(column => column.IsVisible && !string.IsNullOrWhiteSpace(column.SortMemberPath))
                 .Select(column => (Header: column.Header?.ToString() ?? string.Empty,
@@ -175,10 +195,20 @@ public partial class ProductsView : UserControl
                 .Where(column => column.Property is not null)
                 .Select(column => (column.Header, Property: column.Property!))
                 .ToArray();
-            await using var stream = await file.OpenWriteAsync();
-            await ProductCsvExporter.WriteAsync(stream, viewModel.Products, columns);
 
-            viewModel.ReportProductsExported();
+            var exportDirectory = Path.Combine(Path.GetTempPath(), "Decor", "Exportacoes");
+            Directory.CreateDirectory(exportDirectory);
+            var exportPath = Path.Combine(exportDirectory, $"produtos-{DateTime.Now:yyyyMMdd-HHmmss-fff}.{extension}");
+            await using (var stream = new FileStream(exportPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read))
+                await ProductExporter.WriteAsync(stream, viewModel.Listing.AllItems, columns, format);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = exportPath,
+                UseShellExecute = true
+            });
+
+            viewModel.ReportProductsExported(exportPath);
         }
         catch
         {

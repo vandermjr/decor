@@ -97,7 +97,7 @@ public sealed class StockViewModel : INotifyPropertyChanged
                 .OrderBy(product => product.ProductID)
                 .Select(product => new StockSummaryRow(
                     product.ProductID,
-                    string.IsNullOrWhiteSpace(product.Description) ? $"Produto {product.ProductID}" : product.Description,
+                    string.IsNullOrWhiteSpace(product.ProductName) ? $"Produto {product.ProductID}" : product.ProductName,
                     "Estoque geral",
                     product.AvailableStockQuantity,
                     product.StockUnitCode ?? string.Empty,

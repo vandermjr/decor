@@ -73,13 +73,13 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Arrange & Act
             var (sql, parameters) = FluentCommandBuilder.Create(new MariaDBDialect())
-                .Select<Product>(s => s.WithColumns<Product>(prod => prod.ProductID, item => item.Description))
+                .Select<Product>(s => s.WithColumns<Product>(prod => prod.ProductID, item => item.ProductName))
                 .Where(w => w.Equals<Product>(anyVarName => anyVarName.ProductID, 123))
                 .Build();
 
             // Assert
             sql.Should().Contain("p.ProductID");
-            sql.Should().Contain("p.Description");
+            sql.Should().Contain("p.Product");
             sql.Should().Contain("FROM\n    products AS p");
             sql.Should().Contain("WHERE p.ProductID = @ProductID");
             parameters["ProductID"].Should().Be(123);

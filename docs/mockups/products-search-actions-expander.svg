@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <defs>
+    <style>
+      .ui { font-family: 'Noto Sans', 'Segoe UI', sans-serif; }
+      .text { fill: #30363e; }
+      .muted { fill: #68717d; }
+      .small { font-size: 12px; }
+      .body { font-size: 14px; }
+      .strong { font-weight: 650; }
+      .label { font-size: 11px; font-weight: 600; }
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#f5f6f8"/>
+  <rect width="236" height="900" fill="#ffffff"/>
+  <line x1="236" y1="0" x2="236" y2="900" stroke="#dfe3e8"/>
+
+  <g class="ui">
+    <rect x="24" y="22" width="34" height="34" rx="7" fill="#2074b8"/>
+    <path d="M33 45V32h16v13M30 45h22M37 45v-7h8v7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="70" y="46" class="text strong" font-size="20">Decor</text>
+    <text x="24" y="101" class="muted label">PRINCIPAL</text>
+    <g fill="none" stroke="#77818c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="27" y="130" width="14" height="14" rx="2"/><path d="M30 134h8M30 138h5"/>
+      <path d="M28 179h13v13H28zM31 176v6M38 176v6"/>
+      <path d="M28 222h13v13H28zM31 226h7M31 230h5"/>
+      <path d="M28 267h13v13H28zM31 271h7M31 275h5"/>
+    </g>
+    <g class="body muted">
+      <text x="52" y="146">Visão geral</text>
+      <text x="52" y="190">Orçamentos</text>
+      <text x="52" y="234">Pedidos</text>
+      <text x="52" y="278">Vendas</text>
+    </g>
+    <text x="24" y="333" class="muted label">ESTOQUE</text>
+    <rect x="12" y="349" width="212" height="42" rx="5" fill="#e7f1f8"/>
+    <rect x="12" y="349" width="3" height="42" rx="1.5" fill="#2074b8"/>
+    <g fill="none" stroke="#2074b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M28 366l7-4 7 4v9l-7 4-7-4zM28 366l7 4 7-4M35 370v9"/>
+    </g>
+    <text x="52" y="376" fill="#185f9a" class="body strong">Produtos</text>
+    <g fill="none" stroke="#77818c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M29 416h13v12H29zM32 413h7M33 420h5M33 424h5"/>
+      <path d="M28 461h14M30 457h10v12H30zM33 460h4M33 464h4"/>
+      <path d="M29 503h13v13H29zM32 507h7M32 511h5"/>
+    </g>
+    <g class="body muted">
+      <text x="52" y="427">Movimentações</text>
+      <text x="52" y="471">Depósitos</text>
+      <text x="52" y="515">Inventário</text>
+    </g>
+    <line x1="20" y1="840" x2="216" y2="840" stroke="#e5e8eb"/>
+    <circle cx="41" cy="870" r="15" fill="#e9eff0"/>
+    <text x="41" y="875" text-anchor="middle" class="text strong small">JD</text>
+    <text x="66" y="867" class="text strong small">João Duarte</text>
+    <text x="66" y="883" class="muted" font-size="11">Administrador</text>
+
+    <text x="266" y="49" class="muted small">Estoque</text>
+    <text x="312" y="49" class="muted small">/</text>
+    <text x="328" y="49" class="text small">Produtos</text>
+    <text x="266" y="98" class="text strong" font-size="27">Catálogo de produtos</text>
+    <text x="266" y="124" class="muted body">Catálogo, preços e disponibilidade do estoque.</text>
+    <rect x="1242" y="78" width="172" height="40" rx="4" fill="#f6ab58" stroke="#d6a02e"/>
+    <path d="M1260 98h14M1267 91v14" stroke="#332611" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="1282" y="103" fill="#332611" class="body strong">Novo produto</text>
+
+    <rect x="266" y="148" width="704" height="90" rx="5" fill="#fff" stroke="#cbd1d9"/>
+    <text x="282" y="169" class="muted" font-size="11" font-weight="600">INDICADORES</text>
+    <g>
+      <rect x="280" y="178" width="160" height="48" rx="4" fill="#f5f6f8"/>
+      <rect x="449" y="178" width="160" height="48" rx="4" fill="#f5f6f8"/>
+      <rect x="618" y="178" width="160" height="48" rx="4" fill="#f5f6f8"/>
+      <rect x="787" y="178" width="169" height="48" rx="4" fill="#f5f6f8"/>
+      <text x="291" y="197" class="muted small">Produtos cadastrados</text><text x="291" y="217" class="text strong body">248</text>
+      <text x="460" y="197" class="muted small">Ativos</text><text x="460" y="217" class="text strong body">231</text>
+      <text x="629" y="197" class="muted small">Sem estoque</text><text x="629" y="217" class="text strong body">12</text>
+      <text x="798" y="197" class="muted small">Estoque baixo</text><text x="798" y="217" class="text strong body">8</text>
+    </g>
+
+    <rect x="266" y="250" width="704" height="146" rx="5" fill="#fff" stroke="#cbd1d9"/>
+    <rect x="280" y="259" width="574" height="30" rx="4" fill="#fff" stroke="#aeb8c3"/>
+    <circle cx="297" cy="272" r="5.5" fill="none" stroke="#68717d" stroke-width="1.6"/>
+    <path d="M301 276l4 4" stroke="#68717d" stroke-width="1.6" stroke-linecap="round"/>
+    <text x="315" y="277" class="muted small">Pesquisar por código, produto, marca ou referência</text>
+    <line x1="866" y1="264" x2="866" y2="284" stroke="#cbd1d9"/>
+    <rect x="868" y="259" width="88" height="30" rx="4" fill="#f5f6f8"/>
+    <text x="880" y="277" class="text small" font-weight="600">Ações</text>
+    <path d="M934 270l6 6 6-6" fill="none" stroke="#68717d" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="266" y1="303" x2="970" y2="303" stroke="#e4e7eb"/>
+    <rect x="280" y="319" width="146" height="32" rx="4" fill="#fff" stroke="#cbd1d9"/>
+    <path d="M295 328h12v13h-12zM298 325h6M298 332h6M298 336h6" fill="none" stroke="#68717d" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="314" y="340" class="text body">Exportar</text>
+    <path d="M407 333l5 5 5-5" fill="none" stroke="#68717d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="434" y="319" width="188" height="32" rx="4" fill="#fff" stroke="#cbd1d9"/>
+    <path d="M448 328h13v13h-13zM451 332h7M451 336h7" fill="none" stroke="#68717d" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="469" y="340" class="text body">Configurar colunas</text>
+
+    <rect x="266" y="408" width="704" height="450" rx="5" fill="#fff" stroke="#cbd1d9"/>
+    <rect x="267" y="409" width="702" height="42" rx="5" fill="#f0f2f5"/>
+    <g class="muted label">
+      <text x="282" y="435">CÓDIGO</text><text x="360" y="435">PRODUTO</text><text x="618" y="435">UN.</text>
+      <text x="730" y="435" text-anchor="end">DISPONÍVEL</text><text x="801" y="435" text-anchor="end">MÍNIMO</text><text x="825" y="435">SITUAÇÃO</text>
+    </g>
+    <line x1="266" y1="451" x2="970" y2="451" stroke="#e4e7eb"/>
+    <g class="ui body">
+      <text x="282" y="483" class="muted">10245</text><text x="360" y="483" class="text strong">Porcelanato Urban Gray</text><text x="618" y="483" class="text">m²</text><text x="730" y="483" text-anchor="end" class="text">30,00</text><text x="801" y="483" text-anchor="end" class="text">10,00</text><circle cx="836" cy="478" r="4" fill="#25826f"/><text x="847" y="483" fill="#267461">Normal</text>
+      <line x1="267" y1="502" x2="969" y2="502" stroke="#eef0f2"/>
+      <rect x="267" y="503" width="702" height="50" fill="#fffaf2"/><rect x="267" y="503" width="3" height="50" fill="#d88922"/>
+      <text x="282" y="533" class="muted">10418</text><text x="360" y="533" class="text strong">Argamassa ACIII Flexível</text><text x="618" y="533" class="text">saco</text><text x="730" y="533" text-anchor="end" class="text">3</text><text x="801" y="533" text-anchor="end" class="text">4</text><circle cx="836" cy="528" r="4" fill="#d88922"/><text x="847" y="533" fill="#a6620a">Atenção</text>
+      <line x1="267" y1="553" x2="969" y2="553" stroke="#eef0f2"/>
+      <text x="282" y="584" class="muted">10802</text><text x="360" y="584" class="text strong">Tinta Acrílica Fosca Branca</text><text x="618" y="584" class="text">lata</text><text x="730" y="584" text-anchor="end" class="text">18</text><text x="801" y="584" text-anchor="end" class="text">6</text><circle cx="836" cy="579" r="4" fill="#25826f"/><text x="847" y="584" fill="#267461">Normal</text>
+      <line x1="267" y1="604" x2="969" y2="604" stroke="#eef0f2"/>
+      <text x="282" y="635" class="muted">10931</text><text x="360" y="635" class="text strong">Rejunte Cinza Platina</text><text x="618" y="635" class="text">kg</text><text x="730" y="635" text-anchor="end" class="text">0</text><text x="801" y="635" text-anchor="end" class="text">5</text><circle cx="836" cy="630" r="4" fill="#b32d35"/><text x="847" y="635" fill="#b32d35">Sem estoque</text>
+      <line x1="267" y1="655" x2="969" y2="655" stroke="#eef0f2"/>
+      <text x="282" y="686" class="muted">11004</text><text x="360" y="686" class="text strong">Torneira Monocomando</text><text x="618" y="686" class="text">un.</text><text x="730" y="686" text-anchor="end" class="text">7</text><text x="801" y="686" text-anchor="end" class="text">2</text><circle cx="836" cy="681" r="4" fill="#25826f"/><text x="847" y="686" fill="#267461">Normal</text>
+    </g>
+    <g stroke="#eef0f2">
+      <line x1="346" y1="409" x2="346" y2="858"/><line x1="606" y1="409" x2="606" y2="858"/><line x1="650" y1="409" x2="650" y2="858"/><line x1="737" y1="409" x2="737" y2="858"/><line x1="809" y1="409" x2="809" y2="858"/>
+    </g>
+
+    <rect x="988" y="148" width="426" height="710" rx="5" fill="#fff" stroke="#cbd1d9"/>
+    <rect x="1008" y="168" width="96" height="96" rx="5" fill="#f5f6f8" stroke="#cbd1d9"/>
+    <path d="M1038 208l18-10 18 10v23l-18 10-18-10zM1038 208l18 10 18-10M1056 218v23" fill="none" stroke="#68717d" stroke-width="2" stroke-linejoin="round"/>
+    <text x="1120" y="190" class="text strong" font-size="17">Porcelanato Urban Gray</text>
+    <text x="1120" y="216" class="muted body">Código 10245</text>
+    <text x="1120" y="239" class="muted body">Revestimentos · Urban</text>
+    <rect x="1120" y="248" width="49" height="22" rx="4" fill="#f5f6f8"/>
+    <text x="1144" y="263" text-anchor="middle" fill="#267461" class="small">Ativo</text>
+    <line x1="1008" y1="291" x2="1394" y2="291" stroke="#e4e7eb"/>
+    <text x="1008" y="320" class="muted body">Preço de venda</text>
+    <text x="1008" y="354" class="text strong" font-size="25">R$ 89,90</text>
+    <text x="1202" y="320" class="muted body">Custo</text>
+    <text x="1202" y="351" class="text body">R$ 62,00</text>
+    <rect x="1008" y="378" width="386" height="104" rx="5" fill="#f5f6f8" stroke="#cbd1d9"/>
+    <text x="1024" y="404" class="muted body">Disponível</text>
+    <text x="1024" y="439" class="text strong" font-size="23">30,00 m²</text>
+    <rect x="1306" y="393" width="71" height="24" rx="4" fill="#fff"/>
+    <text x="1341" y="409" text-anchor="middle" fill="#267461" class="small">Normal</text>
+    <rect x="1024" y="451" width="350" height="7" rx="3.5" fill="#dfe5e8"/>
+    <rect x="1024" y="451" width="238" height="7" rx="3.5" fill="#25826f"/>
+    <text x="1008" y="510" class="muted body">Estoque acima do mínimo</text>
+    <rect x="1008" y="532" width="386" height="36" rx="4" fill="#f6ab58" stroke="#d6a02e"/>
+    <path d="M1160 550h14M1167 543v14" stroke="#332611" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="1183" y="555" fill="#332611" class="body strong">Editar produto</text>
+    <line x1="1008" y1="590" x2="1394" y2="590" stroke="#e4e7eb"/>
+    <text x="1008" y="622" class="text strong body">Resumo</text>
+    <text x="1008" y="661" class="muted body">Código de barras</text>
+    <text x="1008" y="684" class="text body">7891234567890</text>
+    <text x="1008" y="725" class="muted body">Aquisição</text>
+    <text x="1008" y="748" class="text body">Estocado</text>
+    <text x="1008" y="789" class="muted body">Observações</text>
+    <text x="1008" y="812" class="text body">Acabamento acetinado</text>
+  </g>
+</svg>

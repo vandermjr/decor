@@ -359,6 +359,33 @@ public class DecorIconCatalogTests
     }
 
     [Fact]
+    public void Dropdown_chevron_bounds_are_centered_for_every_weight()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        foreach (var weight in DecorIconCatalog.SupportedWeights)
+        {
+            var bounds = DecorIconCatalog.Get(DecorIconId.Navigation.Dropdown, weight).Bounds;
+            Assert.Equal(-480, bounds.Center.Y, 1);
+        }
+    }
+
+    [Fact]
+    public void Dropdown_chevron_does_not_replace_sort_arrows()
+    {
+        _ = AvaloniaInitialized.Value;
+
+        var dropdown = DecorIconCatalog.Get(DecorIconId.Navigation.Dropdown, 400);
+        var sortAscending = DecorIconCatalog.Get(DecorIconId.Navigation.SortAscending, 400);
+        var sortDescending = DecorIconCatalog.Get(DecorIconId.Navigation.SortDescending, 400);
+        var originalSortArrow = Geometry.Parse("M480-360 280-560h400L480-360Z");
+
+        Assert.NotSame(dropdown, sortAscending);
+        Assert.NotSame(dropdown, sortDescending);
+        Assert.Equal(originalSortArrow.Bounds, sortDescending.Bounds);
+    }
+
+    [Fact]
     public void Original_get_uses_the_default_weight_and_invalid_weight_is_rejected()
     {
         _ = AvaloniaInitialized.Value;

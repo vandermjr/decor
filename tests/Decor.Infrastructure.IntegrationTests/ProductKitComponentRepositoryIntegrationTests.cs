@@ -19,11 +19,11 @@ public sealed class ProductKitComponentRepositoryIntegrationTests(MariaDbFixture
         await EnsureTablesCreatedAsync(connection);
 
         var kitProductId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType, SalePrice) VALUES ('Kit Cortina Completo', 1, 1, NULL); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType, SalePrice) VALUES ('Kit Cortina Completo', 1, 1, NULL); SELECT LAST_INSERT_ID();");
         var componentAId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType, SalePrice) VALUES ('Tecido', 1, 1, 100.00); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType, SalePrice) VALUES ('Tecido', 1, 1, 100.00); SELECT LAST_INSERT_ID();");
         var componentBId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType, SalePrice) VALUES ('Trilho', 1, 1, 50.00); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType, SalePrice) VALUES ('Trilho', 1, 1, 50.00); SELECT LAST_INSERT_ID();");
 
         var repo = CreateRepository();
 
@@ -72,7 +72,7 @@ public sealed class ProductKitComponentRepositoryIntegrationTests(MariaDbFixture
         await connection.ExecuteAsync(@"
             CREATE TABLE IF NOT EXISTS products (
                 ProductID INT NOT NULL AUTO_INCREMENT,
-                Description VARCHAR(255) NULL,
+                Product VARCHAR(255) NULL,
                 IsActive TINYINT(1) NOT NULL DEFAULT 1,
                 ProductType TINYINT UNSIGNED NOT NULL DEFAULT 1,
                 SalePrice DECIMAL(10,2) NULL,

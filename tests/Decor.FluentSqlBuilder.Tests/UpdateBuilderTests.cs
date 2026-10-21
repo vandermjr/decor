@@ -24,14 +24,14 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Update(u => u.Entity<Product>(prod => prod.Description, "Teclado Mecânico"))
+                .Update(u => u.Entity<Product>(prod => prod.ProductName, "Teclado Mecânico"))
                 .Where(w => w.Equals<Product>(item => item.ProductID, 10))
                 .Build();
 
             // Assert
-            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("UPDATE products AS p SET p.Description = @Description WHERE p.ProductID = @ProductID;"));
-            parameters.Should().ContainKeys("Description", "ProductID");
-            parameters["Description"].Should().Be("Teclado Mecânico");
+            NormalizeSqlString(sql).Should().Contain(NormalizeSqlString("UPDATE products AS p SET p.Product = @ProductName WHERE p.ProductID = @ProductID;"));
+            parameters.Should().ContainKeys("ProductName", "ProductID");
+            parameters["ProductName"].Should().Be("Teclado Mecânico");
             parameters["ProductID"].Should().Be(10);
         }
 

@@ -1,7 +1,7 @@
 namespace Decor.Core.DTOs;
 
 public sealed record ProductCatalogSummaryDTO(
-    int TotalProducts,
-    int ActiveProducts,
-    int OutOfStockProducts,
-    int LowStockProducts);
+    long TotalProducts,
+    long ActiveProducts,
+    long OutOfStockProducts,
+    long LowStockProducts);

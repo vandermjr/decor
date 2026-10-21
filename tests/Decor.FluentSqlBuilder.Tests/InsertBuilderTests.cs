@@ -26,7 +26,7 @@ namespace Decor.FluentSqlBuilder.Tests
             var newProduct = new Product
             {
                 Barcode = "12345",
-                Description = "Mouse sem fio",
+                ProductName = "Mouse sem fio",
                 IsActive = true,
                 StockQuantity = 50,
                 BrandID = 1,
@@ -40,11 +40,11 @@ namespace Decor.FluentSqlBuilder.Tests
 
             // Assert
             NormalizeSqlString(sql).Should().Contain(
-                NormalizeSqlString("INSERT INTO products (Barcode, IsActive, Description, ManufacturerRef, AuxiliaryRef, Dimensions, Observations, StockQuantity, MinimumStock, BrandID, SubgroupID, StockUnitID, Origin, AcquisitionMode, ProductType, CostPrice, SalePrice, EmployeeCommissionValue, DefaultInstallationServiceID) VALUES (@Barcode, @IsActive, @Description, @ManufacturerRef, @AuxiliaryRef, @Dimensions, @Observations, @StockQuantity, @MinimumStock, @BrandID, @SubgroupID, @StockUnitID, @Origin, @AcquisitionMode, @ProductType, @CostPrice, @SalePrice, @EmployeeCommissionValue, @DefaultInstallationServiceID);"));
-            parameters.Should().ContainKeys("Barcode", "IsActive", "Description", "ManufacturerRef", "AuxiliaryRef", "Dimensions", "Observations", "StockQuantity", "MinimumStock", "BrandID", "SubgroupID", "StockUnitID", "Origin", "AcquisitionMode", "ProductType", "CostPrice", "SalePrice", "EmployeeCommissionValue", "DefaultInstallationServiceID");
+                NormalizeSqlString("INSERT INTO products (Barcode, IsActive, Product, ManufacturerRef, AuxiliaryRef, Dimensions, Observations, StockQuantity, MinimumStock, BrandID, SubgroupID, StockUnitID, Origin, AcquisitionMode, ProductType, CostPrice, SalePrice, EmployeeCommissionValue, DefaultInstallationServiceID) VALUES (@Barcode, @IsActive, @ProductName, @ManufacturerRef, @AuxiliaryRef, @Dimensions, @Observations, @StockQuantity, @MinimumStock, @BrandID, @SubgroupID, @StockUnitID, @Origin, @AcquisitionMode, @ProductType, @CostPrice, @SalePrice, @EmployeeCommissionValue, @DefaultInstallationServiceID);"));
+            parameters.Should().ContainKeys("Barcode", "IsActive", "ProductName", "ManufacturerRef", "AuxiliaryRef", "Dimensions", "Observations", "StockQuantity", "MinimumStock", "BrandID", "SubgroupID", "StockUnitID", "Origin", "AcquisitionMode", "ProductType", "CostPrice", "SalePrice", "EmployeeCommissionValue", "DefaultInstallationServiceID");
             parameters["Barcode"].Should().Be("12345");
             parameters["IsActive"].Should().Be(true);
-            parameters["Description"].Should().Be("Mouse sem fio");
+            parameters["ProductName"].Should().Be("Mouse sem fio");
             parameters["StockQuantity"].Should().Be(50);
             parameters["BrandID"].Should().Be(1);
             parameters["SubgroupID"].Should().Be(1);

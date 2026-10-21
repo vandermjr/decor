@@ -46,11 +46,11 @@ public sealed class ProductRepositorySearchTests
         Assert.Matches(@"(?i)LEFT(?: OUTER)? JOIN\s+`?brands`?", sql);
         Assert.Contains("p.IsActive = @IsActive AND p.ProductType = @ProductType AND (", sql);
         Assert.Contains(") AND (", sql);
-        foreach (var column in new[] { "p.Description", "b.BrandName", "p.Barcode", "p.ManufacturerRef" })
+        Assert.Equal(2, sql.Split("MATCH(p.Product) AGAINST").Length - 1);
+        foreach (var column in new[] { "b.BrandName", "p.Barcode", "p.ManufacturerRef" })
             Assert.Equal(2, sql.Split(column + " LIKE").Length - 1);
         Assert.Equal(4, parameters.Values.Count(value => Equals(value, "piso")));
         Assert.Equal(4, parameters.Values.Count(value => Equals(value, "arquitech")));
-        Assert.DoesNotContain("MATCH(", sql);
     }
 
     [Theory]
@@ -89,6 +89,7 @@ public sealed class ProductRepositorySearchTests
     public async Task NonnumericBarcodeKeepsMultipleFieldSearch()
     {
         var (sql, parameters) = await BuildQuery("ABC42 tipo:produto");
+        Assert.Contains("MATCH(p.Product) AGAINST", sql);
         Assert.Contains("p.Barcode LIKE", sql);
         Assert.Contains("OR b.BrandName LIKE", sql);
         Assert.DoesNotContain("p.ProductID =", sql);

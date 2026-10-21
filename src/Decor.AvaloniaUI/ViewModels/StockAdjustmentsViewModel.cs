@@ -80,7 +80,7 @@ public sealed class StockAdjustmentsViewModel : INotifyPropertyChanged
                 {
                     rows.Add(new StockAdjustmentRow(
                         $"AJ-{movement.StockMovementID:0000}",
-                        string.IsNullOrWhiteSpace(product.Description) ? $"Produto {product.ProductID}" : product.Description,
+                        string.IsNullOrWhiteSpace(product.ProductName) ? $"Produto {product.ProductID}" : product.ProductName,
                         movement.StockLocationID.ToString(),
                         movement.Quantity,
                         product.StockUnitCode ?? string.Empty,

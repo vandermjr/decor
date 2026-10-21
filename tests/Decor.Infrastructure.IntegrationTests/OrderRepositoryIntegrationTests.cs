@@ -35,7 +35,7 @@ public sealed class OrderRepositoryIntegrationTests(MariaDbFixture fixture) : IC
 
         // Seed product
         var productId = await connection.QuerySingleAsync<int>(
-            "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Cortina Sob Encomenda', 1, 1); SELECT LAST_INSERT_ID();");
+            "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Cortina Sob Encomenda', 1, 1); SELECT LAST_INSERT_ID();");
 
         var attributeId = await connection.QuerySingleAsync<int>(
             "INSERT INTO product_specification_attributes (ProductCategoryID, Name, DataType, IsRequired, DisplayOrder) VALUES (1, 'Largura', 1, 0, 1); SELECT LAST_INSERT_ID();");
@@ -122,7 +122,7 @@ public sealed class OrderRepositoryIntegrationTests(MariaDbFixture fixture) : IC
 
             CREATE TABLE IF NOT EXISTS products (
                 ProductID INT NOT NULL AUTO_INCREMENT,
-                Description VARCHAR(255) NULL,
+                Product VARCHAR(255) NULL,
                 IsActive TINYINT(1) NOT NULL DEFAULT 1,
                 ProductType TINYINT UNSIGNED NOT NULL DEFAULT 1,
                 PRIMARY KEY (ProductID)

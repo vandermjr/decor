@@ -39,7 +39,7 @@ public sealed record QuoteProductOption(ProductDTO? DTO, string Label, string Un
     public int? ProductID => DTO?.ProductID;
     public int? ServiceID => Service?.ServiceID;
     public int Code => ServiceID ?? ProductID ?? 0;
-    public string Description => Service?.Description ?? DTO?.Description ?? "Sem descrição";
+    public string Description => Service?.Description ?? DTO?.ProductName ?? "Sem descrição";
     public string Category => Service is not null ? "Serviço" : "Produto";
     public decimal Price => Service?.SalePrice ?? DTO?.SalePrice ?? 0m;
     public override string ToString() => Label;
@@ -680,7 +680,7 @@ public sealed class QuotesViewModel : IStatusBarSource, IWorkspaceDocumentState
     {
         var reference = product.Barcode ?? product.ProductID.ToString(CultureInfo.InvariantCulture);
         var unit = product.StockUnitID is int unitId ? _units.GetValueOrDefault(unitId)?.Code ?? string.Empty : string.Empty;
-        return new QuoteProductOption(product, $"{product.Description ?? "Sem descrição"} · Produto · {reference}", unit);
+        return new QuoteProductOption(product, $"{product.ProductName ?? "Sem descrição"} · Produto · {reference}", unit);
     }
 
     private static QuoteProductOption ToServiceOption(ServiceDTO service) =>

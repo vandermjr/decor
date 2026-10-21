@@ -44,12 +44,12 @@ public class ProductDTOValidator : IDTOValidator<ProductDTO>
             }
         }
 
-        if (string.IsNullOrWhiteSpace(dto.Description))
-            errors.Add("A descrição é obrigatória.");
-        else if (dto.Description.Length < 3)
-            errors.Add("A descrição deve ter no mínimo 3 caracteres.");
-        else if (dto.Description.Length > 50)
-            errors.Add("A descrição não pode exceder 50 caracteres.");
+        if (string.IsNullOrWhiteSpace(dto.ProductName))
+            errors.Add("O produto é obrigatório.");
+        else if (dto.ProductName.Length < 3)
+            errors.Add("O nome do produto deve ter no mínimo 3 caracteres.");
+        else if (dto.ProductName.Length > 50)
+            errors.Add("O nome do produto não pode exceder 50 caracteres.");
 
         if (dto.StockQuantity < 0)
             errors.Add("O Estoque Inicial não pode ser negativo.");

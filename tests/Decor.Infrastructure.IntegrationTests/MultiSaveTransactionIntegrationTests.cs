@@ -41,7 +41,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
         var quoteId = await InsertIdAsync(connection, $"INSERT INTO quotes (CustomerID, CreatedByEmployeeID, SourceType, CreatedAt, DiscountAmount) VALUES ({customerId}, {employeeId}, 1, NOW(), 15.00);");
         var approvedSectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 1, 4, NOW());");
         var rejectedSectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 2, 5, NOW());");
-        var productId = await InsertIdAsync(connection, "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Quote List Item', 1, 1);");
+        var productId = await InsertIdAsync(connection, "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Quote List Item', 1, 1);");
         await connection.ExecuteAsync("INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES (@SectionID, @ProductID, 2, 100, 0), (@SectionID, @ProductID, 3, 50, 0)", new { SectionID = approvedSectionId, ProductID = productId });
         await connection.ExecuteAsync("INSERT INTO quote_items (QuoteSectionID, ProductID, Quantity, UnitPrice, HasInstallationService) VALUES (@SectionID, @ProductID, 1, 25, 0)", new { SectionID = rejectedSectionId, ProductID = productId });
 
@@ -83,7 +83,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
 
         var customerId = await InsertIdAsync(connection, "INSERT INTO customers (Name, IsActive) VALUES ('Txn Customer', 1);");
         var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Txn Employee', 1);");
-        var productId = await InsertIdAsync(connection, "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Valid Product', 1, 1);");
+        var productId = await InsertIdAsync(connection, "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Valid Product', 1, 1);");
         var attributeId = await InsertIdAsync(connection, "INSERT INTO product_specification_attributes (ProductCategoryID, Name, DataType, IsRequired, DisplayOrder) VALUES (1, 'Color', 1, 0, 1);");
         var quoteId = await InsertIdAsync(connection, $"INSERT INTO quotes (CustomerID, CreatedByEmployeeID, SourceType, CreatedAt) VALUES ({customerId}, {employeeId}, 1, NOW());");
         var sectionId = await InsertIdAsync(connection, $"INSERT INTO quote_sections (QuoteID, SectionType, Status, CreatedAt) VALUES ({quoteId}, 2, 4, NOW());");
@@ -151,7 +151,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
 
         var customerId = await InsertIdAsync(connection, "INSERT INTO customers (Name, IsActive) VALUES ('Service Customer', 1);");
         var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Service Seller', 1);");
-        await connection.ExecuteAsync("INSERT INTO products (ProductID, Description, IsActive, ProductType, DefaultInstallationServiceID) VALUES (@ServiceID, 'Same code goods', 1, 1, @ServiceID)", savedService);
+        await connection.ExecuteAsync("INSERT INTO products (ProductID, Product, IsActive, ProductType, DefaultInstallationServiceID) VALUES (@ServiceID, 'Same code goods', 1, 1, @ServiceID)", savedService);
         var quoteRepository = CreateQuoteRepository();
         var section = new QuoteSection { SectionType = QuoteSectionType.Catalog, Status = QuoteSectionStatus.Approved, CreatedAt = DateTime.UtcNow };
         var quote = new Quote
@@ -219,7 +219,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
         await EnsureGoodsReceiptTablesAsync(connection);
 
         var employeeId = await InsertIdAsync(connection, "INSERT INTO employees (Name, IsActive) VALUES ('Receipt Employee', 1);");
-        var productId = await InsertIdAsync(connection, "INSERT INTO products (Description, IsActive, ProductType) VALUES ('Receipt Product', 1, 1);");
+        var productId = await InsertIdAsync(connection, "INSERT INTO products (Product, IsActive, ProductType) VALUES ('Receipt Product', 1, 1);");
         var supplierId = await InsertIdAsync(connection, "INSERT INTO suppliers (Name, IsActive) VALUES ('Receipt Supplier', 1);");
         var purchaseOrderId = await InsertIdAsync(connection, $"INSERT INTO purchase_orders (SupplierID, OrderDate, Status) VALUES ({supplierId}, NOW(), 1);");
         var purchaseOrderItemId = await InsertIdAsync(connection, $"INSERT INTO purchase_order_items (PurchaseOrderID, ProductID, QuantityOrdered, UnitPrice, ReceivingMethod, FinalDestination, StockLocationID) VALUES ({purchaseOrderId}, {productId}, 1, 10, 1, 1, 999999);");
@@ -264,7 +264,7 @@ public sealed class MultiSaveTransactionIntegrationTests(MariaDbFixture fixture)
             CREATE TABLE IF NOT EXISTS customers (CustomerID INT AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(150) NOT NULL, IsActive TINYINT(1) NOT NULL) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS employees (EmployeeID INT AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(150) NOT NULL, IsActive TINYINT(1) NOT NULL) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS services (ServiceID INT AUTO_INCREMENT PRIMARY KEY, Description VARCHAR(255) NOT NULL, IsActive TINYINT(1) NOT NULL DEFAULT 1, CostPrice DECIMAL(10,2) NULL, SalePrice DECIMAL(10,2) NULL, EmployeeCommissionValue DECIMAL(10,2) NULL, Observations TEXT NULL) ENGINE=InnoDB AUTO_INCREMENT=100000;
-            CREATE TABLE IF NOT EXISTS products (ProductID INT AUTO_INCREMENT PRIMARY KEY, Description VARCHAR(255), IsActive TINYINT(1) NOT NULL, ProductType TINYINT UNSIGNED NOT NULL, DefaultInstallationServiceID INT NULL, FOREIGN KEY (DefaultInstallationServiceID) REFERENCES services(ServiceID)) ENGINE=InnoDB;
+            CREATE TABLE IF NOT EXISTS products (ProductID INT AUTO_INCREMENT PRIMARY KEY, Product VARCHAR(255), IsActive TINYINT(1) NOT NULL, ProductType TINYINT UNSIGNED NOT NULL, DefaultInstallationServiceID INT NULL, FOREIGN KEY (DefaultInstallationServiceID) REFERENCES services(ServiceID)) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS product_specification_attributes (AttributeID INT AUTO_INCREMENT PRIMARY KEY, ProductCategoryID INT NOT NULL, Name VARCHAR(150) NOT NULL, DataType TINYINT UNSIGNED NOT NULL, IsRequired TINYINT(1) NOT NULL, DisplayOrder INT NOT NULL) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS quotes (QuoteID INT AUTO_INCREMENT PRIMARY KEY, CustomerID INT NOT NULL, CreatedByEmployeeID INT NOT NULL, CreatedByUserID INT NULL, SourcePartnerID INT NULL, SourceType TINYINT UNSIGNED NOT NULL, CreatedAt DATETIME NOT NULL, Notes TEXT NULL, DiscountAmount DECIMAL(12,2) NOT NULL DEFAULT 0) ENGINE=InnoDB;
             CREATE TABLE IF NOT EXISTS quote_sections (QuoteSectionID INT AUTO_INCREMENT PRIMARY KEY, QuoteID INT NOT NULL, SectionType TINYINT UNSIGNED NOT NULL, Status TINYINT UNSIGNED NOT NULL, SentToCustomerAt DATETIME NULL, ApprovedAt DATETIME NULL, CreatedAt DATETIME NOT NULL) ENGINE=InnoDB;

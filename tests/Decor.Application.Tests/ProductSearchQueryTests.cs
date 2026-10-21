@@ -49,7 +49,7 @@ public sealed class ProductSearchQueryTests
     }
 
     [Fact]
-    public void DescriptionAndBrandRemainSeparateTokens()
+    public void ProductNameAndBrandRemainSeparateTokens()
     {
         Assert.Equal(new[] { "piso", "arquitech" }, ProductSearchQuery.Parse("  piso\t arquitech ").Tokens);
     }

@@ -230,7 +230,7 @@ public sealed class ProductsViewModelStatusTests
         viewModel.IsListVisible.Should().BeFalse();
         viewModel.IsAdding.Should().Be(adding);
         viewModel.ProductId.Should().Be(adding ? 0 : 42);
-        viewModel.Description.Should().Be(adding ? null : "Produto");
+        viewModel.ProductName.Should().Be(adding ? null : "Produto");
         viewModel.StatusMessage.Should().Be(adding ? "Cadastrando um produto." : "Editando o produto 42.");
         AssertNoListingStatus(viewModel);
         viewModel.CancelEdit();

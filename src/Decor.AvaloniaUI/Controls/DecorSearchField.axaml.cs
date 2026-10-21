@@ -25,9 +25,15 @@ public partial class DecorSearchField : UserControl
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(HasSearchHelp), true);
     public static readonly StyledProperty<bool> SearchOnTextChangedProperty =
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(SearchOnTextChanged), true);
+    public static readonly StyledProperty<bool> ShowSearchButtonProperty =
+        AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowSearchButton), true);
+    public static readonly StyledProperty<bool> ShowFilterButtonProperty =
+        AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowFilterButton), true);
+    public static readonly StyledProperty<bool> ShowLeadingSearchIconProperty =
+        AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowLeadingSearchIcon));
 
     public const string GenericSearchHelp = "Digite palavras para combinar termos (todos precisam corresponder). Use aspas para buscar uma frase exata, como \"piso vinílico\". Um número localiza pelo código. Apague o texto para limpar; use Pesquisar com o campo vazio para listar tudo.";
-    public const string ProductSearchHelp = "Pesquise por código, descrição, marca ou referência. Combine palavras: piso arquitech (todos os termos precisam corresponder). Use aspas para uma frase: \"piso vinílico\". Estoque: com estoque; sem estoque; estoque negativo; estoque > 5; estoque < 10; estoque = 0; estoque acima de 5,5; estoque abaixo de 10. Combine, por exemplo: piso com estoque. Use Pesquisar com o campo vazio para listar todos os produtos.";
+    public const string ProductSearchHelp = "Pesquise por código, descrição, marca ou referência. Combine palavras: piso arquitech (todos os termos precisam corresponder). Use aspas para uma frase: \"piso vinílico\". Estoque: com estoque; sem estoque; estoque negativo; estoque > 5; estoque < 10; estoque = 0; estoque acima de 5,5; estoque abaixo de 10. Combine, por exemplo: piso com estoque. Pressione Enter com o campo vazio para listar todos os produtos.";
 
     private readonly DispatcherTimer _searchTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly SearchCommandProxy _searchActionCommand;
@@ -56,6 +62,9 @@ public partial class DecorSearchField : UserControl
     public bool HasClearCommand { get => GetValue(HasClearCommandProperty); private set => SetValue(HasClearCommandProperty, value); }
     public bool HasSearchHelp { get => GetValue(HasSearchHelpProperty); private set => SetValue(HasSearchHelpProperty, value); }
     public bool SearchOnTextChanged { get => GetValue(SearchOnTextChangedProperty); set => SetValue(SearchOnTextChangedProperty, value); }
+    public bool ShowSearchButton { get => GetValue(ShowSearchButtonProperty); set => SetValue(ShowSearchButtonProperty, value); }
+    public bool ShowFilterButton { get => GetValue(ShowFilterButtonProperty); set => SetValue(ShowFilterButtonProperty, value); }
+    public bool ShowLeadingSearchIcon { get => GetValue(ShowLeadingSearchIconProperty); set => SetValue(ShowLeadingSearchIconProperty, value); }
     public ICommand SearchActionCommand => _searchActionCommand;
     public ICommand ClearActionCommand => _clearActionCommand;
 

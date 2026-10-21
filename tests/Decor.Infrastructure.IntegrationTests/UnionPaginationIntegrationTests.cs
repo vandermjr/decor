@@ -145,11 +145,11 @@ FROM (
         await connection.ExecuteAsync(@"
             CREATE TABLE IF NOT EXISTS products (
                 ProductID INT NOT NULL AUTO_INCREMENT,
-                Description VARCHAR(255) NULL,
+                Product VARCHAR(255) NULL,
                 PRIMARY KEY (ProductID)
             ) ENGINE=InnoDB;
             DELETE FROM products;
-            INSERT INTO products (Description)
+            INSERT INTO products (Product)
             SELECT CONCAT('UNION pagination product ', sequence_number)
             FROM (
                 SELECT 1 AS sequence_number UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5

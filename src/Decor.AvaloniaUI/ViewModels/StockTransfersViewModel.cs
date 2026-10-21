@@ -84,7 +84,7 @@ public sealed class StockTransfersViewModel : INotifyPropertyChanged
                     rows.Add(new StockTransferRow(
                         movement.TransferID?.ToString() ?? $"TR-{movement.StockMovementID:0000}",
                         route,
-                        string.IsNullOrWhiteSpace(product.Description) ? $"Produto {product.ProductID}" : product.Description,
+                        string.IsNullOrWhiteSpace(product.ProductName) ? $"Produto {product.ProductID}" : product.ProductName,
                         movement.Quantity,
                         product.StockUnitCode ?? string.Empty,
                         movement.ReviewStatus?.ToString() ?? "Pendente"));

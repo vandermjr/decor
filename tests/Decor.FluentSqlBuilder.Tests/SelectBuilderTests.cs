@@ -29,10 +29,10 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var (sql, parameters) = _builder
                 .Select<Product>()
-                .WithColumns(p => p.ProductID, p => p.Description)
+                .WithColumns(p => p.ProductID, p => p.ProductName)
                 .Build();
 
-            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.ProductID, p.Description FROM products AS p ORDER BY p.ProductID ASC;"));
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.ProductID, p.Product AS ProductName FROM products AS p ORDER BY p.ProductID ASC;"));
             parameters.Should().BeEmpty();
         }
 
@@ -94,7 +94,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Build();
 
             // Assert
-            string expectedSql = "SELECT p.ProductID, p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.StockUnitID, p.Origin, p.AcquisitionMode, p.ProductType, p.CostPrice, p.SalePrice, p.EmployeeCommissionValue, p.DefaultInstallationServiceID FROM products AS p ORDER BY p.ProductID ASC;";
+            string expectedSql = "SELECT p.ProductID, p.Barcode, p.IsActive, p.Product, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.StockUnitID, p.Origin, p.AcquisitionMode, p.ProductType, p.CostPrice, p.SalePrice, p.EmployeeCommissionValue, p.DefaultInstallationServiceID FROM products AS p ORDER BY p.ProductID ASC;";
             NormalizeSqlString(sql).Should().Be(NormalizeSqlString(expectedSql));
             parameters.Should().BeEmpty();
         }
@@ -104,11 +104,11 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.Description))
+                .Select<Product>(s => s.WithColumns<Product>(p => p.ProductID, p => p.ProductName))
                 .Build();
 
             // Assert
-            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.ProductID, p.Description FROM products AS p ORDER BY p.ProductID ASC;"));
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT p.ProductID, p.Product AS ProductName FROM products AS p ORDER BY p.ProductID ASC;"));
             parameters.Should().BeEmpty();
         }
 
@@ -135,7 +135,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select<Product>(s => s.AllColumns<Product>(true).ExceptColumns<Product>(p => p.Description, p => p.Barcode))
+                .Select<Product>(s => s.AllColumns<Product>(true).ExceptColumns<Product>(p => p.ProductName, p => p.Barcode))
                 .Build();
 
             // Assert
@@ -188,11 +188,11 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             // Act
             var (sql, parameters) = _builder
-                .Select<Product>(s => s.Count<Product>(p => p.Description, true))
+                .Select<Product>(s => s.Count<Product>(p => p.ProductName, true))
                 .Build();
 
             // Assert
-            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT COUNT(DISTINCT p.Description) FROM products AS p;"));
+            NormalizeSqlString(sql).Should().Be(NormalizeSqlString("SELECT COUNT(DISTINCT p.Product) FROM products AS p;"));
             parameters.Should().BeEmpty();
         }
 
@@ -241,7 +241,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Build();
 
             NormalizeSqlString(sql).Should().Contain(
-                NormalizeSqlString("SELECT p.Barcode, p.IsActive, p.Description, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.StockUnitID, p.Origin, p.AcquisitionMode, p.ProductType, p.CostPrice, p.SalePrice, p.EmployeeCommissionValue, p.DefaultInstallationServiceID FROM products AS p ORDER BY p.ProductID ASC;"));
+                NormalizeSqlString("SELECT p.Barcode, p.IsActive, p.Product, p.ManufacturerRef, p.AuxiliaryRef, p.Dimensions, p.Observations, p.StockQuantity, p.MinimumStock, p.BrandID, p.SubgroupID, p.StockUnitID, p.Origin, p.AcquisitionMode, p.ProductType, p.CostPrice, p.SalePrice, p.EmployeeCommissionValue, p.DefaultInstallationServiceID FROM products AS p ORDER BY p.ProductID ASC;"));
             parameters.Should().BeEmpty();
         }
 

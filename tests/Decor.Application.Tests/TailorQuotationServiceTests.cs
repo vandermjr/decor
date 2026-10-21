@@ -187,7 +187,7 @@ public class TailorQuotationServiceTests
             ProductType = ProductType.Good,
             SubgroupID = 7,
             IsActive = true,
-            Description = "Tecido"
+            ProductName = "Tecido"
         };
         product.Subgroup = new Subgroup { SubgroupID = 7, GroupID = 9, SubgroupName = "Voil" };
         _productRepo.Products.Add(product);
@@ -224,7 +224,7 @@ public class TailorQuotationServiceTests
             ProductType = ProductType.Good,
             SubgroupID = 7,
             IsActive = true,
-            Description = "Tecido"
+            ProductName = "Tecido"
         };
         product.Subgroup = new Subgroup { SubgroupID = 7, GroupID = 9, SubgroupName = "Voil" };
         _productRepo.Products.Add(product);

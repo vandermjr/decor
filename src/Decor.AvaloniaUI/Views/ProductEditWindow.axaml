@@ -43,10 +43,10 @@
           <TextBlock Text="{Binding BarcodeError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBarcodeError}"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Descrição" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Produto" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>
         <StackPanel Grid.Row="3" Grid.Column="1" Spacing="3">
-          <TextBox TabIndex="1" Text="{Binding Description}" controls:DecorRequiredField.IsRequired="True"/>
-          <TextBlock Text="{Binding DescriptionError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasDescriptionError}"/>
+          <TextBox TabIndex="1" Text="{Binding ProductName}" controls:DecorRequiredField.IsRequired="True"/>
+          <TextBlock Text="{Binding ProductNameError}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasProductNameError}"/>
         </StackPanel>
 
         <TextBlock Grid.Row="4" Grid.Column="0" Text="Unidade de Medida" FontWeight="{DynamicResource DecorFontWeightBase}" VerticalAlignment="Center"/>

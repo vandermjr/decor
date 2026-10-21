@@ -21,7 +21,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Select<Product>(s =>
                 {
                     s.WithColumns<Product>(p => p.ProductID, p => p.Barcode, p => p.IsActive,
-                                       p => p.Description, p => p.ManufacturerRef, p => p.AuxiliaryRef,
+                                       p => p.ProductName, p => p.ManufacturerRef, p => p.AuxiliaryRef,
                                        p => p.Dimensions, p => p.Observations, p => p.StockQuantity,
                                        p => p.MinimumStock);
                     s.WithColumns<Brand>(b => b.BrandID, b => b.BrandName);
@@ -41,16 +41,16 @@ namespace Decor.FluentSqlBuilder.Tests
                 .Where(w =>
                 {
                     w.Equals<Product>(p => p.ProductID, 999);
-                    w.Or().Contains<Product>(p => p.Description, "test desc");
+                    w.Or().Contains<Product>(p => p.ProductName, "test desc");
                 })
-                .OrderBy("p.Description ASC")
+                .OrderBy("p.Product ASC")
                 .Take(10000);
 
             string expectedSql = @"SELECT
                 p.ProductID,
                 p.Barcode,
                 p.IsActive,
-                p.Description,
+                p.Product AS ProductName,
                 p.ManufacturerRef,
                 p.AuxiliaryRef,
                 p.Dimensions,
@@ -79,9 +79,9 @@ namespace Decor.FluentSqlBuilder.Tests
                 families AS f ON g.FamilyID = f.FamilyID
             INNER JOIN
                 classes AS c ON f.ClassID = c.ClassID
-            WHERE p.ProductID = @ProductID OR p.Description LIKE CONCAT('%', @Description, '%')
+            WHERE p.ProductID = @ProductID OR p.Product LIKE CONCAT('%', @ProductName, '%')
             ORDER BY
-                p.Description ASC
+                p.Product ASC
             LIMIT 10000;";
 
             var (actualSql, actualParameters) = builder.Build();
@@ -89,11 +89,11 @@ namespace Decor.FluentSqlBuilder.Tests
             Assert.Equal(NormalizeSqlString(expectedSql), NormalizeSqlString(actualSql));
 
             Assert.Contains("ProductID", actualParameters.Keys);
-            Assert.Contains("Description", actualParameters.Keys);
+            Assert.Contains("ProductName", actualParameters.Keys);
             Assert.Equal(2, actualParameters.Count);
 
             Assert.Equal(999, actualParameters["ProductID"]);
-            Assert.Equal("test desc", actualParameters["Description"]);
+            Assert.Equal("test desc", actualParameters["ProductName"]);
         }
 
         [Fact]
@@ -145,7 +145,7 @@ namespace Decor.FluentSqlBuilder.Tests
         {
             var builder = FluentCommandBuilder.Create()
                 .Select<Product>(s => s.Count(1))
-                .OrderBy("p.Description ASC")
+                .OrderBy("p.Product ASC")
                 .Take(100);
 
             string expectedSql = @"SELECT
@@ -302,7 +302,7 @@ namespace Decor.FluentSqlBuilder.Tests
             Assert.Contains(NormalizeSqlString("p.ProductID"), normalizedSql);
             Assert.Contains(NormalizeSqlString("p.Barcode"), normalizedSql);
             Assert.Contains(NormalizeSqlString("p.IsActive"), normalizedSql);
-            Assert.Contains(NormalizeSqlString("p.Description"), normalizedSql);
+            Assert.Contains(NormalizeSqlString("p.Product"), normalizedSql);
             Assert.Contains(NormalizeSqlString("p.ManufacturerRef"), normalizedSql);
             Assert.Contains(NormalizeSqlString("p.AuxiliaryRef"), normalizedSql);
             Assert.Contains(NormalizeSqlString("p.Dimensions"), normalizedSql);
@@ -325,7 +325,7 @@ namespace Decor.FluentSqlBuilder.Tests
         public void GeneratesCorrectSqlForExcept()
         {
             var builder = FluentCommandBuilder.Create()
-                .Select<Product>(s => s.ExceptColumns<Product>(p => p.BrandID, p => p.Description, p => p.Barcode));
+                .Select<Product>(s => s.ExceptColumns<Product>(p => p.BrandID, p => p.ProductName, p => p.Barcode));
 
             // Espera-se que BrandID, Description e Barcode sejam excluídos.
             // A ordem das colunas restantes pode variar devido à reflexão.
@@ -368,7 +368,7 @@ namespace Decor.FluentSqlBuilder.Tests
                 p.ProductID,
                 p.Barcode,
                 p.IsActive,
-                p.Description,
+                p.Product AS ProductName,
                 p.ManufacturerRef,
                 p.AuxiliaryRef,
                 p.Dimensions,

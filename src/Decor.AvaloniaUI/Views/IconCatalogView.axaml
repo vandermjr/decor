@@ -325,6 +325,8 @@
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#10b981" Tag="#10b981" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#3b82f6" Tag="#3b82f6" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#8b5cf6" Tag="#8b5cf6" Click="IconColorChoice_Click"/>
+                                    <Button Width="22" Height="22" CornerRadius="11" Background="#ffffff" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" Tag="#ffffff" Click="IconColorChoice_Click"/>
+                                    <Button Width="22" Height="22" CornerRadius="11" Background="#000000" Tag="#000000" Click="IconColorChoice_Click"/>
                                     <Button Content="Restaurar padrão" Classes="decor-action" Tag="" Click="IconColorReset_Click"/>
                                   </StackPanel>
                                 </Flyout>

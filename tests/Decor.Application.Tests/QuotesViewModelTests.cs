@@ -1200,7 +1200,7 @@ public sealed class QuotesViewModelTests
     }
 
     private static ProductDTO Product(int id, ProductType type) => new(
-        ProductID: id, Barcode: null, IsActive: true, Description: type == ProductType.Service ? "Service" : "Product",
+        ProductID: id, Barcode: null, IsActive: true, ProductName: type == ProductType.Service ? "Service" : "Product",
         StockQuantity: 0m, BrandID: null, BrandName: null, SubgroupID: null, SubgroupName: null,
         GroupID: null, GroupName: null, FamilyID: null, FamilyName: null, ClassID: null, ClassName: null,
         ManufacturerRef: null, AuxiliarRef: null, Dimensions: null, Observations: null, MinimumStock: 0m,

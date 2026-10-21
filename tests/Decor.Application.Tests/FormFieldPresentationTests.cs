@@ -41,14 +41,14 @@ public sealed class FormFieldPresentationTests
     public void Product_marks_description_and_brand_but_not_optional_barcode()
     {
         var document = Read("ProductsView.axaml");
-        AssertRequired(document, "Text", "{Binding Description}", true);
+        AssertRequired(document, "Text", "{Binding ProductName}", true);
         AssertRequired(document, "SelectedItem", "{Binding SelectedBrand}", true);
         AssertRequired(document, "Text", "{Binding Barcode}", false);
     }
 
     [Theory]
-    [InlineData("ProductsView.axaml", "Description,SelectedBrand,SelectedSubgroup")]
-    [InlineData("ProductEditWindow.axaml", "Description,SelectedBrand,SelectedSubgroup")]
+    [InlineData("ProductsView.axaml", "ProductName,SelectedBrand,SelectedSubgroup,SelectedStockUnit")]
+    [InlineData("ProductEditWindow.axaml", "ProductName,SelectedBrand,SelectedSubgroup,SelectedStockUnit")]
     [InlineData("CustomersView.axaml", "Name")]
     [InlineData("SuppliersView.axaml", "Name")]
     [InlineData("EmployeesView.axaml", "Name")]
@@ -185,13 +185,13 @@ public sealed class FormFieldPresentationTests
     }
 
     [Fact]
-    public void Product_dto_requires_description_and_brand_but_accepts_empty_barcode()
+    public void Product_dto_requires_product_name_and_brand_but_accepts_empty_barcode()
     {
         var product = new ProductDTO(0, null, false, "Produto", 0, 1, "Marca", 1, null,
             null, null, null, null, null, null, null, null, null, null, 0, (int)ProductType.Good, null, null, null, null, 1);
         var validator = new ProductDTOValidator();
         Assert.Empty(validator.Validate(product));
-        Assert.NotEmpty(validator.Validate(product with { Description = null }));
+        Assert.NotEmpty(validator.Validate(product with { ProductName = null }));
         Assert.NotEmpty(validator.Validate(product with { BrandID = null }));
     }
 

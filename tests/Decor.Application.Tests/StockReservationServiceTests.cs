@@ -293,7 +293,7 @@ public sealed class StockReservationServiceTests
             ProductRepo.Products[productId] = new Product
             {
                 ProductID = productId,
-                Description = "Produto Teste",
+                ProductName = "Produto Teste",
                 ProductType = productType,
                 IsActive = true
             };

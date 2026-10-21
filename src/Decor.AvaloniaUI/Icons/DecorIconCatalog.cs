@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using Avalonia;
 using Avalonia.Media;
 
@@ -445,6 +444,8 @@ public static class DecorIconCatalog
             Transform = new MatrixTransform(new Matrix(-1, 0, 0, -1, 960, 960)),
             Children = { SymbolGeometriesByWeight[weight]["arrow_drop_down"].Value }
         }));
+    private static readonly IReadOnlyDictionary<int, Lazy<Geometry>> DropdownGeometries =
+        AvailableWeights.ToDictionary(weight => weight, CreateDropdownGeometry);
     private static readonly IReadOnlyDictionary<int, Lazy<Geometry>> InfoGeometries = new Dictionary<int, Lazy<Geometry>>
     {
         [100] = CreateGeometry("M466-306h28v-214h-28v214Zm28-269.75q6-5.75 6-14.25t-5.75-14.25Q488.5-610 480-610t-14.25 5.75Q460-598.5 460-590t6 14.25q6 5.75 14 5.75t14-5.75ZM480.17-132q-72.17 0-135.73-27.39-63.56-27.39-110.57-74.35-47.02-46.96-74.44-110.43Q132-407.65 132-479.83q0-72.17 27.39-135.73 27.39-63.56 74.35-110.57 46.96-47.02 110.43-74.44Q407.65-828 479.83-828q72.17 0 135.73 27.39 63.56 27.39 110.57 74.35 47.02 46.96 74.44 110.43Q828-552.35 828-480.17q0 72.17-27.39 135.73-27.39 63.56-74.35 110.57-46.96 47.02-110.43 74.44Q552.35-132 480.17-132Zm-.17-28q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"),
@@ -481,6 +482,8 @@ public static class DecorIconCatalog
             throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
         if (!SymbolGeometriesByWeight.TryGetValue(weight, out var geometries))
             throw new ArgumentOutOfRangeException(nameof(weight), weight, "The Material Symbol weight is not supported.");
+        if (id == DecorIconId.Navigation.Dropdown)
+            return DropdownGeometries[weight].Value;
         if (symbol == "contrast") return ThemeToggleGeometry.Value;
         if (symbol == "info") return InfoGeometries[weight].Value;
         if (id == DecorIconId.Navigation.SortAscending)
@@ -498,6 +501,22 @@ public static class DecorIconCatalog
     }
 
     private static Lazy<Geometry> CreateGeometry(string path) => new(() => Geometry.Parse(path), LazyThreadSafetyMode.ExecutionAndPublication);
+
+    private static Lazy<Geometry> CreateDropdownGeometry(int weight)
+    {
+        var halfThickness = 18 + weight / 100;
+        var normalX = (int)Math.Round(halfThickness * 0.64);
+        var normalY = (int)Math.Round(halfThickness * 0.77);
+        var path = $"M{240 + normalX}-{580 + normalY} " +
+                   $"L{480 + normalX}-{380 + normalY} " +
+                   $"L{480 - normalX}-{380 + normalY} " +
+                   $"L{720 - normalX}-{580 + normalY} " +
+                   $"L{720 + normalX}-{580 - normalY} " +
+                   $"L{480 + normalX}-{380 - normalY} " +
+                   $"L{480 - normalX}-{380 - normalY} " +
+                   $"L{240 - normalX}-{580 - normalY}Z";
+        return CreateGeometry(path);
+    }
 }
 
 public sealed record DecorIconCatalogFamily(string Name, IReadOnlyList<DecorIconId> Ids);

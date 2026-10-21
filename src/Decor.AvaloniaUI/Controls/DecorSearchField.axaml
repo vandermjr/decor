@@ -51,27 +51,32 @@
   </UserControl.Styles>
   <Border x:Name="FieldBorder" BorderThickness="1" CornerRadius="4" ClipToBounds="True"
       Background="{DynamicResource DecorControlBrush}">
-    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
-      <TextBox x:Name="SearchInput" Classes="search-input" MinWidth="0" MinHeight="0" Height="34"
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
+      <PathIcon Grid.Column="0" Classes="search-icon" Width="16" Height="16" Margin="10,0,0,0"
+                VerticalAlignment="Center" IsVisible="{Binding ShowLeadingSearchIcon, ElementName=Root}"
+                Focusable="False" IsTabStop="False" IsHitTestVisible="False"/>
+      <TextBox x:Name="SearchInput" Grid.Column="1" Classes="search-input" MinWidth="0" MinHeight="0" Height="34"
                BorderThickness="0" Background="Transparent" CornerRadius="0" Padding="10,0"
                VerticalContentAlignment="Center" FocusAdorner="{x:Null}"
                Text="{Binding Text, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                PlaceholderText="{Binding PlaceholderText, ElementName=Root}"
                AutomationProperties.Name="{Binding PlaceholderText, ElementName=Root}"/>
-      <Button x:Name="SearchButton" Grid.Column="1" Classes="search-action" Command="{Binding SearchActionCommand, ElementName=Root}"
+            <Button x:Name="SearchButton" Grid.Column="2" Classes="search-action" Command="{Binding SearchActionCommand, ElementName=Root}"
+              IsVisible="{Binding ShowSearchButton, ElementName=Root}"
               ToolTip.Tip="Pesquisar" AutomationProperties.Name="Pesquisar">
         <PathIcon Classes="search-icon" Width="16" Height="16"/>
       </Button>
-      <Button x:Name="ClearButton" Grid.Column="2" Classes="search-action" Command="{Binding ClearActionCommand, ElementName=Root}"
+      <Button x:Name="ClearButton" Grid.Column="3" Classes="search-action" Command="{Binding ClearActionCommand, ElementName=Root}"
               IsVisible="{Binding HasClearCommand, ElementName=Root}" ToolTip.Tip="Limpar pesquisa" AutomationProperties.Name="Limpar pesquisa">
         <PathIcon Classes="clear-icon" Width="16" Height="16"/>
       </Button>
-            <Button x:Name="FilterButton" Grid.Column="3" Classes="search-action filter-action" IsEnabled="False" IsTabStop="False"
+      <Button x:Name="FilterButton" Grid.Column="4" Classes="search-action filter-action" IsEnabled="False" IsTabStop="False"
+              IsVisible="{Binding ShowFilterButton, ElementName=Root}"
               controls:DecorActionAvailability.HideWhenDisabled="False"
               ToolTip.Tip="Filtros de pesquisa (em breve)" AutomationProperties.Name="Filtros de pesquisa">
         <PathIcon Classes="filter-icon" Width="16" Height="16"/>
       </Button>
-            <Button x:Name="InfoButton" Grid.Column="4" Classes="search-action info-action" Margin="0,0,1,0"
+          <Button x:Name="InfoButton" Grid.Column="5" Classes="search-action info-action" Margin="0,0,1,0"
               CornerRadius="0,3,3,0" IsVisible="{Binding HasSearchHelp, ElementName=Root}"
               ToolTip.Tip="{Binding SearchHelp, ElementName=Root}" AutomationProperties.Name="Informações da pesquisa">
         <PathIcon Classes="info-icon" Width="16" Height="16"/>

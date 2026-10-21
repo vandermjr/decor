@@ -101,7 +101,7 @@ public sealed class IntegratedSearchLayoutTests
     public void Products_describe_actual_goods_search_and_supported_stock_examples()
     {
         var field = Assert.Single(ReadView("ProductsView.axaml").Descendants(), element => element.Name.LocalName == "DecorSearchField");
-        Assert.Equal("Pesquisar por código, descrição, marca ou referência", (string?)field.Attribute("PlaceholderText"));
+        Assert.Equal("Pesquisar por código, produto, marca ou referência", (string?)field.Attribute("PlaceholderText"));
         Assert.Equal("{x:Static controls:DecorSearchField.ProductSearchHelp}", (string?)field.Attribute("SearchHelp"));
         Assert.DoesNotContain("serviço", DecorSearchField.ProductSearchHelp, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("servico", DecorSearchField.ProductSearchHelp, StringComparison.OrdinalIgnoreCase);
@@ -111,6 +111,28 @@ public sealed class IntegratedSearchLayoutTests
         Assert.Equal(5.5m, ProductSearchQuery.Parse("estoque acima de 5,5").StockGreaterThan);
         Assert.Equal(10m, ProductSearchQuery.Parse("estoque abaixo de 10").StockLessThan);
         Assert.Equal(new[] { "piso vinílico" }, ProductSearchQuery.Parse("\"piso vinílico\"").Tokens);
+    }
+
+    [Fact]
+    public void Products_search_uses_a_decorative_leading_icon_and_separate_filters_toggle()
+    {
+        var view = ReadView("ProductsView.axaml");
+        var field = Assert.Single(view.Descendants(), element => element.Name.LocalName == "DecorSearchField");
+        Assert.Equal("False", (string?)field.Attribute("ShowSearchButton"));
+        Assert.Equal("False", (string?)field.Attribute("ShowFilterButton"));
+        Assert.Equal("True", (string?)field.Attribute("ShowLeadingSearchIcon"));
+        Assert.Equal("{Binding SearchCommand}", (string?)field.Attribute("SearchCommand"));
+
+        var toggle = Assert.Single(view.Descendants(), element => element.Name.LocalName == "ToggleButton"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "FiltersToggleButton");
+        Assert.Equal("False", (string?)toggle.Attribute("IsChecked"));
+        Assert.Contains(toggle.Descendants(), element => element.Name.LocalName == "TextBlock" && (string?)element.Attribute("Text") == "Filtros");
+
+        var actions = Assert.Single(view.Descendants(), element => element.Name.LocalName == "WrapPanel"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "FilterActionsPanel");
+        Assert.Equal("{Binding IsChecked, ElementName=FiltersToggleButton}", (string?)actions.Attribute("IsVisible"));
+        Assert.Contains(actions.Descendants(), element => (string?)element.Attribute("Click") == "ConfigureColumnsClicked");
+        Assert.Contains(actions.Descendants(), element => (string?)element.Attribute("Click") == "ExportProductsCsvClicked");
     }
 
     private static XDocument ReadView(string view) => XDocument.Load(Path.Combine(ViewDirectory(), view));
