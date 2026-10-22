@@ -49,6 +49,53 @@ public static class ActionSortTestApplication
 
 public sealed class ActionSortRenderingTests
 {
+    [AvaloniaFact]
+    public void Submenu_highlight_uses_reduced_vertical_margin_at_runtime()
+    {
+        var defaultItem = new MenuItem { Header = "Padrão" };
+        var submenuItem = new MenuItem { Header = "Produtos" };
+        submenuItem.Classes.Add("submenu-item");
+        var category = new MenuItem { Header = "Cadastros" };
+        category.Classes.Add("main-menu-category");
+        category.Items.Add(defaultItem);
+        category.Items.Add(submenuItem);
+        var menu = new Menu();
+        menu.Classes.Add("top-menu");
+        menu.Items.Add(category);
+        var window = new Window { Width = 420, Height = 220, Content = menu };
+        window.Show();
+        try
+        {
+            Settle(window);
+            category.IsSubMenuOpen = true;
+            Settle(window);
+
+            var defaultHighlight = Assert.Single(defaultItem.GetVisualDescendants().OfType<Border>(), border => border.Name == "PART_LayoutRoot");
+            var highlight = Assert.Single(submenuItem.GetVisualDescendants().OfType<Border>(), border => border.Name == "PART_LayoutRoot");
+            var popup = Assert.Single(category.GetVisualDescendants().OfType<Popup>(), popup => popup.Name == "PART_Popup");
+            var popupBorder = Assert.IsType<Border>(popup.Child);
+            var categoryHighlight = Assert.Single(category.GetVisualDescendants().OfType<Border>(), border => border.Name == "PART_LayoutRoot");
+            Assert.Equal(new Thickness(4, 4), highlight.Margin);
+            Assert.Equal(new Thickness(12, 3), submenuItem.Padding);
+            Assert.Equal(new Thickness(4, 5), categoryHighlight.Margin);
+            Assert.True(categoryHighlight.Bounds.Height < category.Bounds.Height,
+                $"Expected main category highlight to be inset; category={category.Bounds.Height}, highlight={categoryHighlight.Bounds.Height}.");
+            Assert.Equal(new Thickness(1), popupBorder.BorderThickness);
+            Assert.Equal(Color.Parse("#3B4046"), Assert.IsAssignableFrom<ISolidColorBrush>(popupBorder.BorderBrush).Color);
+            Assert.True(highlight.Bounds.Height < defaultHighlight.Bounds.Height,
+                $"Expected custom highlight to render shorter than default; default={defaultHighlight.Bounds.Height}, custom={highlight.Bounds.Height}.");
+
+            submenuItem.IsSelected = true;
+            Settle(window);
+            Assert.Equal(new Thickness(4, 4), highlight.Margin);
+            Assert.Equal(Brushes.Transparent, highlight.BorderBrush);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]

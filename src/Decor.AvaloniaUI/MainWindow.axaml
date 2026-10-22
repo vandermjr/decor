@@ -161,11 +161,6 @@
       <Setter Property="Padding" Value="16,13"/>
       <Setter Property="MinHeight" Value="48"/>
     </Style>
-    <Style Selector="Menu.top-menu > MenuItem">
-      <Setter Property="Padding" Value="6,3"/>
-      <Setter Property="MinWidth" Value="0"/>
-      <Setter Property="HorizontalAlignment" Value="Left"/>
-    </Style>
     <Style Selector="Button.main-menu-button">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
@@ -182,166 +177,110 @@
     </Style>
   </Window.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
-    <Border Background="{DynamicResource DecorSurfaceBrush}"
+    <Border Background="{DynamicResource DecorMenuBackgroundBrush}"
             BorderBrush="{DynamicResource DecorBorderBrush}"
             BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Orientation="Horizontal">
-          <Button x:Name="MainMenuRegistrationsButton" Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Cadastros" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Produtos" Command="{Binding ShowProductsCommand}">
+        <Menu Classes="top-menu">
+          <MenuItem Classes="main-menu-category" Header="Cadastros">
+                <MenuItem Classes="submenu-item" Header="Produtos" Command="{Binding ShowProductsCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Products}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Marcas" Command="{Binding ShowBrandsCommand}">
+                <MenuItem Classes="submenu-item" Header="Marcas" Command="{Binding ShowBrandsCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Brands}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Unidades de medida" Command="{Binding ShowUnitsOfMeasureCommand}"
+                <MenuItem Classes="submenu-item" Header="Unidades de medida" Command="{Binding ShowUnitsOfMeasureCommand}"
                           IsVisible="{Binding CanViewUnitsOfMeasure}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Classifications}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Clientes" Command="{Binding ShowCustomersCommand}" IsVisible="{Binding CanViewCustomers}">
+                <MenuItem Classes="submenu-item" Header="Clientes" Command="{Binding ShowCustomersCommand}" IsVisible="{Binding CanViewCustomers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Fornecedores" Command="{Binding ShowSuppliersCommand}" IsVisible="{Binding CanViewSuppliers}">
+                <MenuItem Classes="submenu-item" Header="Fornecedores" Command="{Binding ShowSuppliersCommand}" IsVisible="{Binding CanViewSuppliers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Parceiros" Command="{Binding ShowPartnersCommand}" IsVisible="{Binding CanViewPartners}">
+                <MenuItem Classes="submenu-item" Header="Parceiros" Command="{Binding ShowPartnersCommand}" IsVisible="{Binding CanViewPartners}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Funcionários" Command="{Binding ShowEmployeesCommand}" IsVisible="{Binding CanViewEmployees}">
+                <MenuItem Classes="submenu-item" Header="Funcionários" Command="{Binding ShowEmployeesCommand}" IsVisible="{Binding CanViewEmployees}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Profile}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Classificações" Command="{Binding ShowClassificationsCommand}">
+                <MenuItem Classes="submenu-item" Header="Classificações" Command="{Binding ShowClassificationsCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Classifications}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Comercial" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Orçamentos" Command="{Binding ShowQuotesCommand}" IsVisible="{Binding CanViewQuotes}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Comercial">
+                <MenuItem Classes="submenu-item" Header="Orçamentos" Command="{Binding ShowQuotesCommand}" IsVisible="{Binding CanViewQuotes}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Vendas" Command="{Binding ShowSalesCommand}" IsVisible="{Binding CanViewSales}">
+                <MenuItem Classes="submenu-item" Header="Vendas" Command="{Binding ShowSalesCommand}" IsVisible="{Binding CanViewSales}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Comercial}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Compras" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Pedidos de Compra" Command="{Binding ShowPurchaseOrdersCommand}" IsVisible="{Binding CanViewPurchaseOrders}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Compras">
+                <MenuItem Classes="submenu-item" Header="Pedidos de Compra" Command="{Binding ShowPurchaseOrdersCommand}" IsVisible="{Binding CanViewPurchaseOrders}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Compras}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Recebimentos" Command="{Binding ShowGoodsReceiptsCommand}" IsVisible="{Binding CanViewGoodsReceipts}">
+                <MenuItem Classes="submenu-item" Header="Recebimentos" Command="{Binding ShowGoodsReceiptsCommand}" IsVisible="{Binding CanViewGoodsReceipts}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.TermDelivery}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Estoque" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Estoque" Command="{Binding ShowStockCommand}" IsVisible="{Binding CanViewStock}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Estoque">
+                <MenuItem Classes="submenu-item" Header="Estoque" Command="{Binding ShowStockCommand}" IsVisible="{Binding CanViewStock}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Estoque}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Transferências" Command="{Binding ShowStockTransfersCommand}" IsVisible="{Binding CanViewStockTransfers}">
+                <MenuItem Classes="submenu-item" Header="Transferências" Command="{Binding ShowStockTransfersCommand}" IsVisible="{Binding CanViewStockTransfers}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.TermDelivery}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Ajustes" Command="{Binding ShowStockAdjustmentsCommand}" IsVisible="{Binding CanViewStockAdjustments}">
+                <MenuItem Classes="submenu-item" Header="Ajustes" Command="{Binding ShowStockAdjustmentsCommand}" IsVisible="{Binding CanViewStockAdjustments}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+User.Preferences}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Serviços" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Serviços" Command="{Binding ShowServicesCommand}" IsVisible="{Binding CanViewServices}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Serviços">
+                <MenuItem Classes="submenu-item" Header="Serviços" Command="{Binding ShowServicesCommand}" IsVisible="{Binding CanViewServices}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Servicos}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Agenda" IsEnabled="False">
+                <MenuItem Classes="submenu-item" Header="Agenda" IsEnabled="False">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Calendar}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Financeiro" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Contas a Pagar" IsEnabled="False">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Financeiro">
+                <MenuItem Classes="submenu-item" Header="Contas a Pagar" IsEnabled="False">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Caixa" IsEnabled="False">
+                <MenuItem Classes="submenu-item" Header="Caixa" IsEnabled="False">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Modules.Financeiro}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Ferramentas" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Acessos" IsVisible="{Binding CanViewAccess}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Ferramentas">
+                <MenuItem Classes="submenu-item" Header="Acessos" IsVisible="{Binding CanViewAccess}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}"/></MenuItem.Icon>
-                  <MenuItem Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}">
+                  <MenuItem Classes="submenu-item" Header="Usuários" Command="{Binding ShowUsersCommand}" IsVisible="{Binding CanViewUsers}">
                     <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Users}"/></MenuItem.Icon>
                   </MenuItem>
-                  <MenuItem Header="Grupos" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}">
+                  <MenuItem Classes="submenu-item" Header="Grupos" Command="{Binding ShowRolesCommand}" IsVisible="{Binding CanViewRoles}">
                     <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.PermissionGroups}"/></MenuItem.Icon>
                   </MenuItem>
-                  <MenuItem Header="Permissões" Command="{Binding ShowPermissionsCommand}" IsVisible="{Binding CanViewPermissions}">
+                  <MenuItem Classes="submenu-item" Header="Permissões" Command="{Binding ShowPermissionsCommand}" IsVisible="{Binding CanViewPermissions}">
                     <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.Permissions}"/></MenuItem.Icon>
                   </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Manutenção do banco de dados" IsVisible="{Binding CanViewDatabaseMaintenance}">
+                <MenuItem Classes="submenu-item" Header="Manutenção do banco de dados" IsVisible="{Binding CanViewDatabaseMaintenance}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.DatabaseMaintenance}"/></MenuItem.Icon>
-                  <MenuItem Header="Backup e restauração" Command="{Binding ShowDatabaseMaintenanceCommand}">
+                  <MenuItem Classes="submenu-item" Header="Backup e restauração" Command="{Binding ShowDatabaseMaintenanceCommand}">
                     <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Forms.DatabaseMaintenance}"/></MenuItem.Icon>
                   </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Opções" Command="{Binding ShowSystemSettingsCommand}" IsVisible="{Binding CanViewSystemSettings}">
+                <MenuItem Classes="submenu-item" Header="Opções" Command="{Binding ShowSystemSettingsCommand}" IsVisible="{Binding CanViewSystemSettings}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="main-menu-button">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="Ajuda" VerticalAlignment="Center"/>
-            </StackPanel>
-            <Button.Flyout>
-              <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                <MenuItem Header="Sobre o Sistema" Command="{Binding ShowAboutCommand}">
+          </MenuItem>
+          <MenuItem Classes="main-menu-category" Header="Ajuda">
+                <MenuItem Classes="submenu-item" Header="Sobre o Sistema" Command="{Binding ShowAboutCommand}">
                   <MenuItem.Icon><PathIcon Classes="menu-icon" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Info}"/></MenuItem.Icon>
                 </MenuItem>
-              </MenuFlyout>
-            </Button.Flyout>
-          </Button>
-        </StackPanel>
+          </MenuItem>
+        </Menu>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
           <Border Width="1" Height="20" Margin="4,0,4,0" Background="{DynamicResource DecorBorderBrush}" VerticalAlignment="Center"/>
           <Button Classes="theme-selector-button" Command="{Binding ToggleThemeCommand}" ToolTip.Tip="{Binding ThemeToolTip}">

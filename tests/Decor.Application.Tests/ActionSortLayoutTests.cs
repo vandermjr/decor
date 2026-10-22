@@ -20,20 +20,69 @@ public class ActionSortLayoutTests
     public void Main_menu_categories_have_no_icons_but_submenu_items_keep_them()
     {
         var document = Load("MainWindow.axaml");
-        var mainMenuButtons = document.Descendants().Where(element => element.Name.LocalName == "Button"
-            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("main-menu-button") == true);
+        var mainMenu = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Menu"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("top-menu") == true);
+        var mainMenuItems = mainMenu.Elements().Where(element => element.Name.LocalName == "MenuItem").ToArray();
 
-        Assert.NotEmpty(mainMenuButtons);
-        Assert.All(mainMenuButtons, button =>
-        {
-            var content = button.Elements().Single(element => element.Name.LocalName == "StackPanel");
-            Assert.DoesNotContain(content.Descendants(), element => element.Name.LocalName == "PathIcon"
-                && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id"));
-        });
+        Assert.Equal(8, mainMenuItems.Length);
+        Assert.DoesNotContain(mainMenuItems, item => item.Elements().Any(element => element.Name.LocalName == "PathIcon"
+            && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id")));
 
-        var submenuItems = document.Descendants().Where(element => element.Name.LocalName == "MenuItem");
+        var submenuItems = mainMenu.Descendants().Where(element => element.Name.LocalName == "MenuItem");
         Assert.Contains(submenuItems, item => item.Descendants().Any(element => element.Name.LocalName == "PathIcon"
             && element.Attributes().Any(attribute => attribute.Name.LocalName == "DecorIcon.Id")));
+    }
+
+    [Fact]
+    public void Main_menu_uses_native_submenus_instead_of_independent_flyouts()
+    {
+        var document = Load("MainWindow.axaml");
+        var mainMenu = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Menu"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("top-menu") == true);
+
+        Assert.DoesNotContain(mainMenu.Descendants(), element => element.Name.LocalName == "MenuFlyout");
+        Assert.DoesNotContain(document.Descendants(), element => (string?)element.Attribute("Click") == "MainMenuButton_Click"
+            || (string?)element.Attribute("PointerEntered") == "MainMenuButton_PointerEntered");
+    }
+
+    [Fact]
+    public void Main_and_submenu_highlights_are_inset_and_rounded()
+    {
+        var document = Load("App.axaml");
+        var menuItemStyle = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "MenuItem");
+        var mainMenuItemStyle = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "MenuItem.main-menu-category");
+        var mainMenuLayoutRootStyle = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "MenuItem.main-menu-category /template/ Border#PART_LayoutRoot");
+        var submenuLayoutRootStyle = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "MenuItem.submenu-item /template/ Border#PART_LayoutRoot");
+
+        Assert.Contains(menuItemStyle.Elements(), element => (string?)element.Attribute("Property") == "CornerRadius"
+            && (string?)element.Attribute("Value") == "5");
+        Assert.Contains(mainMenuLayoutRootStyle.Elements(), element => (string?)element.Attribute("Property") == "Margin"
+            && (string?)element.Attribute("Value") == "4,5");
+        Assert.Contains(mainMenuItemStyle.Elements(), element => (string?)element.Attribute("Property") == "Padding"
+            && (string?)element.Attribute("Value") == "6,3");
+        Assert.Contains(submenuLayoutRootStyle.Elements(), element => (string?)element.Attribute("Property") == "Margin"
+            && (string?)element.Attribute("Value") == "4,4");
+        var submenuItemStyle = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "MenuItem.submenu-item");
+        Assert.Contains(submenuItemStyle.Elements(), element => (string?)element.Attribute("Property") == "Padding"
+            && (string?)element.Attribute("Value") == "12,3");
+        Assert.Contains(submenuLayoutRootStyle.Elements(), element => (string?)element.Attribute("Property") == "BorderThickness"
+            && (string?)element.Attribute("Value") == "1");
+        Assert.Contains(submenuLayoutRootStyle.Elements(), element => (string?)element.Attribute("Property") == "BorderBrush"
+            && (string?)element.Attribute("Value") == "Transparent");
+        Assert.DoesNotContain(document.Descendants().Attributes(), attribute => attribute.Name.LocalName == "Key"
+            && attribute.Value == "DecorMenuSelectionBorderBrush");
+
+        var mainMenu = Assert.Single(Load("MainWindow.axaml").Descendants(), element => element.Name.LocalName == "Menu"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("top-menu") == true);
+        var categories = mainMenu.Elements().Where(element => element.Name.LocalName == "MenuItem").ToArray();
+        Assert.All(categories, item => Assert.Contains("main-menu-category", ((string?)item.Attribute("Classes"))?.Split(' ') ?? []));
+        var submenuItems = categories.SelectMany(category => category.Descendants().Where(element => element.Name.LocalName == "MenuItem"));
+        Assert.All(submenuItems, item => Assert.Contains("submenu-item", ((string?)item.Attribute("Classes"))?.Split(' ') ?? []));
     }
 
     [Theory]

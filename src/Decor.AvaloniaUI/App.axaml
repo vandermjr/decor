@@ -32,6 +32,10 @@
                 <SolidColorBrush x:Key="LoginGlassFieldBrush">#FFFFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="LoginGlassFieldTextBrush">#252A30</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceBrush">#F5F6F8</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorMenuBackgroundBrush">#F5F6F8</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorMenuForegroundBrush">#30363E</SolidColorBrush>
+                <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush">#CBD1D9</SolidColorBrush>
+                <Thickness x:Key="MenuFlyoutPresenterBorderThemeThickness">1</Thickness>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorBorderBrush">#CBD1D9</SolidColorBrush>
@@ -70,7 +74,7 @@
                 <SolidColorBrush x:Key="DecorAddIndicatorBrush">#218739</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#66000000</SolidColorBrush>
                 <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
-                <x:Double x:Key="DecorFontSizeBase">13</x:Double>
+                <x:Double x:Key="DecorFontSizeBase">12</x:Double>
                 <x:Double x:Key="DecorFontSizeSmall">10</x:Double>
                 <x:Double x:Key="DecorFontSizeCaption">11</x:Double>
                 <x:Double x:Key="DecorFontSizeSection">17</x:Double>
@@ -96,6 +100,10 @@
                 <SolidColorBrush x:Key="LoginGlassFieldBrush">#33383E</SolidColorBrush>
                 <SolidColorBrush x:Key="LoginGlassFieldTextBrush">#FFFFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSurfaceBrush">#222529</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorMenuBackgroundBrush">#202122</SolidColorBrush>
+                <SolidColorBrush x:Key="DecorMenuForegroundBrush">#BFBFBF</SolidColorBrush>
+                <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush">#3B4046</SolidColorBrush>
+                <Thickness x:Key="MenuFlyoutPresenterBorderThemeThickness">1</Thickness>
                 <SolidColorBrush x:Key="DecorSurfaceRaisedBrush">#2C3035</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorControlBrush">#272B30</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorBorderBrush">#3B4046</SolidColorBrush>
@@ -130,7 +138,7 @@
                 <SolidColorBrush x:Key="DecorAddIndicatorBrush">#55B96B</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorOverlayBrush">#99000000</SolidColorBrush>
                 <FontFamily x:Key="DecorFontFamily">Noto Sans, Segoe UI, sans-serif</FontFamily>
-                <x:Double x:Key="DecorFontSizeBase">13</x:Double>
+                <x:Double x:Key="DecorFontSizeBase">12</x:Double>
                 <x:Double x:Key="DecorFontSizeSmall">10</x:Double>
                 <x:Double x:Key="DecorFontSizeCaption">11</x:Double>
                 <x:Double x:Key="DecorFontSizeSection">17</x:Double>
@@ -169,18 +177,35 @@
         <Setter Property="Theme" Value="{StaticResource DecorScrollBarTheme}" />
     </Style>
     <Style Selector="Menu">
-        <Setter Property="Background" Value="{DynamicResource DecorSurfaceBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DecorMenuBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorMenuForegroundBrush}" />
         <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
     </Style>
     <Style Selector="MenuItem">
-        <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DecorMenuForegroundBrush}" />
         <Setter Property="FontFamily" Value="{DynamicResource DecorFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource DecorFontSizeBase}" />
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
+        <Setter Property="CornerRadius" Value="5" />
         <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="MenuItem.main-menu-category">
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="MenuItem.main-menu-category /template/ Border#PART_LayoutRoot">
+        <Setter Property="Margin" Value="4,5" />
+    </Style>
+    <Style Selector="MenuItem.submenu-item /template/ Border#PART_LayoutRoot">
+        <Setter Property="Margin" Value="4,4" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="MenuItem.submenu-item">
+        <Setter Property="Padding" Value="12,3" />
     </Style>
     <Style Selector="MenuItem /template/ ContentPresenter">
         <Setter Property="FontWeight" Value="{DynamicResource DecorFontWeightBase}" />
