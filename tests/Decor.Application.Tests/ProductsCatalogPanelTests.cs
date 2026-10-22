@@ -93,7 +93,7 @@ public sealed class ProductsCatalogPanelTests
         var details = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
             && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ProductDetailsPanel");
 
-        Assert.Equal(new[] { "Resumo", "Especificações", "Fornecedores" }, tabs);
+        Assert.Equal(new[] { "Resumo", "Especificações", "Fornecedores", "Classificação" }, tabs);
         Assert.Contains(details.Descendants(), element => element.Name.LocalName == "TextBlock"
             && (string?)element.Attribute("Text") == "{Binding SelectedProduct.ProductName}");
         Assert.Contains(details.Descendants(), element => element.Name.LocalName == "TextBlock"
@@ -147,6 +147,24 @@ public sealed class ProductsCatalogPanelTests
         Assert.Contains("viewModel.Listing.AllItems", File.ReadAllText(Path.ChangeExtension(ProductsViewPath(), ".axaml.cs")));
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Click") == "ConfigureColumnsClicked");
+        var columnMenuCodeBehind = File.ReadAllText(Path.ChangeExtension(ProductsViewPath(), ".axaml.cs"));
+        Assert.Contains("MoveColumnAsync", columnMenuCodeBehind, StringComparison.Ordinal);
+        Assert.Contains("Mover coluna para cima", columnMenuCodeBehind, StringComparison.Ordinal);
+        Assert.Contains("Mover coluna para baixo", columnMenuCodeBehind, StringComparison.Ordinal);
+        Assert.Contains("DecorUserSettings.ProductGridColumnOrder", columnMenuCodeBehind, StringComparison.Ordinal);
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
+            && (string?)element.Attribute("FilterFlyout") == "{StaticResource ClassificationFilterFlyout}");
+        var filterFlyout = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Flyout"
+            && (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ClassificationFilterFlyout");
+        Assert.Contains(filterFlyout.Descendants(), element => element.Name.LocalName == "TreeView"
+            && (string?)element.Attribute("ItemsSource") == "{Binding FilteredClassificationTreeNodes}");
+        Assert.DoesNotContain(filterFlyout.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding IncludeEditorClassificationCommand}");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TreeView"
+            && (string?)element.Attribute("ItemsSource") == "{Binding FilteredEditorClassificationTreeNodes}");
+        Assert.Contains("controls:DecorRequiredField.IsRequired=\"True\"", viewMarkup, StringComparison.Ordinal);
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Command") == "{Binding IncludeEditorClassificationCommand}");
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Grid"
             && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogLayout");
         var catalog = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Grid"

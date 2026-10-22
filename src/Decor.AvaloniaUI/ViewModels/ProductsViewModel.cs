@@ -42,9 +42,15 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private FamilyDTO? _selectedFamily;
     private GroupDTO? _selectedGroup;
     private SubgroupDTO? _selectedSubgroup;
+    private ClassificationTreeNode? _selectedCatalogClassificationNode;
+    private ClassificationTreeNode? _selectedEditorClassificationNode;
+    private string _classificationSearchText = string.Empty;
+    private string _editorClassificationSearchText = string.Empty;
+    private List<ProductDTO> _loadedSearchResults = [];
     private UnitOfMeasureDTO? _selectedStockUnit;
     private readonly Dictionary<string, string> _fieldErrors = [];
     private Task? _lookupsLoadTask;
+    private Task? _classificationTreeLoadTask;
     private int _recordCount;
     private ProductCatalogSummaryDTO? _catalogSummary;
 
@@ -77,6 +83,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         EditCommand = new RelayCommand(async () => await BeginEditAsync(), () => CanEdit);
         SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave);
         CancelCommand = new RelayCommand(CancelEdit, () => IsEditing && !IsBusy);
+        IncludeEditorClassificationCommand = new RelayCommand(IncludeEditorClassification, () => CanIncludeEditorClassification);
+        ClearClassificationFilterCommand = new RelayCommand(ClearClassificationFilter);
     }
 
     public ObservableCollection<ProductDTO> Products { get; } = [];
@@ -85,6 +93,9 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public ObservableCollection<FamilyDTO> Families { get; } = [];
     public ObservableCollection<GroupDTO> Groups { get; } = [];
     public ObservableCollection<SubgroupDTO> Subgroups { get; } = [];
+    public ObservableCollection<ClassificationTreeNode> ClassificationTreeNodes { get; } = [];
+    public ObservableCollection<ClassificationTreeNode> FilteredClassificationTreeNodes { get; } = [];
+    public ObservableCollection<ClassificationTreeNode> FilteredEditorClassificationTreeNodes { get; } = [];
     public ObservableCollection<UnitOfMeasureDTO> StockUnits { get; } = [];
 
     public ICommand SearchCommand { get; }
@@ -93,6 +104,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public ICommand EditCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand IncludeEditorClassificationCommand { get; }
+    public ICommand ClearClassificationFilterCommand { get; }
     public GridListState<ProductDTO> Listing { get; }
     public ICommand PreviousPageCommand => Listing.PreviousPageCommand;
     public ICommand NextPageCommand => Listing.NextPageCommand;
@@ -108,6 +121,61 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 RaiseCommandStates();
         }
     }
+
+    public string ClassificationSearchText
+    {
+        get => _classificationSearchText;
+        set
+        {
+            if (SetField(ref _classificationSearchText, value))
+                RefreshFilteredClassificationTree(FilteredClassificationTreeNodes, ClassificationSearchText);
+        }
+    }
+
+    public string EditorClassificationSearchText
+    {
+        get => _editorClassificationSearchText;
+        set
+        {
+            if (SetField(ref _editorClassificationSearchText, value))
+                RefreshFilteredClassificationTree(FilteredEditorClassificationTreeNodes, EditorClassificationSearchText);
+        }
+    }
+
+    public ClassificationTreeNode? SelectedCatalogClassificationNode
+    {
+        get => _selectedCatalogClassificationNode;
+        set
+        {
+            if (!SetField(ref _selectedCatalogClassificationNode, value)) return;
+            OnPropertyChanged(nameof(ClassificationFilterDisplay));
+            ApplyProductFilters();
+        }
+    }
+
+    public ClassificationTreeNode? SelectedEditorClassificationNode
+    {
+        get => _selectedEditorClassificationNode;
+        set
+        {
+            if (!SetField(ref _selectedEditorClassificationNode, value)) return;
+            OnPropertyChanged(nameof(CanIncludeEditorClassification));
+            if (IncludeEditorClassificationCommand is RelayCommand command)
+                command.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool CanIncludeEditorClassification => IsEditing && !IsBusy && SelectedEditorClassificationNode?.SubgroupItem is not null;
+    public string ClassificationFilterDisplay => SelectedCatalogClassificationNode is null
+        ? string.Empty
+        : GetClassificationPath(SelectedCatalogClassificationNode);
+    public string SelectedClassificationPath => string.Join(" / ", new[]
+    {
+        SelectedClass?.ClassName,
+        SelectedFamily?.FamilyName,
+        SelectedGroup?.GroupName,
+        SelectedSubgroup?.SubgroupName
+    }.Where(name => !string.IsNullOrWhiteSpace(name)));
 
     public bool IsBusy
     {
@@ -242,6 +310,10 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     }
 
     public bool HasSelectedProduct => SelectedProduct is not null;
+    public string SelectedProductClassName => SelectedProduct?.ClassName ?? "Não informado";
+    public string SelectedProductFamilyName => SelectedProduct?.FamilyName ?? "Não informado";
+    public string SelectedProductGroupName => SelectedProduct?.GroupName ?? "Não informado";
+    public string SelectedProductSubgroupName => SelectedProduct?.SubgroupName ?? "Não informado";
     public string SelectedProductCodeDisplay => SelectedProduct is null
         ? string.Empty
         : SelectedProduct.ProductID.ToString("D6", BrazilianCulture);
@@ -468,6 +540,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public bool HasDimensionsError => HasFieldError("Dimensions");
     public bool HasBrandError => HasFieldError("Brand");
     public bool HasObservationsError => HasFieldError("Observations");
+    public string SubgroupError => GetFieldError("Subgroup");
+    public bool HasSubgroupError => HasFieldError("Subgroup");
 
     public async Task InitializeAsync()
     {
@@ -528,6 +602,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         // O formulário exige marca e classificação. Aberturas pelo menu podem
         // acontecer enquanto a inicialização assíncrona da tela ainda está em curso.
         await EnsureLookupsAsync();
+        await EnsureClassificationTreeAsync();
 
         if (Brands.Count == 0 || Classes.Count == 0)
         {
@@ -564,6 +639,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         Observations = null;
         SelectedBrand = null;
         ResetClassificationSelection();
+        SelectedEditorClassificationNode = null;
+        EditorClassificationSearchText = string.Empty;
         ClearFieldErrors();
         StatusMessage = "Cadastrando um produto.";
     }
@@ -576,6 +653,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         }
 
         await EnsureLookupsAsync();
+        await EnsureClassificationTreeAsync();
 
         if (Brands.Count == 0 || Classes.Count == 0)
         {
@@ -585,6 +663,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
 
         _isNew = false;
         IsEditing = true;
+        EditorClassificationSearchText = string.Empty;
         ProductId = SelectedProduct.ProductID;
         Barcode = SelectedProduct.Barcode;
         IsActive = SelectedProduct.IsActive;
@@ -608,6 +687,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         if (_selectedClass is not null)
         {
             await LoadFamiliesAsync(SelectedProduct.FamilyID, SelectedProduct.GroupID, SelectedProduct.SubgroupID);
+            SelectedEditorClassificationNode = FindSubgroupNode(SelectedProduct.SubgroupID);
         }
     }
 
@@ -673,7 +753,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         try
         {
             SelectedProduct = null;
-            Listing.Load(await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue));
+            _loadedSearchResults = (await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue)).ToList();
+            ApplyProductFilters();
             OnPropertyChanged(nameof(CanExport));
             OnPropertyChanged(nameof(ProductCodeDisplay));
             if (!IsEditing)
@@ -692,6 +773,151 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             IsBusy = false;
         }
     }
+
+    public async Task EnsureClassificationTreeAsync()
+    {
+        await EnsureLookupsAsync();
+        if (ClassificationTreeNodes.Count > 0 || Classes.Count == 0)
+            return;
+
+        if (_classificationTreeLoadTask is null || _classificationTreeLoadTask.IsCompleted)
+            _classificationTreeLoadTask = LoadClassificationTreeAsync();
+
+        try
+        {
+            await _classificationTreeLoadTask;
+        }
+        catch (Exception exception)
+        {
+            _classificationTreeLoadTask = null;
+            _logger?.LogWarning(exception, "Não foi possível carregar a árvore de classificações.");
+        }
+    }
+
+    private async Task LoadClassificationTreeAsync()
+    {
+        var roots = new List<ClassificationTreeNode>();
+        var classes = await LoadAllPagesAsync((page, pageSize) => _classService.GetAllAsync(page, pageSize));
+        Replace(Classes, classes);
+        foreach (var classItem in classes)
+        {
+            var classNode = new ClassificationTreeNode(classItem.ClassName ?? string.Empty, ClassificationTreeLevel.Class, classItem);
+            var families = await LoadAllPagesAsync((page, pageSize) => _familyService.GetByClassIdAsync(classItem.ClassID, page, pageSize));
+            foreach (var familyItem in families)
+            {
+                var familyNode = new ClassificationTreeNode(familyItem.FamilyName ?? string.Empty, ClassificationTreeLevel.Family, classItem, familyItem);
+                var groups = await LoadAllPagesAsync((page, pageSize) => _groupService.GetByFamilyIdAsync(familyItem.FamilyID, page, pageSize));
+                foreach (var groupItem in groups)
+                {
+                    var groupNode = new ClassificationTreeNode(groupItem.GroupName ?? string.Empty, ClassificationTreeLevel.Group, classItem, familyItem, groupItem);
+                    var subgroups = await LoadAllPagesAsync((page, pageSize) => _subgroupService.GetByGroupIdAsync(groupItem.GroupID, page, pageSize));
+                    foreach (var subgroupItem in subgroups)
+                        groupNode.Children.Add(new ClassificationTreeNode(subgroupItem.SubgroupName ?? string.Empty, ClassificationTreeLevel.Subgroup, classItem, familyItem, groupItem, subgroupItem));
+                    familyNode.Children.Add(groupNode);
+                }
+                classNode.Children.Add(familyNode);
+            }
+            roots.Add(classNode);
+        }
+
+        Replace(ClassificationTreeNodes, roots);
+        RefreshFilteredClassificationTree(FilteredClassificationTreeNodes, ClassificationSearchText);
+        RefreshFilteredClassificationTree(FilteredEditorClassificationTreeNodes, EditorClassificationSearchText);
+    }
+
+    private static async Task<List<T>> LoadAllPagesAsync<T>(Func<int, int, Task<IEnumerable<T>>> loadPage)
+    {
+        const int pageSize = 500;
+        var items = new List<T>();
+        for (var page = 1; ; page++)
+        {
+            var currentPage = (await loadPage(page, pageSize)).ToList();
+            items.AddRange(currentPage);
+            if (currentPage.Count < pageSize)
+                return items;
+        }
+    }
+
+    private void RefreshFilteredClassificationTree(ObservableCollection<ClassificationTreeNode> target, string searchText)
+    {
+        var terms = searchText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var filtered = ClassificationTreeNodes
+            .Select(node => FilterClassificationNode(node, terms))
+            .Where(node => node is not null)
+            .Cast<ClassificationTreeNode>()
+            .ToList();
+        Replace(target, filtered);
+    }
+
+    private static ClassificationTreeNode? FilterClassificationNode(ClassificationTreeNode node, IReadOnlyList<string> terms)
+    {
+        var matches = terms.Count == 0 || terms.All(term => node.Name.Contains(term, StringComparison.CurrentCultureIgnoreCase));
+        if (matches)
+            return node.CopyWithChildren(node.Children.Select(child => FilterClassificationNode(child, [])!).Where(child => child is not null));
+
+        var children = node.Children
+            .Select(child => FilterClassificationNode(child, terms))
+            .Where(child => child is not null)
+            .Cast<ClassificationTreeNode>()
+            .ToList();
+        return children.Count > 0 ? node.CopyWithChildren(children) : null;
+    }
+
+    public void ClearClassificationFilter() => SelectedCatalogClassificationNode = null;
+
+    private void ApplyProductFilters()
+    {
+        SelectedProduct = null;
+        IEnumerable<ProductDTO> filtered = _loadedSearchResults;
+        if (SelectedCatalogClassificationNode is { } node)
+        {
+            filtered = node.Level switch
+            {
+                ClassificationTreeLevel.Class => filtered.Where(product => product.ClassID == node.ClassItem.ClassID),
+                ClassificationTreeLevel.Family => filtered.Where(product => product.FamilyID == node.FamilyItem?.FamilyID),
+                ClassificationTreeLevel.Group => filtered.Where(product => product.GroupID == node.GroupItem?.GroupID),
+                ClassificationTreeLevel.Subgroup => filtered.Where(product => product.SubgroupID == node.SubgroupItem?.SubgroupID),
+                _ => filtered
+            };
+        }
+        Listing.Load(filtered);
+        OnPropertyChanged(nameof(CanExport));
+    }
+
+    private void IncludeEditorClassification()
+    {
+        if (SelectedEditorClassificationNode is not { SubgroupItem: { } subgroup } node)
+            return;
+
+        _selectedClass = node.ClassItem;
+        _selectedFamily = node.FamilyItem;
+        _selectedGroup = node.GroupItem;
+        SetField(ref _selectedSubgroup, subgroup, nameof(SelectedSubgroup));
+        _fieldErrors.Remove("Subgroup");
+        OnPropertyChanged(nameof(SelectedClass));
+        OnPropertyChanged(nameof(SelectedFamily));
+        OnPropertyChanged(nameof(SelectedGroup));
+        OnPropertyChanged(nameof(SelectedClassificationPath));
+        OnPropertyChanged(nameof(SubgroupError));
+        OnPropertyChanged(nameof(HasSubgroupError));
+        if (IncludeEditorClassificationCommand is RelayCommand command)
+            command.RaiseCanExecuteChanged();
+    }
+
+    private ClassificationTreeNode? FindSubgroupNode(int? subgroupId) => subgroupId is null
+        ? null
+        : FilteredEditorClassificationTreeNodes.SelectMany(classNode => classNode.Children)
+            .SelectMany(familyNode => familyNode.Children)
+            .SelectMany(groupNode => groupNode.Children)
+            .FirstOrDefault(node => node.SubgroupItem?.SubgroupID == subgroupId);
+
+    private static string GetClassificationPath(ClassificationTreeNode node) => string.Join(" / ", new[]
+    {
+        node.ClassItem.ClassName,
+        node.FamilyItem?.FamilyName,
+        node.GroupItem?.GroupName,
+        node.SubgroupItem?.SubgroupName
+    }.Where(name => !string.IsNullOrWhiteSpace(name)));
 
     private async Task LoadFamiliesAsync(int? familyId = null, int? groupId = null, int? subgroupId = null)
     {
@@ -942,6 +1168,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         OnPropertyChanged(nameof(HasDimensionsError));
         OnPropertyChanged(nameof(HasBrandError));
         OnPropertyChanged(nameof(HasObservationsError));
+        OnPropertyChanged(nameof(SubgroupError));
+        OnPropertyChanged(nameof(HasSubgroupError));
     }
 
     private static string ExtractFieldName(string errorMessage)
@@ -961,6 +1189,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             return "StockUnit";
         if (errorMessage.Contains("Marca", StringComparison.OrdinalIgnoreCase))
             return "Brand";
+        if (errorMessage.Contains("Subgrupo", StringComparison.OrdinalIgnoreCase))
+            return "Subgroup";
         if (errorMessage.Contains("Fabricante", StringComparison.OrdinalIgnoreCase))
             return "ManufacturerRef";
         if (errorMessage.Contains("Auxiliar", StringComparison.OrdinalIgnoreCase))

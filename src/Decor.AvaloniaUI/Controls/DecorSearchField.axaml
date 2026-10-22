@@ -70,10 +70,11 @@
               IsVisible="{Binding HasClearCommand, ElementName=Root}" ToolTip.Tip="Limpar pesquisa" AutomationProperties.Name="Limpar pesquisa">
         <PathIcon Classes="clear-icon" Width="16" Height="16"/>
       </Button>
-      <Button x:Name="FilterButton" Grid.Column="4" Classes="search-action filter-action" IsEnabled="False" IsTabStop="False"
+      <Button x:Name="FilterButton" Grid.Column="4" Classes="search-action filter-action" IsEnabled="{Binding FilterFlyout, ElementName=Root}" IsTabStop="False"
+              Flyout="{Binding FilterFlyout, ElementName=Root}"
               IsVisible="{Binding ShowFilterButton, ElementName=Root}"
               controls:DecorActionAvailability.HideWhenDisabled="False"
-              ToolTip.Tip="Filtros de pesquisa (em breve)" AutomationProperties.Name="Filtros de pesquisa">
+              ToolTip.Tip="Filtros de pesquisa" AutomationProperties.Name="Filtros de pesquisa">
         <PathIcon Classes="filter-icon" Width="16" Height="16"/>
       </Button>
           <Button x:Name="InfoButton" Grid.Column="5" Classes="search-action info-action" Margin="0,0,1,0"

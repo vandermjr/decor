@@ -164,6 +164,21 @@ public sealed class UserSettingsServiceTests
         repository.LastSet.Should().Be((7, DecorUserSettings.Language, "en-US", UserSettingValueType.String));
     }
 
+    [Fact]
+    public async Task Generic_user_setting_round_trips_by_authenticated_user_and_key()
+    {
+        var repository = new FakeUserSettingsRepository();
+        var service = new UserSettingsService(repository, AuthenticatedContext(7));
+
+        await service.SetValueAsync(DecorUserSettings.ProductGridColumnOrder, "[\"ProductName\",\"ProductID\"]");
+        var savedValue = await service.GetValueAsync(DecorUserSettings.ProductGridColumnOrder);
+
+        savedValue.Should().Be("[\"ProductName\",\"ProductID\"]");
+        repository.RequestedUserId.Should().Be(7);
+        repository.LastSet.Should().Be((7, DecorUserSettings.ProductGridColumnOrder,
+            "[\"ProductName\",\"ProductID\"]", UserSettingValueType.String));
+    }
+
     private static RecordingAuthenticatedUserContext AuthenticatedContext(int userId)
     {
         var context = new RecordingAuthenticatedUserContext();
@@ -182,7 +197,7 @@ public sealed class UserSettingsServiceTests
 
 internal sealed class FakeUserSettingsRepository : IUserSettingsRepository
 {
-    public IReadOnlyDictionary<string, UserSetting> Settings { get; init; } = new Dictionary<string, UserSetting>();
+    public Dictionary<string, UserSetting> Settings { get; init; } = new(StringComparer.Ordinal);
     public int? RequestedUserId { get; private set; }
     public int GetAllCalls { get; private set; }
     public (int UserId, string Key, string Value, UserSettingValueType ValueType)? LastSet { get; private set; }
@@ -198,13 +213,20 @@ internal sealed class FakeUserSettingsRepository : IUserSettingsRepository
     {
         GetAllCalls++;
         RequestedUserId = userId;
-        return Task.FromResult(Settings);
+        return Task.FromResult<IReadOnlyDictionary<string, UserSetting>>(Settings);
     }
 
     public Task SetAsync(int userId, string settingKey, string settingValue, UserSettingValueType valueType, CancellationToken cancellationToken = default)
     {
         LastSet = (userId, settingKey, settingValue, valueType);
         SetCalls.Add(LastSet.Value);
+        Settings[settingKey] = new UserSetting
+        {
+            UserID = userId,
+            SettingKey = settingKey,
+            SettingValue = settingValue,
+            ValueType = valueType.ToString()
+        };
         return Task.CompletedTask;
     }
 }

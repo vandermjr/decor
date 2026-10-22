@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -31,6 +32,8 @@ public partial class DecorSearchField : UserControl
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowFilterButton), true);
     public static readonly StyledProperty<bool> ShowLeadingSearchIconProperty =
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowLeadingSearchIcon));
+    public static readonly StyledProperty<FlyoutBase?> FilterFlyoutProperty =
+        AvaloniaProperty.Register<DecorSearchField, FlyoutBase?>(nameof(FilterFlyout));
 
     public const string GenericSearchHelp = "Digite palavras para combinar termos (todos precisam corresponder). Use aspas para buscar uma frase exata, como \"piso vinílico\". Um número localiza pelo código. Apague o texto para limpar; use Pesquisar com o campo vazio para listar tudo.";
     public const string ProductSearchHelp = "Pesquise por código, descrição, marca ou referência. Combine palavras: piso arquitech (todos os termos precisam corresponder). Use aspas para uma frase: \"piso vinílico\". Estoque: com estoque; sem estoque; estoque negativo; estoque > 5; estoque < 10; estoque = 0; estoque acima de 5,5; estoque abaixo de 10. Combine, por exemplo: piso com estoque. Pressione Enter com o campo vazio para listar todos os produtos.";
@@ -65,6 +68,7 @@ public partial class DecorSearchField : UserControl
     public bool ShowSearchButton { get => GetValue(ShowSearchButtonProperty); set => SetValue(ShowSearchButtonProperty, value); }
     public bool ShowFilterButton { get => GetValue(ShowFilterButtonProperty); set => SetValue(ShowFilterButtonProperty, value); }
     public bool ShowLeadingSearchIcon { get => GetValue(ShowLeadingSearchIconProperty); set => SetValue(ShowLeadingSearchIconProperty, value); }
+    public FlyoutBase? FilterFlyout { get => GetValue(FilterFlyoutProperty); set => SetValue(FilterFlyoutProperty, value); }
     public ICommand SearchActionCommand => _searchActionCommand;
     public ICommand ClearActionCommand => _clearActionCommand;
 

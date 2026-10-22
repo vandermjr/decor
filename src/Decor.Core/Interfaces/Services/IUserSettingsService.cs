@@ -5,6 +5,8 @@ namespace Decor.Core.Interfaces.Services;
 public interface IUserSettingsService
 {
     Task<UserSettings> GetAsync(CancellationToken cancellationToken = default);
+    Task<string?> GetValueAsync(string settingKey, CancellationToken cancellationToken = default);
+    Task SetValueAsync(string settingKey, string settingValue, CancellationToken cancellationToken = default);
     Task<DecorThemeStyle> GetThemeForUserAsync(int userId, CancellationToken cancellationToken = default);
     Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default);
     Task SetLanguageAsync(string language, CancellationToken cancellationToken = default);

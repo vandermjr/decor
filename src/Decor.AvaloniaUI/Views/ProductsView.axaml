@@ -9,6 +9,13 @@
     x:DataType="vm:ProductsViewModel">
   <UserControl.Resources>
     <SolidColorBrush x:Key="ErrorBrush">#FFB3261E</SolidColorBrush>
+    <TreeDataTemplate x:Key="ClassificationTreeTemplate" DataType="{x:Type vm:ClassificationTreeNode}" ItemsSource="{Binding Children}">
+      <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+        <Border Width="4" Height="18" CornerRadius="2" Background="{Binding LevelBrush}"/>
+        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding LevelName}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+      </StackPanel>
+    </TreeDataTemplate>
     <SolidColorBrush x:Key="CatalogActionBackgroundBrush">#F6AB58</SolidColorBrush>
     <SolidColorBrush x:Key="CatalogActionForegroundBrush">#332611</SolidColorBrush>
     <SolidColorBrush x:Key="CatalogActionBorderBrush">#D6A02E</SolidColorBrush>
@@ -16,6 +23,22 @@
     <SolidColorBrush x:Key="CatalogActionPressedBrush">#D9991D</SolidColorBrush>
     <SolidColorBrush x:Key="CatalogActionDisabledBackgroundBrush">#D8CCB4</SolidColorBrush>
     <SolidColorBrush x:Key="CatalogActionDisabledForegroundBrush">#625842</SolidColorBrush>
+    <Flyout x:Key="ClassificationFilterFlyout" Placement="BottomEdgeAlignedRight" Opened="ClassificationFilterFlyout_Opened">
+      <Border Classes="column-menu" BorderThickness="1" CornerRadius="5" Padding="12" Width="330" MaxHeight="480">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
+          <StackPanel Spacing="3">
+            <TextBlock Text="Filtrar por classificação" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+            <TextBlock Text="Selecione uma classe, família, grupo ou subgrupo." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+          </StackPanel>
+          <TextBox Grid.Row="1" Text="{Binding ClassificationSearchText, Mode=TwoWay}" PlaceholderText="Pesquisar classificações"/>
+          <TreeView Grid.Row="2" ItemsSource="{Binding FilteredClassificationTreeNodes}" SelectedItem="{Binding SelectedCatalogClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" MinHeight="190"/>
+          <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Text="{Binding ClassificationFilterDisplay}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Limpar" Command="{Binding ClearClassificationFilterCommand}" Classes="product-secondary-action"/>
+          </Grid>
+        </Grid>
+      </Border>
+    </Flyout>
   </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="PathIcon.catalog-total-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Common.Database}"/></Style>
@@ -150,45 +173,36 @@
       </Expander>
       <Border x:Name="SearchToolsFrame" Grid.Row="1" Grid.Column="0" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
         <StackPanel Spacing="8">
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
             <controls:DecorSearchField x:Name="SearchTextBox" HorizontalAlignment="Stretch" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
                                        PlaceholderText="Pesquisar por código, produto, marca ou referência" SearchHelp="{x:Static controls:DecorSearchField.ProductSearchHelp}"
                                        SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"
-                                       ShowSearchButton="False" ShowFilterButton="False" ShowLeadingSearchIcon="True"/>
-            <ToggleButton x:Name="FiltersToggleButton" Grid.Column="1" Classes="product-secondary-action" TabIndex="1" IsChecked="False"
-                          ToolTip.Tip="Mostrar filtros e ações do catálogo" AutomationProperties.Name="Filtros do catálogo">
-              <Grid ColumnDefinitions="Auto,*,Auto" Width="94" ColumnSpacing="6" VerticalAlignment="Center">
-                <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Filter}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Filtros" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                       ShowSearchButton="False" ShowFilterButton="True" ShowLeadingSearchIcon="True"
+                                       FilterFlyout="{StaticResource ClassificationFilterFlyout}"/>
+            <Button Grid.Column="1" Classes="product-secondary-action" TabIndex="2" IsEnabled="{Binding CanExport}" Margin="0" ToolTip.Tip="Exportar produtos encontrados">
+              <Grid ColumnDefinitions="Auto,*,Auto" Width="112" ColumnSpacing="6" VerticalAlignment="Center">
+                <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="Exportar" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 <Path Grid.Column="2" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.Dropdown}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Grid>
-            </ToggleButton>
+              <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedRight">
+                  <StackPanel Spacing="4" MinWidth="190">
+                    <Button Content="CSV (.csv)" Classes="product-secondary-action" Click="ExportProductsCsvClicked" HorizontalAlignment="Stretch"/>
+                    <Button Content="Excel 97-2003 (.xls)" Classes="product-secondary-action" Click="ExportProductsXlsClicked" HorizontalAlignment="Stretch"/>
+                    <Button Content="Excel (.xlsx)" Classes="product-secondary-action" Click="ExportProductsXlsxClicked" HorizontalAlignment="Stretch"/>
+                    <Button Content="OpenDocument (.odt)" Classes="product-secondary-action" Click="ExportProductsOdtClicked" HorizontalAlignment="Stretch"/>
+                  </StackPanel>
+                </Flyout>
+              </Button.Flyout>
+            </Button>
+            <Button Grid.Column="2" Classes="product-secondary-action" TabIndex="3" Click="ConfigureColumnsClicked" Margin="0" ToolTip.Tip="Escolher colunas visíveis">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform"/>
+                <TextBlock Text="Configurar colunas" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
           </Grid>
-          <WrapPanel x:Name="FilterActionsPanel" IsVisible="{Binding IsChecked, ElementName=FiltersToggleButton}" Orientation="Horizontal" HorizontalAlignment="Left">
-          <Button Classes="product-secondary-action" TabIndex="2" IsEnabled="{Binding CanExport}" Margin="2" ToolTip.Tip="Escolher formato para exportar todos os produtos encontrados">
-            <Grid ColumnDefinitions="Auto,*,Auto" Width="128" ColumnSpacing="6" VerticalAlignment="Center">
-              <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-              <TextBlock Grid.Column="1" Text="Exportar" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-              <Path Grid.Column="2" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.Dropdown}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            </Grid>
-            <Button.Flyout>
-              <Flyout Placement="BottomEdgeAlignedRight">
-                <StackPanel Spacing="4" MinWidth="190">
-                  <Button Content="CSV (.csv)" Classes="product-secondary-action" Click="ExportProductsCsvClicked" HorizontalAlignment="Stretch"/>
-                  <Button Content="Excel 97-2003 (.xls)" Classes="product-secondary-action" Click="ExportProductsXlsClicked" HorizontalAlignment="Stretch"/>
-                  <Button Content="Excel (.xlsx)" Classes="product-secondary-action" Click="ExportProductsXlsxClicked" HorizontalAlignment="Stretch"/>
-                  <Button Content="OpenDocument (.odt)" Classes="product-secondary-action" Click="ExportProductsOdtClicked" HorizontalAlignment="Stretch"/>
-                </StackPanel>
-              </Flyout>
-            </Button.Flyout>
-          </Button>
-          <Button Classes="product-secondary-action" TabIndex="3" Click="ConfigureColumnsClicked" Margin="2" ToolTip.Tip="Escolher colunas visíveis">
-            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform"/>
-              <TextBlock Text="Configurar colunas" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          </WrapPanel>
         </StackPanel>
     </Border>
 
@@ -293,6 +307,17 @@
                   </TabItem>
                   <TabItem Header="Fornecedores" FontSize="{DynamicResource DecorFontSizeBase}">
                     <TextBlock Margin="8,12" Text="O cadastro atual não mantém fornecedores associados diretamente ao produto." Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+                  </TabItem>
+                  <TabItem Header="Classificação" FontSize="{DynamicResource DecorFontSizeBase}">
+                    <StackPanel Spacing="8" Margin="8,12">
+                      <TextBlock Text="Hierarquia de classificação" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+                      <StackPanel Spacing="6">
+                        <Grid ColumnDefinitions="5,*" ColumnSpacing="8"><Border Grid.Column="0" Width="4" CornerRadius="2" Background="#2074B8"/><StackPanel Grid.Column="1" Spacing="1"><TextBlock Text="Classe" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedProductClassName}" TextWrapping="Wrap"/></StackPanel></Grid>
+                        <Grid ColumnDefinitions="5,*" ColumnSpacing="8"><Border Grid.Column="0" Width="4" CornerRadius="2" Background="#63844F"/><StackPanel Grid.Column="1" Spacing="1"><TextBlock Text="Família" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedProductFamilyName}" TextWrapping="Wrap"/></StackPanel></Grid>
+                        <Grid ColumnDefinitions="5,*" ColumnSpacing="8"><Border Grid.Column="0" Width="4" CornerRadius="2" Background="#A66A17"/><StackPanel Grid.Column="1" Spacing="1"><TextBlock Text="Grupo" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedProductGroupName}" TextWrapping="Wrap"/></StackPanel></Grid>
+                        <Grid ColumnDefinitions="5,*" ColumnSpacing="8"><Border Grid.Column="0" Width="4" CornerRadius="2" Background="#755B91"/><StackPanel Grid.Column="1" Spacing="1"><TextBlock Text="Subgrupo" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/><TextBlock Text="{Binding SelectedProductSubgroupName}" TextWrapping="Wrap"/></StackPanel></Grid>
+                      </StackPanel>
+                    </StackPanel>
                   </TabItem>
                 </TabControl>
               </StackPanel>
@@ -402,60 +427,24 @@
               <TextBlock Text="{Binding BrandError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasBrandError}"/>
             </StackPanel>
             
-            <TextBlock Text="Classificação Hierárquica" FontWeight="{DynamicResource DecorFontWeightHeading}" Margin="0,12,0,8"/>
-            <Grid Height="160" ClipToBounds="True" ColumnDefinitions="1*,1*,1*,1*" ColumnSpacing="8">
-              <Border BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
-                <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Classes" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                  <ListBox Grid.Row="1" ItemsSource="{Binding Classes}" SelectedItem="{Binding SelectedClass}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate x:DataType="dto:ClassDTO">
-                        <TextBlock Text="{Binding ClassName}" VerticalAlignment="Center"/>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </Grid>
+            <StackPanel Spacing="6" Margin="0,12,0,0">
+              <TextBlock Text="Classificação Hierárquica" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="Escolha o subgrupo ao qual este produto pertence." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
+              <TextBox TabIndex="11" Text="{Binding EditorClassificationSearchText, Mode=TwoWay}" PlaceholderText="Pesquisar classificação"/>
+              <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="4" Height="250">
+                <TreeView ItemsSource="{Binding FilteredEditorClassificationTreeNodes}" SelectedItem="{Binding SelectedEditorClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" controls:DecorRequiredField.IsRequired="True"/>
               </Border>
-
-              <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
-                <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Famílias" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                  <ListBox Grid.Row="1" ItemsSource="{Binding Families}" SelectedItem="{Binding SelectedFamily}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate x:DataType="dto:FamilyDTO">
-                        <TextBlock Text="{Binding FamilyName}" VerticalAlignment="Center"/>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </Grid>
-              </Border>
-
-              <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
-                <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Grupos" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                  <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate x:DataType="dto:GroupDTO">
-                        <TextBlock Text="{Binding GroupName}" VerticalAlignment="Center"/>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </Grid>
-              </Border>
-
-              <Border Grid.Column="3" BorderBrush="Gray" BorderThickness="1" Padding="8" CornerRadius="4" ClipToBounds="True">
-                <Grid RowDefinitions="Auto,*" RowSpacing="6">
-                  <TextBlock Text="Subgrupos" FontWeight="{DynamicResource DecorFontWeightBase}"/>
-                  <ListBox Grid.Row="1" ItemsSource="{Binding Subgroups}" SelectedItem="{Binding SelectedSubgroup}" controls:DecorRequiredField.IsRequired="True">
-                    <ListBox.ItemTemplate>
-                      <DataTemplate x:DataType="dto:SubgroupDTO">
-                        <TextBlock Text="{Binding SubgroupName}" VerticalAlignment="Center"/>
-                      </DataTemplate>
-                    </ListBox.ItemTemplate>
-                  </ListBox>
-                </Grid>
-              </Border>
-            </Grid>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <TextBlock Text="{Binding SelectedClassificationPath}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Command="{Binding IncludeEditorClassificationCommand}" IsEnabled="{Binding CanIncludeEditorClassification}" Classes="product-secondary-action" TabIndex="12">
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Create}" Fill="{DynamicResource DecorAccentBrush}" Width="15" Height="15" Stretch="Uniform"/>
+                    <TextBlock Text="Incluir descendente" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </Button>
+              </Grid>
+              <TextBlock Text="{Binding SubgroupError}" Foreground="{StaticResource ErrorBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" IsVisible="{Binding HasSubgroupError}"/>
+            </StackPanel>
             
             <StackPanel Spacing="4" Margin="0,8,0,0">
               <TextBlock Text="Observações" FontWeight="{DynamicResource DecorFontWeightBase}"/>

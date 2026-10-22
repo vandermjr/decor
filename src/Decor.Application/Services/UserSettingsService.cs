@@ -30,6 +30,24 @@ public sealed class UserSettingsService(
         return ParseTheme(setting?.SettingValue);
     }
 
+    public async Task<string?> GetValueAsync(string settingKey, CancellationToken cancellationToken = default)
+    {
+        var userId = authenticatedUserContext.User?.UserID;
+        if (userId is null || string.IsNullOrWhiteSpace(settingKey))
+            return null;
+
+        var setting = await userSettingsRepository.GetAsync(userId.Value, settingKey, cancellationToken);
+        return setting?.SettingValue;
+    }
+
+    public Task SetValueAsync(string settingKey, string settingValue, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(settingKey))
+            throw new ArgumentException("A chave da configuração é obrigatória.", nameof(settingKey));
+
+        return SetAsync(settingKey, settingValue, cancellationToken);
+    }
+
     public Task SetThemeAsync(DecorThemeStyle theme, CancellationToken cancellationToken = default) =>
         SetAsync(DecorUserSettings.Theme, theme.ToString(), cancellationToken);
 

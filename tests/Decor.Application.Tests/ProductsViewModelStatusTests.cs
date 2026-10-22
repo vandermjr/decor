@@ -9,10 +9,12 @@ namespace Decor.Application.Tests;
 public sealed class ProductsViewModelStatusTests
 {
     private static ProductDTO Product(int id = 42) => new(id, "789", true, "Produto", 3m, 1, "Marca", 1, "Subgrupo", 1, "Grupo", 1, "Familia", 1, "Classe", "Ref", null, null, null, 1m, 0, null, null, null, null, null);
-    private static ProductsViewModel Create(ProductService? products = null, ClassificationService? classification = null, BrandsViewModelStatusTests.BrandService? brands = null, IAuthorizationService? authorization = null)
+    private static ProductsViewModel Create(ProductService? products = null, IClassService? classService = null, IFamilyService? familyService = null, IGroupService? groupService = null, ISubgroupService? subgroupService = null, BrandsViewModelStatusTests.BrandService? brands = null, IAuthorizationService? authorization = null)
     {
-        classification ??= new ClassificationService();
-        return new(products ?? new ProductService(), brands ?? new BrandsViewModelStatusTests.BrandService(), classification, classification, classification, classification, authorization);
+        var classification = classService ?? new ClassificationService();
+        return new(products ?? new ProductService(), brands ?? new BrandsViewModelStatusTests.BrandService(), classification,
+            familyService ?? (IFamilyService)classification, groupService ?? (IGroupService)classification,
+            subgroupService ?? (ISubgroupService)classification, authorization);
     }
 
     [Fact]
@@ -156,6 +158,52 @@ public sealed class ProductsViewModelStatusTests
         viewModel.SearchText.Should().BeEmpty();
         viewModel.Products.Should().BeEmpty();
         viewModel.HasSelectedProduct.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Classification_filter_includes_products_in_selected_descendant()
+    {
+        var firstProduct = Product() with { ProductID = 1, ClassID = 1, FamilyID = 1, GroupID = 1, SubgroupID = 1 };
+        var otherProduct = Product(2) with { ClassID = 2, FamilyID = 2, GroupID = 2, SubgroupID = 2 };
+        var service = new ProductService { Search = () => Task.FromResult<IEnumerable<ProductDTO>>([firstProduct, otherProduct]) };
+        var tree = new TreeClassificationService();
+        var viewModel = Create(service, tree, tree, tree, tree);
+
+        await viewModel.EnsureClassificationTreeAsync();
+        viewModel.FilteredClassificationTreeNodes.Select(node => node.Name)
+            .Should().Contain(new[] { "Revestimentos", "Decoração" });
+        Assert.All(tree.RequestedPageSizes, pageSize => Assert.InRange(pageSize, 1, 500));
+        viewModel.ClassificationSearchText = "Revestimentos";
+        Assert.Equal([11], viewModel.FilteredClassificationTreeNodes.Single().Children.Single().Children.Single().Children
+            .Select(node => node.SubgroupItem is null ? 0 : node.SubgroupItem.SubgroupID));
+        await ExecuteAsync(viewModel, viewModel.SearchCommand, () => viewModel.IsBusy);
+        var selectedClass = viewModel.ClassificationTreeNodes.Single(node => node.ClassItem.ClassID == 1);
+        viewModel.SelectedCatalogClassificationNode = selectedClass;
+
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(1);
+        viewModel.ClassificationFilterDisplay.Should().Be("Revestimentos");
+        viewModel.SelectedProduct.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Editor_classification_is_assigned_only_after_include_command()
+    {
+        var tree = new TreeClassificationService();
+        var viewModel = Create(classService: tree, familyService: tree, groupService: tree, subgroupService: tree);
+        await viewModel.BeginNewAsync();
+        var subgroup = viewModel.FilteredEditorClassificationTreeNodes
+            .SelectMany(classNode => classNode.Children)
+            .SelectMany(familyNode => familyNode.Children)
+            .SelectMany(groupNode => groupNode.Children)
+            .Single(node => node.SubgroupItem?.SubgroupID == 11);
+
+        viewModel.SelectedEditorClassificationNode = subgroup;
+        viewModel.SelectedSubgroup.Should().BeNull();
+        viewModel.CanIncludeEditorClassification.Should().BeTrue();
+        viewModel.IncludeEditorClassificationCommand.Execute(null);
+
+        viewModel.SelectedSubgroup?.SubgroupID.Should().Be(11);
+        viewModel.SelectedClassificationPath.Should().Be("Revestimentos / Pisos / Porcelanatos / Esmaltados");
     }
 
     [Fact]
@@ -314,7 +362,7 @@ public sealed class ProductsViewModelStatusTests
     [InlineData(2, "N\u00e3o foi poss\u00edvel carregar os subgrupos.")]
     public async Task BeginEdit_LookupFailureIsNotReplacedByActionStatus(int level, string expected)
     {
-        var viewModel = Create(classification: new ClassificationService { FailureLevel = level });
+        var viewModel = Create(classService: new ClassificationService { FailureLevel = level });
         viewModel.SelectedProduct = Product();
         await viewModel.BeginEditAsync();
 
@@ -327,7 +375,7 @@ public sealed class ProductsViewModelStatusTests
     [InlineData(false)]
     public async Task MissingRequiredLookups_DoesNotOpenFormOrShowActionStatus(bool adding)
     {
-        var viewModel = Create(classification: new ClassificationService { MissingClasses = true });
+        var viewModel = Create(classService: new ClassificationService { MissingClasses = true });
         if (adding)
             await viewModel.BeginNewAsync();
         else
@@ -371,5 +419,24 @@ public sealed class ProductsViewModelStatusTests
             ? Task.FromException<IEnumerable<GroupDTO>>(Failure(0)) : Task.FromResult<IEnumerable<GroupDTO>>([new GroupDTO(1, "Grupo")]);
         public Task<IEnumerable<SubgroupDTO>> GetByGroupIdAsync(int groupId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) => FailureLevel == 2
             ? Task.FromException<IEnumerable<SubgroupDTO>>(Failure(0)) : Task.FromResult<IEnumerable<SubgroupDTO>>([new SubgroupDTO(1, "Subgrupo")]);
+    }
+
+    private sealed class TreeClassificationService : IClassService, IFamilyService, IGroupService, ISubgroupService
+    {
+        public List<int> RequestedPageSizes { get; } = [];
+        public Task<IEnumerable<ClassDTO>> GetAllAsync(int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<ClassDTO>>(Track<ClassDTO>(pageSize, [new(1, "Revestimentos"), new(2, "Decoração")]));
+        public Task<IEnumerable<FamilyDTO>> GetByClassIdAsync(int classId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<FamilyDTO>>(Track<FamilyDTO>(pageSize, [new(classId == 1 ? 11 : 21, classId == 1 ? "Pisos" : "Objetos")]));
+        public Task<IEnumerable<GroupDTO>> GetByFamilyIdAsync(int familyId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<GroupDTO>>(Track<GroupDTO>(pageSize, [new(familyId == 11 ? 111 : 211, familyId == 11 ? "Porcelanatos" : "Vasos")]));
+        public Task<IEnumerable<SubgroupDTO>> GetByGroupIdAsync(int groupId, int page = 1, int pageSize = 100, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<SubgroupDTO>>(Track<SubgroupDTO>(pageSize, [new(groupId == 111 ? 11 : 21, groupId == 111 ? "Esmaltados" : "Cerâmica")]));
+
+        private IEnumerable<T> Track<T>(int pageSize, IEnumerable<T> items)
+        {
+            RequestedPageSizes.Add(pageSize);
+            return items;
+        }
     }
 }
