@@ -412,6 +412,7 @@ public static class DecorIconCatalog
             [DecorIconId.Actions.Close] = "close",
             [DecorIconId.Actions.Clear] = "cleaning_services",
             [DecorIconId.Actions.Filter] = "filter_alt",
+            [DecorIconId.Actions.Refresh] = "refresh",
             [DecorIconId.Actions.Copy] = "content_copy",
             [DecorIconId.Actions.Cart] = "shopping_cart",
             [DecorIconId.User.Profile] = "person",
@@ -458,6 +459,7 @@ public static class DecorIconCatalog
     };
     private static readonly IReadOnlyList<DecorIconId> RegisteredIds = Array.AsReadOnly(SymbolsById.Keys.ToArray());
     private static readonly Lazy<Geometry> ThemeToggleGeometry = CreateGeometry("M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q133 0 226.5 93.5T800-480q0 133-93.5 226.5T480-160Zm0-40q116 0 198-82t82-198q0-116-82-198t-198-82v560Z");
+    private static readonly Lazy<Geometry> RefreshGeometry = CreateGeometry("M480-120q-75 0-140.5-28.5t-114-77Q177-274 148.5-339.5T120-480q0-150 105-255t255-105v80q-117 0-198.5 81.5T200-480q0 117 81.5 198.5T480-200q117 0 198.5-81.5T760-480H640l160-160 160 160H840q0 75-28.5 140.5t-77 114Q686-177 620.5-148.5T480-120Z");
 
     public static IReadOnlyList<DecorIconId> Ids => RegisteredIds;
     public static IReadOnlyList<int> SupportedWeights => AvailableWeights;
@@ -478,6 +480,8 @@ public static class DecorIconCatalog
             return SignInGeometriesByWeight.TryGetValue(weight, out var signInGeometry)
                 ? signInGeometry.Value
                 : throw new ArgumentOutOfRangeException(nameof(weight), weight, "The Material Symbol weight is not supported.");
+        if (id == DecorIconId.Actions.Refresh)
+            return RefreshGeometry.Value;
         if (!SymbolsById.TryGetValue(id, out var symbol))
             throw new KeyNotFoundException($"No vector geometry is registered for icon '{id.Value}'.");
         if (!SymbolGeometriesByWeight.TryGetValue(weight, out var geometries))

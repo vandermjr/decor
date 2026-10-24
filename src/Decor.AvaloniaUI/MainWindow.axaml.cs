@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.AvaloniaUI.Views;
@@ -59,6 +60,12 @@ public partial class MainWindow : Window
 
         InitializeDocumentTabScrollBehavior(mainViewModel);
     }
+
+    private void CloseNotificationsFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        (Resources["NotificationsFlyout"] as Flyout)?.Hide();
+
+    private void CloseUserFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        (Resources["UserFlyout"] as Flyout)?.Hide();
 
     private void InitializeDocumentTabScrollBehavior(MainViewModel? viewModel = null)
     {

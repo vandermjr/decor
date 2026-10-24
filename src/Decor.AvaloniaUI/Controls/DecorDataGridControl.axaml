@@ -26,7 +26,7 @@
     
         <Border x:Name="GridFrame"
             BorderBrush="{DynamicResource DecorBorderBrush}"
-            BorderThickness="1">
+            BorderThickness="{Binding FrameBorderThickness, ElementName=Root}">
         <Grid x:Name="GridContent" ColumnDefinitions="*" RowDefinitions="*,Auto">
         <!-- Main DataGrid -->
         <DataGrid x:Name="InnerDataGrid"

@@ -47,12 +47,23 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private string _classificationSearchText = string.Empty;
     private string _editorClassificationSearchText = string.Empty;
     private List<ProductDTO> _loadedSearchResults = [];
+    private bool _hasLoadedSearchResults;
+    private string _catalogSortDisplay = "CÓDIGO: Crescente";
     private UnitOfMeasureDTO? _selectedStockUnit;
     private readonly Dictionary<string, string> _fieldErrors = [];
     private Task? _lookupsLoadTask;
     private Task? _classificationTreeLoadTask;
     private int _recordCount;
     private ProductCatalogSummaryDTO? _catalogSummary;
+    private bool _catalogSummaryLoaded;
+    private bool _isCatalogSummaryLoading;
+    private DateTimeOffset? _catalogSummaryUpdatedAt;
+    private bool _showTotalProductsIndicator = true;
+    private bool _showActiveProductsIndicator = true;
+    private bool _showInactiveProductsIndicator;
+    private bool _showOutOfStockProductsIndicator = true;
+    private bool _showLowStockProductsIndicator = true;
+    private string? _catalogIndicatorFilter;
 
     public ProductsViewModel(
         IProductService productService,
@@ -85,6 +96,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         CancelCommand = new RelayCommand(CancelEdit, () => IsEditing && !IsBusy);
         IncludeEditorClassificationCommand = new RelayCommand(IncludeEditorClassification, () => CanIncludeEditorClassification);
         ClearClassificationFilterCommand = new RelayCommand(ClearClassificationFilter);
+        ClearCatalogIndicatorFilterCommand = new RelayCommand(async () => await ClearCatalogIndicatorFilterAsync());
+        RefreshCatalogSummaryCommand = new RelayCommand(async () => await RefreshCatalogSummaryAsync(), () => !IsCatalogSummaryLoading);
     }
 
     public ObservableCollection<ProductDTO> Products { get; } = [];
@@ -106,6 +119,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public ICommand CancelCommand { get; }
     public ICommand IncludeEditorClassificationCommand { get; }
     public ICommand ClearClassificationFilterCommand { get; }
+    public ICommand ClearCatalogIndicatorFilterCommand { get; }
+    public ICommand RefreshCatalogSummaryCommand { get; }
     public GridListState<ProductDTO> Listing { get; }
     public ICommand PreviousPageCommand => Listing.PreviousPageCommand;
     public ICommand NextPageCommand => Listing.NextPageCommand;
@@ -149,7 +164,14 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             if (!SetField(ref _selectedCatalogClassificationNode, value)) return;
             OnPropertyChanged(nameof(ClassificationFilterDisplay));
-            ApplyProductFilters();
+            OnPropertyChanged(nameof(ClassificationFilterLabel));
+            OnPropertyChanged(nameof(ClassificationFilterPathSegments));
+            OnPropertyChanged(nameof(HasClassificationFilter));
+            OnPropertyChanged(nameof(HasActiveCatalogFilters));
+            if (_hasLoadedSearchResults)
+                ApplyProductFilters();
+            else
+                _ = LoadProductsAsync();
         }
     }
 
@@ -169,6 +191,32 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     public string ClassificationFilterDisplay => SelectedCatalogClassificationNode is null
         ? string.Empty
         : GetClassificationPath(SelectedCatalogClassificationNode);
+    public string ClassificationFilterLabel => string.IsNullOrEmpty(ClassificationFilterDisplay)
+        ? string.Empty
+        : $"Classificação: {ClassificationFilterDisplay}";
+    public IReadOnlyList<ClassificationPathSegment> ClassificationFilterPathSegments =>
+        CreateClassificationPathSegments(SelectedCatalogClassificationNode);
+    public bool HasClassificationFilter => SelectedCatalogClassificationNode is not null;
+    public string CatalogSortDisplay => _catalogSortDisplay;
+    public bool HasCatalogSort => !string.IsNullOrWhiteSpace(_catalogSortDisplay);
+    public bool HasCatalogIndicatorFilter => !string.IsNullOrWhiteSpace(_catalogIndicatorFilter);
+    public string CatalogIndicatorFilterDisplay => _catalogIndicatorFilter switch
+    {
+        "active" => "Indicador: ativos",
+        "inactive" => "Indicador: inativos",
+        "out-of-stock" => "Indicador: sem estoque",
+        "low-stock" => "Indicador: estoque baixo",
+        _ => string.Empty
+    };
+    public bool HasActiveCatalogFilters => HasClassificationFilter || HasCatalogSort || HasCatalogIndicatorFilter;
+
+    public void SetCatalogSortDisplay(string? display)
+    {
+        var normalized = display ?? string.Empty;
+        if (!SetField(ref _catalogSortDisplay, normalized)) return;
+        OnPropertyChanged(nameof(HasCatalogSort));
+        OnPropertyChanged(nameof(HasActiveCatalogFilters));
+    }
     public string SelectedClassificationPath => string.Join(" / ", new[]
     {
         SelectedClass?.ClassName,
@@ -266,6 +314,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     private void ClearSearch()
     {
         SearchText = string.Empty;
+        _loadedSearchResults = [];
+        _hasLoadedSearchResults = false;
         SelectedProduct = null;
         Listing.Clear();
         OnPropertyChanged(nameof(CanExport));
@@ -547,7 +597,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     {
         // A tela abre apenas com os cabeçalhos do grid.
         // Os produtos são carregados somente após uma pesquisa explícita.
-        await Task.WhenAll(EnsureLookupsAsync(), LoadCatalogSummaryAsync());
+        await EnsureLookupsAsync();
     }
 
     public ProductCatalogSummaryDTO? CatalogSummary
@@ -559,38 +609,125 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             OnPropertyChanged(nameof(HasCatalogSummary));
             OnPropertyChanged(nameof(TotalProductsDisplay));
             OnPropertyChanged(nameof(ActiveProductsDisplay));
+            OnPropertyChanged(nameof(InactiveProductsDisplay));
             OnPropertyChanged(nameof(OutOfStockProductsDisplay));
             OnPropertyChanged(nameof(LowStockProductsDisplay));
+            OnPropertyChanged(nameof(ActiveProductsPercentage));
+            OnPropertyChanged(nameof(OutOfStockProductsPercentage));
+            OnPropertyChanged(nameof(LowStockProductsPercentage));
+            OnPropertyChanged(nameof(ActiveProductsPercentageDisplay));
+            OnPropertyChanged(nameof(OutOfStockProductsPercentageDisplay));
+            OnPropertyChanged(nameof(LowStockProductsPercentageDisplay));
         }
     }
 
     public bool HasCatalogSummary => CatalogSummary is not null;
+    public bool IsCatalogSummaryLoading
+    {
+        get => _isCatalogSummaryLoading;
+        private set
+        {
+            if (!SetField(ref _isCatalogSummaryLoading, value)) return;
+            if (RefreshCatalogSummaryCommand is RelayCommand command)
+                command.RaiseCanExecuteChanged();
+        }
+    }
+    public string CatalogSummaryUpdatedDisplay => _catalogSummaryUpdatedAt is null
+        ? "Ainda não atualizado"
+        : $"Atualizado às {_catalogSummaryUpdatedAt.Value.LocalDateTime:HH:mm}";
     public string TotalProductsDisplay => FormatCatalogCount(CatalogSummary?.TotalProducts);
     public string ActiveProductsDisplay => FormatCatalogCount(CatalogSummary?.ActiveProducts);
+    public string InactiveProductsDisplay => FormatCatalogCount(CatalogSummary is null
+        ? null
+        : Math.Max(0, CatalogSummary.TotalProducts - CatalogSummary.ActiveProducts));
     public string OutOfStockProductsDisplay => FormatCatalogCount(CatalogSummary?.OutOfStockProducts);
     public string LowStockProductsDisplay => FormatCatalogCount(CatalogSummary?.LowStockProducts);
+    public double ActiveProductsPercentage => GetSummaryPercentage(CatalogSummary?.ActiveProducts);
+    public double OutOfStockProductsPercentage => GetSummaryPercentage(CatalogSummary?.OutOfStockProducts);
+    public double LowStockProductsPercentage => GetSummaryPercentage(CatalogSummary?.LowStockProducts);
+    public string ActiveProductsPercentageDisplay => $"{ActiveProductsPercentage:N0}% ativos";
+    public string OutOfStockProductsPercentageDisplay => $"{OutOfStockProductsPercentage:N0}% do catálogo";
+    public string LowStockProductsPercentageDisplay => $"{LowStockProductsPercentage:N0}% do catálogo";
+
+    public bool ShowTotalProductsIndicator
+    {
+        get => _showTotalProductsIndicator;
+        set => SetField(ref _showTotalProductsIndicator, value);
+    }
+
+    public bool ShowActiveProductsIndicator
+    {
+        get => _showActiveProductsIndicator;
+        set => SetField(ref _showActiveProductsIndicator, value);
+    }
+
+    public bool ShowInactiveProductsIndicator
+    {
+        get => _showInactiveProductsIndicator;
+        set => SetField(ref _showInactiveProductsIndicator, value);
+    }
+
+    public bool ShowOutOfStockProductsIndicator
+    {
+        get => _showOutOfStockProductsIndicator;
+        set => SetField(ref _showOutOfStockProductsIndicator, value);
+    }
+
+    public bool ShowLowStockProductsIndicator
+    {
+        get => _showLowStockProductsIndicator;
+        set => SetField(ref _showLowStockProductsIndicator, value);
+    }
+
+    public async Task EnsureCatalogSummaryAsync()
+    {
+        if (_catalogSummaryLoaded || IsCatalogSummaryLoading)
+            return;
+
+        await LoadCatalogSummaryAsync();
+    }
+
+    public Task RefreshCatalogSummaryAsync() => LoadCatalogSummaryAsync();
 
     private async Task LoadCatalogSummaryAsync()
     {
+        if (IsCatalogSummaryLoading)
+            return;
+
+        IsCatalogSummaryLoading = true;
         if (_authorizationService?.CanView("Products") == false)
         {
             CatalogSummary = null;
+            _catalogSummaryLoaded = true;
+            IsCatalogSummaryLoading = false;
             return;
         }
 
         try
         {
             CatalogSummary = await _productService.GetCatalogSummaryAsync();
+            _catalogSummaryUpdatedAt = DateTimeOffset.Now;
+            _catalogSummaryLoaded = true;
+            OnPropertyChanged(nameof(CatalogSummaryUpdatedDisplay));
         }
         catch (Exception exception)
         {
             _logger?.LogWarning(exception, "Não foi possível carregar o resumo do catálogo de produtos.");
             CatalogSummary = null;
+            _catalogSummaryLoaded = true;
+        }
+        finally
+        {
+            IsCatalogSummaryLoading = false;
         }
     }
 
     private static string FormatCatalogCount(long? count) =>
         count?.ToString("N0", CultureInfo.GetCultureInfo("pt-BR")) ?? "—";
+
+    private double GetSummaryPercentage(long? count) => CatalogSummary is { TotalProducts: > 0 }
+        ? Math.Round((count ?? 0) * 100d / CatalogSummary.TotalProducts, 1)
+        : 0;
 
     public async Task BeginNewAsync()
     {
@@ -754,6 +891,7 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         {
             SelectedProduct = null;
             _loadedSearchResults = (await _productService.SearchProductsAsync(SearchText, 1, int.MaxValue)).ToList();
+            _hasLoadedSearchResults = true;
             ApplyProductFilters();
             OnPropertyChanged(nameof(CanExport));
             OnPropertyChanged(nameof(ProductCodeDisplay));
@@ -842,28 +980,82 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
     {
         var terms = searchText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var filtered = ClassificationTreeNodes
-            .Select(node => FilterClassificationNode(node, terms))
+            .Select(node => FilterClassificationNode(node, terms, string.Empty))
             .Where(node => node is not null)
             .Cast<ClassificationTreeNode>()
             .ToList();
         Replace(target, filtered);
     }
 
-    private static ClassificationTreeNode? FilterClassificationNode(ClassificationTreeNode node, IReadOnlyList<string> terms)
+    private static ClassificationTreeNode? FilterClassificationNode(ClassificationTreeNode node, IReadOnlyList<string> terms, string parentPath)
     {
-        var matches = terms.Count == 0 || terms.All(term => node.Name.Contains(term, StringComparison.CurrentCultureIgnoreCase));
+        var nodePath = string.IsNullOrEmpty(parentPath) ? node.Name : $"{parentPath} {node.Name}";
+        var matches = terms.Count == 0 || terms.All(term => nodePath.Contains(term, StringComparison.CurrentCultureIgnoreCase));
         if (matches)
-            return node.CopyWithChildren(node.Children.Select(child => FilterClassificationNode(child, [])!).Where(child => child is not null));
+            return node.CopyWithChildren(node.Children.Select(child => FilterClassificationNode(child, [], nodePath)!).Where(child => child is not null));
 
         var children = node.Children
-            .Select(child => FilterClassificationNode(child, terms))
+            .Select(child => FilterClassificationNode(child, terms, nodePath))
             .Where(child => child is not null)
             .Cast<ClassificationTreeNode>()
             .ToList();
-        return children.Count > 0 ? node.CopyWithChildren(children) : null;
+        if (children.Count == 0)
+            return null;
+
+        var copy = node.CopyWithChildren(children);
+        copy.IsExpanded = true;
+        return copy;
     }
 
     public void ClearClassificationFilter() => SelectedCatalogClassificationNode = null;
+
+    public async Task ShowCatalogIndicatorAsync(string? indicator)
+    {
+        var normalized = indicator is "active" or "inactive" or "out-of-stock" or "low-stock"
+            ? indicator
+            : null;
+        SetCatalogIndicatorFilter(normalized);
+
+        // Os indicadores descrevem o catálogo inteiro, não apenas uma pesquisa ou classificação anterior.
+        SearchText = string.Empty;
+        ClearClassificationFilterState();
+        _loadedSearchResults = [];
+        _hasLoadedSearchResults = false;
+        await LoadProductsAsync();
+    }
+
+    private async Task ClearCatalogIndicatorFilterAsync()
+    {
+        if (!HasCatalogIndicatorFilter)
+            return;
+
+        SetCatalogIndicatorFilter(null);
+        if (_hasLoadedSearchResults)
+            ApplyProductFilters();
+        else
+            await LoadProductsAsync();
+    }
+
+    private void SetCatalogIndicatorFilter(string? indicator)
+    {
+        if (SetField(ref _catalogIndicatorFilter, indicator, nameof(CatalogIndicatorFilterDisplay)))
+        {
+            OnPropertyChanged(nameof(HasCatalogIndicatorFilter));
+            OnPropertyChanged(nameof(HasActiveCatalogFilters));
+        }
+    }
+
+    private void ClearClassificationFilterState()
+    {
+        if (!SetField(ref _selectedCatalogClassificationNode, null, nameof(SelectedCatalogClassificationNode)))
+            return;
+
+        OnPropertyChanged(nameof(ClassificationFilterDisplay));
+        OnPropertyChanged(nameof(ClassificationFilterLabel));
+        OnPropertyChanged(nameof(ClassificationFilterPathSegments));
+        OnPropertyChanged(nameof(HasClassificationFilter));
+        OnPropertyChanged(nameof(HasActiveCatalogFilters));
+    }
 
     private void ApplyProductFilters()
     {
@@ -880,6 +1072,18 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
                 _ => filtered
             };
         }
+        filtered = _catalogIndicatorFilter switch
+        {
+            "active" => filtered.Where(product => product.IsActive),
+            "inactive" => filtered.Where(product => !product.IsActive),
+            "out-of-stock" => filtered.Where(product => product.AcquisitionMode == ProductAcquisitionMode.Estocado
+                && product.AvailableStockQuantity == 0),
+            "low-stock" => filtered.Where(product => product.AcquisitionMode == ProductAcquisitionMode.Estocado
+                && product.CurrentStockQuantity >= 0
+                && product.AvailableStockQuantity > 0
+                && product.AvailableStockQuantity < product.MinimumStock),
+            _ => filtered
+        };
         Listing.Load(filtered);
         OnPropertyChanged(nameof(CanExport));
     }
@@ -918,6 +1122,25 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
         node.GroupItem?.GroupName,
         node.SubgroupItem?.SubgroupName
     }.Where(name => !string.IsNullOrWhiteSpace(name)));
+
+    private static IReadOnlyList<ClassificationPathSegment> CreateClassificationPathSegments(ClassificationTreeNode? node)
+    {
+        if (node is null)
+            return [];
+
+        var levels = new (string? Name, ClassificationTreeLevel Level)[]
+        {
+            (node.ClassItem.ClassName, ClassificationTreeLevel.Class),
+            (node.FamilyItem?.FamilyName, ClassificationTreeLevel.Family),
+            (node.GroupItem?.GroupName, ClassificationTreeLevel.Group),
+            (node.SubgroupItem?.SubgroupName, ClassificationTreeLevel.Subgroup)
+        };
+        var populatedLevels = levels.Where(item => !string.IsNullOrWhiteSpace(item.Name)).ToArray();
+        return populatedLevels
+            .Select((item, index) => new ClassificationPathSegment(
+                item.Name!, item.Level, index < populatedLevels.Length - 1))
+            .ToArray();
+    }
 
     private async Task LoadFamiliesAsync(int? familyId = null, int? groupId = null, int? subgroupId = null)
     {
@@ -1062,7 +1285,8 @@ public sealed class ProductsViewModel : IStatusBarSource, IWorkspaceDocumentStat
             IsEditing = false;
             _isNew = false;
             await LoadProductsAsync();
-            await LoadCatalogSummaryAsync();
+            if (HasCatalogSummary)
+                await RefreshCatalogSummaryAsync();
         }
         catch (System.ComponentModel.DataAnnotations.ValidationException vex)
         {

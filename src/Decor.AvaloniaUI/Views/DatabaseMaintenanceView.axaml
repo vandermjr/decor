@@ -97,9 +97,10 @@
                         <Button.Flyout>
                           <Flyout Placement="BottomEdgeAlignedRight">
                             <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
-                              <StackPanel Spacing="10">
-                                <Calendar x:Name="BackupDateCalendar" SelectedDate="{Binding BackupDate, Mode=TwoWay}" SelectedDatesChanged="BackupDateCalendar_SelectedDatesChanged"/>
-                              </StackPanel>
+                              <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Data inicial" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseBackupDateFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+                                <Calendar Grid.Row="1" x:Name="BackupDateCalendar" SelectedDate="{Binding BackupDate, Mode=TwoWay}" SelectedDatesChanged="BackupDateCalendar_SelectedDatesChanged"/>
+                              </Grid>
                             </Border>
                           </Flyout>
                         </Button.Flyout>
@@ -117,9 +118,10 @@
                         <Button.Flyout>
                           <Flyout Placement="BottomEdgeAlignedRight">
                             <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
-                              <StackPanel Spacing="10">
-                                <TimePickerPresenter x:Name="BackupTimePicker" Time="{Binding BackupTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupTimePicker_Confirmed" Dismissed="BackupTimePicker_Dismissed"/>
-                              </StackPanel>
+                              <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                                <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Horário inicial" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseBackupTimeFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+                                <TimePickerPresenter Grid.Row="1" x:Name="BackupTimePicker" Time="{Binding BackupTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupTimePicker_Confirmed" Dismissed="BackupTimePicker_Dismissed"/>
+                              </Grid>
                             </Border>
                           </Flyout>
                         </Button.Flyout>

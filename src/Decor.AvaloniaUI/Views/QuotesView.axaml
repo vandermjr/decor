@@ -61,7 +61,12 @@
                   <Button x:Name="ChooseQuoteDateButton" Grid.Column="1" Classes="field-action" ToolTip.Tip="Selecionar data">
                     <Button.Flyout>
                       <Flyout Placement="BottomEdgeAlignedRight">
-                        <Calendar SelectedDate="{Binding SelectedQuoteDate, Mode=TwoWay}" SelectedDatesChanged="QuoteDateCalendar_SelectedDatesChanged"/>
+                        <Border Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                          <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                            <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Selecionar data" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseQuoteDateFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+                            <Calendar Grid.Row="1" SelectedDate="{Binding SelectedQuoteDate, Mode=TwoWay}" SelectedDatesChanged="QuoteDateCalendar_SelectedDatesChanged"/>
+                          </Grid>
+                        </Border>
                       </Flyout>
                     </Button.Flyout>
                     <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Common.Calendar}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform"/>

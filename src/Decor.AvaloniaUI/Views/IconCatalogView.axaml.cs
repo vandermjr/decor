@@ -67,6 +67,9 @@ public partial class IconCatalogView : UserControl
         ChooseBackupNotificationLeadTimeButton.Flyout?.Hide();
     }
 
+    private void CloseBackupNotificationLeadTimeFlyout_Click(object? sender, RoutedEventArgs e) =>
+        ChooseBackupNotificationLeadTimeButton.Flyout?.Hide();
+
     private void IconColorChoiceButton_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is Button button)
@@ -129,4 +132,6 @@ public partial class IconCatalogView : UserControl
         _activeIconColorButton?.Flyout?.Hide();
         _activeIconColorButton = null;
     }
+
+    private void CloseIconColorPalette_Click(object? sender, RoutedEventArgs e) => CloseIconColorPalette();
 }

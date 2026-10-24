@@ -63,6 +63,14 @@
                 <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">1</x:Double>
                 <SolidColorBrush x:Key="DecorAccentBrush">#2074B8</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#185F9A</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionBackgroundBrush">#F6AB58</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionForegroundBrush">#332611</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionBorderBrush">#D6A02E</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionHoverBrush">#FFC66E</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionFocusBrush">#FFD385</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionPressedBrush">#D9991D</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionDisabledBackgroundBrush">#D8CCB4</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionDisabledForegroundBrush">#625842</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#B32D35</SolidColorBrush>
                 <LinearGradientBrush x:Key="DecorStockLevelBrush" StartPoint="0%,0%" EndPoint="100%,0%">
@@ -127,6 +135,14 @@
                 <SolidColorBrush x:Key="DecorGridSelectionBrush">#E0BE63</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentBrush">#3D94D1</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorAccentHoverBrush">#55A7E0</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionBackgroundBrush">#DDA24D</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionForegroundBrush">#21190C</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionBorderBrush">#F0BF70</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionHoverBrush">#EDB75B</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionFocusBrush">#F5CB77</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionPressedBrush">#BE822B</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionDisabledBackgroundBrush">#69573A</SolidColorBrush>
+                <SolidColorBrush x:Key="CatalogActionDisabledForegroundBrush">#B9A98A</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorSelectionForegroundBrush">#FFFFFF</SolidColorBrush>
                 <SolidColorBrush x:Key="DecorDangerBrush">#E16B73</SolidColorBrush>
                 <LinearGradientBrush x:Key="DecorStockLevelBrush" StartPoint="0%,0%" EndPoint="100%,0%">
@@ -156,6 +172,19 @@
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
     <Style Selector="Button.decor-action, controls|DecorSearchField Button.search-action">
         <Setter Property="controls:DecorActionAvailability.HideWhenDisabled" Value="True" />
+    </Style>
+    <Style Selector="Button.decor-flyout-close">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinWidth" Value="24" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Button.decor-flyout-close:pointerover">
+        <Setter Property="Background" Value="{DynamicResource DecorControlBrush}" />
     </Style>
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource DecorWindowBackgroundBrush}" />
@@ -392,10 +421,22 @@
     </Style>
     <Style Selector="DataGridRow">
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+    </Style>
+    <Style Selector="DataGridRow:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource DataGridRowSelectedBackgroundBrush}" />
     </Style>
     <Style Selector="DataGridRow:selected">
         <Setter Property="BorderBrush" Value="{DynamicResource DecorGridSelectionBrush}" />
+    </Style>
+    <Style Selector="DataGridRow:selected:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource DecorGridSelectionBrush}" />
+    </Style>
+    <Style Selector="DataGridRow:selected DataGridCell">
+        <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedBackgroundBrush}" />
+    </Style>
+    <Style Selector="DataGridRow:selected:pointerover DataGridCell">
+        <Setter Property="Background" Value="{DynamicResource DataGridRowSelectedHoveredBackgroundBrush}" />
     </Style>
     <Style Selector="DataGridColumnHeader">
         <Setter Property="Padding" Value="8,0,0,0" />

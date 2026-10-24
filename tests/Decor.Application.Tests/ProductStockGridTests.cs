@@ -47,6 +47,10 @@ public sealed class ProductStockGridTests
             && (string?)element.Attribute("Selector") == "DataGridRow");
         var selectedRowStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
             && (string?)element.Attribute("Selector") == "DataGridRow:selected");
+        var selectedCellStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "DataGridRow:selected DataGridCell");
+        var selectedHoveredCellStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
+            && (string?)element.Attribute("Selector") == "DataGridRow:selected:pointerover DataGridCell");
         var cellStyle = app.Descendants().Single(element => element.Name.LocalName == "Style"
             && (string?)element.Attribute("Selector") == "DataGridCell");
         var gridColors = File.ReadAllText(Path.Combine(root.FullName, "src", "Decor.AvaloniaUI", "Controls", "GridStyling", "GridControlThemeColors.cs"));
@@ -61,6 +65,10 @@ public sealed class ProductStockGridTests
             (string?)setter.Attribute("Property") == "BorderThickness");
         Assert.Contains(selectedRowStyle.Elements(), setter => (string?)setter.Attribute("Property") == "BorderBrush"
             && (string?)setter.Attribute("Value") == "{DynamicResource DecorGridSelectionBrush}");
+        Assert.Contains(selectedCellStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Background"
+            && (string?)setter.Attribute("Value") == "{DynamicResource DataGridRowSelectedBackgroundBrush}");
+        Assert.Contains(selectedHoveredCellStyle.Elements(), setter => (string?)setter.Attribute("Property") == "Background"
+            && (string?)setter.Attribute("Value") == "{DynamicResource DataGridRowSelectedHoveredBackgroundBrush}");
         Assert.Contains(cellStyle.Elements(), setter => (string?)setter.Attribute("Property") == "VerticalContentAlignment"
             && (string?)setter.Attribute("Value") == "Stretch");
         foreach (var theme in new[] { resources, darkResources })

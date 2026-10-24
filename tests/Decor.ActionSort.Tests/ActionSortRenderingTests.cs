@@ -366,10 +366,10 @@ public sealed class ActionSortRenderingTests
             var firstCell = cellsPresenter.GetVisualDescendants().OfType<DataGridCell>().First(cell =>
                 cell.GetVisualDescendants().OfType<TextBlock>().Any(textBlock =>
                     textBlock.Classes.Contains($"grid-column-{grid.Columns[0].SortMemberPath}")));
-            Assert.Equal(0, firstRow.BorderThickness.Left);
-            Assert.Equal(3, cellsPresenter.Margin.Left);
+            Assert.Equal(3, firstRow.BorderThickness.Left);
+            Assert.Equal(0, cellsPresenter.Margin.Left);
             Assert.InRange(firstCell.Bounds.Height, 0, firstRow.Bounds.Height);
-            var leadingIndicator = Assert.Single(firstCell.GetVisualDescendants().OfType<Border>(), border =>
+            Assert.DoesNotContain(firstCell.GetVisualDescendants().OfType<Border>(), border =>
                 border.BorderThickness.Left == 3);
             double GetBoundaryOffset(DataGridColumn column)
             {
@@ -390,7 +390,6 @@ public sealed class ActionSortRenderingTests
             Assert.True(headerGutter.IsVisible);
             Assert.Same(control.Styler.Theme.HeaderBackground, headerGutter.Background);
             var firstCellOriginX = firstCell.TranslatePoint(default, window)!.Value.X;
-            var indicatorOriginX = leadingIndicator.TranslatePoint(default, window)!.Value.X;
 
             var horizontalThumb = Assert.Single(horizontal.GetVisualDescendants().OfType<Thumb>());
             var thumbCenter = horizontalThumb.TranslatePoint(
@@ -402,11 +401,9 @@ public sealed class ActionSortRenderingTests
             Settle(window);
             Assert.True(horizontal.Value > horizontal.Minimum);
             var scrolledCellOriginX = firstCell.TranslatePoint(default, window)!.Value.X;
-            var scrolledIndicatorOriginX = leadingIndicator.TranslatePoint(default, window)!.Value.X;
             Assert.True(scrolledCellOriginX < firstCellOriginX);
-            Assert.Equal(firstCellOriginX - scrolledCellOriginX, indicatorOriginX - scrolledIndicatorOriginX, 1);
             Assert.InRange(firstCell.Bounds.Height, 0, firstRow.Bounds.Height);
-            Assert.Equal(3, cellsPresenter.Margin.Left);
+            Assert.Equal(0, cellsPresenter.Margin.Left);
             Assert.InRange(Math.Abs(GetBoundaryOffset(firstColumn)), 0, 0.5);
             Assert.InRange(Math.Abs(GetBoundaryOffset(grid.Columns[1])), 0, 0.5);
 

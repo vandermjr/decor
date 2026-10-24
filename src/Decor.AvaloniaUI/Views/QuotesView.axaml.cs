@@ -151,6 +151,9 @@ public partial class QuotesView : UserControl
         ChooseQuoteDateButton.Flyout?.Hide();
     }
 
+    private void CloseQuoteDateFlyout_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs eventArgs) =>
+        ChooseQuoteDateButton.Flyout?.Hide();
+
     private async void SearchPartner_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
         await OpenLookupAsync(LookupSearchContext.Partner);
 

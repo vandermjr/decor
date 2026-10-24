@@ -36,11 +36,16 @@
     <Style Selector="Button.search-action.info-action /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="CornerRadius" Value="0,3,3,0"/>
     </Style>
-    <Style Selector="Button.search-action:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.search-action:focus /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.search-action.highlighted-search-action">
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource DecorTextBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.search-action:not(.highlighted-search-action):pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.search-action:not(.highlighted-search-action):focus /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource DecorScrollTrackBrush}"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
-    <Style Selector="Button.search-action:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector="Button.search-action:not(.highlighted-search-action):pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource DecorBorderBrush}"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
@@ -49,7 +54,7 @@
     <Style Selector="PathIcon.filter-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Filter}"/></Style>
     <Style Selector="PathIcon.info-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Application.Info}"/></Style>
   </UserControl.Styles>
-  <Border x:Name="FieldBorder" BorderThickness="1" CornerRadius="4" ClipToBounds="True"
+  <Border x:Name="FieldBorder" BorderThickness="{Binding FieldBorderThickness, ElementName=Root}" CornerRadius="4" ClipToBounds="True"
       Background="{DynamicResource DecorControlBrush}">
     <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
       <PathIcon Grid.Column="0" Classes="search-icon" Width="16" Height="16" Margin="10,0,0,0"

@@ -71,7 +71,7 @@ public sealed class ProductsViewModelStatusTests
     }
 
     [Fact]
-    public async Task Initialize_loads_global_catalog_summary_once()
+    public async Task Catalog_summary_is_loaded_only_when_requested()
     {
         var productService = new ProductService
         {
@@ -81,12 +81,63 @@ public sealed class ProductsViewModelStatusTests
 
         await viewModel.InitializeAsync();
 
+        viewModel.CatalogSummary.Should().BeNull();
+        await viewModel.EnsureCatalogSummaryAsync();
+
         viewModel.CatalogSummary.Should().Be(new ProductCatalogSummaryDTO(1250, 1180, 42, 18));
         viewModel.HasCatalogSummary.Should().BeTrue();
         viewModel.TotalProductsDisplay.Should().Be("1.250");
         viewModel.ActiveProductsDisplay.Should().Be("1.180");
+        viewModel.InactiveProductsDisplay.Should().Be("70");
         viewModel.OutOfStockProductsDisplay.Should().Be("42");
         viewModel.LowStockProductsDisplay.Should().Be("18");
+    }
+
+    [Fact]
+    public async Task Catalog_summary_is_cached_after_first_open_and_refreshes_on_demand()
+    {
+        var calls = 0;
+        var viewModel = Create(new ProductService
+        {
+            Summary = () => Task.FromResult<ProductCatalogSummaryDTO?>(new(++calls, 1, 0, 0))
+        });
+
+        await viewModel.InitializeAsync();
+        await viewModel.EnsureCatalogSummaryAsync();
+        await viewModel.EnsureCatalogSummaryAsync();
+
+        calls.Should().Be(1);
+        await viewModel.RefreshCatalogSummaryAsync();
+
+        calls.Should().Be(2);
+        viewModel.TotalProductsDisplay.Should().Be("2");
+    }
+
+    [Fact]
+    public async Task Catalog_indicator_filters_apply_the_matching_stock_or_activity_state()
+    {
+        var active = Product(1) with { IsActive = true, CurrentStockQuantity = 10m, ReservedStockQuantity = 0m, MinimumStock = 2m };
+        var inactive = Product(2) with { IsActive = false, CurrentStockQuantity = 10m, ReservedStockQuantity = 0m, MinimumStock = 2m };
+        var outOfStock = Product(3) with { CurrentStockQuantity = 0m, ReservedStockQuantity = 0m, MinimumStock = 2m };
+        var lowStock = Product(4) with { CurrentStockQuantity = 3m, ReservedStockQuantity = 0m, MinimumStock = 5m };
+        var viewModel = Create(new ProductService
+        {
+            Search = () => Task.FromResult<IEnumerable<ProductDTO>>([active, inactive, outOfStock, lowStock])
+        });
+
+        await viewModel.ShowCatalogIndicatorAsync("out-of-stock");
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(3);
+        viewModel.CatalogIndicatorFilterDisplay.Should().Be("Indicador: sem estoque");
+
+        await viewModel.ShowCatalogIndicatorAsync("low-stock");
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(4);
+
+        await viewModel.ShowCatalogIndicatorAsync("inactive");
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(2);
+
+        await viewModel.ShowCatalogIndicatorAsync(null);
+        viewModel.Products.Should().HaveCount(4);
+        viewModel.HasCatalogIndicatorFilter.Should().BeFalse();
     }
 
     [Fact]
@@ -95,6 +146,7 @@ public sealed class ProductsViewModelStatusTests
         var viewModel = Create(new ProductService { Summary = () => Task.FromResult<ProductCatalogSummaryDTO?>(null) });
 
         await viewModel.InitializeAsync();
+        await viewModel.EnsureCatalogSummaryAsync();
 
         viewModel.CatalogSummary.Should().BeNull();
         viewModel.HasCatalogSummary.Should().BeFalse();
@@ -109,6 +161,7 @@ public sealed class ProductsViewModelStatusTests
         });
 
         await viewModel.InitializeAsync();
+        await viewModel.EnsureCatalogSummaryAsync();
 
         viewModel.CatalogSummary.Should().BeNull();
         viewModel.HasCatalogSummary.Should().BeFalse();
@@ -128,6 +181,7 @@ public sealed class ProductsViewModelStatusTests
         }, authorization: new DeniedAuthorization());
 
         await viewModel.InitializeAsync();
+        await viewModel.EnsureCatalogSummaryAsync();
 
         summaryCalls.Should().Be(0);
         viewModel.HasCatalogSummary.Should().BeFalse();
@@ -186,6 +240,106 @@ public sealed class ProductsViewModelStatusTests
     }
 
     [Fact]
+    public async Task Classification_filter_loads_catalog_when_selected_before_first_search()
+    {
+        var matchingProduct = Product(1) with { ClassID = 1, FamilyID = 11, GroupID = 111, SubgroupID = 11 };
+        var otherProduct = Product(2) with { ClassID = 2, FamilyID = 21, GroupID = 211, SubgroupID = 21 };
+        var service = new ProductService { Search = () => Task.FromResult<IEnumerable<ProductDTO>>([matchingProduct, otherProduct]) };
+        var tree = new TreeClassificationService();
+        var viewModel = Create(service, tree, tree, tree, tree);
+
+        await viewModel.EnsureClassificationTreeAsync();
+        var subgroup = viewModel.ClassificationTreeNodes
+            .SelectMany(classNode => classNode.Children)
+            .SelectMany(familyNode => familyNode.Children)
+            .SelectMany(groupNode => groupNode.Children)
+            .Single(node => node.SubgroupItem?.SubgroupID == 11);
+
+        viewModel.SelectedCatalogClassificationNode = subgroup;
+
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(1);
+        viewModel.ClassificationFilterLabel.Should().Be("Classificação: Revestimentos / Pisos / Porcelanatos / Esmaltados");
+    }
+
+    [Fact]
+    public async Task Classification_filter_reloads_catalog_after_search_is_cleared()
+    {
+        var requestCount = 0;
+        var matchingProduct = Product(1) with { ClassID = 1, FamilyID = 11, GroupID = 111, SubgroupID = 11 };
+        var service = new ProductService
+        {
+            Search = () =>
+            {
+                requestCount++;
+                return Task.FromResult<IEnumerable<ProductDTO>>([matchingProduct]);
+            }
+        };
+        var tree = new TreeClassificationService();
+        var viewModel = Create(service, tree, tree, tree, tree);
+        await viewModel.EnsureClassificationTreeAsync();
+        await ExecuteAsync(viewModel, viewModel.SearchCommand, () => viewModel.IsBusy);
+        viewModel.ClearSearchCommand.Execute(null);
+
+        viewModel.SelectedCatalogClassificationNode = viewModel.ClassificationTreeNodes.Single(node => node.ClassItem.ClassID == 1);
+
+        await WaitForAsync(() => !viewModel.IsBusy && viewModel.Products.Count == 1);
+        requestCount.Should().Be(2);
+        viewModel.Products.Should().ContainSingle().Which.ProductID.Should().Be(1);
+    }
+
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        var timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition() && DateTime.UtcNow < timeout)
+            await Task.Delay(10);
+        condition().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Classification_search_finds_leaf_and_expands_its_ancestor_path()
+    {
+        var tree = new TreeClassificationService();
+        var viewModel = Create(classService: tree, familyService: tree, groupService: tree, subgroupService: tree);
+
+        await viewModel.EnsureClassificationTreeAsync();
+        viewModel.ClassificationSearchText = "Esmaltados";
+
+        var classNode = viewModel.FilteredClassificationTreeNodes.Should().ContainSingle().Subject;
+        classNode.Name.Should().Be("Revestimentos");
+        classNode.IsExpanded.Should().BeTrue();
+        var familyNode = classNode.Children.Should().ContainSingle().Subject;
+        familyNode.IsExpanded.Should().BeTrue();
+        var groupNode = familyNode.Children.Should().ContainSingle().Subject;
+        groupNode.IsExpanded.Should().BeTrue();
+        groupNode.Children.Should().ContainSingle().Which.Name.Should().Be("Esmaltados");
+
+        viewModel.ClassificationSearchText = "Revestimentos Esmaltados";
+        var matchingClass = viewModel.FilteredClassificationTreeNodes.Should().ContainSingle().Subject;
+        matchingClass.IsExpanded.Should().BeTrue();
+        var matchingFamily = matchingClass.Children.Should().ContainSingle().Subject;
+        matchingFamily.IsExpanded.Should().BeTrue();
+        matchingFamily.Children.Should().ContainSingle().Which.Children.Should().ContainSingle().Which.Name.Should().Be("Esmaltados");
+    }
+
+    [Fact]
+    public void Catalog_sort_display_exposes_active_column_direction_and_clears_cleanly()
+    {
+        var viewModel = Create();
+
+        viewModel.CatalogSortDisplay.Should().Be("CÓDIGO: Crescente");
+        viewModel.HasCatalogSort.Should().BeTrue();
+        viewModel.SetCatalogSortDisplay("Produto: Decrescente");
+        viewModel.CatalogSortDisplay.Should().Be("Produto: Decrescente");
+        viewModel.HasCatalogSort.Should().BeTrue();
+        viewModel.HasActiveCatalogFilters.Should().BeTrue();
+
+        viewModel.SetCatalogSortDisplay(null);
+        viewModel.CatalogSortDisplay.Should().BeEmpty();
+        viewModel.HasCatalogSort.Should().BeFalse();
+        viewModel.HasActiveCatalogFilters.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Editor_classification_is_assigned_only_after_include_command()
     {
         var tree = new TreeClassificationService();
@@ -207,7 +361,7 @@ public sealed class ProductsViewModelStatusTests
     }
 
     [Fact]
-    public async Task Initialize_loads_catalog_summary_while_classification_lookups_are_pending()
+    public async Task Catalog_summary_loads_while_classification_lookups_are_pending()
     {
         var pendingClasses = new TaskCompletionSource<IEnumerable<ClassDTO>>(TaskCreationOptions.RunContinuationsAsynchronously);
         var classification = new ClassificationService { PendingClasses = pendingClasses };
@@ -220,6 +374,7 @@ public sealed class ProductsViewModelStatusTests
         var initialization = viewModel.InitializeAsync();
 
         viewModel.IsBusy.Should().BeTrue();
+        await viewModel.EnsureCatalogSummaryAsync();
         viewModel.CatalogSummary.Should().Be(new ProductCatalogSummaryDTO(7, 6, 1, 2));
         pendingClasses.SetResult([new ClassDTO(1, "Classe")]);
         await initialization;

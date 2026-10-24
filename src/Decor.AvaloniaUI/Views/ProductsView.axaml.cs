@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
@@ -9,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Decor.AvaloniaUI.Icons;
 using Decor.AvaloniaUI.Services;
 using Decor.AvaloniaUI.ViewModels;
 using Decor.Core.Configuration;
@@ -22,12 +24,16 @@ public partial class ProductsView : UserControl
 {
     private readonly IUserSettingsService? _userSettingsService;
     private bool _columnOrderLoaded;
+    private bool _catalogSortEventsAttached;
+    private bool _catalogSortWasCleared;
+    private CancellationTokenSource? _catalogCarouselScrollCancellation;
 
     public ProductsView()
     {
         InitializeComponent();
         _userSettingsService = (Avalonia.Application.Current as App)?.Services.GetService<IUserSettingsService>();
         ConfigureGridColumns();
+        ProductsGrid.Loaded += ProductsGrid_Loaded;
         SizeChanged += (_, _) => UpdateCatalogLayout();
         UpdateCatalogLayout();
         ProductsGrid.AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(async () =>
@@ -82,6 +88,82 @@ public partial class ProductsView : UserControl
             await viewModel.EnsureClassificationTreeAsync();
     }
 
+    private void ClassificationFilterConfirm_Click(object? sender, RoutedEventArgs eventArgs) =>
+        this.FindControl<Button>("ClassificationFilterButton")?.Flyout?.Hide();
+
+    private void CloseClassificationFilterFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        (Resources["ClassificationFilterFlyout"] as Flyout)?.Hide();
+
+    private void CloseCatalogIndicatorsFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        (Resources["CatalogIndicatorsFlyout"] as Flyout)?.Hide();
+
+    private void CloseExportProductsFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        ExportProductsButton.Flyout?.Hide();
+
+    private async void CatalogSummaryExpander_Expanded(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (DataContext is ProductsViewModel viewModel)
+            await viewModel.EnsureCatalogSummaryAsync();
+    }
+
+    private async void CatalogIndicatorCard_Click(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (DataContext is not ProductsViewModel viewModel || sender is not Button button)
+            return;
+
+        await viewModel.ShowCatalogIndicatorAsync(button.Tag as string);
+    }
+
+    private void ProductsGrid_Loaded(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (_catalogSortEventsAttached || ProductsGrid.FindControl<DataGrid>("InnerDataGrid") is not { } grid)
+            return;
+
+        _catalogSortEventsAttached = true;
+        if (grid.CollectionView?.SortDescriptions is INotifyCollectionChanged sortDescriptions)
+            sortDescriptions.CollectionChanged += (_, _) => Dispatcher.UIThread.Post(UpdateCatalogSortDisplay);
+        grid.Sorting += (_, _) => Dispatcher.UIThread.Post(
+            UpdateCatalogSortDisplay,
+            DispatcherPriority.Background);
+        Dispatcher.UIThread.Post(UpdateCatalogSortDisplay);
+    }
+
+    private void UpdateCatalogSortDisplay()
+    {
+        if (DataContext is not ProductsViewModel viewModel
+            || ProductsGrid.FindControl<DataGrid>("InnerDataGrid") is not { CollectionView: { } collectionView })
+            return;
+
+        var sort = collectionView.SortDescriptions.FirstOrDefault();
+        if (sort is null || !sort.HasPropertyPath || string.IsNullOrWhiteSpace(sort.PropertyPath))
+        {
+            if (!_catalogSortWasCleared)
+            {
+                var defaultPath = ProductsGrid.DefaultSortMemberPath;
+                var defaultColumn = ProductsGrid.Columns.FirstOrDefault(candidate => candidate.SortMemberPath == defaultPath);
+                var defaultHeader = defaultColumn?.Header?.ToString() ?? defaultPath;
+                if (!string.IsNullOrWhiteSpace(defaultHeader))
+                    viewModel.SetCatalogSortDisplay($"{defaultHeader}: Crescente");
+            }
+            return;
+        }
+
+        _catalogSortWasCleared = false;
+        var column = ProductsGrid.Columns.FirstOrDefault(candidate => candidate.SortMemberPath == sort.PropertyPath);
+        var header = column?.Header?.ToString() ?? sort.PropertyPath;
+        var direction = sort.Direction == System.ComponentModel.ListSortDirection.Ascending ? "Crescente" : "Decrescente";
+        viewModel.SetCatalogSortDisplay($"{header}: {direction}");
+    }
+
+    private void ClearCatalogSortClicked(object? sender, RoutedEventArgs eventArgs)
+    {
+        _catalogSortWasCleared = true;
+        if (ProductsGrid.FindControl<DataGrid>("InnerDataGrid")?.CollectionView?.SortDescriptions is { } sorts)
+            sorts.Clear();
+        if (DataContext is ProductsViewModel viewModel)
+            viewModel.SetCatalogSortDisplay(null);
+    }
+
     private void ApplyProductColumnWidths()
     {
         foreach (var propertyName in new[]
@@ -133,21 +215,69 @@ public partial class ProductsView : UserControl
 
         var summaryExpander = this.FindControl<Expander>("CatalogSummaryExpander");
         var searchToolsFrame = this.FindControl<Border>("SearchToolsFrame");
-        var summaryLayout = this.FindControl<Grid>("CatalogSummaryLayout");
-        var compactSummary = Bounds.Width < 760;
-        if (summaryLayout is not null)
-        {
-            summaryLayout.ColumnDefinitions = compactSummary ? new ColumnDefinitions("*,*") : new ColumnDefinitions("*,*,*,*");
-            summaryLayout.RowDefinitions = compactSummary ? new RowDefinitions("Auto,Auto") : new RowDefinitions("Auto");
-            var cards = new[] { TotalProductsCard, ActiveProductsCard, OutOfStockProductsCard, LowStockProductsCard };
-            for (var index = 0; index < cards.Length; index++)
-            {
-                Grid.SetColumn(cards[index], compactSummary ? index % 2 : index);
-                Grid.SetRow(cards[index], compactSummary ? index / 2 : 0);
-            }
-        }
-
+        var searchActionsLayout = this.FindControl<Grid>("CatalogSearchActionsLayout");
         ConfigureCatalogLayout(layout, summaryExpander, searchToolsFrame, ProductsGridFrame, ProductDetailsPanel, Bounds.Width);
+        ConfigureCatalogSearchActionsLayout(searchActionsLayout, searchToolsFrame?.Bounds.Width ?? Bounds.Width);
+    }
+
+    private async Task ScrollCatalogIndicatorsAsync(int direction)
+    {
+        const double cardStep = 232;
+        var maximumOffset = Math.Max(0, CatalogSummaryCarousel.Extent.Width - CatalogSummaryCarousel.Viewport.Width);
+        var initialOffset = CatalogSummaryCarousel.Offset.X;
+        var targetOffset = Math.Clamp(initialOffset + direction * cardStep, 0, maximumOffset);
+        if (Math.Abs(targetOffset - initialOffset) < 0.1) return;
+
+        _catalogCarouselScrollCancellation?.Cancel();
+        _catalogCarouselScrollCancellation?.Dispose();
+        _catalogCarouselScrollCancellation = new CancellationTokenSource();
+        var cancellationToken = _catalogCarouselScrollCancellation.Token;
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            while (stopwatch.ElapsedMilliseconds < 220)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var progress = stopwatch.ElapsedMilliseconds / 220d;
+                var easedProgress = 1 - Math.Pow(1 - progress, 3);
+                var offset = initialOffset + (targetOffset - initialOffset) * easedProgress;
+                CatalogSummaryCarousel.Offset = new Vector(offset, 0);
+                await Task.Delay(16, cancellationToken);
+            }
+
+            CatalogSummaryCarousel.Offset = new Vector(targetOffset, 0);
+        }
+        catch (OperationCanceledException)
+        {
+            // A new navigation request takes over the animation.
+        }
+    }
+
+    private async void PreviousCatalogIndicator_Click(object? sender, RoutedEventArgs eventArgs) => await ScrollCatalogIndicatorsAsync(-1);
+
+    private async void NextCatalogIndicator_Click(object? sender, RoutedEventArgs eventArgs) => await ScrollCatalogIndicatorsAsync(1);
+
+    private void ConfigureCatalogSearchActionsLayout(Grid? layout, double width)
+    {
+        if (layout is null) return;
+
+        var compact = width < 720;
+        layout.ColumnDefinitions = compact
+            ? new ColumnDefinitions("Auto,Auto,Auto")
+            : new ColumnDefinitions("*,Auto,Auto,Auto");
+        layout.RowDefinitions = compact ? new RowDefinitions("Auto,Auto") : new RowDefinitions("Auto");
+
+        Grid.SetRow(SearchTextBox, 0);
+        Grid.SetColumn(SearchTextBox, 0);
+        Grid.SetColumnSpan(SearchTextBox, compact ? 3 : 1);
+
+        var actions = new[] { ClassificationFilterButton, ExportProductsButton, ConfigureColumnsButton };
+        for (var index = 0; index < actions.Length; index++)
+        {
+            Grid.SetRow(actions[index], compact ? 1 : 0);
+            Grid.SetColumn(actions[index], compact ? index : index + 1);
+        }
     }
 
     private static void ConfigureCatalogLayout(Grid layout, Expander? summaryExpander, Border? searchToolsFrame, Border productsGridFrame, Border productDetailsPanel, double width)
@@ -241,7 +371,50 @@ public partial class ProductsView : UserControl
 
         var items = new StackPanel { Spacing = 4 };
         PopulateColumnMenu(items);
-        var flyout = new Flyout
+        Flyout? flyout = null;
+        var closeIcon = new PathIcon
+        {
+            Width = 10,
+            Height = 10,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        DecorIcon.SetId(closeIcon, DecorIconId.Actions.Close);
+
+        var closeButton = new Button
+        {
+            Content = closeIcon,
+            Width = 18,
+            Height = 18,
+            MinWidth = 18,
+            MinHeight = 18,
+            Padding = new Thickness(0),
+            Margin = new Thickness(0),
+            Background = Avalonia.Media.Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        ToolTip.SetTip(closeButton, "Fechar");
+        AutomationProperties.SetName(closeButton, "Fechar");
+        closeButton.Click += (_, _) => flyout?.Hide();
+
+        var content = new StackPanel { Spacing = 8 };
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 12 };
+        header.Children.Add(new TextBlock
+        {
+            Text = "Ordenar colunas",
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        });
+        Grid.SetColumn(closeButton, 1);
+        header.Children.Add(closeButton);
+        content.Children.Add(header);
+        content.Children.Add(items);
+
+        flyout = new Flyout
         {
             Content = new Border
             {
@@ -249,7 +422,7 @@ public partial class ProductsView : UserControl
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(5),
                 Padding = new Thickness(10),
-                Child = items
+                Child = content
             }
         };
         flyout.ShowAt(anchor);
@@ -258,7 +431,7 @@ public partial class ProductsView : UserControl
     private void PopulateColumnMenu(StackPanel items)
     {
         items.Children.Clear();
-        foreach (var column in ProductsGrid.Columns.ToArray())
+        foreach (var column in ProductsGrid.Columns.OrderBy(column => column.DisplayIndex))
         {
             if (column.Header is not string header || string.IsNullOrWhiteSpace(column.SortMemberPath)) continue;
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 3 };
@@ -266,7 +439,7 @@ public partial class ProductsView : UserControl
             visibility.Click += (_, _) => column.IsVisible = visibility.IsChecked == true;
             row.Children.Add(visibility);
 
-            var columnIndex = ProductsGrid.Columns.IndexOf(column);
+            var columnIndex = column.DisplayIndex;
             var moveUp = CreateColumnMoveButton("↑", "Mover coluna para cima", columnIndex > 0);
             Grid.SetColumn(moveUp, 1);
             moveUp.Click += async (_, _) => await MoveColumnAsync(column, -1, items);
@@ -300,12 +473,11 @@ public partial class ProductsView : UserControl
     private async Task MoveColumnAsync(DataGridColumn column, int offset, StackPanel menuItems)
     {
         var columns = ProductsGrid.Columns;
-        var index = columns.IndexOf(column);
+        var index = column.DisplayIndex;
         var targetIndex = index + offset;
         if (index < 0 || targetIndex < 0 || targetIndex >= columns.Count) return;
 
-        columns.RemoveAt(index);
-        columns.Insert(targetIndex, column);
+        column.DisplayIndex = targetIndex;
         PopulateColumnMenu(menuItems);
         await SaveProductColumnOrderAsync();
     }
@@ -329,10 +501,8 @@ public partial class ProductsView : UserControl
                 .ToArray();
             for (var index = 0; index < ordered.Length; index++)
             {
-                var currentIndex = ProductsGrid.Columns.IndexOf(ordered[index]);
-                if (currentIndex == index) continue;
-                ProductsGrid.Columns.RemoveAt(currentIndex);
-                ProductsGrid.Columns.Insert(index, ordered[index]);
+                if (ordered[index].DisplayIndex != index)
+                    ordered[index].DisplayIndex = index;
             }
         }
         catch (Exception)
@@ -347,6 +517,7 @@ public partial class ProductsView : UserControl
         try
         {
             var order = ProductsGrid.Columns.Where(column => !string.IsNullOrWhiteSpace(column.SortMemberPath))
+                .OrderBy(column => column.DisplayIndex)
                 .Select(column => column.SortMemberPath).ToArray();
             await _userSettingsService.SetValueAsync(DecorUserSettings.ProductGridColumnOrder, JsonSerializer.Serialize(order));
         }

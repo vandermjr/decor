@@ -32,6 +32,10 @@ public partial class DecorSearchField : UserControl
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowFilterButton), true);
     public static readonly StyledProperty<bool> ShowLeadingSearchIconProperty =
         AvaloniaProperty.Register<DecorSearchField, bool>(nameof(ShowLeadingSearchIcon));
+    public static readonly StyledProperty<bool> HighlightActionButtonsProperty =
+        AvaloniaProperty.Register<DecorSearchField, bool>(nameof(HighlightActionButtons));
+    public static readonly StyledProperty<Thickness> FieldBorderThicknessProperty =
+        AvaloniaProperty.Register<DecorSearchField, Thickness>(nameof(FieldBorderThickness), new Thickness(1));
     public static readonly StyledProperty<FlyoutBase?> FilterFlyoutProperty =
         AvaloniaProperty.Register<DecorSearchField, FlyoutBase?>(nameof(FilterFlyout));
 
@@ -51,6 +55,7 @@ public partial class DecorSearchField : UserControl
         _searchActionCommand = new SearchCommandProxy(this, isClear: false);
         _clearActionCommand = new SearchCommandProxy(this, isClear: true);
         InitializeComponent();
+        UpdateActionButtonHighlight();
         SearchInput.KeyDown += SearchInput_KeyDown;
         _searchTimer.Tick += SearchTimer_Tick;
         AttachedToVisualTree += (_, _) => AttachCommands();
@@ -68,6 +73,8 @@ public partial class DecorSearchField : UserControl
     public bool ShowSearchButton { get => GetValue(ShowSearchButtonProperty); set => SetValue(ShowSearchButtonProperty, value); }
     public bool ShowFilterButton { get => GetValue(ShowFilterButtonProperty); set => SetValue(ShowFilterButtonProperty, value); }
     public bool ShowLeadingSearchIcon { get => GetValue(ShowLeadingSearchIconProperty); set => SetValue(ShowLeadingSearchIconProperty, value); }
+    public bool HighlightActionButtons { get => GetValue(HighlightActionButtonsProperty); set => SetValue(HighlightActionButtonsProperty, value); }
+    public Thickness FieldBorderThickness { get => GetValue(FieldBorderThicknessProperty); set => SetValue(FieldBorderThicknessProperty, value); }
     public FlyoutBase? FilterFlyout { get => GetValue(FilterFlyoutProperty); set => SetValue(FilterFlyoutProperty, value); }
     public ICommand SearchActionCommand => _searchActionCommand;
     public ICommand ClearActionCommand => _clearActionCommand;
@@ -197,8 +204,18 @@ public partial class DecorSearchField : UserControl
             HasClearCommand = ClearCommand is not null;
             _clearActionCommand.RaiseCanExecuteChanged();
         }
+        else if (change.Property == HighlightActionButtonsProperty)
+            UpdateActionButtonHighlight();
         if (change.Property == SearchHelpProperty)
             HasSearchHelp = !string.IsNullOrWhiteSpace(SearchHelp);
+    }
+
+    private void UpdateActionButtonHighlight()
+    {
+        ClearButton.Classes.Set("decor-action", HighlightActionButtons);
+        InfoButton.Classes.Set("decor-action", HighlightActionButtons);
+        ClearButton.Classes.Set("highlighted-search-action", HighlightActionButtons);
+        InfoButton.Classes.Set("highlighted-search-action", HighlightActionButtons);
     }
 
     private sealed class SearchCommandProxy(DecorSearchField owner, bool isClear) : ICommand

@@ -12,9 +12,10 @@
     <Flyout x:Key="NotificationsFlyout" Placement="BottomEdgeAlignedRight" ShowMode="Transient">
       <Border Padding="14" MinWidth="320" MaxWidth="420" Background="{DynamicResource DecorSurfaceRaisedBrush}">
         <StackPanel Spacing="8">
-          <Grid ColumnDefinitions="*,Auto">
+          <Grid ColumnDefinitions="*,Auto,Auto">
             <TextBlock Text="Notificações" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
             <Button Grid.Column="1" Content="Limpar" Command="{Binding ClearNotificationsCommand}" IsVisible="{Binding HasNotifications}" Classes="decor-action"/>
+            <Button Grid.Column="2" Classes="decor-flyout-close" Click="CloseNotificationsFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button>
           </Grid>
           <TextBlock Text="Nenhuma notificação" Foreground="{DynamicResource DecorTextMutedBrush}" IsVisible="{Binding !HasNotifications}"/>
           <ScrollViewer MaxHeight="360" IsVisible="{Binding HasNotifications}">
@@ -38,13 +39,14 @@
       <Border MinWidth="300" MaxWidth="360" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="8">
         <StackPanel>
           <Border Padding="16,14" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="0,0,0,1" CornerRadius="7,7,0,0">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
               <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource DecorAccentBrush}">
                 <TextBlock Text="{Binding UserInitials}" Foreground="{DynamicResource DecorSelectionForegroundBrush}" FontSize="16" FontWeight="{DynamicResource DecorFontWeightHeading}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
               </Border>
               <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                 <TextBlock Text="{Binding UserPresentationName}" FontWeight="{DynamicResource DecorFontWeightHeading}" FontSize="15" TextTrimming="CharacterEllipsis"/>
               </StackPanel>
+              <Button Grid.Column="2" Classes="decor-flyout-close" Click="CloseUserFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button>
             </Grid>
           </Border>
 

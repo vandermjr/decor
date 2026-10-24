@@ -132,8 +132,20 @@ public sealed class ProductsCatalogPanelTests
             && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogSummaryExpander");
         Assert.Equal("Indicadores", (string?)summaryExpander.Attribute("Header"));
         Assert.Equal("Stretch", (string?)summaryExpander.Attribute("HorizontalAlignment"));
-        Assert.Equal("True", (string?)summaryExpander.Attribute("IsExpanded"));
+        Assert.Equal("False", (string?)summaryExpander.Attribute("IsExpanded"));
+        Assert.Equal("CatalogSummaryExpander_Expanded", (string?)summaryExpander.Attribute("Expanded"));
         Assert.Contains(summaryExpander.Descendants(), element => ReferenceEquals(element, summary));
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Flyout"
+            && (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml")) == "CatalogIndicatorsFlyout");
+        foreach (var indicator in new[]
+                 {
+                     "ShowTotalProductsIndicator", "ShowActiveProductsIndicator", "ShowInactiveProductsIndicator",
+                     "ShowOutOfStockProductsIndicator", "ShowLowStockProductsIndicator"
+                 })
+            Assert.Contains(document.Descendants(), element => element.Name.LocalName == "CheckBox"
+                && (string?)element.Attribute("IsChecked") == $"{{Binding {indicator}, Mode=TwoWay}}");
+        Assert.Equal(4, document.Descendants().Count(element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Click") == "CatalogIndicatorCard_Click"));
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Click") == "ExportProductsCsvClicked");
         foreach (var formatClick in new[]
@@ -147,17 +159,47 @@ public sealed class ProductsCatalogPanelTests
         Assert.Contains("viewModel.Listing.AllItems", File.ReadAllText(Path.ChangeExtension(ProductsViewPath(), ".axaml.cs")));
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Click") == "ConfigureColumnsClicked");
+        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "Ordenar colunas");
         var columnMenuCodeBehind = File.ReadAllText(Path.ChangeExtension(ProductsViewPath(), ".axaml.cs"));
         Assert.Contains("MoveColumnAsync", columnMenuCodeBehind, StringComparison.Ordinal);
         Assert.Contains("Mover coluna para cima", columnMenuCodeBehind, StringComparison.Ordinal);
         Assert.Contains("Mover coluna para baixo", columnMenuCodeBehind, StringComparison.Ordinal);
         Assert.Contains("DecorUserSettings.ProductGridColumnOrder", columnMenuCodeBehind, StringComparison.Ordinal);
-        Assert.Contains(document.Descendants(), element => element.Name.LocalName == "DecorSearchField"
-            && (string?)element.Attribute("FilterFlyout") == "{StaticResource ClassificationFilterFlyout}");
+        var searchFrame = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Border"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "SearchToolsFrame");
+        Assert.Equal("{DynamicResource DecorSurfaceBrush}", (string?)searchFrame.Attribute("Background"));
+        Assert.Equal("{DynamicResource DecorBorderBrush}", (string?)searchFrame.Attribute("BorderBrush"));
+        Assert.Equal("1", (string?)searchFrame.Attribute("BorderThickness"));
+        var searchField = Assert.Single(searchFrame.Descendants(), element => element.Name.LocalName == "DecorSearchField");
+        Assert.Equal("False", (string?)searchField.Attribute("ShowFilterButton"));
+        Assert.Null(searchField.Attribute("FieldBorderThickness"));
+        Assert.Contains(searchFrame.Descendants(), element => element.Name.LocalName == "Border"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("catalog-filter-chip") == true
+            && (string?)element.Attribute("IsVisible") == "{Binding HasClassificationFilter}");
+        var filterButton = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ClassificationFilterButton");
+        Assert.Equal("{StaticResource ClassificationFilterFlyout}", (string?)filterButton.Attribute("Flyout"));
+        Assert.Contains(filterButton.Descendants(), element => element.Name.LocalName == "TextBlock"
+            && (string?)element.Attribute("Text") == "Filtrar");
+        foreach (var button in new[]
+                 {
+                     filterButton,
+                     Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+                         && element.Descendants().Any(child => child.Name.LocalName == "TextBlock" && (string?)child.Attribute("Text") == "Exportar")),
+                     Assert.Single(document.Descendants(), element => element.Name.LocalName == "Button"
+                         && element.Descendants().Any(child => child.Name.LocalName == "TextBlock" && (string?)child.Attribute("Text") == "Ordenar colunas"))
+                 })
+            Assert.Contains(button.Ancestors(), ancestor => ReferenceEquals(ancestor, searchFrame));
+        Assert.Contains(searchFrame.Descendants(), element => element.Name.LocalName == "Border"
+            && ((string?)element.Attribute("Classes"))?.Split(' ').Contains("catalog-filter-chip") == true);
         var filterFlyout = Assert.Single(document.Descendants(), element => element.Name.LocalName == "Flyout"
             && (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2006/xaml")) == "ClassificationFilterFlyout");
         Assert.Contains(filterFlyout.Descendants(), element => element.Name.LocalName == "TreeView"
             && (string?)element.Attribute("ItemsSource") == "{Binding FilteredClassificationTreeNodes}");
+        Assert.Contains(filterFlyout.Descendants(), element => element.Name.LocalName == "Button"
+            && (string?)element.Attribute("Content") == "OK"
+            && (string?)element.Attribute("Click") == "ClassificationFilterConfirm_Click");
         Assert.DoesNotContain(filterFlyout.Descendants(), element => element.Name.LocalName == "Button"
             && (string?)element.Attribute("Command") == "{Binding IncludeEditorClassificationCommand}");
         Assert.Contains(document.Descendants(), element => element.Name.LocalName == "TreeView"

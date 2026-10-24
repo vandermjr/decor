@@ -273,7 +273,10 @@
                       <Button.Flyout>
                         <Flyout Placement="BottomEdgeAlignedRight">
                           <Border Padding="12" Background="{DynamicResource DecorSurfaceRaisedBrush}">
-                            <TimePickerPresenter x:Name="BackupNotificationLeadTimePicker" Time="{Binding BackupNotificationLeadTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupNotificationLeadTimePicker_Confirmed" Dismissed="BackupNotificationLeadTimePicker_Dismissed"/>
+                            <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                              <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Antecedência" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseBackupNotificationLeadTimeFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+                              <TimePickerPresenter Grid.Row="1" x:Name="BackupNotificationLeadTimePicker" Time="{Binding BackupNotificationLeadTime, Mode=TwoWay}" ClockIdentifier="24HourClock" UseSeconds="False" Confirmed="BackupNotificationLeadTimePicker_Confirmed" Dismissed="BackupNotificationLeadTimePicker_Dismissed"/>
+                            </Grid>
                           </Border>
                         </Flyout>
                       </Button.Flyout>
@@ -319,7 +322,10 @@
                             <Button Grid.Row="1" Grid.Column="1" Width="30" Height="30" CornerRadius="15" BorderThickness="1" BorderBrush="{DynamicResource DecorBorderBrush}" Background="{Binding ColorPreviewBrush}" ToolTip.Tip="Escolher cor do ícone" Click="IconColorChoiceButton_Click">
                               <Button.Flyout>
                                 <Flyout Placement="BottomEdgeAlignedRight">
-                                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                  <Border Padding="10" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+                                  <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Cor do ícone" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseIconColorPalette_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+                                  <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#ef4444" Tag="#ef4444" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#f59e0b" Tag="#f59e0b" Click="IconColorChoice_Click"/>
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#10b981" Tag="#10b981" Click="IconColorChoice_Click"/>
@@ -329,6 +335,8 @@
                                     <Button Width="22" Height="22" CornerRadius="11" Background="#000000" Tag="#000000" Click="IconColorChoice_Click"/>
                                     <Button Content="Restaurar padrão" Classes="decor-action" Tag="" Click="IconColorReset_Click"/>
                                   </StackPanel>
+                                  </Grid>
+                                  </Border>
                                 </Flyout>
                               </Button.Flyout>
                             </Button>

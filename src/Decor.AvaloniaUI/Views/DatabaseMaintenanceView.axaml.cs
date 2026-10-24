@@ -109,6 +109,9 @@ public partial class DatabaseMaintenanceView : UserControl
         ChooseBackupDateButton.Flyout?.Hide();
     }
 
+    private void CloseBackupDateFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        ChooseBackupDateButton.Flyout?.Hide();
+
     private void BackupTimePicker_Confirmed(object? sender, EventArgs eventArgs) =>
         ChooseBackupTimeButton.Flyout?.Hide();
 
@@ -117,6 +120,9 @@ public partial class DatabaseMaintenanceView : UserControl
         ViewModel.BackupTime = _backupTimeBeforeSelection;
         ChooseBackupTimeButton.Flyout?.Hide();
     }
+
+    private void CloseBackupTimeFlyout_Click(object? sender, RoutedEventArgs eventArgs) =>
+        ChooseBackupTimeButton.Flyout?.Hide();
 
     private DatabaseMaintenanceViewModel ViewModel => (DatabaseMaintenanceViewModel)DataContext!;
 

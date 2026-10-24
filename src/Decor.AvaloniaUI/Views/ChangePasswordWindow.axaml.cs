@@ -57,6 +57,9 @@ public partial class ChangePasswordWindow : Window
         e.Handled = true;
     }
 
+    private void ClosePasswordRequirementsFlyout_Click(object? sender, RoutedEventArgs e) =>
+        (Resources["PasswordRequirementsFlyout"] as Flyout)?.Hide();
+
     private async void CopyErrorButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not ChangePasswordViewModel { ErrorMessage: { Length: > 0 } errorMessage })

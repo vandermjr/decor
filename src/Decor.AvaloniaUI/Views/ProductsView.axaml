@@ -16,27 +16,33 @@
         <TextBlock Text="{Binding LevelName}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
       </StackPanel>
     </TreeDataTemplate>
-    <SolidColorBrush x:Key="CatalogActionBackgroundBrush">#F6AB58</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionForegroundBrush">#332611</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionBorderBrush">#D6A02E</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionHoverBrush">#E9AE31</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionPressedBrush">#D9991D</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionDisabledBackgroundBrush">#D8CCB4</SolidColorBrush>
-    <SolidColorBrush x:Key="CatalogActionDisabledForegroundBrush">#625842</SolidColorBrush>
+    <ControlTheme x:Key="ClassificationTreeItemTheme" TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+      <Setter Property="IsExpanded" Value="{ReflectionBinding IsExpanded, Mode=TwoWay}"/>
+    </ControlTheme>
     <Flyout x:Key="ClassificationFilterFlyout" Placement="BottomEdgeAlignedRight" Opened="ClassificationFilterFlyout_Opened">
       <Border Classes="column-menu" BorderThickness="1" CornerRadius="5" Padding="12" Width="330" MaxHeight="480">
         <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
-          <StackPanel Spacing="3">
-            <TextBlock Text="Filtrar por classificação" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-            <TextBlock Text="Selecione uma classe, família, grupo ou subgrupo." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
-          </StackPanel>
+          <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="3"><TextBlock Text="Filtrar por classificação" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Text="Selecione uma classe, família, grupo ou subgrupo." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/></StackPanel><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseClassificationFilterFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
           <TextBox Grid.Row="1" Text="{Binding ClassificationSearchText, Mode=TwoWay}" PlaceholderText="Pesquisar classificações"/>
-          <TreeView Grid.Row="2" ItemsSource="{Binding FilteredClassificationTreeNodes}" SelectedItem="{Binding SelectedCatalogClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" MinHeight="190"/>
-          <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <TreeView Grid.Row="2" ItemsSource="{Binding FilteredClassificationTreeNodes}" SelectedItem="{Binding SelectedCatalogClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" ItemContainerTheme="{StaticResource ClassificationTreeItemTheme}" MinHeight="190"/>
+          <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
             <TextBlock Text="{Binding ClassificationFilterDisplay}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
             <Button Grid.Column="1" Content="Limpar" Command="{Binding ClearClassificationFilterCommand}" Classes="product-secondary-action"/>
+            <Button Grid.Column="2" Content="OK" Classes="product-secondary-action" Click="ClassificationFilterConfirm_Click"/>
           </Grid>
         </Grid>
+      </Border>
+    </Flyout>
+    <Flyout x:Key="CatalogIndicatorsFlyout" Placement="BottomEdgeAlignedRight">
+      <Border Classes="column-menu" BorderThickness="1" CornerRadius="6" Padding="12" Width="250">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Text="Personalizar indicadores" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Text="Escolha os dados exibidos neste resumo." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/></StackPanel><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseCatalogIndicatorsFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
+          <CheckBox Content="Produtos cadastrados" IsChecked="{Binding ShowTotalProductsIndicator, Mode=TwoWay}"/>
+          <CheckBox Content="Produtos ativos" IsChecked="{Binding ShowActiveProductsIndicator, Mode=TwoWay}"/>
+          <CheckBox Content="Produtos inativos" IsChecked="{Binding ShowInactiveProductsIndicator, Mode=TwoWay}"/>
+          <CheckBox Content="Produtos sem estoque" IsChecked="{Binding ShowOutOfStockProductsIndicator, Mode=TwoWay}"/>
+          <CheckBox Content="Produtos com estoque baixo" IsChecked="{Binding ShowLowStockProductsIndicator, Mode=TwoWay}"/>
+        </StackPanel>
       </Border>
     </Flyout>
   </UserControl.Resources>
@@ -45,7 +51,53 @@
     <Style Selector="PathIcon.catalog-active-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Common.Status}"/></Style>
     <Style Selector="PathIcon.catalog-empty-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Remove}"/></Style>
     <Style Selector="PathIcon.catalog-low-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Filter}"/></Style>
+    <Style Selector="PathIcon.catalog-inactive-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Actions.Close}"/></Style>
     <Style Selector="PathIcon.product-placeholder-icon"><Setter Property="icons:DecorIcon.Id" Value="{x:Static icons:DecorIconId+Forms.Products}"/></Style>
+    <Style Selector="Expander.catalog-summary /template/ ToggleButton">
+      <Setter Property="Height" Value="24"/>
+      <Setter Property="MinHeight" Value="24"/>
+      <Setter Property="Padding" Value="6,0"/>
+    </Style>
+    <Style Selector="Border.catalog-indicator-card">
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="12"/>
+      <Setter Property="Height" Value="140"/>
+    </Style>
+    <Style Selector="Border.catalog-indicator-icon">
+      <Setter Property="Width" Value="34"/>
+      <Setter Property="Height" Value="34"/>
+      <Setter Property="Background" Value="{DynamicResource DecorControlBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="17"/>
+    </Style>
+    <Style Selector="Button.catalog-indicator-action">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+      <Setter Property="Width" Value="220"/>
+      <Setter Property="MinWidth" Value="220"/>
+    </Style>
+    <Style Selector="Button.catalog-indicator-action:pointerover Border.catalog-indicator-card">
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorAccentBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-carousel-navigation">
+      <Setter Property="Width" Value="32"/>
+      <Setter Property="MinWidth" Value="32"/>
+      <Setter Property="Height" Value="140"/>
+      <Setter Property="Padding" Value="1"/>
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+    </Style>
     <Style Selector="controls|DecorDataGridControl.stock-catalog DataGridRow">
       <Setter Property="MinHeight" Value="44"/>
     </Style>
@@ -93,6 +145,21 @@
       <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionBorderBrush}"/>
     </Style>
+    <Style Selector="Button.catalog-accent-action:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CatalogActionBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-accent-action:focus">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionFocusBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-accent-action:focus /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource CatalogActionFocusBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorFieldFocusBrush}"/>
+    </Style>
     <Style Selector="Button.catalog-accent-action:pressed">
       <Setter Property="Background" Value="{DynamicResource CatalogActionPressedBrush}"/>
       <Setter Property="Foreground" Value="{DynamicResource CatalogActionForegroundBrush}"/>
@@ -106,6 +173,19 @@
     <Style Selector="Border.column-menu">
       <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.catalog-filter-chip">
+      <Setter Property="Background" Value="{DynamicResource DecorSurfaceRaisedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DecorBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.catalog-filter-remove">
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="MinHeight" Value="20"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="Transparent"/>
     </Style>
     <Style Selector="ProgressBar.product-stock-level">
       <Setter Property="Height" Value="8"/>
@@ -131,63 +211,117 @@
         <ColumnDefinition Width="2*" MinWidth="0"/>
         <ColumnDefinition Width="420"/>
       </Grid.ColumnDefinitions>
-      <Expander x:Name="CatalogSummaryExpander" Grid.Row="0" Grid.Column="0" Header="Indicadores" IsExpanded="True" HorizontalAlignment="Stretch">
-        <Grid x:Name="CatalogSummaryLayout" ColumnDefinitions="*,*,*,*" ColumnSpacing="10" HorizontalAlignment="Stretch">
-          <Border x:Name="TotalProductsCard" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <PathIcon Classes="catalog-total-icon" Width="19" Height="19" Foreground="{DynamicResource DecorAccentBrush}" VerticalAlignment="Center"/>
-              <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="Produtos cadastrados" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                <TextBlock Text="{Binding TotalProductsDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+      <Expander x:Name="CatalogSummaryExpander" Classes="catalog-summary" Grid.Row="0" Grid.Column="0" Header="Indicadores" IsExpanded="False" Expanded="CatalogSummaryExpander_Expanded" HorizontalAlignment="Stretch">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <StackPanel Spacing="1" VerticalAlignment="Center">
+              <TextBlock Text="Panorama do catálogo" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+              <TextBlock Text="{Binding CatalogSummaryUpdatedDisplay}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="1" Classes="product-secondary-action" Command="{Binding RefreshCatalogSummaryCommand}" IsEnabled="{Binding !IsCatalogSummaryLoading}" ToolTip.Tip="Atualizar indicadores">
+              <PathIcon icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Refresh}" Width="16" Height="16" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+            </Button>
+            <Button Grid.Column="2" Classes="product-secondary-action" Flyout="{StaticResource CatalogIndicatorsFlyout}" ToolTip.Tip="Escolher indicadores exibidos">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <PathIcon icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}" Width="14" Height="14" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <TextBlock Text="Indicadores" FontSize="{DynamicResource DecorFontSizeCaption}" VerticalAlignment="Center"/>
               </StackPanel>
-            </Grid>
-          </Border>
-          <Border x:Name="ActiveProductsCard" Grid.Column="1" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <PathIcon Classes="catalog-active-icon" Width="19" Height="19" Foreground="{DynamicResource DecorAddIndicatorBrush}" VerticalAlignment="Center"/>
-              <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="Ativos" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                <TextBlock Text="{Binding ActiveProductsDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
+            </Button>
+          </Grid>
+          <Grid IsVisible="{Binding IsCatalogSummaryLoading}" ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+            <Border Classes="catalog-indicator-card"><StackPanel Spacing="10" VerticalAlignment="Center"><Border Height="10" Width="110" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5"/><Border Height="24" Width="64" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="4"/></StackPanel></Border>
+            <Border Grid.Column="1" Classes="catalog-indicator-card"><StackPanel Spacing="10" VerticalAlignment="Center"><Border Height="10" Width="94" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5"/><Border Height="24" Width="74" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="4"/></StackPanel></Border>
+            <Border Grid.Column="2" Classes="catalog-indicator-card"><StackPanel Spacing="10" VerticalAlignment="Center"><Border Height="10" Width="100" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5"/><Border Height="8" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="4"/></StackPanel></Border>
+            <Border Grid.Column="3" Classes="catalog-indicator-card"><StackPanel Spacing="10" VerticalAlignment="Center"><Border Height="10" Width="88" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="5"/><Border Height="8" Background="{DynamicResource DecorScrollTrackBrush}" CornerRadius="4"/></StackPanel></Border>
+          </Grid>
+          <Grid IsVisible="{Binding HasCatalogSummary}" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <Button Classes="catalog-carousel-navigation" Click="PreviousCatalogIndicator_Click" ToolTip.Tip="Indicadores anteriores" VerticalAlignment="Center">
+              <Viewbox Width="28" Height="112" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"><PathIcon icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.PreviousPage}" Width="24" Height="24" Foreground="{DynamicResource DecorTextMutedBrush}"/></Viewbox>
+            </Button>
+            <ScrollViewer x:Name="CatalogSummaryCarousel" Grid.Column="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+              <StackPanel x:Name="CatalogSummaryLayout" Orientation="Horizontal" Spacing="12">
+            <Button x:Name="TotalProductsIndicatorButton" Classes="catalog-indicator-action" MinWidth="0" Click="CatalogIndicatorCard_Click" Tag="" ToolTip.Tip="Mostrar todos os produtos no catálogo" IsVisible="{Binding ShowTotalProductsIndicator}">
+            <Border Classes="catalog-indicator-card">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto">
+                <TextBlock Text="VISÃO DO CATÁLOGO" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <Border Grid.Column="1" Classes="catalog-indicator-icon"><PathIcon Classes="catalog-total-icon" Width="17" Height="17" Foreground="{DynamicResource DecorAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                <TextBlock Grid.Row="1" Text="{Binding TotalProductsDisplay}" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="2" Text="Ver todos os produtos  ›" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorAccentBrush}"/>
+              </Grid>
+            </Border>
+            </Button>
+            <Button x:Name="ActiveProductsIndicatorButton" Grid.Column="1" Classes="catalog-indicator-action" MinWidth="0" Click="CatalogIndicatorCard_Click" Tag="active" ToolTip.Tip="Mostrar produtos ativos no catálogo" IsVisible="{Binding ShowActiveProductsIndicator}">
+            <Border Classes="catalog-indicator-card">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto">
+                <TextBlock Text="ATIVAÇÃO" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <Border Grid.Column="1" Classes="catalog-indicator-icon"><PathIcon Classes="catalog-active-icon" Width="17" Height="17" Foreground="{DynamicResource DecorAddIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="4" VerticalAlignment="Center"><Grid ColumnDefinitions="Auto,*"><TextBlock Text="{Binding ActiveProductsDisplay}" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}"/><TextBlock Grid.Column="1" Text="{Binding ActiveProductsPercentageDisplay}" TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" VerticalAlignment="Bottom" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/></Grid><ProgressBar Maximum="100" Value="{Binding ActiveProductsPercentage}" Height="6" Foreground="{DynamicResource DecorAddIndicatorBrush}"/></StackPanel>
+                <TextBlock Grid.Row="2" Text="{Binding InactiveProductsDisplay, StringFormat='{}{0} inativos'}" IsVisible="{Binding ShowInactiveProductsIndicator}" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+              </Grid>
+            </Border>
+            </Button>
+            <Button x:Name="OutOfStockProductsIndicatorButton" Grid.Column="2" Classes="catalog-indicator-action" MinWidth="0" Click="CatalogIndicatorCard_Click" Tag="out-of-stock" ToolTip.Tip="Mostrar produtos sem estoque no catálogo" IsVisible="{Binding ShowOutOfStockProductsIndicator}">
+            <Border Classes="catalog-indicator-card">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto">
+                <TextBlock Text="SEM ESTOQUE" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <Border Grid.Column="1" Classes="catalog-indicator-icon"><PathIcon Classes="catalog-empty-icon" Width="17" Height="17" Foreground="{DynamicResource DecorDangerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                <TextBlock Grid.Row="1" Text="{Binding OutOfStockProductsDisplay}" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="2" Text="Ver produtos que requerem reposição  ›" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorDangerBrush}"/>
+              </Grid>
+            </Border>
+            </Button>
+            <Button x:Name="LowStockProductsIndicatorButton" Grid.Column="3" Classes="catalog-indicator-action" MinWidth="0" Click="CatalogIndicatorCard_Click" Tag="low-stock" ToolTip.Tip="Mostrar produtos com estoque baixo no catálogo" IsVisible="{Binding ShowLowStockProductsIndicator}">
+            <Border Classes="catalog-indicator-card">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*,Auto">
+                <TextBlock Text="ESTOQUE BAIXO" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" FontWeight="{DynamicResource DecorFontWeightHeading}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
+                <Border Grid.Column="1" Classes="catalog-indicator-icon"><PathIcon Classes="catalog-low-icon" Width="17" Height="17" Foreground="{DynamicResource DecorEditIndicatorBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                <TextBlock Grid.Row="1" Text="{Binding LowStockProductsDisplay}" FontSize="{DynamicResource DecorFontSizeDisplay}" FontWeight="{DynamicResource DecorFontWeightHeading}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="2" Text="Ver produtos abaixo do mínimo  ›" TextWrapping="Wrap" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorEditIndicatorBrush}"/>
+              </Grid>
+            </Border>
+            </Button>
               </StackPanel>
-            </Grid>
-          </Border>
-          <Border x:Name="OutOfStockProductsCard" Grid.Column="2" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <PathIcon Classes="catalog-empty-icon" Width="19" Height="19" Foreground="{DynamicResource DecorDangerBrush}" VerticalAlignment="Center"/>
-              <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="Sem estoque" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                <TextBlock Text="{Binding OutOfStockProductsDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-              </StackPanel>
-            </Grid>
-          </Border>
-          <Border x:Name="LowStockProductsCard" Grid.Column="3" Background="{DynamicResource DecorSurfaceRaisedBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <PathIcon Classes="catalog-low-icon" Width="19" Height="19" Foreground="{DynamicResource DecorEditIndicatorBrush}" VerticalAlignment="Center"/>
-              <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="Estoque baixo" FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}"/>
-                <TextBlock Text="{Binding LowStockProductsDisplay}" FontSize="{DynamicResource DecorFontSizeSection}" FontWeight="{DynamicResource DecorFontWeightHeading}"/>
-              </StackPanel>
-            </Grid>
-          </Border>
-        </Grid>
+            </ScrollViewer>
+            <Button Grid.Column="2" Classes="catalog-carousel-navigation" Click="NextCatalogIndicator_Click" ToolTip.Tip="Próximos indicadores" VerticalAlignment="Center">
+              <Viewbox Width="28" Height="112" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"><PathIcon icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.NextPage}" Width="24" Height="24" Foreground="{DynamicResource DecorTextMutedBrush}"/></Viewbox>
+            </Button>
+          </Grid>
+        </StackPanel>
       </Expander>
       <Border x:Name="SearchToolsFrame" Grid.Row="1" Grid.Column="0" Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10">
         <StackPanel Spacing="8">
-          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-            <controls:DecorSearchField x:Name="SearchTextBox" HorizontalAlignment="Stretch" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
+          <Grid x:Name="CatalogSearchActionsLayout" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" MinWidth="0"/>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <controls:DecorSearchField x:Name="SearchTextBox" MinWidth="0" HorizontalAlignment="Stretch" TabIndex="0" Text="{Binding SearchText, Mode=TwoWay}"
                                        PlaceholderText="Pesquisar por código, produto, marca ou referência" SearchHelp="{x:Static controls:DecorSearchField.ProductSearchHelp}"
                                        SearchCommand="{Binding SearchCommand}" ClearCommand="{Binding ClearSearchCommand}"
-                                       ShowSearchButton="False" ShowFilterButton="True" ShowLeadingSearchIcon="True"
-                                       FilterFlyout="{StaticResource ClassificationFilterFlyout}"/>
-            <Button Grid.Column="1" Classes="product-secondary-action" TabIndex="2" IsEnabled="{Binding CanExport}" Margin="0" ToolTip.Tip="Exportar produtos encontrados">
+                                       ShowSearchButton="False" ShowFilterButton="False" ShowLeadingSearchIcon="True" HighlightActionButtons="True"/>
+            <Button x:Name="ClassificationFilterButton" Grid.Column="1" Classes="product-secondary-action" TabIndex="1" Margin="0"
+                        Flyout="{StaticResource ClassificationFilterFlyout}" ToolTip.Tip="Filtrar por classificação">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Filter}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform"/>
+                <TextBlock Text="Filtrar" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="ExportProductsButton" Grid.Column="2" Classes="product-secondary-action" TabIndex="2" IsEnabled="{Binding CanExport}" Margin="0" ToolTip.Tip="Exportar produtos encontrados">
               <Grid ColumnDefinitions="Auto,*,Auto" Width="112" ColumnSpacing="6" VerticalAlignment="Center">
                 <Path Grid.Column="0" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Report}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="Exportar" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <Path Grid.Column="2" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.Dropdown}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <PathIcon Grid.Column="2" icons:DecorIcon.Id="{x:Static icons:DecorIconId+Navigation.Dropdown}" Foreground="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" VerticalAlignment="Center" HorizontalAlignment="Center">
+                  <PathIcon.RenderTransform>
+                    <TranslateTransform Y="1"/>
+                  </PathIcon.RenderTransform>
+                </PathIcon>
               </Grid>
               <Button.Flyout>
                 <Flyout Placement="BottomEdgeAlignedRight">
                   <StackPanel Spacing="4" MinWidth="190">
+                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Exportar produtos" FontWeight="{DynamicResource DecorFontWeightHeading}"/><Button Grid.Column="1" Classes="decor-flyout-close" Click="CloseExportProductsFlyout_Click" ToolTip.Tip="Fechar"><Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="12" Height="12" Stretch="Uniform"/></Button></Grid>
                     <Button Content="CSV (.csv)" Classes="product-secondary-action" Click="ExportProductsCsvClicked" HorizontalAlignment="Stretch"/>
                     <Button Content="Excel 97-2003 (.xls)" Classes="product-secondary-action" Click="ExportProductsXlsClicked" HorizontalAlignment="Stretch"/>
                     <Button Content="Excel (.xlsx)" Classes="product-secondary-action" Click="ExportProductsXlsxClicked" HorizontalAlignment="Stretch"/>
@@ -196,19 +330,70 @@
                 </Flyout>
               </Button.Flyout>
             </Button>
-            <Button Grid.Column="2" Classes="product-secondary-action" TabIndex="3" Click="ConfigureColumnsClicked" Margin="0" ToolTip.Tip="Escolher colunas visíveis">
+            <Button x:Name="ConfigureColumnsButton" Grid.Column="3" Classes="product-secondary-action" TabIndex="3" Click="ConfigureColumnsClicked" Margin="0" ToolTip.Tip="Ordenar colunas e escolher quais ficam visíveis">
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Application.Settings}" Fill="{DynamicResource DecorTextMutedBrush}" Width="16" Height="16" Stretch="Uniform"/>
-                <TextBlock Text="Configurar colunas" VerticalAlignment="Center"/>
+                <TextBlock Text="Ordenar colunas" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
           </Grid>
+          <WrapPanel Orientation="Horizontal" IsVisible="{Binding HasActiveCatalogFilters}">
+            <Border Classes="catalog-filter-chip" BorderThickness="1" CornerRadius="5" Padding="8,4" Margin="0,0,6,0" IsVisible="{Binding HasClassificationFilter}">
+              <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" MaxWidth="320" ClipToBounds="True">
+                  <TextBlock Text="Classificação" Foreground="{DynamicResource DecorTextMutedBrush}" VerticalAlignment="Center"/>
+                  <ItemsControl ItemsSource="{Binding ClassificationFilterPathSegments}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="4"/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ClassificationPathSegment">
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                          <Border Background="{DynamicResource DecorSurfaceBrush}" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="5,2">
+                            <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                              <Ellipse Width="6" Height="6" Fill="{Binding LevelBrush}" VerticalAlignment="Center"/>
+                              <TextBlock Text="{Binding Name}" FontSize="{DynamicResource DecorFontSizeCaption}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                          </Border>
+                          <TextBlock Text="›" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="15" VerticalAlignment="Center" IsVisible="{Binding HasNext}"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="catalog-filter-remove" Command="{Binding ClearClassificationFilterCommand}"
+                        ToolTip.Tip="Remover filtro de classificação" AutomationProperties.Name="Remover filtro de classificação">
+                  <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="11" Height="11" Stretch="Uniform"/>
+                </Button>
+              </Grid>
+            </Border>
+            <Border Classes="catalog-filter-chip" BorderThickness="1" CornerRadius="5" Padding="8,4" Margin="0,0,6,0" IsVisible="{Binding HasCatalogIndicatorFilter}">
+              <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="4">
+                <TextBlock Text="{Binding CatalogIndicatorFilterDisplay}" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Classes="catalog-filter-remove" Command="{Binding ClearCatalogIndicatorFilterCommand}"
+                        ToolTip.Tip="Remover filtro do indicador" AutomationProperties.Name="Remover filtro do indicador">
+                  <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="11" Height="11" Stretch="Uniform"/>
+                </Button>
+              </Grid>
+            </Border>
+            <Border Classes="catalog-filter-chip" BorderThickness="1" CornerRadius="5" Padding="8,4" Margin="0,0,6,0" IsVisible="{Binding HasCatalogSort}">
+              <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="4">
+                <TextBlock Text="{Binding CatalogSortDisplay}" VerticalAlignment="Center" MaxWidth="220" TextTrimming="CharacterEllipsis"/>
+                <Button Grid.Column="1" Classes="catalog-filter-remove" Click="ClearCatalogSortClicked"
+                        ToolTip.Tip="Remover ordenação" AutomationProperties.Name="Remover ordenação">
+                  <Path icons:DecorIcon.Id="{x:Static icons:DecorIconId+Actions.Close}" Fill="{DynamicResource DecorTextMutedBrush}" Width="11" Height="11" Stretch="Uniform"/>
+                </Button>
+              </Grid>
+            </Border>
+          </WrapPanel>
         </StackPanel>
-    </Border>
+      </Border>
 
     <!-- DataGrid ou Formulário (alternância) -->
-        <Border x:Name="ProductsGridFrame" Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource DecorSurfaceRaisedBrush}">
-          <controls:DecorDataGridControl x:Name="ProductsGrid" Classes="stock-catalog" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
+        <Border x:Name="ProductsGridFrame" Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="6" ClipToBounds="True" Background="{DynamicResource DecorSurfaceRaisedBrush}">
+          <controls:DecorDataGridControl x:Name="ProductsGrid" Classes="stock-catalog" FrameBorderThickness="0" PaginationSource="{Binding}" DefaultSortMemberPath="ProductID" ItemsSource="{Binding Products}"
                 SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"/>
@@ -432,7 +617,7 @@
               <TextBlock Text="Escolha o subgrupo ao qual este produto pertence." FontSize="{DynamicResource DecorFontSizeCaption}" Foreground="{DynamicResource DecorTextMutedBrush}" TextWrapping="Wrap"/>
               <TextBox TabIndex="11" Text="{Binding EditorClassificationSearchText, Mode=TwoWay}" PlaceholderText="Pesquisar classificação"/>
               <Border BorderBrush="{DynamicResource DecorBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="4" Height="250">
-                <TreeView ItemsSource="{Binding FilteredEditorClassificationTreeNodes}" SelectedItem="{Binding SelectedEditorClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" controls:DecorRequiredField.IsRequired="True"/>
+                <TreeView ItemsSource="{Binding FilteredEditorClassificationTreeNodes}" SelectedItem="{Binding SelectedEditorClassificationNode, Mode=TwoWay}" ItemTemplate="{StaticResource ClassificationTreeTemplate}" ItemContainerTheme="{StaticResource ClassificationTreeItemTheme}" controls:DecorRequiredField.IsRequired="True"/>
               </Border>
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <TextBlock Text="{Binding SelectedClassificationPath}" Foreground="{DynamicResource DecorTextMutedBrush}" FontSize="{DynamicResource DecorFontSizeCaption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>

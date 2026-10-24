@@ -40,7 +40,9 @@ public sealed class ClassificationTreeNode
         ClassificationTreeLevel.Subgroup => "Subgrupo",
         _ => string.Empty
     };
-    public IBrush LevelBrush => Level switch
+    public IBrush LevelBrush => GetLevelBrush(Level);
+
+    public static IBrush GetLevelBrush(ClassificationTreeLevel level) => level switch
     {
         ClassificationTreeLevel.Class => Brush.Parse("#2074B8"),
         ClassificationTreeLevel.Family => Brush.Parse("#63844F"),
@@ -53,12 +55,23 @@ public sealed class ClassificationTreeNode
     public GroupDTO? GroupItem { get; }
     public SubgroupDTO? SubgroupItem { get; }
     public ObservableCollection<ClassificationTreeNode> Children { get; } = [];
+    public bool IsExpanded { get; set; }
 
     public ClassificationTreeNode CopyWithChildren(IEnumerable<ClassificationTreeNode> children)
     {
-        var copy = new ClassificationTreeNode(Name, Level, ClassItem, FamilyItem, GroupItem, SubgroupItem);
+        var copy = new ClassificationTreeNode(Name, Level, ClassItem, FamilyItem, GroupItem, SubgroupItem)
+        {
+            IsExpanded = IsExpanded
+        };
         foreach (var child in children)
             copy.Children.Add(child);
         return copy;
     }
+}
+
+public sealed class ClassificationPathSegment(string name, ClassificationTreeLevel level, bool hasNext)
+{
+    public string Name { get; } = name;
+    public bool HasNext { get; } = hasNext;
+    public IBrush LevelBrush => ClassificationTreeNode.GetLevelBrush(level);
 }

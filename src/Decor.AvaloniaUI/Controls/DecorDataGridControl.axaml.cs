@@ -88,7 +88,6 @@ public partial class DecorDataGridControl : UserControl
     private Func<string, string>? _configuredGetDisplayName;
     private Func<string, DataGridLength>? _configuredGetColumnWidth;
     private IReadOnlyList<string>? _configuredPropertyNames;
-    private PropertyInfo? _leadingColumnProperty;
     private readonly List<DataGridColumn> _additionalColumns = [];
 
     public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
@@ -104,6 +103,8 @@ public partial class DecorDataGridControl : UserControl
         AvaloniaProperty.Register<DecorDataGridControl, string?>(nameof(DefaultSortMemberPath));
     public static readonly StyledProperty<bool> AutoSizeColumnsOnItemsChangedProperty =
         AvaloniaProperty.Register<DecorDataGridControl, bool>(nameof(AutoSizeColumnsOnItemsChanged));
+    public static readonly StyledProperty<Thickness> FrameBorderThicknessProperty =
+        AvaloniaProperty.Register<DecorDataGridControl, Thickness>(nameof(FrameBorderThickness), new Thickness(1));
 
     public string? DefaultSortMemberPath
     {
@@ -117,6 +118,12 @@ public partial class DecorDataGridControl : UserControl
         set => SetValue(AutoSizeColumnsOnItemsChangedProperty, value);
     }
 
+    public Thickness FrameBorderThickness
+    {
+        get => GetValue(FrameBorderThicknessProperty);
+        set => SetValue(FrameBorderThicknessProperty, value);
+    }
+
     public event EventHandler<ValueMatchChangedEventArgs>? ValueMatchChanged;
 
     public DecorDataGridControl()
@@ -127,7 +134,6 @@ public partial class DecorDataGridControl : UserControl
         {
             _innerGrid.Columns.CollectionChanged += (_, _) => ConfigureColumnPresentation();
             _innerGrid.PropertyChanged += OnInnerGridPropertyChanged;
-            _innerGrid.LoadingRow += OnInnerGridLoadingRow;
         }
         _paginationFooter = this.FindControl<Border>("PaginationFooter");
         _paginationLayout = this.FindControl<Grid>("PaginationLayout");
@@ -351,8 +357,6 @@ public partial class DecorDataGridControl : UserControl
             UpdatePaginationLayout();
             Dispatcher.UIThread.Post(UpdateRowsPresenterMargin);
         }
-        else if (eventArgs.Property == RangeBase.ValueProperty && sender == _horizontalScrollBar)
-            Dispatcher.UIThread.Post(ConfigureVisibleRowIndicators);
     }
 
     private void UpdateRowsPresenterMargin()
@@ -366,27 +370,6 @@ public partial class DecorDataGridControl : UserControl
         }
         if (_columnHeadersPresenter is not null)
             _columnHeadersPresenter.Margin = presenterMargin;
-    }
-
-    private void OnInnerGridLoadingRow(object? sender, DataGridRowEventArgs eventArgs) =>
-        Dispatcher.UIThread.Post(() => ConfigureRowIndicator(eventArgs.Row));
-
-    private void ConfigureVisibleRowIndicators()
-    {
-        if (_innerGrid is null)
-            return;
-
-        foreach (var row in _innerGrid.GetVisualDescendants().OfType<DataGridRow>())
-            ConfigureRowIndicator(row);
-    }
-
-    private static void ConfigureRowIndicator(DataGridRow row)
-    {
-        var cellsPresenter = row.GetVisualDescendants().OfType<DataGridCellsPresenter>().FirstOrDefault();
-        if (cellsPresenter is null)
-            return;
-
-        cellsPresenter.Margin = new Thickness(3, 0, 0, 0);
     }
 
     /// <summary>
@@ -549,7 +532,6 @@ public partial class DecorDataGridControl : UserControl
         }
 
         _innerGrid.Columns.Clear();
-        _leadingColumnProperty = null;
         CacheProperties(dtoType);
 
         var properties = (propertyNames is null
@@ -574,11 +556,9 @@ public partial class DecorDataGridControl : UserControl
             // Isso evita que uma largura fixa ou Star menor corte o texto do cabeçalho.
             width = DataGridLength.Auto;
 
-            var isLeadingColumn = _leadingColumnProperty is null;
-            _leadingColumnProperty ??= property;
             DataGridColumn column = property.PropertyType == typeof(bool) || property.PropertyType == typeof(bool?)
-                ? CreateBooleanColumn(property, isLeadingColumn)
-                : CreateTextColumn(property, isLeadingColumn);
+                ? CreateBooleanColumn(property)
+                : CreateTextColumn(property);
 
             column.Header = displayName;
             column.HeaderTemplate = new DecorGridHeader(GetHeaderTextAlignment());
@@ -632,7 +612,7 @@ public partial class DecorDataGridControl : UserControl
             _innerGrid.Columns.Insert(_innerGrid.Columns.IndexOf(stateColumn), column);
     }
 
-    private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo, bool isLeadingColumn)
+    private DataGridTemplateColumn CreateTextColumn(PropertyInfo propertyInfo)
     {
         var automaticAlignment = propertyInfo.Name switch
         {
@@ -651,18 +631,6 @@ public partial class DecorDataGridControl : UserControl
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
                     Tag = propertyInfo
                 };
-                if (isLeadingColumn)
-                {
-                    cellContent.BorderThickness = new Thickness(3, 0, 0, 0);
-                    cellContent.Bind(Border.BorderBrushProperty,
-                        new Binding("BorderBrush")
-                        {
-                            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor)
-                            {
-                                AncestorType = typeof(DataGridRow)
-                            }
-                        });
-                }
                 var textBlock = new TextBlock
                 {
                     Foreground = _styler.Theme.GetBrushForColumn(propertyInfo.Name, propertyInfo.PropertyType,
@@ -809,7 +777,7 @@ public partial class DecorDataGridControl : UserControl
         _ => FontWeight.Normal
     };
 
-    private DataGridTemplateColumn CreateBooleanColumn(PropertyInfo propertyInfo, bool isLeadingColumn) => new()
+    private DataGridTemplateColumn CreateBooleanColumn(PropertyInfo propertyInfo) => new()
     {
         CellTemplate = new FuncDataTemplate<object?>((item, _) =>
         {
@@ -823,24 +791,7 @@ public partial class DecorDataGridControl : UserControl
                 Focusable = false
             };
             checkBox.Bind(CheckBox.IsCheckedProperty, new Binding(propertyInfo.Name));
-            if (!isLeadingColumn)
-                return checkBox;
-
-            var cellContent = new Border
-            {
-                BorderThickness = new Thickness(3, 0, 0, 0),
-                Padding = new Thickness(4, 0),
-                Child = checkBox
-            };
-            cellContent.Bind(Border.BorderBrushProperty,
-                new Binding("BorderBrush")
-                {
-                    RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor)
-                    {
-                        AncestorType = typeof(DataGridRow)
-                    }
-                });
-            return cellContent;
+            return checkBox;
         })
     };
 
